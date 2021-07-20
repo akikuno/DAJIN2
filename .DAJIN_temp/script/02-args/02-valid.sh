@@ -2,10 +2,6 @@
 
 # Check whether mandatory options are inputted ------------
 
-[ -z "$design" ] && error_exit "design argument is not specified"
-[ -z "$input_dir" ] && error_exit "input_dir argument is not specified"
-[ -z "$control" ] && error_exit "control argument is not specified"
-
 echo "$ARGS" |
   grep -q -e "\-a " -e "\--alleles " ||
   error_exit "-a|--alleles argument is required"

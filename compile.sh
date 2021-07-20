@@ -11,60 +11,50 @@ embed_document() {
 }
 
 echo '#!/bin/sh' >DAJIN
-cat document/VERSION.md |
+
+cat document/version.md |
   sed 's/```/==================================/' |
-  sed "s/^/# /" |
-  cat >>DAJIN
+  sed "s/^/# /" >>DAJIN
 
-: 'Initialization' && {
-  grep ^ script/00-initialization/initialization.sh
-} >>DAJIN
+# Make directories
+cat <<EOF >>DAJIN
+find ./ -type d |
+  grep -e "./library" -e "./script" -e "./document" -e "./utils" |
+  grep -v -e "past" -e ".DAJIN_temp" |
+  sort -u |
+  sed "s|^./|.DAJIN_temp/|" |
+  xargs mkdir -p
+EOF
 
-: 'Documentation' && {
-  find document/*.md | embed_document | grep -v '```'
-} >>DAJIN
+# Embed
+find document/*.md | embed_document | grep -v '```' >>DAJIN
 
-: 'util' && {
-  find util/*.html | embed_document >>DAJIN
-  find util/*.csv | embed_document >>DAJIN
-}
+find util/*.html | embed_document >>DAJIN
+find util/*.csv | embed_document >>DAJIN
 
-: 'script' && {
-  find script/ -type f |
-    grep -v -e "compile" -e "99-past" -e "00-initialization" |
-    sort |
-    embed_document >>DAJIN
-  echo "chmod -R +x .DAJIN_temp/script/*" >>DAJIN
-}
+find script/ -type f |
+  grep -v -e "past" |
+  sort |
+  embed_document >>DAJIN
+echo "chmod -R +x .DAJIN_temp/script/*" >>DAJIN
 
-: 'Library' && {
-  : 'Generate shell library' && {
-    find library/*.sh | embed_document >>DAJIN
-  }
+find library/*.sh | embed_document >>DAJIN
+find library/*.sh |
+  while read -r line; do
+    echo '. .DAJIN_temp/'"$line"
+  done >>DAJIN
+find library/*.py | embed_document >>DAJIN
+echo "chmod +x .DAJIN_temp/library/*" >>DAJIN
 
-  : 'Load shell library' && {
-    find library/*.sh |
-      while read -r line; do
-        echo '. .DAJIN_temp/'"$line"
-      done >>DAJIN
-  }
+echo 'ARGS="$*" && export ARGS' >>DAJIN
+find script/ -type f |
+  grep -v -e "past" |
+  sort |
+  sed "s|^|. .DAJIN_temp/|" >>DAJIN
 
-  : 'Python library' && {
-    find library/*.py | embed_document >>DAJIN
-  }
-  echo "chmod +x .DAJIN_temp/library/*" >>DAJIN
-}
-
-: 'Arguments' && {
-  echo 'ARGS="$*" && export ARGS' >>DAJIN
-  find script/ -type f |
-    grep -v -e "past" -e "init" |
-    sort |
-    sed "s|^|. .DAJIN_temp/|" >>DAJIN
-}
-
+# Execute
 chmod +x DAJIN
-
 ./DAJIN -h
 
+# Clean up
 rm /tmp/tmp_*

@@ -1,0 +1,439 @@
+#!/bin/sh
+# ==================================
+# DAJIN - Genotyping software using Nanopore long-read sequencer for genome-edited samples
+# Version: 2.0.2
+# License: MIT
+# Written by Akihiro Kuno
+# <https://github.com/akikuno/DAJIN2>.
+# ==================================
+find ./ -type d |
+  grep -e "./library" -e "./script" -e "./document" -e "./utils" |
+  grep -v -e "past" -e ".DAJIN_temp" |
+  sort -u |
+  sed "s|^./|.DAJIN_temp/|" |
+  xargs mkdir -p
+cat <<'EMBED' >.DAJIN_temp/document/README_JP.md
+
+<p align="center">
+<img src="https://github.com/akikuno/DAJIN/blob/master/misc/images/DAJIN-logo.png" width="90%">
+</p>
+
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
+
+## 特徴
+
+- **移植性**：Windows10 (WSL), Linux, macOS
+- **低依存性**：minimap2とsamtoolsのみ必要とします
+- **高速**： DAJINの100倍高速です
+
+## セットアップ
+
+### 動作環境
+
+LinuxまたはWindows 10 ([WSL](https://docs.microsoft.com/ja-jp/windows/wsl/install-win10))で動作確認をしています.  
+検証済みの環境は[こちら](https://github.com/akikuno/DAJIN/blob/master/docs/TESTED_SYSTEMS.md)です.  
+
+### `conda`をインストールします
+
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+
+condaおよびインストールについての詳細は[こちら](https://docs.conda.io/projects/conda/en/latest/)にございます.  
+
+
+### DAJINをダウンロードします
+
+git clone https://github.com/akikuno/DAJIN.git
+
+または下記URLでZIPファイルをダウンロードしてください.  
+
+https://github.com/akikuno/DAJIN/archive/master.zip
+
+### DAJINをダウンロードします
+
+
+## 利用方法
+
+### 入力ファイルの用意
+
+以下のような入力ファイルを作製します.  
+
+design=DAJIN/example/design.txt
+input_dir=DAJIN/example/demultiplex
+control=barcode01
+genome=mm10
+grna=CCTGTCCAGAGTGGGAGATAGCC,CCACTGCTAGCTGTGGGTAACCC
+output_dir=DAJIN_cables2
+threads=10
+filter=on
+
+各項目の情報は以下のとおりです. 各項目は順不同です.  
+
+- **desing**: 考えられる遺伝型の配列を記載したFASTA形式のテキストファイルです.  ">wt"と">target"の2つは含まれている必要があります. 
+- **input_dir**: demultiplex済みのFASTA/FASTQファイルを含むディレクトリです. 
+- **control**: 野生型コントロールのバーコード番号です. 
+- **genome**: `mm10`, `hg38`等の参照ゲノムです. 
+- **grna**: PAMを含むgRNA配列です. 2つ以上の配列はコンマ（,）で区切ります. 
+- **output_dir（オプショナル）**: 結果を保存するディレクトリの名前です. デフォルトは`DAJIN_results`です. 
+- **threads（オプショナル）**: DAJINに使用するCPUスレッド数です. デフォルトでは`3分の2`を使用します. 
+- **filter（オプショナル**: on/off）: マイナーアレル（3%以下）を解析から除きます. デフォルトは"on"です. 
+
+
+### DAJINの実行
+
+./DAJIN/DAJIN.sh -f [入力ファイルのPATH]
+
+下記のコマンドで例を実行します.
+
+./DAJIN/DAJIN.sh -i DAJIN/example/design.txt
+
+### 結果のレポートについて
+
+DAJINは2つのファイル（`Details.csv`, `Details.pdf`）と2つのフォルダ（`BAM`, `Consensus`）を出力します. 
+
+#### Details.csv
+
+`Details.csv` はアレル情報を記載しています.
+
+| Sample    |  Allele ID |  % of reads |  Allele type  |  Indel |  Large indel |  Design |
+|-----------|------------|-------------|---------------|--------|--------------|---------|
+| barcode01 | 1          | 100         | wt            | -      | -            | -       |
+| barcode02 | 1          | 11.8        | abnormal      | +      | +            | -       |
+| barcode02 | 2          | 88.2        | target        | -      | -            | +       |
+| barcode03 | 1          | 9.9         | abnormal      | +      | +            | -       |
+| barcode03 | 2          | 38.5        | abnormal      | +      | +            | -       |
+| barcode03 | 3          | 51.6        | flox_deletion | -      | -            | -       |
+
+#### Details.pdf
+
+`Details.pdf`は上記CSVを可視化した以下のような図です.  
+
+<img src="https://github.com/akikuno/DAJIN/blob/master/misc/images/Details.png" width="75%">  
+
+barcode01は野生型コントロールです. barcode02とbarcode03はfloxノックインのゲノム編集を施したファウンダーマウスの結果です.  
+barcode02のほぼ全てのアレルがintact target （flox以外の異常な変異の入っていないアレル）であることから、このマウスは目的のfloxアレルをホモでもつマウスの候補と考えられます.  
+
+#### Consensus
+
+`Conseusus` フォルダーには各アレルのコンセンサス配列が保存されています.  
+ファイル形式はFASTAおよびHTMLです.  
+
+HTMLでは色付けされた変異情報が表示されます.  
+
+<a href="https://htmlpreview.github.io/?https://github.com/akikuno/DAJIN/blob/master/misc/images/tyr_c140cg.html" target= _blank rel= noopener> こちらは点変異のコンセンサス配列です. </a>
+
+#### BAM
+
+`BAM` フォルダーには解析したサンプルの全アレルおよび各アレルごとのBAMファイルが保存されています.  
+この`BAM`ファイルは[IGV](http://software.broadinstitute.org/software/igv/)で可視化できます.  
+
+EMBED
+cat <<'EMBED' >.DAJIN_temp/document/dependencies.md
+# Dependencies
+
++ samtools (1.10)
++ minimap2 (2.17-r941)
++ Python (3.7.6)
+  + numpy (1.18.5)
+  + pandas (1.0.5)
+  + scikit-learn (0.23.1)
+  + plotnine (0.7.0)
+
+> The number in the parenthesis represents the tested software version.
+EMBED
+cat <<'EMBED' >.DAJIN_temp/document/tested_systems.md
+# Tested system information
+
+We have tested DAJIN2 works in the following systems:
+
+## Linux
+
+---
+| OS     | Ubuntu 18.04.3 LTS x86_64            |
+| ------ | ------------------------------------ |
+| Kernel | 5.0.0-29-generic                     |
+| Shell  | bash 4.4.20                          |
+| CPU    | Intel Xeon Gold 5220 (72) @ 3.900GHz |
+| GPU    | NVIDIA GeForce RTX 2080 Ti x4        |
+| Memory | 192 GB                               |
+---
+| OS     | Linux Mint 20 x86_64            |
+| ------ | ------------------------------- |
+| Kernel | 5.4.0-42-generic                |
+| Shell  | bash 5.0.17                     |
+| CPU    | AMD Ryzen 7 2700X (16) @ 3.700G |
+| GPU    | NVIDIA GeForce GTX 1080 Ti      |
+| Memory | 64 GB                           |
+
+## macOS
+
+## Windows 10 (WSL2)
+
+---
+| OS     | Ubuntu 18.04.5 LTS on Windows 10 x86_64 |
+| ------ | --------------------------------------- |
+| Kernel | 4.19.104-microsoft-standard             |
+| Shell  | bash 4.4.20                             |
+| CPU    | Intel Xeon E3-1535M v6 (8) @ 3.095GHz   |
+| Memory | 64 GB                                   |
+---
+EMBED
+cat <<'EMBED' >.DAJIN_temp/document/troubleshootings.md
+# Troubleshootings
+
+## line feed
+
+DAJIN: 7: set: Illegal option -
+
+This error may be caused by `CRLF`.
+
+Please open `DAJIN` by your text editor (e.g. Visual Studio Code) and change the line feed from `CRLF` to `LF`.  
+
+## samtools
+
+EMBED
+cat <<'EMBED' >.DAJIN_temp/document/usage.md
+Usage:
+
+  DAJIN [options] -a <alleles.fasta> -c <control.fastq> -s <sample.fastq>
+
+Example:
+
+  DAJIN \
+    -a example/alleles.fa \
+    -c example/fastq/barcode01.fq.gz \
+    -s example/fastq/barcode02.fq.gz \
+    -g mm10 \
+    -o DAJIN_example \
+    -t 4
+
+Mandatory arguments:
+
+  -a|--alleles <string>
+    Name of a multi-fasta file describing DNA sequence of each alleles in specific regions of interest.
+
+  -c|--control <string>
+    Name of a fastq file from a control sample.
+    Acceptable formats include gzipped FASTQ and FASTQ.
+
+  -s|--sample <string>
+    Name of a fastq file from an experimental sample.
+    Acceptable formats include gzipped FASTQ and FASTQ.
+
+Optional arguments (defaults in parentheses):
+
+  -g|--genome <string>
+    Name of UCSC genome releases.
+    The available genomes are listed at https://genome.ucsc.edu/FAQ/FAQreleases.html#release1
+
+  -t|--threads <integer>
+    Number of threads to use (1)
+
+  -o|--output <string>
+    Output directory (DAJIN_results)
+
+See the further information: <https://github.com/akikuno/DAJIN2>
+
+EMBED
+cat <<'EMBED' >.DAJIN_temp/document/version.md
+DAJIN - Genotyping software using Nanopore long-read sequencer for genome-edited samples
+Version: 2.0.2
+License: MIT
+Written by Akihiro Kuno
+<https://github.com/akikuno/DAJIN2>.
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
+#!/bin/sh
+
+set -ue
+umask 0022
+export LC_ALL=C
+
+[ "${BASH_VERSION:-}" ] && set -o posix -o pipefail
+[ "${ZSH_VERSION:-}" ] && setopt shwordsplit interactivecomments
+
+error_exit() {
+  echo "ERROR: $1" >&2
+  echo "ERROR: $1" >>log_DAJIN.txt
+  [ "${TEST:-}" ] || rm -rf .DAJIN_temp/ 2>/dev/null
+  exit 1
+}
+
+terminate() {
+  trap '' TERM
+  kill -TERM 0
+  [ "${TEST:-}" ] || rm -rf .DAJIN_temp/ 2>/dev/null
+  exit "$1"
+}
+trap "terminate 130" INT
+trap "terminate 143" TERM
+
+timestamp() {
+  echo "$(date +'%Y-%m-%d %H:%M:%S') $*"
+}
+
+timestamp "DAJIN $*" >log_DAJIN.txt
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/02-args/01-args.sh
+#!/bin/sh
+
+[ "$#" -eq 0 ] && grep -v '```' .DAJIN_temp/document/usage.md && exit 0
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+  -h | --help)
+    grep -v '```' .DAJIN_temp/document/usage.md
+    exit 0
+    ;;
+  -v | --version)
+    grep -v '```' .DAJIN_temp/document/version.md
+    exit 0
+    ;;
+
+  #--- parse arguments
+  -a | --alleles)
+    alleles="$2"
+    shift
+    ;;
+  -c | --control)
+    control="$2"
+    shift
+    ;;
+  -s | --sample)
+    sample="$2"
+    shift
+    ;;
+  -g | --genome)
+    genome="$2"
+    shift
+    ;;
+  -o | --output)
+    output_dir="$2"
+    shift
+    ;;
+  -t | --threads)
+    threads="$2"
+    shift
+    ;;
+
+  #--- error handling
+  -*) echo "Unrecognized option: $1" && exit 1 ;;
+  *) echo "Unrecognized argument: $1" && exit 1 ;;
+  esac
+  shift
+done
+
+# Check whether mandatory options are inputted ------------
+
+echo "$ARGS" |
+  grep -q -e "\-a " -e "\--alleles " ||
+  error_exit "-a|--alleles argument is required"
+
+echo "$ARGS" |
+  grep -q -e "\-c " -e "\--control " ||
+  error_exit "-c|--control argument is required"
+
+echo "$ARGS" |
+  grep -q -e "\-s " -e "\--sample " ||
+  error_exit "-s|--sample argument is required"
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/02-args/02-depend.sh
+#!/bin/sh
+
+################################################################################
+# Chech dependencies
+################################################################################
+
+# curl or wget ------------------------------------------------
+
+if type wget >/dev/null 2>&1; then
+  CMD_CHECK='wget -q -O - --spider --tries=2 --wait=1 --timeout=5'
+  CMD_GET='wget -q -O -'
+elif type curl >/dev/null 2>&1; then
+  CMD_CHECK='curl --retry 2 --retry-delay 1 -s -o /dev/null -w "%{http_code}"'
+  CMD_GET='curl -s'
+else
+  error_exit 'No HTTP-GET/POST command found.'
+fi
+
+# Commands ------------------------------------------------
+
+cat <<EOF |
+  minimap2
+  samtools
+  python
+EOF
+  while read -r CMD; do
+    "$CMD" --version >/dev/null 2>&1 || error_exit "$CMD: command not found"
+  done
+
+# R packages ----------------------------------------------
+# Rscript --slave --vanilla .DAJIN_temp/library/install_pkgs.R 1>/dev/null 2>&1
+
+# Rscript --slave --vanilla -e "installed.packages()" >.DAJIN_temp/rpackages
+
+# cat <<EOF |
+#   dbscan
+#   ggplot2
+#   RColorBrewer
+# EOF
+#   while read -r RPKG; do
+#     grep -q "$RPKG" .DAJIN_temp/rpackages || error_exit "$RPKG: package not found in R"
+#   done
+
+# rm .DAJIN_temp/rpackages
+
+# Python packages ----------------------------------------
+
+pip freeze >.DAJIN_temp/pypackages
+
+cat <<EOF |
+  numpy
+  pandas
+  scikit-learn
+  hdbscan
+  joblib
+  plotnine
+EOF
+  while read -r PYPKG; do
+    grep -q "$PYPKG" .DAJIN_temp/pypackages || error_exit "$PYPKG: package not found in Python"
+  done
+
+rm .DAJIN_temp/pypackages
+EMBED
+chmod -R +x .DAJIN_temp/script/*
+cat <<'EMBED' >.DAJIN_temp/library/calc_hotelling.sh
+#!/bin/sh
+
+calc_hotelling() (
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$*" ]; then
+    cat "$*"
+  else
+    echo "$*"
+  fi |
+    awk '{
+      data[NR]=$0
+      sum+=$1
+    } END {
+      mean=sum/NR
+      for(i=1;i<=NR;i++) {
+        residual+=(data[i]-mean)^2
+      }
+      var=residual/NR
+      for(i=1;i<=NR;i++) {
+        hotelling=(data[i]-mean)^2/var
+        print hotelling
+      }
+    }'
+)
+EMBED
+. .DAJIN_temp/library/calc_hotelling.sh
+chmod +x .DAJIN_temp/library/*
+ARGS="$*" && export ARGS
+. .DAJIN_temp/script/01-init/01-init.sh
+. .DAJIN_temp/script/02-args/01-args.sh
+. .DAJIN_temp/script/02-args/02-depend.sh

@@ -27,22 +27,4 @@ timestamp() {
   echo "$(date +'%Y-%m-%d %H:%M:%S') $*"
 }
 
-if type wget >/dev/null 2>&1; then
-  CMD_CHECK='wget -q -O - --spider --tries=2 --wait=1 --timeout=5'
-  CMD_GET='wget -q -O -'
-elif type curl >/dev/null 2>&1; then
-  CMD_CHECK='curl --retry 2 --retry-delay 1 -s -o /dev/null -w "%{http_code}"'
-  CMD_GET='curl -s'
-else
-  error_exit 'No HTTP-GET/POST command found.'
-fi
-
 timestamp "DAJIN $*" >log_DAJIN.txt
-
-find ./ -type f |
-  grep -e lib -e src -e doc -e utils |
-  grep -v -e "init" -e "past" -e ".DAJIN_temp" |
-  cut -d / -f 1-2 |
-  sort -u |
-  sed "s|^./|.DAJIN_temp/|" |
-  xargs mkdir -p

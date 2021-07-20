@@ -9,7 +9,7 @@ while [ "$#" -gt 0 ]; do
     exit 0
     ;;
   -v | --version)
-    grep -v '```' .DAJIN_temp/document/VERSION.md
+    grep -v '```' .DAJIN_temp/document/version.md
     exit 0
     ;;
 
@@ -45,3 +45,17 @@ while [ "$#" -gt 0 ]; do
   esac
   shift
 done
+
+# Check whether mandatory options are inputted ------------
+
+echo "$ARGS" |
+  grep -q -e "\-a " -e "\--alleles " ||
+  error_exit "-a|--alleles argument is required"
+
+echo "$ARGS" |
+  grep -q -e "\-c " -e "\--control " ||
+  error_exit "-c|--control argument is required"
+
+echo "$ARGS" |
+  grep -q -e "\-s " -e "\--sample " ||
+  error_exit "-s|--sample argument is required"
