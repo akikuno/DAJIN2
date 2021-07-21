@@ -1,11 +1,8 @@
 #!/bin/sh
 
-cat "${alleles}" |
-  sed "s/ /_/g" |
-  tr -d "\r" |
-  paste - - |
-  awk '{print $1, toupper($2)}' |
-  grep -v "^>$" |
+. .DAJIN_temp/library/fmt_fa.sh
+
+fmt_fa "${alleles}" |
   while read -r line; do
     output="$(echo ${line#>} | cut -d " " -f 1)"
     echo "$line" |

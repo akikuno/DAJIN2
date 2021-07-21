@@ -271,6 +271,19 @@ calc_hotelling() (
     }'
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/fmt_fa.sh
+#!/bin/sh
+
+fmt_fa() {
+  cat "$1" |
+    awk 'BEGIN{RS=">"} {
+      $1=">" $1 " "
+      for(i=1;i<=NF;i++) printf $i
+      print ""
+      }' |
+    awk 'NF==2'
+}
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/general.sh
 #!/bin/sh
 
@@ -295,6 +308,7 @@ timestamp() {
 }
 EMBED
 . .DAJIN_temp/library/calc_hotelling.sh
+. .DAJIN_temp/library/fmt_fa.sh
 . .DAJIN_temp/library/general.sh
 ARGS="$*" && export ARGS
 cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
@@ -455,12 +469,9 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/010-alleles.sh
 #!/bin/sh
 
-cat "${alleles}" |
-  sed "s/ /_/g" |
-  tr -d "\r" |
-  paste - - |
-  awk '{print $1, toupper($2)}' |
-  grep -v "^>$" |
+. .DAJIN_temp/library/fmt_fa.sh
+
+fmt_fa "${alleles}" |
   while read -r line; do
     output="$(echo ${line#>} | cut -d " " -f 1)"
     echo "$line" |
