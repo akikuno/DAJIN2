@@ -13,18 +13,18 @@ if ! conda info -e | grep -q DAJIN2; then
 fi
 
 #------------------------------------------------------------------------------
-# Tyr-albino
+# pm-tyr
 # chr7:87490801-87494587
 #------------------------------------------------------------------------------
 conda activate DAJIN2
-sample=./example/tyr-albino/barcode31.fq.gz
-control=./example/tyr-albino/barcode32.fq.gz
-alleles=./example/tyr-albino/design_tyr.fa
+sample=./example/pm-tyr/barcode31.fq.gz
+control=./example/pm-tyr/barcode32.fq.gz
+alleles=./example/pm-tyr/design_tyr.fa
 threads=$(getconf _NPROCESSORS_ONLN | awk '{print $0-2}')
 genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
-./generate_DAJIN.sh
+sh compile.sh
 # rm -rf .DAJIN_temp DAJIN_results
 # ./generate_DAJIN.sh && time bash ./DAJIN batch -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 

@@ -21,6 +21,7 @@ fi
 cat <<EOF |
   minimap2
   samtools
+  gzip
   python
 EOF
   while read -r CMD; do

@@ -46,16 +46,31 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-# Check whether mandatory options are inputted ------------
+################################################################################
+# Check arguments
+################################################################################
+
+# Check mandatory arguments ------------
 
 echo "$ARGS" |
   grep -q -e "\-a " -e "\--alleles " ||
   error_exit "-a|--alleles argument is required"
 
+[ -r "$alleles" ] || error_exit "$alleles is not found"
+
+grep -q -e '>wt' -e ">control" "$alleles" ||
+  error_exit "$alleles must include '>control' or '>wt'"
+
 echo "$ARGS" |
   grep -q -e "\-c " -e "\--control " ||
   error_exit "-c|--control argument is required"
 
+[ -r "$control" ] || error_exit "$control is not found"
+
 echo "$ARGS" |
   grep -q -e "\-s " -e "\--sample " ||
   error_exit "-s|--sample argument is required"
+
+[ -r "$sample" ] || error_exit "$sample is not found"
+
+# Check optional arguments ------------

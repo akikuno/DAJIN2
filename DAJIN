@@ -244,15 +244,35 @@ License: MIT
 Written by Akihiro Kuno
 <https://github.com/akikuno/DAJIN2>.
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
+cat <<'EMBED' >.DAJIN_temp/library/calc_hotelling.sh
 #!/bin/sh
 
-set -ue
-umask 0022
-export LC_ALL=C
-
-[ "${BASH_VERSION:-}" ] && set -o posix -o pipefail
-[ "${ZSH_VERSION:-}" ] && setopt shwordsplit interactivecomments
+calc_hotelling() (
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$*" ]; then
+    cat "$*"
+  else
+    echo "$*"
+  fi |
+    awk '{
+      data[NR]=$0
+      sum+=$1
+    } END {
+      mean=sum/NR
+      for(i=1;i<=NR;i++) {
+        residual+=(data[i]-mean)^2
+      }
+      var=residual/NR
+      for(i=1;i<=NR;i++) {
+        hotelling=(data[i]-mean)^2/var
+        print hotelling
+      }
+    }'
+)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/general.sh
+#!/bin/sh
 
 error_exit() {
   echo "ERROR: $1" >&2
@@ -271,12 +291,25 @@ trap "terminate 130" INT
 trap "terminate 143" TERM
 
 timestamp() {
-  echo "$(date +'%Y-%m-%d %H:%M:%S') $*"
+  echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"
 }
+EMBED
+. .DAJIN_temp/library/calc_hotelling.sh
+. .DAJIN_temp/library/general.sh
+ARGS="$*" && export ARGS
+cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
+#!/bin/sh
+
+set -eu
+umask 0022
+export LC_ALL=C
+
+[ "${BASH_VERSION:-}" ] && set -o posix -o pipefail
+[ "${ZSH_VERSION:-}" ] && setopt shwordsplit interactivecomments
 
 timestamp "DAJIN $*" >log_DAJIN.txt
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/02-args/01-args.sh
+cat <<'EMBED' >.DAJIN_temp/script/02-args/01-parse.sh
 #!/bin/sh
 
 [ "$#" -eq 0 ] && grep -v '```' .DAJIN_temp/document/usage.md && exit 0
@@ -325,19 +358,34 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-# Check whether mandatory options are inputted ------------
+################################################################################
+# Check arguments
+################################################################################
+
+# Check mandatory arguments ------------
 
 echo "$ARGS" |
   grep -q -e "\-a " -e "\--alleles " ||
   error_exit "-a|--alleles argument is required"
 
+[ -r "$alleles" ] || error_exit "$alleles is not found"
+
+grep -q -e '>wt' -e ">control" "$alleles" ||
+  error_exit "$alleles must include '>control' or '>wt'"
+
 echo "$ARGS" |
   grep -q -e "\-c " -e "\--control " ||
   error_exit "-c|--control argument is required"
 
+[ -r "$control" ] || error_exit "$control is not found"
+
 echo "$ARGS" |
   grep -q -e "\-s " -e "\--sample " ||
   error_exit "-s|--sample argument is required"
+
+[ -r "$sample" ] || error_exit "$sample is not found"
+
+# Check optional arguments ------------
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/02-args/02-depend.sh
 #!/bin/sh
@@ -363,6 +411,7 @@ fi
 cat <<EOF |
   minimap2
   samtools
+  gzip
   python
 EOF
   while read -r CMD; do
@@ -403,37 +452,22 @@ EOF
 
 rm .DAJIN_temp/pypackages
 EMBED
-chmod -R +x .DAJIN_temp/script/*
-cat <<'EMBED' >.DAJIN_temp/library/calc_hotelling.sh
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/010-alleles.sh
 #!/bin/sh
 
-calc_hotelling() (
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$*" ]; then
-    cat "$*"
-  else
-    echo "$*"
-  fi |
-    awk '{
-      data[NR]=$0
-      sum+=$1
-    } END {
-      mean=sum/NR
-      for(i=1;i<=NR;i++) {
-        residual+=(data[i]-mean)^2
-      }
-      var=residual/NR
-      for(i=1;i<=NR;i++) {
-        hotelling=(data[i]-mean)^2/var
-        print hotelling
-      }
-    }'
-)
+cat "${alleles}" |
+  sed "s/ /_/g" |
+  tr -d "\r" |
+  paste - - |
+  awk '{print $1, toupper($2)}' |
+  grep -v "^>$" |
+  while read -r line; do
+    output="$(echo ${line#>} | cut -d " " -f 1)"
+    echo "$line" |
+      tr " " "\n" >.DAJIN_temp/input/"$output".fa
+  done
 EMBED
-. .DAJIN_temp/library/calc_hotelling.sh
-chmod +x .DAJIN_temp/library/*
-ARGS="$*" && export ARGS
 . .DAJIN_temp/script/01-init/01-init.sh
-. .DAJIN_temp/script/02-args/01-args.sh
+. .DAJIN_temp/script/02-args/01-parse.sh
 . .DAJIN_temp/script/02-args/02-depend.sh
+. .DAJIN_temp/script/03-preprocess/010-alleles.sh
