@@ -54,7 +54,7 @@ delToD() {
 
 insToI() {
   awk '{
-    for(i=2;i<=NF;i++) {
+    for(i=3;i<=NF;i++) {
       if($i~/^[acgt]/){
         $i=length($i) $(i+1)
         $(i+1)=""
@@ -62,58 +62,57 @@ insToI() {
     }}1'
 }
 
+spaceTocomma() {
+  sed -e "s/  */,/g" -e "s/,$//"
+}
+
 midsconv() (
   cat - |
-    cat test/midsconv/input-del_to_wt_allele.sam |
-    cat test/midsconv/input-ins_largedel_to_wt_allele.sam |
+    # cat test/midsconv/input-del_to_wt_allele.sam |
+    cat test/midsconv/test_del_long.sam |
     fmt_sam |
     matchToM |
     subToS |
     delToD |
-    insToI |
-    awk '{sub("$", ",", $1)}1' |
+    awk '{$1=$1","}1' |
     #* Large deletion and Inversion -------------------------
-    awk -F, '{
-      id_of[$1]++
-      flag_of[$1]=flag_of[$1]","$2
+    awk -F, '
+      function pad_D (_length) {
+        str=""
+        for (i=1;i<=_length;i++) str=str " D "
+        return str
+      } {
+      num_of_alignment[$1]++
       start_of[$1]=start_of[$1]","$3
       allele=$4
       reflen=$5
       cstag_of[$1]=cstag_of[$1]","$6
     } END {
-    for(id in id_of) {
-      sub(/^,/,"",start_of[id])
-      sub(/^,/,"",cstag_of[id])
+    for (id in num_of_alignment) {
+      sub(/^,/, "" ,start_of[id])
+      sub(/^,/, "" ,cstag_of[id])
       split(start_of[id], s_of, ",")
       split(cstag_of[id], c_of, ",")
       #* normal
-      if(id_of[id]==1) {
+      if (num_of_alignment[id]==1) {
         print id, s_of[1], reflen, c_of[1]
       }
       #* deletion
-      else if (id_of[id]==2) {
+      else if (num_of_alignment[id]==2) {
+        #* controlアレル以外のアレルの構造多型はすべて異常としたいため.
         if (allele !~ /(control)|(wt)/) {
-          str1=""
-          gsub(" ", "",c_of[1])
-          for (i=1;i<=length(c_of[1]);i++) str1=str1 " D "
-          c_of[1] = str1
+          c_of[1] = pad_D(length(c_of[1]))
         }
         cs1=c_of[1]
-        gsub(" ", "", cs1)
-        gsub("[acgt][acgt]*", "", cs1)
-        del_len=s_of[2]-s_of[1]-length(cs1)
-        str=""
-        for(i=1;i<=del_len;i++) str=str " D "
-        cs=c_of[1]" "str" "c_of[2]
+        del_len=s_of[2] - s_of[1] - length(cs1)
+        D=pad_D(del_len)
+        cs=c_of[1] " " D " " c_of[2]
         print id, s_of[1], reflen, cs
         }
       #* inversion
-      else if (id_of[id]==3) {
+      else if (num_of_alignment[id]==3) {
         if (allele !~ /(control)|(wt)/) {
-          str=""
-          gsub(" ", "",c_of[1])
-          for (i=1;i<=length(c_of[1]);i++) str=str " D "
-          c_of[1] = str
+          c_of[1] = pad_D(c_of[1])
         }
         str1=""; str2=""
         cs1=c_of[1]; gsub(" ", "", cs1); gsub("[acgt][acgt]*", "", cs1)
@@ -126,7 +125,6 @@ midsconv() (
         print id, s_of[1], reflen, cs
       }
     }}' |
-    sed "s/  */ /g" |
     sed "s/  */ /g" |
     #* Padding ----------------------------------------------
     awk '{
