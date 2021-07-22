@@ -22,8 +22,8 @@ find test/midsconv/*.fq |
 find test/midsconv/input-*.sam |
   while read -r line; do
     output="$(echo "${line%.sam}".csv | sed "s/input/output/")"
-    midsconv "$line" >test/tmp_midsconv
+    cat "$line" | midsconv >test/tmp_midsconv
     diff test/tmp_midsconv "$output" ||
-      echo "TEST FAILED: $output"
+      echo "TEST FAILED: $line"
     rm test/tmp_midsconv
   done
