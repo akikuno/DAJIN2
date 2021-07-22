@@ -1,0 +1,4 @@
+@SQ	SN:inv	LN:15
+aaa	0	inv	1	cs:Z:=AAAAA
+aaa	2048	inv	6	cs:Z:=TTTTT
+aaa	2048	inv	11	cs:Z:=AAAAA

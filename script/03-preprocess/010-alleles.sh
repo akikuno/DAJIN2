@@ -8,5 +8,5 @@ fmt_fa "${alleles}" |
   while read -r line; do
     output="$(echo ${line#>} | cut -d " " -f 1)"
     echo "$line" |
-      tr " " "\n" >.DAJIN_temp/input/"$output".fa
+      tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
   done

@@ -11,6 +11,11 @@ if ! conda info -e | grep -q DAJIN2; then
   conda install -y -n DAJIN2 minimap2 samtools numpy pandas scikit-learn hdbscan joblib plotnine
   conda install -y -n DAJIN2 -c conda-forge r-base r-essentials
 fi
+#------------------------------------------------------------------------------
+# Execute test
+#------------------------------------------------------------------------------
+
+sh misc/exec_test.sh
 
 #------------------------------------------------------------------------------
 # pm-tyr
@@ -24,7 +29,7 @@ threads=$(getconf _NPROCESSORS_ONLN | awk '{print $0-2}')
 genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
-sh compile.sh
+sh misc/compile.sh
 # rm -rf .DAJIN_temp DAJIN_results
 # ./generate_DAJIN.sh && time bash ./DAJIN batch -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
