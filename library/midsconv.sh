@@ -84,6 +84,7 @@ spaceTocomma() {
 midsconv() (
   cat - |
     # cat test/midsconv/input-del_to_wt_allele.sam |
+    # cat test/midsconv/test_del_long.sam |
     # cat test/midsconv/test_inv.sam |
     fmt_sam |
     matchToM |
@@ -92,62 +93,68 @@ midsconv() (
     awk '{$1=$1","}1' |
     #* Large deletion and Inversion -------------------------
     awk -F, '
-      function pad_D (_length) {
+      function padD(iter) {
         str=""
-        for (i=1;i<=_length;i++) str=str " D "
+        for (i_padD=1; i_padD<=iter; i_padD++) str=str " D "
         return str
       }
-      function rm_insertion(_string) {
-        gsub("[acgt][acgt]*", "", _string)
-        return _string
-      } {
+
+      function rm_insertion(string) {
+        gsub("[acgt][acgt]*", "", string)
+        return string
+      }
+
+      function csCat(c_of, s_of, iter) {
+        cs=""
+        for(i_csCat=1; i_csCat<=iter; i_csCat++) {
+          _cs=c_of[i_csCat]
+          rm_insertion(_cs)
+          gap_length=s_of[i_csCat+1] - s_of[i_csCat] - gsub(/[MIDS]/, "", _cs) -1
+          cs=cs c_of[i_csCat] padD(gap_length)
+        }
+        cs=cs c_of[iter+1]
+        return cs
+      }
+
+    {
       num_of_alignment[$1]++
       start_of[$1]=start_of[$1]","$3
       allele=$4
       reflen=$5
       cstag_of[$1]=cstag_of[$1]","$6
     } END {
-    for (id in num_of_alignment) {
-      sub(/^,/, "" ,start_of[id])
-      sub(/^,/, "" ,cstag_of[id])
-      split(start_of[id], s_of, ",")
-      split(cstag_of[id], c_of, ",")
-      #* normal
-      if (num_of_alignment[id]==1) {
-        print id, s_of[1], reflen, c_of[1]
-      }
-      #* large deletion
-      else if (num_of_alignment[id]==2) {
-        #* controlアレル以外のアレルの構造多型はすべて異常としたいため.
-        if (allele !~ /(control)|(wt)/) {
-          c_of[1] = pad_D(length(c_of[1]))
+      for (read_id in num_of_alignment) {
+        sub(/^,/, "" ,start_of[read_id])
+        sub(/^,/, "" ,cstag_of[read_id])
+        split(start_of[read_id], s_of, ",")
+        split(cstag_of[read_id], c_of, ",")
+        #* normal
+        if (num_of_alignment[read_id]==1) {
+          cs=c_of[1]
         }
-        cs1=c_of[1]; rm_insertion(cs1)
-        D=pad_D(s_of[2] - s_of[1] - length(cs1))
-        cs=c_of[1] " " D " " c_of[2]
-        print id, s_of[1], reflen, cs
+        #* large deletion
+        else if (num_of_alignment[read_id]==2) {
+          #* controlアレル以外のアレルに対する構造多型はすべて"controlの構造多型"としたいため, ミスマッチスコアを高くする
+          if (allele !~ /(control)|(wt)/) {
+            c_of[1] = padD(gsub(/[MIDS]/, "", c_of[1]))
+          }
+          cs=csCat(c_of, s_of, 1)
+          }
+        #* inversion
+        else if (num_of_alignment[read_id]==3) {
+          if (allele !~ /(control)|(wt)/) {
+            c_of[1] = padD(gsub(/[MIDS]/, "", c_of[1]))
+          }
+          #? c_of[1] = c_of[1] "XXXXXXXX" #?????????????????????????????????
+          #? c_of[2] = c_of[2] "YYYYYYYY" #?????????????????????????????????
+          cs=csCat(c_of, s_of, 2)
         }
-      #* inversion
-      else if (num_of_alignment[id]==3) {
-        if (allele !~ /(control)|(wt)/) {
-          c_of[1] = pad_D(c_of[1])
-        }
-        # for(i=i; i<=2; i++) {
-        #   cs=c_of[i]
-        #   rm_insertion(cs)
-        #   array[i]=pad_D(s_of[i+1]-s_of[i]-length(cs))
-        # }
-        cs1=c_of[1]; rm_insertion(cs1)
-        cs2=c_of[2]; rm_insertion(cs2)
-        D1 = pad_D(s_of[2]-s_of[1]-length(cs1))
-        D2 = pad_D(s_of[3]-s_of[2]-length(cs2))
-        cs=c_of[1] " " D1 " " c_of[2] " " D2 " " c_of[3]
-        print id, s_of[1], reflen, cs
-      }
+      print read_id, s_of[1], reflen, cs
     }}' |
     insToI |
     padding |
     spaceTocomma |
+    awk -F, 'NF==$3+3' |
     cut -d, -f 1,4- |
     grep -v "^$" |
     sort -t,
