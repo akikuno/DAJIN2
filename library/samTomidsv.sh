@@ -143,7 +143,7 @@ samTomidsv() (
         #* inversion
         else if (num_of_alignment[read_id]==3) {
           c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
-          gsub("D", "V", cs_of[2])
+          gsub("D", "V", cs_of[2]) #! <= ここ
           cs=csCat(c_of, s_of, 2)
         }
       print read_id, s_of[1], reflen, cs
