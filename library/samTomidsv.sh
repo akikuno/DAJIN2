@@ -81,11 +81,11 @@ spaceTocomma() {
   sed -e "s/  */,/g" -e "s/,$//"
 }
 
-midsconv() (
+samTomidsv() (
   cat - |
-    # cat test/midsconv/input-del_to_wt_allele.sam |
-    # cat test/midsconv/test_del_long.sam |
-    # cat test/midsconv/test_inv.sam |
+    # cat test/samTomidsv/input-del_to_wt_allele.sam |
+    # cat test/samTomidsv/test_del_long.sam |
+    # cat test/samTomidsv/test_inv.sam |
     fmt_sam |
     matchToM |
     subToS |
@@ -134,19 +134,16 @@ midsconv() (
         }
         #* large deletion
         else if (num_of_alignment[read_id]==2) {
-          #* controlアレル以外のアレルに対する構造多型はすべて"controlの構造多型"としたいため, ミスマッチスコアを高くする
           if (allele !~ /(control)|(wt)/) {
             c_of[1] = padD(gsub(/[MIDS]/, "", c_of[1]))
+            c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
           }
           cs=csCat(c_of, s_of, 1)
           }
         #* inversion
         else if (num_of_alignment[read_id]==3) {
-          if (allele !~ /(control)|(wt)/) {
-            c_of[1] = padD(gsub(/[MIDS]/, "", c_of[1]))
-          }
-          #? c_of[1] = c_of[1] "XXXXXXXX" #?????????????????????????????????
-          #? c_of[2] = c_of[2] "YYYYYYYY" #?????????????????????????????????
+          c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
+          gsub("D", "V", cs_of[2])
           cs=csCat(c_of, s_of, 2)
         }
       print read_id, s_of[1], reflen, cs
