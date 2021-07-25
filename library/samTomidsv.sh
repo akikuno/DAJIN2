@@ -3,7 +3,7 @@
 
 ################################################################################
 # input: SAM file using `minimap2 -ax splice --cs=long`
-# output: Match, Insertion, Deletion, Substitution, and "= (null)"
+# output: Match(M), Insertion(1M), Deletion(D), Substitution(S), Inversion (V) and "= (null)"
 ################################################################################
 
 fmt_sam() {
@@ -84,8 +84,8 @@ spaceTocomma() {
 samTomidsv() (
   cat - |
     # cat test/samTomidsv/input-del_to_wt_allele.sam |
-    # cat test/samTomidsv/test_del_long.sam |
     # cat test/samTomidsv/test_inv.sam |
+    # cat test/samTomidsv/test_del_long.sam |
     fmt_sam |
     matchToM |
     subToS |
@@ -93,9 +93,9 @@ samTomidsv() (
     awk '{$1=$1","}1' |
     #* Large deletion and Inversion -------------------------
     awk -F, '
-      function padD(iter) {
+      function padD(iter,    i) {
         str=""
-        for (i_padD=1; i_padD<=iter; i_padD++) str=str " D "
+        for (i=1; i<=iter; i++) str=str " D "
         return str
       }
 
@@ -104,13 +104,13 @@ samTomidsv() (
         return string
       }
 
-      function csCat(c_of, s_of, iter) {
+      function csCat(c_of, s_of, iter,    i) {
         cs=""
-        for(i_csCat=1; i_csCat<=iter; i_csCat++) {
-          _cs=c_of[i_csCat]
+        for(i=1; i<=iter; i++) {
+          _cs=c_of[i]
           rm_insertion(_cs)
-          gap_length=s_of[i_csCat+1] - s_of[i_csCat] - gsub(/[MIDS]/, "", _cs) -1
-          cs=cs c_of[i_csCat] padD(gap_length)
+          gap_length=s_of[i+1] - s_of[i] - gsub(/[MIDSV]/, "", _cs)
+          cs=cs c_of[i] padD(gap_length)
         }
         cs=cs c_of[iter+1]
         return cs
@@ -143,7 +143,7 @@ samTomidsv() (
         #* inversion
         else if (num_of_alignment[read_id]==3) {
           c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
-          gsub("D", "V", cs_of[2]) #! <= ここ
+          gsub("D", "V", c_of[2])
           cs=csCat(c_of, s_of, 2)
         }
       print read_id, s_of[1], reflen, cs
