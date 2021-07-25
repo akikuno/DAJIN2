@@ -2,11 +2,10 @@
 
 . .DAJIN_temp/library/fmt_fa.sh
 
-mkdir -p .DAJIN_temp/fasta/"$output".fa
+mkdir -p .DAJIN_temp/fasta/
 
 fmt_fa "${alleles}" |
   while read -r line; do
     output="$(echo ${line#>} | cut -d " " -f 1)"
-    echo "$line" |
-      tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
+    echo "$line" | tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
   done

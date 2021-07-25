@@ -82,7 +82,13 @@ spaceTocomma() {
 }
 
 samTomidsv() (
-  cat - |
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$1" ]; then
+    cat "$1"
+  else
+    echo "$*"
+  fi |
     # cat test/samTomidsv/input-del_to_wt_allele.sam |
     # cat test/samTomidsv/test_inv.sam |
     # cat test/samTomidsv/test_del_long.sam |
