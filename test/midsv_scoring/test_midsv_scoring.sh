@@ -4,12 +4,13 @@
 
 echo "aaa,M,M,1M,M" |
   awk -F, '
-  function midsv_score(I,D,S,V) {
-    $(i+(LEN-1)*0)=I
-    $(i+(LEN-1)*1)=D
-    $(i+(LEN-1)*2)=S
-    $(i+(LEN-1)*3)=V
-  } BEGIN {OFS=","} {
+    function midsv_score(I,D,S,V) {
+      $(i+(LEN-1)*0)=I
+      $(i+(LEN-1)*1)=D
+      $(i+(LEN-1)*2)=S
+      $(i+(LEN-1)*3)=V
+    }
+    BEGIN {OFS=","} {
     LEN=NF-1
     for(i=2;i<=NF;i++) {
       if($i=="M")

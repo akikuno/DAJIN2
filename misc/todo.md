@@ -1,5 +1,11 @@
 # Todo
 
+
+## 2021-07-26
++ inversionアレルの変異情報が消えてしまう
++ paddingの”=”のあつかいはどうしよう. MatchかDeletionか？
+
+---
 ## midsconvリファクタリング
 
 + [x] テストケースの記載

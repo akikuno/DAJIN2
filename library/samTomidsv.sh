@@ -52,7 +52,7 @@ delToD() {
       }}1'
 }
 
-insToI() {
+insToNum() {
   awk '{
     for(i=3;i<=NF;i++) {
       if($i~/^[acgt]/){
@@ -99,8 +99,7 @@ samTomidsv() (
     awk '{$1=$1","}1' |
     #* Large deletion and Inversion -------------------------
     awk -F, '
-      function padD(iter,    i) {
-        str=""
+      function padD(iter,    i,str) {
         for (i=1; i<=iter; i++) str=str " D "
         return str
       }
@@ -110,8 +109,7 @@ samTomidsv() (
         return string
       }
 
-      function csCat(c_of, s_of, iter,    i) {
-        cs=""
+      function csCat(c_of, s_of, iter,    i,cs) {
         for(i=1; i<=iter; i++) {
           _cs=c_of[i]
           rm_insertion(_cs)
@@ -154,7 +152,7 @@ samTomidsv() (
         }
       print read_id, s_of[1], reflen, cs
     }}' |
-    insToI |
+    insToNum |
     padding |
     spaceTocomma |
     awk -F, 'NF==$3+3' |

@@ -10,7 +10,8 @@ ref_long=test/samTomidsv/test_ref_long.fa
 find test/samTomidsv/*.fq |
   grep -v -e long -e inv |
   while read -r que; do
-    minimap2 -ax map-ont "$ref" "$que" --cs=long 2>/dev/null >"${que%.fq}".sam
+    minimap2 -ax map-ont "$ref" "$que" --cs=long 2>/dev/null >"${que%.fq}".sam ||
+      { echo \'minimap2\' is not found && break; }
   done
 
 find test/samTomidsv/*.fq |
@@ -18,6 +19,13 @@ find test/samTomidsv/*.fq |
   while read -r que; do
     minimap2 -ax map-ont "$ref_long" "$que" --cs=long 2>/dev/null >"${que%.fq}".sam
   done
+
+find test/samTomidsv/test*sam |
+  while read -r line; do
+    samTomidsv "$line" >"${line%.sam}.csv"
+  done
+samTomidsv test/samTomidsv/test_del.sam
+samTomidsv test/samTomidsv/test_padding.sam
 
 find test/samTomidsv/input-*.sam |
   while read -r line; do
