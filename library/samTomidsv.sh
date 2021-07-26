@@ -89,9 +89,6 @@ samTomidsv() (
   else
     echo "$*"
   fi |
-    # cat test/samTomidsv/input-del_to_wt_allele.sam |
-    # cat test/samTomidsv/test_inv.sam |
-    # cat test/samTomidsv/test_del_long.sam |
     fmt_sam |
     matchToM |
     subToS |
@@ -147,7 +144,6 @@ samTomidsv() (
         #* inversion
         else if (num_of_alignment[read_id]==3) {
           c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
-          gsub("D", "V", c_of[2])
           cs=csCat(c_of, s_of, 2)
         }
       print read_id, s_of[1], reflen, cs
