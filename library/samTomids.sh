@@ -3,7 +3,7 @@
 
 ################################################################################
 # input: SAM file using `minimap2 -ax splice --cs=long`
-# output: Match(M), Insertion(1M), Deletion(D), Substitution(S), Inversion (V) and "= (null)"
+# output: Match(M), Insertion(1M), Deletion(D), Substitution(S), Inversion (mids) and "= (null)"
 ################################################################################
 
 fmt_sam() {
@@ -81,14 +81,15 @@ spaceTocomma() {
   sed -e "s/  */,/g" -e "s/,$//"
 }
 
-samTomidsv() (
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+samTomids() (
+  if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
     cat -
   elif [ -r "$1" ]; then
     cat "$1"
   else
     echo "$*"
   fi |
+    # cat test/samTomids/in/test_inv.sam |
     fmt_sam |
     matchToM |
     subToS |
@@ -101,7 +102,7 @@ samTomidsv() (
         return str
       }
 
-      function rm_insertion(string) {
+      function ins_rm(string) {
         gsub("[acgt][acgt]*", "", string)
         return string
       }
@@ -109,8 +110,8 @@ samTomidsv() (
       function csCat(c_of, s_of, iter,    i,cs) {
         for(i=1; i<=iter; i++) {
           _cs=c_of[i]
-          rm_insertion(_cs)
-          gap_length=s_of[i+1] - s_of[i] - gsub(/[MIDSV]/, "", _cs)
+          ins_rm(_cs)
+          gap_length=s_of[i+1] - s_of[i] - gsub(/[MIDSmids]/, "", _cs)
           cs=cs c_of[i] padD(gap_length)
         }
         cs=cs c_of[iter+1]
@@ -143,7 +144,7 @@ samTomidsv() (
           }
         #* inversion
         else if (num_of_alignment[read_id]==3) {
-          c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
+          c_of[2] = tolower(c_of[2])
           cs=csCat(c_of, s_of, 2)
         }
       print read_id, s_of[1], reflen, cs

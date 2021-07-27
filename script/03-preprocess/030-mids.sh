@@ -5,7 +5,7 @@ echo "$(date +'%Y-%m-%d %H:%M:%S') MIDSV encoding" >>log_DAJIN.txt
 #----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/midsv
-cmd='. .DAJIN_temp/library/samTomidsv.sh; samTomidsv '
+cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
 
 if find /tmp/"$control_name"*.csv 1>/dev/null 2>&1; then
   cp /tmp/"$control_name"*.csv .DAJIN_temp/midsv
