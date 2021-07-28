@@ -307,13 +307,63 @@ timestamp() {
   echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"
 }
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/samTomidsv.sh
+cat <<'EMBED' >.DAJIN_temp/library/midsToscore.sh
+#!/bin/sh
+# shellcheck disable=SC1091,SC2120
+
+################################################################################
+# input: MIDS (id, MIDS)
+# output: MIDS score (id, I, D, S)
+################################################################################
+
+midsToscore() {
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$1" ]; then
+    cat "$1"
+  else
+    echo "$*"
+  fi |
+    awk -F, '
+    function mids_score(I,D,S) {
+      $(i+(LEN)*0)=I
+      $(i+(LEN)*1)=D
+      $(i+(LEN)*2)=S
+    }
+    BEGIN {OFS=","} {
+    LEN=NF-1
+    for(i=2;i<=NF;i++) {
+      if($i=="M")
+        mids_score(0,0,0)
+      else if ($i~/[0-9]+M/) {
+        sub("M$","",$i)
+        mids_score($i,0,0)
+        }
+      else if ($i~/[0-9]+D/) {
+        sub("D$","",$i)
+        mids_score($i,1,0)
+      }
+      else if ($i~/[0-9]+S/) {
+        sub("S$","",$i)
+        mids_score($i,0,1)
+      }
+      else if($i=="D") {
+        mids_score(0,1,0)
+      }
+      else if($i=="S") {
+        mids_score(0,0,1)
+      }
+    }
+  }1'
+}
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/samTomids.sh
 #!/bin/sh
 # shellcheck disable=SC1091,SC2120
 
 ################################################################################
 # input: SAM file using `minimap2 -ax splice --cs=long`
-# output: Match(M), Insertion(1M), Deletion(D), Substitution(S), Inversion (V) and "= (null)"
+# output: Match(M), Insertion(1M), Deletion(D), Substitution(S), Inversion (mids) and "= (null)"
 ################################################################################
 
 fmt_sam() {
@@ -362,7 +412,7 @@ delToD() {
       }}1'
 }
 
-insToI() {
+insToNum() {
   awk '{
     for(i=3;i<=NF;i++) {
       if($i~/^[acgt]/){
@@ -379,9 +429,9 @@ padding() {
     len=NF-3+start
     pad_start=""
     pad_end=""
-    for(i=1;i<=start;i++) pad_start=pad_start "= "
+    for(i=1;i<=start;i++) pad_start=pad_start "D "
     $4=pad_start $4
-    for(i=len;i<end;i++) pad_end=pad_end " ="
+    for(i=len;i<end;i++) pad_end=pad_end " D"
     $NF=$NF pad_end
   }1' |
     sed "s/  */ /g"
@@ -391,17 +441,15 @@ spaceTocomma() {
   sed -e "s/  */,/g" -e "s/,$//"
 }
 
-samTomidsv() (
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+samTomids() (
+  if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
     cat -
   elif [ -r "$1" ]; then
     cat "$1"
   else
     echo "$*"
   fi |
-    # cat test/samTomidsv/input-del_to_wt_allele.sam |
-    # cat test/samTomidsv/test_inv.sam |
-    # cat test/samTomidsv/test_del_long.sam |
+    # cat test/samTomids/in/test_inv.sam |
     fmt_sam |
     matchToM |
     subToS |
@@ -409,23 +457,21 @@ samTomidsv() (
     awk '{$1=$1","}1' |
     #* Large deletion and Inversion -------------------------
     awk -F, '
-      function padD(iter,    i) {
-        str=""
+      function padD(iter,    i,str) {
         for (i=1; i<=iter; i++) str=str " D "
         return str
       }
 
-      function rm_insertion(string) {
+      function ins_rm(string) {
         gsub("[acgt][acgt]*", "", string)
         return string
       }
 
-      function csCat(c_of, s_of, iter,    i) {
-        cs=""
+      function csCat(c_of, s_of, iter,    i,cs) {
         for(i=1; i<=iter; i++) {
           _cs=c_of[i]
-          rm_insertion(_cs)
-          gap_length=s_of[i+1] - s_of[i] - gsub(/[MIDSV]/, "", _cs)
+          ins_rm(_cs)
+          gap_length=s_of[i+1] - s_of[i] - gsub(/[MIDSmids]/, "", _cs)
           cs=cs c_of[i] padD(gap_length)
         }
         cs=cs c_of[iter+1]
@@ -458,13 +504,12 @@ samTomidsv() (
           }
         #* inversion
         else if (num_of_alignment[read_id]==3) {
-          c_of[2] = padD(gsub(/[MIDS]/, "", c_of[2]))
-          gsub("D", "V", c_of[2])
+          c_of[2] = tolower(c_of[2])
           cs=csCat(c_of, s_of, 2)
         }
       print read_id, s_of[1], reflen, cs
     }}' |
-    insToI |
+    insToNum |
     padding |
     spaceTocomma |
     awk -F, 'NF==$3+3' |
@@ -476,7 +521,8 @@ EMBED
 . .DAJIN_temp/library/calc_hotelling.sh
 . .DAJIN_temp/library/fmt_fa.sh
 . .DAJIN_temp/library/general.sh
-. .DAJIN_temp/library/samTomidsv.sh
+. .DAJIN_temp/library/midsToscore.sh
+. .DAJIN_temp/library/samTomids.sh
 ARGS="$*" && export ARGS
 cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
 #!/bin/sh
@@ -633,7 +679,7 @@ EOF
 
 rm .DAJIN_temp/pypackages
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/010-alleles.sh
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/010-fasta.sh
 #!/bin/sh
 
 . .DAJIN_temp/library/fmt_fa.sh
@@ -646,7 +692,7 @@ fmt_fa "${alleles}" |
     echo "$line" | tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
   done
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/020-mapping.sh
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/020-sam.sh
 #!/bin/sh
 
 #----------------------------------------------------------
@@ -674,47 +720,90 @@ find .DAJIN_temp/fasta/*.fa |
       cat >.DAJIN_temp/sam/"$sample_name"_"$allele_name".sam
   done
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/030-encoding.sh
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/030-mids.sh
 #!/bin/sh
 
 #----------------------------------------------------------
-echo "$(date +'%Y-%m-%d %H:%M:%S') MIDSV encoding" >>log_DAJIN.txt
+timestamp "MIDS encoding" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/mids
-. .DAJIN_temp/library/samTomidsv.sh
+mkdir -p .DAJIN_temp/mids /tmp/mids
 
-cmd='. .DAJIN_temp/library/samTomidsv.sh && samTomidsv'
+multi_samTomids() {
+  cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
+  find .DAJIN_temp/sam/"$1"*.sam |
+    while read -r line; do
+      output="${line%.*}".csv
+      output="$(echo $output | sed "s|/sam/|/mids/|")"
+      echo "$line" |
+        sed "s|^|$cmd|" |
+        sed "s|$| >$output \&|"
+    done |
+    awk -v th="${threads:-1}" '
+    {if (NR%(th+1) == 0) print "wait"}
+    END {print "wait"}1' |
+    sh
+}
 
-find .DAJIN_temp/sam/*.sam |
-  grep -e "$control_name" -e "$sample_name" |
-  awk -v th="$threads" -v cmd="$cmd" '{
-    input=$0
-    output=$0
-    sub("sam$", "csv", output)
-    sub(".DAJIN_temp/sam/", ".DAJIN_temp/mids/", output)
-    print "[ -f ",output, "] || {",cmd, input, ">", output, ";} &"
-    if (NR%th==0) print "wait"
-    } END {
-    print "wait"
-  }' |
-  sh
+if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
+  find /tmp/mids/* |
+    while read -r line; do
+      gzip -dc "$line" >.DAJIN_temp/mids/"$(basename ${line%.gz})"
+    done
+else
+  multi_samTomids "$control_name"
+  find .DAJIN_temp/mids/"$control_name"* |
+    while read -r line; do
+      gzip -c "$line" >/tmp/mids/"$(basename $line)".gz
+    done
+fi
 
-# Error handling ------------------------------------------
-find .DAJIN_temp/mids/ -type f |
-  while read -r line; do
-    if ! [ -s "${line}" ]; then
-      error_exit "${line} is empty after MIDSV encoding"
-      break
-    fi
-  done || exit 1
+multi_samTomids "$sample_name"
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-scoring.sh
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-score.sh
+#!/bin/sh
+
+#----------------------------------------------------------
+timestamp "MIDS scoring" >>log_DAJIN.txt
+#----------------------------------------------------------
+
+mkdir -p .DAJIN_temp/score /tmp/score
+
+multi_midsToscore() {
+  cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
+  find .DAJIN_temp/mids/"$1"*.csv |
+    while read -r line; do
+      output="${line%.*}".csv
+      output="$(echo $output | sed "s|/mids/|/score/|")"
+      echo "$line" |
+        sed "s|^|$cmd|" |
+        sed "s|$| >$output \&|"
+    done |
+    awk -v th="${threads:-1}" '
+    {if (NR%(th+1) == 0) print "wait"}
+    END {print "wait"}1' |
+    sh
+}
+
+if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
+  find /tmp/score/* |
+    while read -r line; do
+      gzip -dc "$line" >.DAJIN_temp/score/"$(basename ${line%.gz})"
+    done
+else
+  multi_midsToscore "$control_name"
+  find .DAJIN_temp/score/"$control_name"* |
+    while read -r line; do
+      gzip -c "$line" >/tmp/score/"$(basename $line)".gz
+    done
+fi
+
+multi_midsToscore "$sample_name"
 EMBED
 . .DAJIN_temp/script/01-init/01-init.sh
 . .DAJIN_temp/script/02-args/01-parse.sh
 . .DAJIN_temp/script/02-args/02-depend.sh
-. .DAJIN_temp/script/03-preprocess/010-alleles.sh
-. .DAJIN_temp/script/03-preprocess/020-mapping.sh
-. .DAJIN_temp/script/03-preprocess/030-encoding.sh
-. .DAJIN_temp/script/03-preprocess/040-scoring.sh
+. .DAJIN_temp/script/03-preprocess/010-fasta.sh
+. .DAJIN_temp/script/03-preprocess/020-sam.sh
+. .DAJIN_temp/script/03-preprocess/030-mids.sh
+. .DAJIN_temp/script/03-preprocess/040-score.sh

@@ -1,13 +1,38 @@
 #!/bin/sh
 
 #----------------------------------------------------------
-echo "$(date +'%Y-%m-%d %H:%M:%S') MIDSV scoring" >>log_DAJIN.txt
+timestamp "MIDS scoring" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/score
+mkdir -p .DAJIN_temp/score /tmp/score
 
-head .DAJIN_temp/midsv/barcode31_albino.csv |
-  grep 00328905-1c46-4f17-8816-7881d8d44bb3 |
-  sed -e "s/,\=/,D/g" |
-  sed -e "s/,M/,0/g" -e s"/,M$/,0/" |
-  cmd='. .DAJIN_temp/library/samTomidsv.sh; samTomidsv '
+multi_midsToscore() {
+  cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
+  find .DAJIN_temp/mids/"$1"*.csv |
+    while read -r line; do
+      output="${line%.*}".csv
+      output="$(echo $output | sed "s|/mids/|/score/|")"
+      echo "$line" |
+        sed "s|^|$cmd|" |
+        sed "s|$| >$output \&|"
+    done |
+    awk -v th="${threads:-1}" '
+    {if (NR%(th+1) == 0) print "wait"}
+    END {print "wait"}1' |
+    sh
+}
+
+if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
+  find /tmp/score/* |
+    while read -r line; do
+      gzip -dc "$line" >.DAJIN_temp/score/"$(basename ${line%.gz})"
+    done
+else
+  multi_midsToscore "$control_name"
+  find .DAJIN_temp/score/"$control_name"* |
+    while read -r line; do
+      gzip -c "$line" >/tmp/score/"$(basename $line)".gz
+    done
+fi
+
+multi_midsToscore "$sample_name"

@@ -69,9 +69,9 @@ padding() {
     len=NF-3+start
     pad_start=""
     pad_end=""
-    for(i=1;i<=start;i++) pad_start=pad_start "= "
+    for(i=1;i<=start;i++) pad_start=pad_start "D "
     $4=pad_start $4
-    for(i=len;i<end;i++) pad_end=pad_end " ="
+    for(i=len;i<end;i++) pad_end=pad_end " D"
     $NF=$NF pad_end
   }1' |
     sed "s/  */ /g"

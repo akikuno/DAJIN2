@@ -1,9 +1,12 @@
 # Todo
 
+## midsToscore
++ =のあつかい
++ ,,,,となっている？
 
 ## 2021-07-26
-+ inversionアレルの変異情報が消えてしまう → 完成が先なので, 一旦無視します. 
-+ paddingの”=”のあつかいはどうしよう. MatchかDeletionか？
++ [ ] paddingの”=”のあつかいはどうしよう. MatchかDeletionか？ → ひとまずDeletionとしてあつかう
++ [x] inversionアレルの変異情報が消えてしまう → 小文字にすることで完成しました. 
 
 ---
 ## midsconvリファクタリング

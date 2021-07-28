@@ -6,18 +6,14 @@
 # output: MIDS score (id, I, D, S)
 ################################################################################
 
-input() {
+midsToscore() {
   if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
     cat -
   elif [ -r "$1" ]; then
     cat "$1"
   else
     echo "$*"
-  fi
-}
-
-midsToscore() {
-  input |
+  fi |
     awk -F, '
     function mids_score(I,D,S) {
       $(i+(LEN)*0)=I

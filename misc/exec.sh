@@ -38,16 +38,16 @@ sh misc/compile.sh
 ## chr5:128,991,721-128,996,151
 #------------------------------------------------------------------------------
 conda activate DAJIN2
-sample=./example/stx2/barcode25.fq.gz
-control=./example/stx2/barcode30.fq.gz
-alleles=./example/stx2/design_stx2.fa
+sample=./example/del-stx2/barcode25.fq.gz
+control=./example/del-stx2/barcode30.fq.gz
+alleles=./example/del-stx2/design_stx2.fa
 threads=$(getconf _NPROCESSORS_ONLN | awk '{num=$0-2; if(num>0) print num; else print 1}')
 genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
-./generate_DAJIN.sh
+sh misc/compile.sh
 # rm -rf .DAJIN_temp DAJIN_results
-# ./generate_DAJIN.sh && time bash ./DAJIN batch -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+# sh misc/compile.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
 # Cables2 BC14

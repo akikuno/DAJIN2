@@ -1,39 +1,38 @@
 #!/bin/sh
 
 #----------------------------------------------------------
-echo "$(date +'%Y-%m-%d %H:%M:%S') MIDSV encoding" >>log_DAJIN.txt
+timestamp "MIDS encoding" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/midsv
-cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
+mkdir -p .DAJIN_temp/mids /tmp/mids
 
-if find /tmp/"$control_name"*.csv 1>/dev/null 2>&1; then
-  cp /tmp/"$control_name"*.csv .DAJIN_temp/midsv
-else
-  find .DAJIN_temp/sam/"$control_name"*.sam |
+multi_samTomids() {
+  cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
+  find .DAJIN_temp/sam/"$1"*.sam |
     while read -r line; do
       output="${line%.*}".csv
+      output="$(echo $output | sed "s|/sam/|/mids/|")"
       echo "$line" |
         sed "s|^|$cmd|" |
         sed "s|$| >$output \&|"
     done |
-    awk -v th="$threads" '
+    awk -v th="${threads:-1}" '
     {if (NR%(th+1) == 0) print "wait"}
     END {print "wait"}1' |
     sh
-  cp .DAJIN_temp/sam/"$control_name"*.csv /tmp/
+}
+
+if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
+  find /tmp/mids/* |
+    while read -r line; do
+      gzip -dc "$line" >.DAJIN_temp/mids/"$(basename ${line%.gz})"
+    done
+else
+  multi_samTomids "$control_name"
+  find .DAJIN_temp/mids/"$control_name"* |
+    while read -r line; do
+      gzip -c "$line" >/tmp/mids/"$(basename $line)".gz
+    done
 fi
 
-find .DAJIN_temp/sam/"$sample_name"*.sam |
-  while read -r line; do
-    output="${line%.*}".csv
-    echo "$line" |
-      sed "s|^|$cmd|" |
-      sed "s|$| >$output \&|"
-  done |
-  awk -v th="$threads" '
-    {if (NR%(th+1) == 0) print "wait"}
-    END {print "wait"}1' |
-  sh
-
-mv .DAJIN_temp/sam/*.csv .DAJIN_temp/midsv
+multi_samTomids "$sample_name"
