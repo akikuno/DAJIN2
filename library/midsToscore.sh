@@ -6,7 +6,7 @@
 # output: MIDS score (id, I, D, S)
 ################################################################################
 
-midsToscore() {
+expansion() {
   if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
     cat -
   elif [ -r "$1" ]; then
@@ -45,4 +45,53 @@ midsToscore() {
       }
     }
   }1'
+}
+
+rowSums() {
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$1" ]; then
+    cat "$1"
+  else
+    echo "$*"
+  fi |
+    cat tmp.csv |
+    awk -F, 'BEGIN {OFS=","} {
+    for(i=2;i<=NF;i++) {
+      if($i>0 && $(i+1)>0) {
+        $i="@"
+      }
+      if($(i-1)=="@" && $i==1) {
+        $i="@"
+      }
+    }
+  }1' |
+    sed "s/@,@/@@/g" |
+    awk -F, 'BEGIN {OFS=","} {
+    for(i=2; i<=NF; i++) {
+      _rep=""
+      if($i~/@/) {
+        n=gsub("@",$i)
+        for(j=1; j<=n; j++) {
+          _rep=_rep n ","
+        }
+        gsub(",$" ,"" , _rep)
+        $i=_rep
+      }
+    }
+  }1'
+}
+
+midsToscore() {
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$1" ]; then
+    cat "$1"
+  else
+    echo "$*"
+  fi |
+    expansion >.DAJIN_temp/tmp_expansion
+  rowSums .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_row
+  colSums .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_col
+  rowColSums .DAJIN_temp/tmp_row .DAJIN_temp/tmp_col
 }
