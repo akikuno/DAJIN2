@@ -2,17 +2,20 @@
 
 . library/midsToscore.sh
 
-echo "aaa,M,M,M,M" |
-  midsToscore
+echo "aaa,M,M,M,M" >tmp
+midsToscore tmp
 
-echo "aaa,S,S,S,S,S" |
-  midsToscore
+echo "aaa,S,S,S,S,S" >tmp
+midsToscore tmp
 
-echo "aaa,M,100S,D,M" |
-  midsToscore
+echo "aaa,M,100S,D,M" >tmp
+midsToscore tmp
 
 echo "aaa,D,100S,D,D" |
   midsToscore
+
+echo "aaa,M,1M,11M" >tmp
+midsToscore tmp
 
 cat <<EOF |
 aaa,M,2M,M,D,M

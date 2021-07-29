@@ -7,14 +7,27 @@
 ################################################################################
 
 expansion() {
-  awk -F, '
+  if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
+    cat -
+  elif [ -r "$1" ]; then
+    cat "$1"
+  else
+    echo "$*"
+  fi |
+    awk -F, '
     function mids_score(I,D,S) {
       $(i+(LEN)*0)=I
       $(i+(LEN)*1)=D
       $(i+(LEN)*2)=S
     }
+    function invToD(data) {
+      id=$1
+      gsub(/[mids]/, "D", $0)
+      $1=id
+    }
     BEGIN {OFS=","} {
     LEN=NF-1
+    invToD($0)
     for(i=2;i<=NF;i++) {
       if($i=="M")
         mids_score(0,0,0)
@@ -93,16 +106,10 @@ rowColSums() {
 
 midsToscore() {
   mkdir -p .DAJIN_temp
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$1" ]; then
-    cat "$1"
-  else
-    echo "$*"
-  fi |
-    expansion >.DAJIN_temp/tmp_expansion
-  rowScore .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_row
-  colScore .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_col
-  rowColSums .DAJIN_temp/tmp_row .DAJIN_temp/tmp_col
-  rm .DAJIN_temp/tmp_*
+  suffix="${1##*/}"
+  expansion "$1" >.DAJIN_temp/tmp_expansion_"$suffix"
+  rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
+  colScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_col_"$suffix"
+  rowColSums .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
+  # rm .DAJIN_temp/tmp_*"$suffix"
 }
