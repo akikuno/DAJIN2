@@ -14,15 +14,15 @@ midsToscore tmp
 echo "aaa,D,100S,D,D" |
   midsToscore
 
-echo "aaa,M,1M,11M" >tmp
+echo "aaa,M,1M,1M,D,D" >tmp
 midsToscore tmp
 
-cat <<EOF |
+cat <<EOF >tmp
 aaa,M,2M,M,D,M
 bbb,M,2M,D,D,M
 ccc,M,1M,M,M,S
 EOF
-  midsToscore
+midsToscore tmp
 
 cat <<EOF |
 aaa,M,2M,M,D,M,M,M,M,M

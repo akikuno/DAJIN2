@@ -60,7 +60,11 @@ mutToat() {
       OFS=""
     } {
     $1=$1","
-    for (i=2; i<=NF; i++) {
+    ins_nf=(NF-1)/3
+    for (i=2; i<=ins_nf; i++) {
+      $i=$i","
+    }
+    for (i=ins_nf+1; i<=NF; i++) {
       if ($i>0 && $(i+1)>0)
         $i="@"
       else if ($(i-1)=="@" && $i==1)
