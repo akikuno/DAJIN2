@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
 
-df <- read.csv(file("stdin"), header = FALSE)
+args <- commandArgs(trailingOnly = TRUE)
 
-df_id <- df[, 1]
-df <- df[, -1]
+df <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+
 list_table <- apply(df, 2, table)
 
 for (idx in seq(length(list_table))) {
@@ -15,8 +15,7 @@ for (idx in seq(length(list_table))) {
   }
 }
 
-df <- cbind(df_id, df)
-
-write.table(df, "",
-  sep = ",", col.names = FALSE, row.names = FALSE, quote = FALSE
+write.table(df,
+  file = "",
+  sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
 )

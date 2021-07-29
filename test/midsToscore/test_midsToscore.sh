@@ -16,10 +16,46 @@ echo "aaa,D,100S,D,D" |
 
 cat <<EOF |
 aaa,M,2M,M,D,M
-bbb,M,2M,D,D,D
-ccc,M,1M,M,D,S
+bbb,M,2M,D,D,M
+ccc,M,1M,M,M,S
 EOF
   expansion >tmp.csv
+
+# cat <<EOF |
+# aaa,M,2M,M,D,M,M,M,M,M
+# bbb,M,2M,D,D,M,D,D,D,M
+# ccc,M,1M,M,D,S,S,M,M,M
+# EOF
+#   expansion >tmp.csv
+
+# cat <<EOF |
+# aaa,D,D,M,D,D,M
+# bbb,D,D,M,D,D,M
+# EOF
+#   expansion >tmp.csv
+
+cat tmp.csv |
+  awk -f library/mutToat.awk |
+  awk -f library/atTonum.awk >tmp_row.csv
+
+cat tmp.csv |
+  Rscript library/colTable.R >tmp_col.csv
+
+cat tmp.csv |
+  awk '{
+    FS=","
+    OFS=""
+    $1=$1","
+    for(i=2;i<=NF;i++) {
+      if($i>0 && $(i+1)>0)
+        $i="@"
+      else if($(i-1)=="@" && $i==1)
+        $i="@,"
+      else
+        $i=$i","
+    }
+    sub(",$", "", $NF)
+  }1'
 
 rowSums tmp
 

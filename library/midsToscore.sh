@@ -7,14 +7,7 @@
 ################################################################################
 
 expansion() {
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$1" ]; then
-    cat "$1"
-  else
-    echo "$*"
-  fi |
-    awk -F, '
+  awk -F, '
     function mids_score(I,D,S) {
       $(i+(LEN)*0)=I
       $(i+(LEN)*1)=D
@@ -47,42 +40,59 @@ expansion() {
   }1'
 }
 
-rowSums() {
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$1" ]; then
-    cat "$1"
-  else
-    echo "$*"
-  fi |
-    cat tmp.csv |
-    awk -F, 'BEGIN {OFS=","} {
-    for(i=2;i<=NF;i++) {
-      if($i>0 && $(i+1)>0) {
+mutToat() {
+  awk '
+    BEGIN {
+      FS=","
+      OFS=""
+    } {
+    $1=$1","
+    for (i=2; i<=NF; i++) {
+      if ($i>0 && $(i+1)>0)
         $i="@"
-      }
-      if($(i-1)=="@" && $i==1) {
-        $i="@"
-      }
+      else if ($(i-1)=="@" && $i==1)
+        $i="@,"
+      else
+        $i=$i","
     }
-  }1' |
-    sed "s/@,@/@@/g" |
-    awk -F, 'BEGIN {OFS=","} {
-    for(i=2; i<=NF; i++) {
-      _rep=""
-      if($i~/@/) {
-        n=gsub("@",$i)
-        for(j=1; j<=n; j++) {
-          _rep=_rep n ","
-        }
-        gsub(",$" ,"" , _rep)
-        $i=_rep
+    sub(",$", "", $NF)
+  }1'
+}
+
+atToscore() {
+  awk '
+    BEGIN {
+      FS=","
+      OFS=","
+    } {
+    for (i=2; i<=NF; i++) {
+      n=""
+      if ($i ~ /@/) {
+        num=length($i)
+        for (j=1; j<=num; j++) n=n num ","
+        sub(",$", "", n)
+        $i=n
       }
     }
   }1'
 }
 
+rowScore() {
+  cat "$1" |
+    mutToat |
+    atToscore
+}
+
+colScore() {
+  Rscript --vanilla .DAJIN_temp/library/colTable.R "$1"
+}
+
+rowColSums() {
+  Rscript --vanilla .DAJIN_temp/library/rowColSums.R "$1" "$2"
+}
+
 midsToscore() {
+  mkdir -p .DAJIN_temp
   if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
     cat -
   elif [ -r "$1" ]; then
@@ -91,7 +101,8 @@ midsToscore() {
     echo "$*"
   fi |
     expansion >.DAJIN_temp/tmp_expansion
-  rowSums .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_row
-  colSums .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_col
+  rowScore .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_row
+  colScore .DAJIN_temp/tmp_expansion >.DAJIN_temp/tmp_col
   rowColSums .DAJIN_temp/tmp_row .DAJIN_temp/tmp_col
+  rm .DAJIN_temp/tmp_*
 }

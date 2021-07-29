@@ -31,8 +31,7 @@ find document/*.md | embed_document | grep -v '```' >>DAJIN
 find util/*.html | embed_document >>DAJIN
 find util/*.csv | embed_document >>DAJIN
 
-find library/*.sh | embed_document >>DAJIN
-find library/*.py | embed_document >>DAJIN
+find library/* | embed_document >>DAJIN
 find library/*.sh | sed "s|^|. .DAJIN_temp/|" >>DAJIN
 
 echo 'ARGS="$*" && export ARGS' >>DAJIN
