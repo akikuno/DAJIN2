@@ -632,11 +632,26 @@ samTomids() (
     sort -t,
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/scoreToScalar.sh
+#!/bin/sh
+
+scoreToScalar() {
+  cat "$1" |
+    awk -F, '{
+    sum=0
+    for(i=2; i<=NF; i++) {
+      sum+=$i
+    }
+    print log(sum/(NF-1))
+  }'
+}
+EMBED
 . .DAJIN_temp/library/calc_hotelling.sh
 . .DAJIN_temp/library/fmt_fa.sh
 . .DAJIN_temp/library/general.sh
 . .DAJIN_temp/library/midsToscore.sh
 . .DAJIN_temp/library/samTomids.sh
+. .DAJIN_temp/library/scoreToScalar.sh
 ARGS="$*" && export ARGS
 cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
 #!/bin/sh
@@ -864,15 +879,14 @@ if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
     while read -r line; do
       gzip -dc "$line" >.DAJIN_temp/mids/"$(basename ${line%.gz})"
     done
+  multi_samTomids "$sample_name"
 else
-  multi_samTomids "$control_name"
+  multi_samTomids
   find .DAJIN_temp/mids/"$control_name"* |
     while read -r line; do
       gzip -c "$line" >/tmp/mids/"$(basename $line)".gz
     done
 fi
-
-multi_samTomids "$sample_name"
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
 #!/bin/sh
@@ -904,15 +918,66 @@ if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
     while read -r line; do
       gzip -dc "$line" >.DAJIN_temp/score/"$(basename ${line%.gz})"
     done
+  multi_midsToscore "$sample_name"
 else
-  multi_midsToscore "$control_name"
+  multi_midsToscore
   find .DAJIN_temp/score/"$control_name"* |
     while read -r line; do
       gzip -c "$line" >/tmp/score/"$(basename $line)".gz
     done
 fi
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/04-phasing/003-scalar.sh
+#!/bin/sh
 
-multi_midsToscore "$sample_name"
+mkdir -p .DAJIN_temp/scalar /tmp/scalar
+
+multiscoreToScalar() {
+  cmd='. .DAJIN_temp/library/scoreToScalar.sh; scoreToScalar '
+  find .DAJIN_temp/score/"$1"* |
+    grep -e "$sample_name" -e "$control_name"_wt -e "$control_name"_control |
+    while read -r line; do
+      output="$(echo $line | sed "s|/score/|/scalar/|")"
+      echo "$line" |
+        sed "s|^|$cmd|" |
+        sed "s|$| >$output \&|"
+    done |
+    awk -v th="${threads:-1}" '
+    {if (NR%(th+1) == 0) print "wait"}
+    END {print "wait"}1' |
+    sh
+}
+
+load_control() {
+  find "$1" -type f |
+    while read -r line; do
+      output=${line#/tmp/}
+      output=${output%.gz}
+      gzip -dc "$line" >.DAJIN_temp/"$output"
+    done
+}
+
+save_control() {
+  find "$1" -type f |
+    grep "$control_name" |
+    while read -r line; do
+      output=${line#\.DAJIN_temp/}.gz
+      gzip -c "$line" >/tmp/"$output"
+    done
+}
+
+if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
+  multiscoreToScalar "$sample_name"
+  load_control /tmp/scalar
+else
+  multiscoreToScalar
+  save_control .DAJIN_temp/scalar
+fi
+
+cat .DAJIN_temp/score/barcode30_wt.csv | readScore >tmp
+
+find .DAJIN_temp/score/* |
+  head .DAJIN_temp/score/barcode25_inversion.csv
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/005-classif.sh
 ################################################################################
@@ -1012,6 +1077,8 @@ python .DAJIN_temp/library/lof_novelty.py -t "$threads" \
   awk -F, 'BEGIN{OFS=","} {print $2,$3,$4,$1}' |
   sort >.DAJIN_temp/sv/anomaly_id_"$sample_name".csv
 EMBED
+cat <<'EMBED' >.DAJIN_temp/script/04-phasing/040-clustering.sh
+EMBED
 . .DAJIN_temp/script/01-init/01-init.sh
 . .DAJIN_temp/script/02-args/01-parse.sh
 . .DAJIN_temp/script/02-args/02-depend.sh
@@ -1019,5 +1086,7 @@ EMBED
 . .DAJIN_temp/script/03-preprocess/020-sam.sh
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
+. .DAJIN_temp/script/04-phasing/003-scalar.sh
 . .DAJIN_temp/script/04-phasing/005-classif.sh
 . .DAJIN_temp/script/04-phasing/010-svcall.sh
+. .DAJIN_temp/script/04-phasing/040-clustering.sh

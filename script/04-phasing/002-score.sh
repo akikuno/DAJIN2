@@ -27,12 +27,11 @@ if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
     while read -r line; do
       gzip -dc "$line" >.DAJIN_temp/score/"$(basename ${line%.gz})"
     done
+  multi_midsToscore "$sample_name"
 else
-  multi_midsToscore "$control_name"
+  multi_midsToscore
   find .DAJIN_temp/score/"$control_name"* |
     while read -r line; do
       gzip -c "$line" >/tmp/score/"$(basename $line)".gz
     done
 fi
-
-multi_midsToscore "$sample_name"

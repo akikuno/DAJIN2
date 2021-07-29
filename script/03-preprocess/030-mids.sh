@@ -27,12 +27,11 @@ if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
     while read -r line; do
       gzip -dc "$line" >.DAJIN_temp/mids/"$(basename ${line%.gz})"
     done
+  multi_samTomids "$sample_name"
 else
-  multi_samTomids "$control_name"
+  multi_samTomids
   find .DAJIN_temp/mids/"$control_name"* |
     while read -r line; do
       gzip -c "$line" >/tmp/mids/"$(basename $line)".gz
     done
 fi
-
-multi_samTomids "$sample_name"
