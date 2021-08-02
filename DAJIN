@@ -487,6 +487,9 @@ write.table(df,
   sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/samToPhred.sh
+#!/bin/sh
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/samTomids.sh
 #!/bin/sh
 # shellcheck disable=SC1091,SC2120
@@ -708,6 +711,7 @@ EMBED
 . .DAJIN_temp/library/formatFasta.sh
 . .DAJIN_temp/library/general.sh
 . .DAJIN_temp/library/midsToscore.sh
+. .DAJIN_temp/library/samToPhred.sh
 . .DAJIN_temp/library/samTomids.sh
 . .DAJIN_temp/library/scoreToScalar.sh
 ARGS="$*" && export ARGS
@@ -940,6 +944,20 @@ else
   save_control .DAJIN_temp/mids
 fi
 EMBED
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/035-phred.sh
+#!/bin/sh
+
+samTomids() (
+  if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
+    cat -
+  elif [ -r "$1" ]; then
+    cat "$1"
+  else
+    echo "$*"
+  fi |
+    :
+)
+EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
 #!/bin/sh
 
@@ -1089,6 +1107,7 @@ EMBED
 . .DAJIN_temp/script/03-preprocess/010-fasta.sh
 . .DAJIN_temp/script/03-preprocess/020-sam.sh
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
+. .DAJIN_temp/script/03-preprocess/035-phred.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
 . .DAJIN_temp/script/04-phasing/003-scalar.sh
 . .DAJIN_temp/script/04-phasing/025-classif.sh
