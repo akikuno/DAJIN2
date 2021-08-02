@@ -6,23 +6,12 @@ echo "$(date +'%Y-%m-%d %H:%M:%S') SV allele detetction" >>log_DAJIN.txt
 
 mkdir -p .DAJIN_temp/sv
 
-. .DAJIN_temp/library/calc_hotelling.sh
+. .DAJIN_temp/library/calcHotelling.sh
 
-normalize() {
-  awk -F, '{sum=0; for(i=2; i<=NF; i++) sum+=$i; print log(sum/(NF-1))}'
-}
-
-# Hotelling to remove SV in control sample
-find .DAJIN_temp/score/"$control_name"_* |
-  grep -e "_control.csv" -e "_wt.csv" |
-  xargs cat |
-  normalize |
-  tee .DAJIN_temp/sv/tmp_score |
-  calc_hotelling |
-  cat >.DAJIN_temp/sv/tmp_hotelling
-
-paste .DAJIN_temp/sv/tmp_score .DAJIN_temp/sv/tmp_hotelling |
-  awk '$2 < 3.841459 {print $1}' | #qchisq(0.95,1)
+cat .DAJIN_temp/scalar/"$control_name"* |
+  cut -d, -f2 |
+  calcHotelling |
+  awk -F, '$1 < 3.841459' | #qchisq(0.95,1)
   cat >.DAJIN_temp/sv/tmp_control
 
 # LOFだと値が小さすぎる（きれいにマッピングされすぎる）リードもSVと判定されてしまうため,
@@ -31,6 +20,11 @@ median_score=$(
   sort -n .DAJIN_temp/sv/tmp_control |
     awk -v wc="$(wc -l <.DAJIN_temp/sv/tmp_control)" 'NR==int(wc/2)'
 )
+
+find .DAJIN_temp/scalar/"$sample_name"* |
+  while read -r line; do
+
+  done
 
 cat .DAJIN_temp/sv/"$sample_name"_id_score.csv |
   sort -t, |

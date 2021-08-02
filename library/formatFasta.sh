@@ -1,6 +1,6 @@
 #!/bin/sh
 
-fmt_fa() {
+formatFasta() {
   cat "$1" |
     awk 'BEGIN{RS=">"} {
       $1=">" $1 " "

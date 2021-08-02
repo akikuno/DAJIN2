@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. .DAJIN_temp/library/phasing_functions.sh
+
 mkdir -p .DAJIN_temp/scalar /tmp/scalar
 
 multiscoreToScalar() {

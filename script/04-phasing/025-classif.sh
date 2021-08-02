@@ -6,9 +6,10 @@ Classify alleles...
 EOF
 ################################################################################
 
+. .DAJIN_temp/library/phasing_functions.sh
 mkdir -p .DAJIN_temp/classif
 
-find .DAJIN_temp/score/"$sample_name"_* |
+find .DAJIN_temp/scalar/"$sample_name"_* |
   while read -r line; do
     cat <<____EOF
     awk -F, -v sample="${sample_name}" 'BEGIN {OFS=","} {

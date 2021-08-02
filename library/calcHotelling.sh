@@ -1,6 +1,6 @@
 #!/bin/sh
 
-calc_hotelling() (
+calcHotelling() (
   if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
     cat -
   elif [ -r "$*" ]; then

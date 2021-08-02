@@ -4,6 +4,8 @@
 timestamp "MIDS scoring" >>log_DAJIN.txt
 #----------------------------------------------------------
 
+. .DAJIN_temp/library/phasing_functions.sh
+
 mkdir -p .DAJIN_temp/score /tmp/score
 
 multi_midsToscore() {
@@ -22,16 +24,28 @@ multi_midsToscore() {
     sh
 }
 
-if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
-  find /tmp/score/* |
+load_control() {
+  find "$1" -type f |
     while read -r line; do
-      gzip -dc "$line" >.DAJIN_temp/score/"$(basename ${line%.gz})"
+      output=${line#/tmp/}
+      output=${output%.gz}
+      gzip -dc "$line" >.DAJIN_temp/"$output"
     done
+}
+
+save_control() {
+  find "$1" -type f |
+    grep "$control_name" |
+    while read -r line; do
+      output=${line#\.DAJIN_temp/}.gz
+      gzip -c "$line" >/tmp/"$output"
+    done
+}
+
+if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
   multi_midsToscore "$sample_name"
+  load_control /tmp/scalar
 else
   multi_midsToscore
-  find .DAJIN_temp/score/"$control_name"* |
-    while read -r line; do
-      gzip -c "$line" >/tmp/score/"$(basename $line)".gz
-    done
+  save_control .DAJIN_temp/scalar
 fi
