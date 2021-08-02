@@ -332,52 +332,24 @@ trap "terminate 143" TERM
 timestamp() {
   echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"
 }
-EMBED
-cat <<'EMBED' >.DAJIN_temp/library/lof_novelty.py
-import sys
-import os
-import numpy as np
-import pandas as pd
-from sklearn.neighbors import LocalOutlierFactor
-import argparse
 
-################################################################################
-# Input
-################################################################################
+load_control() {
+  find "$1" -type f |
+    while read -r line; do
+      output=${line#/tmp/}
+      output=${output%.gz}
+      gzip -dc "$line" >.DAJIN_temp/"$output"
+    done
+}
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--control", default=".DAJIN_temp/classif/tmp_control")
-parser.add_argument("-s", "--sample", default=".DAJIN_temp/classif/tmp_control")
-parser.add_argument("-t", "--threads", default="1")
-args = parser.parse_args()
-
-df_control = pd.read_csv(args.control, header=None)
-df_sample = pd.read_csv(args.sample, header=None)
-threads = int(args.threads)
-
-################################################################################
-# LOF
-################################################################################
-
-lof = LocalOutlierFactor(
-    n_neighbors=20,
-    algorithm="auto",
-    leaf_size=30,
-    metric="euclidean",
-    contamination="auto",
-    novelty=True,
-    n_jobs=threads,
-)
-
-lof.fit(df_control)
-
-output = pd.Series(lof.predict(df_sample))
-
-################################################################################
-# Output
-################################################################################
-
-output.to_csv(sys.stdout, index=False, header=False)
+save_control() {
+  find "$1" -type f |
+    grep "$control_name" |
+    while read -r line; do
+      output=${line#\.DAJIN_temp/}.gz
+      gzip -c "$line" >/tmp/"$output"
+    done
+}
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/midsToscore.sh
 #!/bin/sh
@@ -688,6 +660,50 @@ scoreToScalar() {
   }'
 }
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/svLof.py
+import sys
+import pandas as pd
+from sklearn.neighbors import LocalOutlierFactor
+import argparse
+
+################################################################################
+# Input
+################################################################################
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--control", default=".DAJIN_temp/classif/tmp_control")
+parser.add_argument("-s", "--sample", default=".DAJIN_temp/classif/tmp_control")
+parser.add_argument("-t", "--threads", default="1")
+args = parser.parse_args()
+
+df_control = pd.read_csv(args.control, header=None)
+df_sample = pd.read_csv(args.sample, header=None)
+threads = int(args.threads)
+
+################################################################################
+# LOF
+################################################################################
+
+lof = LocalOutlierFactor(
+    n_neighbors=20,
+    algorithm="auto",
+    leaf_size=30,
+    metric="euclidean",
+    contamination="auto",
+    novelty=True,
+    n_jobs=threads,
+)
+
+lof.fit(df_control)
+
+output = pd.Series(lof.predict(df_sample))
+
+################################################################################
+# Output
+################################################################################
+
+output.to_csv(sys.stdout, index=False, header=False)
+EMBED
 . .DAJIN_temp/library/calcHotelling.sh
 . .DAJIN_temp/library/formatFasta.sh
 . .DAJIN_temp/library/general.sh
@@ -902,7 +918,7 @@ mkdir -p .DAJIN_temp/mids /tmp/mids
 
 multi_samTomids() {
   cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
-  find .DAJIN_temp/sam/"$1"*.sam |
+  find .DAJIN_temp/sam/"${1:-}"*.sam |
     while read -r line; do
       output="${line%.*}".csv
       output="$(echo $output | sed "s|/sam/|/mids/|")"
@@ -917,33 +933,31 @@ multi_samTomids() {
 }
 
 if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
-  find /tmp/mids/* |
-    while read -r line; do
-      gzip -dc "$line" >.DAJIN_temp/mids/"$(basename ${line%.gz})"
-    done
   multi_samTomids "$sample_name"
+  load_control /tmp/mids
 else
   multi_samTomids
-  find .DAJIN_temp/mids/"$control_name"* |
-    while read -r line; do
-      gzip -c "$line" >/tmp/mids/"$(basename $line)".gz
-    done
+  save_control .DAJIN_temp/mids
 fi
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
 #!/bin/sh
 
+cat <<EOF >>log_DAJIN.txt
+==========================================================
+Classify alleles...
+==========================================================
+EOF
+
 #----------------------------------------------------------
 timestamp "MIDS scoring" >>log_DAJIN.txt
 #----------------------------------------------------------
-
-. .DAJIN_temp/library/phasing_functions.sh
 
 mkdir -p .DAJIN_temp/score /tmp/score
 
 multi_midsToscore() {
   cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
-  find .DAJIN_temp/mids/"$1"*.csv |
+  find .DAJIN_temp/mids/"${1:-}"*.csv |
     while read -r line; do
       output="${line%.*}".csv
       output="$(echo $output | sed "s|/mids/|/score/|")"
@@ -957,42 +971,22 @@ multi_midsToscore() {
     sh
 }
 
-load_control() {
-  find "$1" -type f |
-    while read -r line; do
-      output=${line#/tmp/}
-      output=${output%.gz}
-      gzip -dc "$line" >.DAJIN_temp/"$output"
-    done
-}
-
-save_control() {
-  find "$1" -type f |
-    grep "$control_name" |
-    while read -r line; do
-      output=${line#\.DAJIN_temp/}.gz
-      gzip -c "$line" >/tmp/"$output"
-    done
-}
-
-if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
   multi_midsToscore "$sample_name"
-  load_control /tmp/scalar
+  load_control /tmp/score
 else
   multi_midsToscore
-  save_control .DAJIN_temp/scalar
+  save_control .DAJIN_temp/score
 fi
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/003-scalar.sh
 #!/bin/sh
 
-. .DAJIN_temp/library/phasing_functions.sh
-
 mkdir -p .DAJIN_temp/scalar /tmp/scalar
 
 multiscoreToScalar() {
   cmd='. .DAJIN_temp/library/scoreToScalar.sh; scoreToScalar '
-  find .DAJIN_temp/score/"$1"* |
+  find .DAJIN_temp/score/"${1:-}"* |
     grep -e "$sample_name" -e "$control_name"_wt -e "$control_name"_control |
     while read -r line; do
       output="$(echo $line | sed "s|/score/|/scalar/|")"
@@ -1006,24 +1000,6 @@ multiscoreToScalar() {
     sh
 }
 
-load_control() {
-  find "$1" -type f |
-    while read -r line; do
-      output=${line#/tmp/}
-      output=${output%.gz}
-      gzip -dc "$line" >.DAJIN_temp/"$output"
-    done
-}
-
-save_control() {
-  find "$1" -type f |
-    grep "$control_name" |
-    while read -r line; do
-      output=${line#\.DAJIN_temp/}.gz
-      gzip -c "$line" >/tmp/"$output"
-    done
-}
-
 if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
   multiscoreToScalar "$sample_name"
   load_control /tmp/scalar
@@ -1032,29 +1008,14 @@ else
   save_control .DAJIN_temp/scalar
 fi
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/04-phasing/010-svcall.sh
+cat <<'EMBED' >.DAJIN_temp/script/04-phasing/025-classif.sh
 #!/bin/sh
 
 #----------------------------------------------------------
-echo "$(date +'%Y-%m-%d %H:%M:%S') SV allele detetction" >>log_DAJIN.txt
+timestamp "Allele classification" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/sv
-
-. .DAJIN_temp/library/calcHotelling.sh
-
-cat .DAJIN_temp/scalar/"$control_name"* |
-  cut -d, -f2 |
-  calcHotelling |
-  awk -F, '$1 < 3.841459' | #qchisq(0.95,1)
-  cat >.DAJIN_temp/sv/tmp_control
-
-# LOFだと値が小さすぎる（きれいにマッピングされすぎる）リードもSVと判定されてしまうため,
-# 中央値よりも値が小さいリードはすべて正常と判定させる.
-median_score=$(
-  sort -n .DAJIN_temp/sv/tmp_control |
-    awk -v wc="$(wc -l <.DAJIN_temp/sv/tmp_control)" 'NR==int(wc/2)'
-)
+mkdir -p .DAJIN_temp/classif
 
 find .DAJIN_temp/scalar/"$sample_name"* |
   while read -r line; do
@@ -1072,66 +1033,55 @@ find .DAJIN_temp/scalar/"$sample_name"* |
     }} END {
       for(read in output) print output[read]
     }' |
-  cat >.DAJIN_temp/sv/tmp_sample
-
-cat .DAJIN_temp/sv/tmp_sample |
-  awk -v median="$median" '{
-    ($0<median) ? $0="normal" : $0="SV_candidate"
-  }1' >.DAJIN_temp/sv/tmp_sample_median
-
-python .DAJIN_temp/library/lof_novelty.py -t "$threads" \
-  -c .DAJIN_temp/sv/tmp_control -s .DAJIN_temp/sv/tmp_sample |
-  awk '{($1 == 1) ? $1="normal" : $1="SV"}1' |
-  paste - .DAJIN_temp/sv/tmp_sample_median |
-  awk '{if($1=="SV" && $2=="normal") $1="normal"; print $1}' |
-  paste -d "," - .DAJIN_temp/sv/"$sample_name"_id_score.csv |
-  cut -d, -f 1-3 |
-  sed "s/^/$sample_name,/" |
-  awk -F, 'BEGIN{OFS=","} {print $2,$3,$4,$1}' |
-  sort >.DAJIN_temp/sv/anomaly_id_"$sample_name".csv
+  cat >.DAJIN_temp/classif/"$sample_name".csv
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/04-phasing/025-classif.sh
-################################################################################
-cat <<EOF >>log_DAJIN.txt
-==========================================================
-Classify alleles...
-==========================================================
-EOF
-################################################################################
+cat <<'EMBED' >.DAJIN_temp/script/04-phasing/030-svcall.sh
+#!/bin/sh
 
-. .DAJIN_temp/library/phasing_functions.sh
-mkdir -p .DAJIN_temp/classif
+#----------------------------------------------------------
+timestamp "SV allele detetction" >>log_DAJIN.txt
+#----------------------------------------------------------
 
-find .DAJIN_temp/scalar/"$sample_name"_* |
-  while read -r line; do
-    cat <<____EOF
-    awk -F, -v sample="${sample_name}" 'BEGIN {OFS=","} {
-      sum=0
-      allele=FILENAME
-      sub(".*"sample"_", "", allele)
-      sub(".csv$", "", allele)
-      for(i=2;i<=NF;i++) sum+=\$i
-      print sum, allele, \$0
-    }' "$line" > "${line%.csv}"_tmp &
-____EOF
-  done |
-  awk '1; END {print "wait"}' |
-  sh
+mkdir -p .DAJIN_temp/sv
+. .DAJIN_temp/library/calcHotelling.sh
 
-cat .DAJIN_temp/score/"$sample_name"*_tmp |
-  awk -F, '{
-    score=$1; allele=$2; id=$3
-    if(score_of[id] == "") score_of[id]="inf"
-    if(score_of[id]>score) {
-      score_of[id]=score; seq[id]=$0
-    }} END {for(id in seq) print seq[id]}' |
-  cut -d "," -f 2- |
-  sort -t, |
-  cat >.DAJIN_temp/classif/"$sample_name"_id_score.csv
+cat .DAJIN_temp/classif/"$sample_name".csv |
+  tee .DAJIN_temp/sv/tmp_sample |
+  cut -d, -f3 >.DAJIN_temp/sv/tmp_sample_score
 
-rm .DAJIN_temp/score/"$sample_name"*_tmp
+cat .DAJIN_temp/scalar/"$control_name"* |
+  cut -d, -f2 |
+  calcHotelling |
+  awk -F, '$1 < 3.841459' | #qchisq(0.95,1)
+  cat >.DAJIN_temp/sv/tmp_control_score
+
+# LOFだと値が小さすぎる（きれいにマッピングされすぎる）リードもSVと判定されてしまうため,
+# 中央値よりも値が小さいリードはすべて正常と判定させる.
+median_score=$(
+  sort -n .DAJIN_temp/sv/tmp_control_score |
+    awk -v wc="$(wc -l <.DAJIN_temp/sv/tmp_control_score)" 'NR==int(wc/2)'
+)
+
+python .DAJIN_temp/library/svLof.py \
+  -c .DAJIN_temp/sv/tmp_control_score \
+  -s .DAJIN_temp/sv/tmp_sample_score \
+  -t "$threads" |
+  awk '{($1 == 1) ? $1="normal" : $1="SV"}1' |
+  paste -d, - .DAJIN_temp/sv/tmp_sample |
+  awk -F, -v median="$median_score" '{
+    if($1=="SV" && $NF<median) $1="normal"
+    if($1=="SV") $2="SV"
+    print $2","$3
+   }' |
+  cat >.DAJIN_temp/sv/"$sample_name".csv
+
+rm .DAJIN_temp/sv/tmp*
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/040-clustering.sh
+#!/bin/sh
+
+echo END
+exit 0
 EMBED
 . .DAJIN_temp/script/01-init/01-init.sh
 . .DAJIN_temp/script/02-args/01-parse.sh
@@ -1141,6 +1091,6 @@ EMBED
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
 . .DAJIN_temp/script/04-phasing/003-scalar.sh
-. .DAJIN_temp/script/04-phasing/010-svcall.sh
 . .DAJIN_temp/script/04-phasing/025-classif.sh
+. .DAJIN_temp/script/04-phasing/030-svcall.sh
 . .DAJIN_temp/script/04-phasing/040-clustering.sh

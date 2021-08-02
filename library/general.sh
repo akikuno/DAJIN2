@@ -19,3 +19,21 @@ trap "terminate 143" TERM
 timestamp() {
   echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"
 }
+
+load_control() {
+  find "$1" -type f |
+    while read -r line; do
+      output=${line#/tmp/}
+      output=${output%.gz}
+      gzip -dc "$line" >.DAJIN_temp/"$output"
+    done
+}
+
+save_control() {
+  find "$1" -type f |
+    grep "$control_name" |
+    while read -r line; do
+      output=${line#\.DAJIN_temp/}.gz
+      gzip -c "$line" >/tmp/"$output"
+    done
+}

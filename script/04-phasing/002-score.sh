@@ -14,7 +14,7 @@ mkdir -p .DAJIN_temp/score /tmp/score
 
 multi_midsToscore() {
   cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
-  find .DAJIN_temp/mids/"$1"*.csv |
+  find .DAJIN_temp/mids/"${1:-}"*.csv |
     while read -r line; do
       output="${line%.*}".csv
       output="$(echo $output | sed "s|/mids/|/score/|")"
@@ -28,28 +28,10 @@ multi_midsToscore() {
     sh
 }
 
-load_control() {
-  find "$1" -type f |
-    while read -r line; do
-      output=${line#/tmp/}
-      output=${output%.gz}
-      gzip -dc "$line" >.DAJIN_temp/"$output"
-    done
-}
-
-save_control() {
-  find "$1" -type f |
-    grep "$control_name" |
-    while read -r line; do
-      output=${line#\.DAJIN_temp/}.gz
-      gzip -c "$line" >/tmp/"$output"
-    done
-}
-
-if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
   multi_midsToscore "$sample_name"
-  load_control /tmp/scalar
+  load_control /tmp/score
 else
   multi_midsToscore
-  save_control .DAJIN_temp/scalar
+  save_control .DAJIN_temp/score
 fi

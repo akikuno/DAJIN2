@@ -31,7 +31,7 @@ control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
 sh misc/compile.sh
 # rm -rf .DAJIN_temp DAJIN_results
-# ./generate_DAJIN.sh && time bash ./DAJIN batch -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+# ./misc/compile.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
 # Stx2

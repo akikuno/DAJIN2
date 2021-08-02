@@ -8,7 +8,7 @@ mkdir -p .DAJIN_temp/mids /tmp/mids
 
 multi_samTomids() {
   cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
-  find .DAJIN_temp/sam/"$1"*.sam |
+  find .DAJIN_temp/sam/"${1:-}"*.sam |
     while read -r line; do
       output="${line%.*}".csv
       output="$(echo $output | sed "s|/sam/|/mids/|")"
@@ -23,15 +23,9 @@ multi_samTomids() {
 }
 
 if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
-  find /tmp/mids/* |
-    while read -r line; do
-      gzip -dc "$line" >.DAJIN_temp/mids/"$(basename ${line%.gz})"
-    done
   multi_samTomids "$sample_name"
+  load_control /tmp/mids
 else
   multi_samTomids
-  find .DAJIN_temp/mids/"$control_name"* |
-    while read -r line; do
-      gzip -c "$line" >/tmp/mids/"$(basename $line)".gz
-    done
+  save_control .DAJIN_temp/mids
 fi
