@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. library/fmt_fa.sh
+. library/formatFasta.sh
 
 fmt_fa test/fmt_fa/in1.fa >/tmp/tmp1
 diff /tmp/tmp1 test/fmt_fa/out1
