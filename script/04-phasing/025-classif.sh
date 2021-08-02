@@ -1,39 +1,25 @@
-################################################################################
-cat <<EOF >>log_DAJIN.txt
-==========================================================
-Classify alleles...
-==========================================================
-EOF
-################################################################################
+#!/bin/sh
 
-. .DAJIN_temp/library/phasing_functions.sh
+#----------------------------------------------------------
+timestamp "Allele classification" >>log_DAJIN.txt
+#----------------------------------------------------------
+
 mkdir -p .DAJIN_temp/classif
 
-find .DAJIN_temp/scalar/"$sample_name"_* |
+find .DAJIN_temp/scalar/"$sample_name"* |
   while read -r line; do
-    cat <<____EOF
-    awk -F, -v sample="${sample_name}" 'BEGIN {OFS=","} {
-      sum=0
-      allele=FILENAME
-      sub(".*"sample"_", "", allele)
-      sub(".csv$", "", allele)
-      for(i=2;i<=NF;i++) sum+=\$i
-      print sum, allele, \$0
-    }' "$line" > "${line%.csv}"_tmp &
-____EOF
+    allele=$(basename "${line%.csv}" | cut -d_ -f2-)
+    awk -v al="$allele" '{print al","$0}' "$line"
   done |
-  awk '1; END {print "wait"}' |
-  sh
-
-cat .DAJIN_temp/score/"$sample_name"*_tmp |
   awk -F, '{
-    score=$1; allele=$2; id=$3
-    if(score_of[id] == "") score_of[id]="inf"
-    if(score_of[id]>score) {
-      score_of[id]=score; seq[id]=$0
-    }} END {for(id in seq) print seq[id]}' |
-  cut -d "," -f 2- |
-  sort -t, |
-  cat >.DAJIN_temp/classif/"$sample_name"_id_score.csv
-
-rm .DAJIN_temp/score/"$sample_name"*_tmp
+    allele=$1
+    read=$2
+    score=$3
+    if(score_of[read] == "") score_of[read]="inf"
+    if(score_of[read]>score) {
+      output[read]=$0
+      score_of[read]=score
+    }} END {
+      for(read in output) print output[read]
+    }' |
+  cat >.DAJIN_temp/classif/"$sample_name".csv

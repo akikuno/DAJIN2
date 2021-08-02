@@ -1,10 +1,14 @@
 #!/bin/sh
 
+cat <<EOF >>log_DAJIN.txt
+==========================================================
+Classify alleles...
+==========================================================
+EOF
+
 #----------------------------------------------------------
 timestamp "MIDS scoring" >>log_DAJIN.txt
 #----------------------------------------------------------
-
-. .DAJIN_temp/library/phasing_functions.sh
 
 mkdir -p .DAJIN_temp/score /tmp/score
 

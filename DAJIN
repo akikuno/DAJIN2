@@ -333,6 +333,52 @@ timestamp() {
   echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"
 }
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/lof_novelty.py
+import sys
+import os
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import LocalOutlierFactor
+import argparse
+
+################################################################################
+# Input
+################################################################################
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--control", default=".DAJIN_temp/classif/tmp_control")
+parser.add_argument("-s", "--sample", default=".DAJIN_temp/classif/tmp_control")
+parser.add_argument("-t", "--threads", default="1")
+args = parser.parse_args()
+
+df_control = pd.read_csv(args.control, header=None)
+df_sample = pd.read_csv(args.sample, header=None)
+threads = int(args.threads)
+
+################################################################################
+# LOF
+################################################################################
+
+lof = LocalOutlierFactor(
+    n_neighbors=20,
+    algorithm="auto",
+    leaf_size=30,
+    metric="euclidean",
+    contamination="auto",
+    novelty=True,
+    n_jobs=threads,
+)
+
+lof.fit(df_control)
+
+output = pd.Series(lof.predict(df_sample))
+
+################################################################################
+# Output
+################################################################################
+
+output.to_csv(sys.stdout, index=False, header=False)
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/midsToscore.sh
 #!/bin/sh
 # shellcheck disable=SC1091,SC2120
@@ -462,8 +508,6 @@ args <- commandArgs(trailingOnly = TRUE)
 df_row <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
 df_col <- read.table(args[2], sep = ",", header = FALSE, row.names = 1)
 
-# df_row <- read.table(".DAJIN_temp/tmp_row_barcode30_inversion.csv", sep = ",", header = FALSE, row.names = 1)
-# df_col <- read.table(".DAJIN_temp/tmp_col_barcode30_inversion.csv", sep = ",", header = FALSE, row.names = 1)
 df <- df_row + df_col
 
 write.table(df,
@@ -1002,7 +1046,7 @@ mkdir -p .DAJIN_temp/sv
 cat .DAJIN_temp/scalar/"$control_name"* |
   cut -d, -f2 |
   calcHotelling |
-  awk -F, '$2 < 3.841459 {print $2}' | #qchisq(0.95,1)
+  awk -F, '$1 < 3.841459' | #qchisq(0.95,1)
   cat >.DAJIN_temp/sv/tmp_control
 
 # LOFだと値が小さすぎる（きれいにマッピングされすぎる）リードもSVと判定されてしまうため,
@@ -1014,14 +1058,20 @@ median_score=$(
 
 find .DAJIN_temp/scalar/"$sample_name"* |
   while read -r line; do
-
-  done
-
-cat .DAJIN_temp/sv/"$sample_name"_id_score.csv |
-  sort -t, |
-  join -t "," - .DAJIN_temp/sv/allele_length |
-  cut -d "," -f 3- |
-  awk -F, '{sum=0; for(i=1; i<=NF-1; i++) sum+=$i; print log(sum/$NF)}' |
+    allele=$(basename "${line%.csv}" | cut -d_ -f2-)
+    awk -v al="$allele" '{print al","$0}' "$line"
+  done |
+  awk -F, '{
+    allele=$1
+    read=$2
+    score=$3
+    if(score_of[read] == "") score_of[read]="inf"
+    if(score_of[read]>score) {
+      output[read]=$0
+      score_of[read]=score
+    }} END {
+      for(read in output) print output[read]
+    }' |
   cat >.DAJIN_temp/sv/tmp_sample
 
 cat .DAJIN_temp/sv/tmp_sample |
