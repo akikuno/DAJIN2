@@ -13,7 +13,7 @@ maskFastq() {
     split($2, sequence, "")
     n=split($NF, quality, "")
     for(i=1 && seq=""; i<=n; i++) {
-      if (quality[i] ~ "[!\"#$%&'\''()*+]") {
+      if (quality[i] ~ "[!\"#$%&'\''()*]") {
         seq=seq "N"
       }
       else {
