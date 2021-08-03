@@ -37,3 +37,11 @@ save_control() {
       gzip -c "$line" >/tmp/"$output"
     done
 }
+
+open() {
+  if file "$1" | grep -q gzip; then
+    gzip -dc "$1"
+  else
+    cat "$1"
+  fi
+}

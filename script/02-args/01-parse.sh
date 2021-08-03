@@ -73,4 +73,10 @@ echo "$ARGS" |
 
 [ -r "$sample" ] || error_exit "$sample is not found"
 
+control_name="$(basename "$control" | sed "s/\..*$//" | tr " " "_")"
+sample_name="$(basename "$sample" | sed "s/\..*$//" | tr " " "_")"
+
+[ ${control_name:-} ] || error_exit "$control is an invalid file name."
+[ ${sample_name:-} ] || error_exit "$sample is an invalid file name"
+
 # Check optional arguments ------------

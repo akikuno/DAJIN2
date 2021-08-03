@@ -1,26 +1,25 @@
 #!/bin/sh
 
 #----------------------------------------------------------
-echo "$(date +'%Y-%m-%d %H:%M:%S') Generate SAM files" >>log_DAJIN.txt
+timestamp "Generate SAM files" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/sam
-control_name="$(basename "$control" | sed "s/\..*$//" | tr " " "_")"
-sample_name="$(basename "$sample" | sed "s/\..*$//" | tr " " "_")"
+mkdir -p .DAJIN_temp/sam /tmp/sam
 
 find .DAJIN_temp/fasta/*.fa |
-  while read -r allele; do
-    allele_name="$(basename ${allele%.fa})"
+  while read -r fasta; do
+    allele_name="$(basename ${fasta%.fa})"
 
-    if [ -s /tmp/"$control_name"_"$allele_name".sam ]; then
-      cp /tmp/"$control_name"_"$allele_name".sam \
-        .DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+    if find /tmp/sam/"$control_name"_"$allele_name".bam 1>/dev/null 2>&1; then
+      samtools view /tmp/sam/"$control_name"_"$allele_name".bam \
+        >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
     else
-      minimap2 -t "$threads" -ax map-ont "$allele" "$control" --cs=long 2>/dev/null |
-        tee /tmp/"$control_name"_"$allele_name".sam |
-        cat >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+      minimap2 -t "$threads" -ax map-ont "$fasta" .DAJIN_temp/fastq/"$control_name".fq --cs=long 2>/dev/null \
+        >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+      samtools sort -@ "$threads" .DAJIN_temp/sam/"$control_name"_"$allele_name".sam \
+        >/tmp/sam/"$control_name"_"$allele_name".bam 2>/dev/null
     fi
 
-    minimap2 -t "$threads" -ax map-ont "$allele" "$sample" --cs=long 2>/dev/null |
-      cat >.DAJIN_temp/sam/"$sample_name"_"$allele_name".sam
+    minimap2 -t "$threads" -ax map-ont "$fasta" .DAJIN_temp/fastq/"$sample_name".fq --cs=long 2>/dev/null \
+      >.DAJIN_temp/sam/"$sample_name"_"$allele_name".sam
   done
