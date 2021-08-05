@@ -10,7 +10,7 @@ EOF
 timestamp "MIDS scoring" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/score /tmp/score
+mkdir -p .DAJIN_temp/score /tmp/DAJIN/score
 
 multi_midsToscore() {
   cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
@@ -28,9 +28,9 @@ multi_midsToscore() {
     sh
 }
 
-if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/DAJIN/score/"$control_name"* 1>/dev/null 2>&1; then
   multi_midsToscore "$sample_name"
-  load_control /tmp/score
+  load_control /tmp/DAJIN/score
 else
   multi_midsToscore
   save_control .DAJIN_temp/score

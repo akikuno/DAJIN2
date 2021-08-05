@@ -30,7 +30,8 @@ genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
 sh misc/compile.sh
-# rm -rf .DAJIN_temp DAJIN_results
+###
+# rm -rf .DAJIN_temp DAJIN_results /tmp/DAJIN
 # ./misc/compile.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------

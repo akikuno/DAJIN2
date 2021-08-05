@@ -4,10 +4,10 @@
 timestamp "MIDS encoding" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/mids /tmp/mids
+mkdir -p .DAJIN_temp/mids /tmp/DAJIN/mids
 
-multi_samTomids() {
-  cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
+multi_samToMIDS() {
+  cmd='. .DAJIN_temp/library/samToMIDS.sh; samToMIDS '
   find .DAJIN_temp/sam/"${1:-}"*.sam |
     while read -r line; do
       output="${line%.*}".csv
@@ -22,10 +22,10 @@ multi_samTomids() {
     sh
 }
 
-if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
-  multi_samTomids "$sample_name"
-  load_control /tmp/mids
+if find /tmp/DAJIN/mids/"$control_name"* 1>/dev/null 2>&1; then
+  multi_samToMIDS "$sample_name"
+  load_control /tmp/DAJIN/mids
 else
-  multi_samTomids
+  multi_samToMIDS
   save_control .DAJIN_temp/mids
 fi

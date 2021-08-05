@@ -81,7 +81,7 @@ spaceTocomma() {
   sed -e "s/  */,/g" -e "s/,$//"
 }
 
-samTomids() (
+samToMIDS() (
   if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
     cat -
   elif [ -r "$1" ]; then

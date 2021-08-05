@@ -1,6 +1,6 @@
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/scalar /tmp/scalar
+mkdir -p .DAJIN_temp/scalar /tmp/DAJIN/scalar
 
 multiscoreToScalar() {
   cmd='. .DAJIN_temp/library/scoreToScalar.sh; scoreToScalar '
@@ -18,9 +18,9 @@ multiscoreToScalar() {
     sh
 }
 
-if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/DAJIN/scalar/"$control_name"* 1>/dev/null 2>&1; then
   multiscoreToScalar "$sample_name"
-  load_control /tmp/scalar
+  load_control /tmp/DAJIN/scalar
 else
   multiscoreToScalar
   save_control .DAJIN_temp/scalar

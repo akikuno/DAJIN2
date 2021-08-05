@@ -350,6 +350,14 @@ save_control() {
       gzip -c "$line" >/tmp/"$output"
     done
 }
+
+open() {
+  if file "$1" | grep -q gzip; then
+    gzip -dc "$1"
+  else
+    cat "$1"
+  fi
+}
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/maskFastq.sh
 #!/bin/sh
@@ -367,7 +375,7 @@ maskFastq() {
     split($2, sequence, "")
     n=split($NF, quality, "")
     for(i=1 && seq=""; i<=n; i++) {
-      if (quality[i] ~ "[!\"#$%&'\''()*+]") {
+      if (quality[i] ~ "[!\"#$%&'\''()*]") {
         seq=seq "N"
       }
       else {
@@ -831,6 +839,12 @@ echo "$ARGS" |
 
 [ -r "$sample" ] || error_exit "$sample is not found"
 
+control_name="$(basename "$control" | sed "s/\..*$//" | tr " " "_")"
+sample_name="$(basename "$sample" | sed "s/\..*$//" | tr " " "_")"
+
+[ "${control_name:-}" ] || error_exit "$control is an invalid file name."
+[ "${sample_name:-}" ] || error_exit "$sample is an invalid file name"
+
 # Check optional arguments ------------
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/02-args/02-depend.sh
@@ -911,32 +925,51 @@ formatFasta "${alleles}" |
     echo "$line" | tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
   done
 EMBED
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/015-fastq.sh
+#!/bin/sh
+
+mkdir -p .DAJIN_temp/fastq/ /tmp/DAJIN/fastq/
+
+# if find /tmp/fastq/"$control_name"* 1>/dev/null 2>&1; then
+#   gzip -dc /tmp/fastq/"$control_name".fq.gz >.DAJIN_temp/fastq/"$control_name".fq
+#   open "$sample" | maskFastq >.DAJIN_temp/fastq/"$sample_name".fq
+# else
+#   {
+#     open "$control" | maskFastq >.DAJIN_temp/fastq/"$control_name".fq &
+#     open "$sample" | maskFastq >.DAJIN_temp/fastq/"$sample_name".fq &
+#     wait
+#   } 1>/dev/null 2>&1
+#   gzip -c .DAJIN_temp/fastq/"$control_name".fq >/tmp/fastq/"$control_name".fq.gz
+# fi
+
+open "$control" >.DAJIN_temp/fastq/"$control_name".fq
+open "$sample" >.DAJIN_temp/fastq/"$sample_name".fq
+EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/020-sam.sh
 #!/bin/sh
 
 #----------------------------------------------------------
-echo "$(date +'%Y-%m-%d %H:%M:%S') Generate SAM files" >>log_DAJIN.txt
+timestamp "Generate SAM files" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/sam
-control_name="$(basename "$control" | sed "s/\..*$//" | tr " " "_")"
-sample_name="$(basename "$sample" | sed "s/\..*$//" | tr " " "_")"
+mkdir -p .DAJIN_temp/sam /tmp/DAJIN/sam
 
 find .DAJIN_temp/fasta/*.fa |
-  while read -r allele; do
-    allele_name="$(basename ${allele%.fa})"
+  while read -r fasta; do
+    allele_name="$(basename ${fasta%.fa})"
 
-    if [ -s /tmp/"$control_name"_"$allele_name".sam ]; then
-      cp /tmp/"$control_name"_"$allele_name".sam \
-        .DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+    if find /tmp/DAJIN/sam/"$control_name"_"$allele_name".bam 1>/dev/null 2>&1; then
+      samtools view /tmp/DAJIN/sam/"$control_name"_"$allele_name".bam \
+        >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
     else
-      minimap2 -t "$threads" -ax map-ont "$allele" "$control" --cs=long 2>/dev/null |
-        tee /tmp/"$control_name"_"$allele_name".sam |
-        cat >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+      minimap2 -t "$threads" -ax map-ont "$fasta" .DAJIN_temp/fastq/"$control_name".fq --cs=long 2>/dev/null \
+        >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+      samtools sort -@ "$threads" .DAJIN_temp/sam/"$control_name"_"$allele_name".sam \
+        >/tmp/DAJIN/sam/"$control_name"_"$allele_name".bam 2>/dev/null
     fi
 
-    minimap2 -t "$threads" -ax map-ont "$allele" "$sample" --cs=long 2>/dev/null |
-      cat >.DAJIN_temp/sam/"$sample_name"_"$allele_name".sam
+    minimap2 -t "$threads" -ax map-ont "$fasta" .DAJIN_temp/fastq/"$sample_name".fq --cs=long 2>/dev/null \
+      >.DAJIN_temp/sam/"$sample_name"_"$allele_name".sam
   done
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/030-mids.sh
@@ -946,7 +979,7 @@ cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/030-mids.sh
 timestamp "MIDS encoding" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/mids /tmp/mids
+mkdir -p .DAJIN_temp/mids /tmp/DAJIN/mids
 
 multi_samTomids() {
   cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
@@ -964,27 +997,13 @@ multi_samTomids() {
     sh
 }
 
-if find /tmp/mids/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/DAJIN/mids/"$control_name"* 1>/dev/null 2>&1; then
   multi_samTomids "$sample_name"
-  load_control /tmp/mids
+  load_control /tmp/DAJIN/mids
 else
   multi_samTomids
   save_control .DAJIN_temp/mids
 fi
-EMBED
-cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/035-phred.sh
-#!/bin/sh
-
-samTomids() (
-  if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
-    cat -
-  elif [ -r "$1" ]; then
-    cat "$1"
-  else
-    echo "$*"
-  fi |
-    :
-)
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
 #!/bin/sh
@@ -999,7 +1018,7 @@ EOF
 timestamp "MIDS scoring" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/score /tmp/score
+mkdir -p .DAJIN_temp/score /tmp/DAJIN/score
 
 multi_midsToscore() {
   cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
@@ -1017,9 +1036,9 @@ multi_midsToscore() {
     sh
 }
 
-if find /tmp/score/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/DAJIN/score/"$control_name"* 1>/dev/null 2>&1; then
   multi_midsToscore "$sample_name"
-  load_control /tmp/score
+  load_control /tmp/DAJIN/score
 else
   multi_midsToscore
   save_control .DAJIN_temp/score
@@ -1028,7 +1047,7 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/003-scalar.sh
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/scalar /tmp/scalar
+mkdir -p .DAJIN_temp/scalar /tmp/DAJIN/scalar
 
 multiscoreToScalar() {
   cmd='. .DAJIN_temp/library/scoreToScalar.sh; scoreToScalar '
@@ -1046,9 +1065,9 @@ multiscoreToScalar() {
     sh
 }
 
-if find /tmp/scalar/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/DAJIN/scalar/"$control_name"* 1>/dev/null 2>&1; then
   multiscoreToScalar "$sample_name"
-  load_control /tmp/scalar
+  load_control /tmp/DAJIN/scalar
 else
   multiscoreToScalar
   save_control .DAJIN_temp/scalar
@@ -1133,9 +1152,9 @@ EMBED
 . .DAJIN_temp/script/02-args/01-parse.sh
 . .DAJIN_temp/script/02-args/02-depend.sh
 . .DAJIN_temp/script/03-preprocess/010-fasta.sh
+. .DAJIN_temp/script/03-preprocess/015-fastq.sh
 . .DAJIN_temp/script/03-preprocess/020-sam.sh
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
-. .DAJIN_temp/script/03-preprocess/035-phred.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
 . .DAJIN_temp/script/04-phasing/003-scalar.sh
 . .DAJIN_temp/script/04-phasing/025-classif.sh
