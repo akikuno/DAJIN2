@@ -17,36 +17,39 @@ replaceN <- function (vect) {
 
 df_replaceN <- apply(df, 2, replaceN)
 
-# replace D
-# Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
-# それ以外→そのまま
+#? （ほかの部位のほうが異常にDが集積しているという判定がされるため, ）
+#? アルビノ点変異部位には効果がありませんでした.
+#?  一旦コメントアウトします（2021-08-06）
+# # replace D
+# # Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
+# # それ以外→そのまま
 
-freqD <- function(vect) {
-  tmp_table <- table(vect)
-  tmp_table_D <- tmp_table[names(tmp_table) == "D"]
-  if (length(tmp_table_D) == 0) {
-    tmp_table_D <- 0
-  }
-  return(as.integer(tmp_table_D))
-}
+# freqD <- function(vect) {
+#   tmp_table <- table(vect)
+#   tmp_table_D <- tmp_table[names(tmp_table) == "D"]
+#   if (length(tmp_table_D) == 0) {
+#     tmp_table_D <- 0
+#   }
+#   return(as.integer(tmp_table_D))
+# }
 
-freq <- unlist(apply(df_replaceN, 2, freqD))
-freq <- log(freq)
-hotelling <- (freq - mean(freq))^2/var(freq)
-hotelling_cols <- which(hotelling > qchisq(0.95, 1))
+# freq <- unlist(apply(df_replaceN, 2, freqD))
+# freq <- log(freq)
+# hotelling <- (freq - mean(freq))^2/var(freq)
+# hotelling_cols <- which(hotelling > qchisq(0.95, 1))
 
-replaceD <- function (vect) {
-  tmp_table <- table(vect)
-  tmp_max <- which.max(tmp_table)
-  tmp_names <- names(tmp_max)[1]
-  if (tmp_names != "D") {
-    vect[vect == "D"] <- tmp_names
-  }
-  return(vect)
-}
+# replaceD <- function (vect) {
+#   tmp_table <- table(vect)
+#   tmp_max <- which.max(tmp_table)
+#   tmp_names <- names(tmp_max)[1]
+#   if (tmp_names != "D") {
+#     vect[vect == "D"] <- tmp_names
+#   }
+#   return(vect)
+# }
 
-if (length(hotelling_cols) > 0) {
-  df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
-}
+# if (length(hotelling_cols) > 0) {
+#   df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
+# }
 
 write.table(df_replaceN, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)

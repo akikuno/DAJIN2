@@ -1,9 +1,5 @@
 #!/bin/sh
 
-#----------------------------------------------------------
-timestamp "MIDS encoding" >>log_DAJIN.txt
-#----------------------------------------------------------
-
 mkdir -p .DAJIN_temp/midsmask /tmp/DAJIN/midsmask
 
 multi_maskMIDS() {
@@ -13,8 +9,8 @@ multi_maskMIDS() {
     sed "s/.sam$//" |
     while read -r line; do
       sam=.DAJIN_temp/sam/"$line".sam
-      mids=.DAJIN_temp/mids/"$line".csv
-      output="$(echo $mids | sed "s|/mids/|/midsmask/|")"
+      mids=.DAJIN_temp/midsfilter/"$line".csv
+      output="$(echo $mids | sed "s|/midsfilter/|/midsmask/|")"
       echo "$sam" "$mids" |
         sed "s|^|$cmd|" |
         sed "s|$| >$output \&|"
