@@ -406,37 +406,40 @@ replaceN <- function (vect) {
 
 df_replaceN <- apply(df, 2, replaceN)
 
-# replace D
-# Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
-# それ以外→そのまま
+#? （ほかの部位のほうが異常にDが集積しているという判定がされるため, ）
+#? アルビノ点変異部位には効果がありませんでした.
+#?  一旦コメントアウトします（2021-08-06）
+# # replace D
+# # Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
+# # それ以外→そのまま
 
-freqD <- function(vect) {
-  tmp_table <- table(vect)
-  tmp_table_D <- tmp_table[names(tmp_table) == "D"]
-  if (length(tmp_table_D) == 0) {
-    tmp_table_D <- 0
-  }
-  return(as.integer(tmp_table_D))
-}
+# freqD <- function(vect) {
+#   tmp_table <- table(vect)
+#   tmp_table_D <- tmp_table[names(tmp_table) == "D"]
+#   if (length(tmp_table_D) == 0) {
+#     tmp_table_D <- 0
+#   }
+#   return(as.integer(tmp_table_D))
+# }
 
-freq <- unlist(apply(df_replaceN, 2, freqD))
-freq <- log(freq)
-hotelling <- (freq - mean(freq))^2/var(freq)
-hotelling_cols <- which(hotelling > qchisq(0.95, 1))
+# freq <- unlist(apply(df_replaceN, 2, freqD))
+# freq <- log(freq)
+# hotelling <- (freq - mean(freq))^2/var(freq)
+# hotelling_cols <- which(hotelling > qchisq(0.95, 1))
 
-replaceD <- function (vect) {
-  tmp_table <- table(vect)
-  tmp_max <- which.max(tmp_table)
-  tmp_names <- names(tmp_max)[1]
-  if (tmp_names != "D") {
-    vect[vect == "D"] <- tmp_names
-  }
-  return(vect)
-}
+# replaceD <- function (vect) {
+#   tmp_table <- table(vect)
+#   tmp_max <- which.max(tmp_table)
+#   tmp_names <- names(tmp_max)[1]
+#   if (tmp_names != "D") {
+#     vect[vect == "D"] <- tmp_names
+#   }
+#   return(vect)
+# }
 
-if (length(hotelling_cols) > 0) {
-  df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
-}
+# if (length(hotelling_cols) > 0) {
+#   df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
+# }
 
 write.table(df_replaceN, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)
 EMBED
@@ -1141,47 +1144,16 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/035-mids-filter.sh
 #!/bin/sh
 
-exit HOGEHOGE
-exit 0
+mkdir -p .DAJIN_temp/midsfilter/
 
 find .DAJIN_temp/mids/*.csv |
-  mkdir -p .DAJIN_temp/midsmask /tmp/DAJIN/midsmask
-head -n 100 .DAJIN_temp/mids/barcode31_albino.csv |
-  grep -e "D$" | wc -l
-
-multi_maskMIDS() {
-  cmd='. .DAJIN_temp/library/maskMIDS.sh; maskMIDS '
-  find .DAJIN_temp/sam/"${1:-}"*.sam -print0 |
-    xargs -0 -I@ basename @ |
-    sed "s/.sam$//" |
-    while read -r line; do
-      sam=.DAJIN_temp/sam/"$line".sam
-      mids=.DAJIN_temp/mids/"$line".csv
-      output="$(echo $mids | sed "s|/mids/|/midsmask/|")"
-      echo "$sam" "$mids" |
-        sed "s|^|$cmd|" |
-        sed "s|$| >$output \&|"
-    done |
-    awk -v th="${threads:-1}" '
-    {if (NR%(th+1) == 0) print "wait"}
-    END {print "wait"}1' |
-    sh
-}
-
-if find /tmp/DAJIN/midsmask/"$control_name"* 1>/dev/null 2>&1; then
-  multi_maskMIDS "$sample_name"
-  load_control /tmp/DAJIN/midsmask/
-else
-  multi_maskMIDS
-  save_control .DAJIN_temp/midsmask/
-fi
+  while read -r line; do
+    awk -F, '$51 != "D" && $(NF-50) != "D"' "$line" |
+      cat >.DAJIN_temp/midsfilter/"$(basename "$line")"
+  done
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-mids-mask.sh
 #!/bin/sh
-
-#----------------------------------------------------------
-timestamp "MIDS encoding" >>log_DAJIN.txt
-#----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/midsmask /tmp/DAJIN/midsmask
 
@@ -1192,8 +1164,8 @@ multi_maskMIDS() {
     sed "s/.sam$//" |
     while read -r line; do
       sam=.DAJIN_temp/sam/"$line".sam
-      mids=.DAJIN_temp/mids/"$line".csv
-      output="$(echo $mids | sed "s|/mids/|/midsmask/|")"
+      mids=.DAJIN_temp/midsfilter/"$line".csv
+      output="$(echo $mids | sed "s|/midsfilter/|/midsmask/|")"
       echo "$sam" "$mids" |
         sed "s|^|$cmd|" |
         sed "s|$| >$output \&|"
@@ -1349,32 +1321,6 @@ python .DAJIN_temp/library/svLof.py \
   cat >.DAJIN_temp/sv/"$sample_name".csv
 
 rm .DAJIN_temp/sv/tmp*
-
-#? DEBUG ==========
-# cat .DAJIN_temp/sv/"$sample_name".csv | cut -d, -f1 | sort | uniq -c
-# cat .DAJIN_temp/sv/"$sample_name".csv | grep control, | cut -d, -f 2 | sort -u >tmpcontrol
-# cat .DAJIN_temp/sv/"$sample_name".csv | grep albino, | cut -d, -f 2 | sort -u >tmpalbino
-# cat .DAJIN_temp/sv/"$sample_name".csv | grep SV, | cut -d, -f 2 | sort -u >tmpsv
-# cat .DAJIN_temp/classif/"$sample_name".csv | sort -t, -k2,2 | join -1 2 -2 1 -t, - tmpcontrol
-# cat .DAJIN_temp/classif/"$sample_name".csv | sort -t, -k2,2 | join -1 2 -2 1 -t, - tmpalbino
-
-# cat .DAJIN_temp/midsmask/barcode31_control.csv | sort -t, | join -t, - tmpcontrol |
-#   awk -F, '{loc=829; print $(loc+1)}' | sort | uniq -c
-
-cat .DAJIN_temp/score/barcode31_control.csv | sort -t, | join -t, - tmpcontrol |
-  awk -F, '{loc=829; print "I="$(loc+1), "D="$(loc+1)+NF/3, "S="$(loc+1)+NF/3*2}' | sort | uniq -c
-
-cat .DAJIN_temp/score/barcode31_control.csv | sort -t, | join -t, - tmpalbino |
-  awk -F, '{loc=829; print "I="$(loc+1), "D="$(loc+1)+NF/3, "S="$(loc+1)+NF/3*2}' | sort | uniq -c
-
-cat .DAJIN_temp/mids/barcode31_control.csv | grep 972df14f-8b66-4c02-ae66-ccf6cfe4ded7 | grep -e "[DS]"
-cat .DAJIN_temp/sam/barcode31_control.sam | grep 972df14f-8b66-4c02-ae66-ccf6cfe4ded7 | grep -e "[acgt]"
-cat .DAJIN_temp/mids/barcode31_control.csv | grep ffff6aed-de17-4d21-bd04-9b23021f4878 | grep -e "[acgt]"
-
-. .DAJIN_temp/library/scoreToScalar.sh
-
-cat .DAJIN_temp/score/barcode31_control.csv | grep ffff6aed-de17-4d21-bd04-9b23021f4878 |
-  scoreToScalar
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/040-clustering.sh
 #!/bin/sh
