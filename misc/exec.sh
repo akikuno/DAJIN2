@@ -9,7 +9,7 @@ if ! conda info -e | grep -q DAJIN2; then
   conda update -y -n base conda
   conda create -y -n DAJIN2
   conda install -y -n DAJIN2 minimap2 samtools numpy pandas scikit-learn hdbscan joblib plotnine
-  conda install -y -n DAJIN2 -c conda-forge r-base r-essentials
+  conda install -y -n DAJIN2 -c conda-forge r-base r-essentials r-languageserver
 fi
 #------------------------------------------------------------------------------
 # Execute test

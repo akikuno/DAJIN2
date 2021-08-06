@@ -1,6 +1,7 @@
 #!/bin/sh
 
 . library/samToMIDS.sh
+. library/maskMIDS.sh
 
 minimap2 -ax map-ont --cs=long test/maskMIDS/ref.fa test/maskMIDS/que.fq >tmp.sam
 minimap2 -ax map-ont --cs=long test/maskMIDS/ref_long.fa test/maskMIDS/que_long.fq >tmp_long.sam
@@ -11,6 +12,18 @@ cat tmp_mids.csv
 
 SAM=tmp.sam
 MIDS=tmp_mids.csv
+set "$SAM" "$MIDS"
+
+cat "$1" |
+  fmtScore |
+  join -t, - "$2" |
+  maskMS >tmp_maskMS.csv
+
+cat tmp_maskMS.csv |
+  Rscript --vanilla ./library/maskMIDS.R
+
+cat tmp_maskMS.csv |
+  Rscript --vanilla ./library/maskMIDS.py
 
 SAM=tmp_long.sam
 MIDS=tmp_mids_long.csv
