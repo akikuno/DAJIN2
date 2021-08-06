@@ -23,7 +23,7 @@ timestamp() {
 load_control() {
   find "$1" -type f |
     while read -r line; do
-      output=${line#/tmp/}
+      output=${line#/tmp/DAJIN/}
       output=${output%.gz}
       gzip -dc "$line" >.DAJIN_temp/"$output"
     done

@@ -29,10 +29,10 @@ threads=$(getconf _NPROCESSORS_ONLN | awk '{print $0-2}')
 genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
-sh misc/compile.sh
+sh misc/build.sh
 ###
-# rm -rf .DAJIN_temp DAJIN_results /tmp/DAJIN
-# ./misc/compile.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+# rm -rf .DAJIN_temp DAJIN_results /tmp/DAJIN/
+# sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
 # Stx2
@@ -46,9 +46,10 @@ threads=$(getconf _NPROCESSORS_ONLN | awk '{num=$0-2; if(num>0) print num; else 
 genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
-sh misc/compile.sh
-# rm -rf .DAJIN_temp DAJIN_results
-# sh misc/compile.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+sh misc/build.sh
+###
+# rm -rf .DAJIN_temp DAJIN_results /tmp/DAJIN/
+# sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
 # Cables2 BC14
