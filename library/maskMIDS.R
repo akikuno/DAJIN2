@@ -30,16 +30,10 @@ freqD <- function(vect) {
   return(as.integer(tmp_table_D))
 }
 
-
 freq <- unlist(apply(df_replaceN, 2, freqD))
 freq <- log(freq)
 hotelling <- (freq - mean(freq))^2/var(freq)
 hotelling_cols <- which(hotelling > qchisq(0.95, 1))
-plot(freq[800:1000])
-freq[806]
-freq[2000]
-freq[2500]
-freq[500]
 
 replaceD <- function (vect) {
   tmp_table <- table(vect)
