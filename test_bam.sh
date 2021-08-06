@@ -1,3 +1,5 @@
+#!/bin/bash
+
 . library/maskFastq.sh
 gzip -dc $control >tmp_control.fq
 gzip -dc $control | maskFastq >tmp_control_mask.fq

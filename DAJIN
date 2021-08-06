@@ -347,7 +347,7 @@ save_control() {
     grep "$control_name" |
     while read -r line; do
       output=${line#\.DAJIN_temp/}.gz
-      gzip -c "$line" >/tmp/"$output"
+      gzip -c "$line" >/tmp/DAJIN/"$output"
     done
 }
 
@@ -384,6 +384,132 @@ maskFastq() {
     }
     $2=seq
   }1'
+}
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/maskMIDS.R
+#!/usr/bin/env Rscript
+
+df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
+# df <- read.table("tmp.csv", sep = ",", header = FALSE, row.names = 1)
+
+replaceN <- function (vect) {
+  tmp_table <- table(vect)
+  tmp_table_omitN <- tmp_table[!grepl("N|n", names(tmp_table))]
+  tmp_max <- which.max(tmp_table_omitN)
+  tmp_names <- names(tmp_max)[1]
+  if (length(tmp_names) == 0) {
+    tmp_names <- "M"
+  }
+  vect[grepl("N|n", vect)] <- tmp_names
+  return(vect)
+}
+
+df_replaceN <- apply(df, 2, replaceN)
+
+# replace D
+# Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
+# それ以外→そのまま
+
+freqIDS <- function(vect) {
+  tmp_table <- table(vect)
+  tmp_table_omitM <- tmp_table[names(tmp_table) != "M"]
+  tmp_max <- which.max(tmp_table_omitM)
+  if (length(tmp_max) == 0) {
+    tmp_max <- 0
+  }
+  return(as.integer(tmp_max))
+}
+
+freq <- unlist(apply(df_replaceN, 2, freqIDS))
+hotelling <- (freq - mean(freq))^2/var(freq)
+hotelling_cols <- which(hotelling > qchisq(0.95, 1))
+
+replaceD <- function (vect) {
+  tmp_table <- table(vect)
+  tmp_max <- which.max(tmp_table)
+  tmp_names <- names(tmp_max)[1]
+  if (tmp_names != "D") {
+    vect[vect == "D"] <- tmp_names
+  }
+  return(vect)
+}
+
+if (length(hotelling_cols) > 0) {
+  df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
+}
+
+write.table(df_replaceN, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/maskMIDS.sh
+#!/bin/sh
+
+fmtScore() {
+  cat - |
+    grep -v "^@" |
+    grep "cs:Z" |
+    sort -k 1,1 -k 4,4n |
+    cut -f 1,6,11 |
+    awk '{gsub(",", "_", $NF)}1' |
+    awk '
+      function trimcrip(cigar, score) {
+        match(cigar, /[0-9][0-9]*S/)
+        leftclip=substr(cigar, RSTART, RLENGTH-1)
+        sub(/[0-9][0-9]*S/, "", cigar)
+        match(cigar, /[0-9][0-9]*S/)
+        rightclip=substr(cigar, RSTART, RLENGTH-1)
+        score=substr(score, leftclip+1)
+        score=substr(score, 1, length(score)-rightclip)
+        return score
+      } {
+      n_id[$1]++
+      cigar=$2
+      score=$3
+      if(cigar~/S/) {
+        score_of[$1] = score_of[$1] trimcrip(cigar, score)
+      }
+      else {
+        score_of[$1] = score_of[$1] score
+      }
+    } END {
+      for(id in score_of) {
+        print id","score_of[id]
+      }
+    }' |
+    sort -t,
+}
+
+maskMS() {
+  awk -F, 'BEGIN {OFS=","} {
+    readid=$1
+    split($2, cigar, "")
+    idx=1
+    for (i=3; i<=NF; i++) {
+      if ($i ~ /[MS]/ && cigar[idx] ~ /[!"#$%&'\''()*]/) {
+        $i="N"
+        idx++
+      }
+      else if ($i == "D") {
+        idx=idx
+      }
+      else if ($i ~ /[0-9]/) {
+        I=$i
+        sub(/[MDSmis]$/, "", I)
+        idx=idx+I+1
+      }
+      else {
+        idx++
+      }
+    }
+  }1' |
+    cut -d, -f1,3-
+}
+
+maskMIDS() {
+  cat "$1" |
+    fmtScore |
+    join -t, - "$2" |
+    maskMS |
+    Rscript --vanilla .DAJIN_temp/library/maskMIDS.R
 }
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/midsToscore.sh
@@ -522,10 +648,7 @@ write.table(df,
   sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
 )
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/samToPhred.sh
-#!/bin/sh
-EMBED
-cat <<'EMBED' >.DAJIN_temp/library/samTomids.sh
+cat <<'EMBED' >.DAJIN_temp/library/samToMIDS.sh
 #!/bin/sh
 # shellcheck disable=SC1091,SC2120
 
@@ -609,7 +732,7 @@ spaceTocomma() {
   sed -e "s/  */,/g" -e "s/,$//"
 }
 
-samTomids() (
+samToMIDS() (
   if [ -p /dev/stdin ] && [ "$#" -eq 0 ]; then
     cat -
   elif [ -r "$1" ]; then
@@ -686,6 +809,9 @@ samTomids() (
     sort -t,
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/samToPhred.sh
+#!/bin/sh
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/scoreToScalar.sh
 #!/bin/sh
 
@@ -746,9 +872,10 @@ EMBED
 . .DAJIN_temp/library/formatFasta.sh
 . .DAJIN_temp/library/general.sh
 . .DAJIN_temp/library/maskFastq.sh
+. .DAJIN_temp/library/maskMIDS.sh
 . .DAJIN_temp/library/midsToscore.sh
+. .DAJIN_temp/library/samToMIDS.sh
 . .DAJIN_temp/library/samToPhred.sh
-. .DAJIN_temp/library/samTomids.sh
 . .DAJIN_temp/library/scoreToScalar.sh
 ARGS="$*" && export ARGS
 cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
@@ -981,8 +1108,8 @@ timestamp "MIDS encoding" >>log_DAJIN.txt
 
 mkdir -p .DAJIN_temp/mids /tmp/DAJIN/mids
 
-multi_samTomids() {
-  cmd='. .DAJIN_temp/library/samTomids.sh; samTomids '
+multi_samToMIDS() {
+  cmd='. .DAJIN_temp/library/samToMIDS.sh; samToMIDS '
   find .DAJIN_temp/sam/"${1:-}"*.sam |
     while read -r line; do
       output="${line%.*}".csv
@@ -998,11 +1125,47 @@ multi_samTomids() {
 }
 
 if find /tmp/DAJIN/mids/"$control_name"* 1>/dev/null 2>&1; then
-  multi_samTomids "$sample_name"
+  multi_samToMIDS "$sample_name"
   load_control /tmp/DAJIN/mids
 else
-  multi_samTomids
+  multi_samToMIDS
   save_control .DAJIN_temp/mids
+fi
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-mids-mask.sh
+#!/bin/sh
+
+#----------------------------------------------------------
+timestamp "MIDS encoding" >>log_DAJIN.txt
+#----------------------------------------------------------
+
+mkdir -p .DAJIN_temp/midsmask /tmp/DAJIN/midsmask
+
+multi_maskMIDS() {
+  cmd='. .DAJIN_temp/library/maskMIDS.sh; maskMIDS '
+  find .DAJIN_temp/sam/"${1:-}"*.sam -print0 |
+    xargs -0 -I@ basename @ |
+    sed "s/.sam$//" |
+    while read -r line; do
+      sam=.DAJIN_temp/sam/"$line".sam
+      mids=.DAJIN_temp/mids/"$line".csv
+      output="$(echo $mids | sed "s|/mids/|/midsmask/|")"
+      echo "$sam" "$mids" |
+        sed "s|^|$cmd|" |
+        sed "s|$| >$output \&|"
+    done |
+    awk -v th="${threads:-1}" '
+    {if (NR%(th+1) == 0) print "wait"}
+    END {print "wait"}1' |
+    sh
+}
+
+if find /tmp/DAJIN/midsmask/"$control_name"* 1>/dev/null 2>&1; then
+  multi_maskMIDS "$sample_name"
+  load_control /tmp/DAJIN/midsmask/
+else
+  multi_maskMIDS
+  save_control .DAJIN_temp/midsmask/
 fi
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
@@ -1155,6 +1318,7 @@ EMBED
 . .DAJIN_temp/script/03-preprocess/015-fastq.sh
 . .DAJIN_temp/script/03-preprocess/020-sam.sh
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
+. .DAJIN_temp/script/03-preprocess/040-mids-mask.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
 . .DAJIN_temp/script/04-phasing/003-scalar.sh
 . .DAJIN_temp/script/04-phasing/025-classif.sh

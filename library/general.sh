@@ -34,7 +34,7 @@ save_control() {
     grep "$control_name" |
     while read -r line; do
       output=${line#\.DAJIN_temp/}.gz
-      gzip -c "$line" >/tmp/"$output"
+      gzip -c "$line" >/tmp/DAJIN/"$output"
     done
 }
 

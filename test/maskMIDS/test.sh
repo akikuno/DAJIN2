@@ -15,6 +15,11 @@ MIDS=tmp_mids.csv
 SAM=tmp_long.sam
 MIDS=tmp_mids_long.csv
 
+set "$SAM" "$MIDS"
+set .DAJIN_temp/sam/barcode31_albino.sam .DAJIN_temp/mids/barcode31_albino.csv
+set .DAJIN_temp/sam/barcode31_control.sam .DAJIN_temp/mids/barcode31_control.csv
+maskMIDS "$SAM" "$MIDS"
+
 cat "$SAM" |
   grep -v "^@" |
   sort -k 1,1 -k 4,4n |
@@ -68,4 +73,53 @@ cat "$SAM" |
       }
     }
   }1' |
-  cut -d, -f1,3-
+  cut -d, -f1,3- |
+  ./test_table.R
+
+# maskMIDS
+## 最大頻度のMIDSを抽出
+## Nを最大頻度のMIDSに置換する
+## すべてNの場合はMに置換する
+
+cp tmp_ tmp.csv
+cat tmp.csv | ./test_table.R
+
+cat tmp_ |
+  cut -d, -f1-3 |
+  awk -F, '{
+    id[NR]=$1
+    for (i=2; i<=NF; i++) {
+      mids[i, NR]=$i
+      count[i,$i]++
+    }
+  } END {
+    for (key in count) {
+      split(key, sep, SUBSEP)
+      num=count[key]
+      i=sep[1]
+      midsn=sep[2]
+      if (num==NR && midsn=="N") {
+        for (nr=1;nr<=NR;nr++){
+          mids[i, nr] = "M"
+        }
+      }
+      else if (num==NR) {
+        for (nr=1;nr<=NR;nr++){
+          mids[i, nr] = midsn
+        }
+      }
+      else if (num<NR) {
+        for (nr=1;nr<=NR;nr++){
+          mids[i, nr] = midsn
+        }
+      }
+    }
+    # output
+    for (nr=1; nr<=NR; nr++) {
+      printf id[nr]","
+      for(i=2; i<=NF; i++) {
+        printf mids[i, nr]","
+      }
+      print ""
+    }
+  }'

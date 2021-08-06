@@ -1,0 +1,58 @@
+#!/usr/bin/env Rscript
+
+df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
+# df <- read.table("tmp.csv", sep = ",", header = FALSE, row.names = 1)
+
+replaceN <- function (vect) {
+  tmp_table <- table(vect)
+  tmp_table_omitN <- tmp_table[!grepl("N|n", names(tmp_table))]
+  tmp_max <- which.max(tmp_table_omitN)
+  tmp_names <- names(tmp_max)[1]
+  if (length(tmp_names) == 0) {
+    tmp_names <- "M"
+  }
+  vect[grepl("N|n", vect)] <- tmp_names
+  return(vect)
+}
+
+df_replaceN <- apply(df, 2, replaceN)
+
+# replace D
+# Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
+# それ以外→そのまま
+
+freqD <- function(vect) {
+  tmp_table <- table(vect)
+  tmp_table_D <- tmp_table[names(tmp_table) == "D"]
+  if (length(tmp_table_D) == 0) {
+    tmp_table_D <- 0
+  }
+  return(as.integer(tmp_table_D))
+}
+
+
+freq <- unlist(apply(df_replaceN, 2, freqD))
+freq <- log(freq)
+hotelling <- (freq - mean(freq))^2/var(freq)
+hotelling_cols <- which(hotelling > qchisq(0.95, 1))
+plot(freq[800:1000])
+freq[806]
+freq[2000]
+freq[2500]
+freq[500]
+
+replaceD <- function (vect) {
+  tmp_table <- table(vect)
+  tmp_max <- which.max(tmp_table)
+  tmp_names <- names(tmp_max)[1]
+  if (tmp_names != "D") {
+    vect[vect == "D"] <- tmp_names
+  }
+  return(vect)
+}
+
+if (length(hotelling_cols) > 0) {
+  df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
+}
+
+write.table(df_replaceN, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)
