@@ -1,6 +1,6 @@
 #!/bin/sh
 
-timestamp "HDBSCAN" | tee log_DAJIN.txt
+timestamp "Clustering" | tee log_DAJIN.txt
 
 mkdir -p .DAJIN_temp/clustering/
 

@@ -14,7 +14,7 @@ find .DAJIN_temp/mids/*.csv |
       for (i=NF-49; i<=NF; i++) {
         if ($i=="D") rightD++
       }
-      if ( leftD!=50 || rightD!=50)
+      if ( leftD!=50 && rightD!=50)
         print $0
       }' >.DAJIN_temp/midsfilter/"$(basename "$line")"
   done
