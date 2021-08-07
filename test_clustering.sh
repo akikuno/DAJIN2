@@ -1,3 +1,7 @@
+#!/bin/sh
+
+# shellcheck disable=SC1090,SC1091,SC2002,SC2030,SC2086,SC2097,SC2098,SC2046
+
 # ちいさめ欠失
 Read name = 0c061bae-a8b6-4a1e-80bb-a2330419283c
 # おおきめ欠失
