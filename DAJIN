@@ -271,6 +271,111 @@ calcHotelling() (
     }'
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/clustering.py
+import sys
+import os
+import numpy as np
+import pandas as pd
+import hdbscan
+import joblib
+from sklearn.decomposition import PCA
+
+################################################################################
+# Input
+################################################################################
+
+args = sys.argv
+if args != [""]:
+    df_score = pd.read_csv(args[1], header=None)
+    threads = int(args[2])
+else:
+    df_score = pd.read_csv(".DAJIN_temp/clustering/tmp_score.csv", header=None)
+    threads = os.cpu_count() - 1
+
+tmp = (df_score.sum(axis=0) != 0).to_list()
+df_score = df_score.loc[:, tmp]
+
+################################################################################
+# PCA as a preprocessing step
+################################################################################
+
+pca = PCA(n_components=5)
+pc_score = pca.fit_transform(df_score)
+prop_var = pca.explained_variance_ratio_
+pc_score = pd.DataFrame(pc_score) * prop_var
+
+################################################################################
+# Clustering
+################################################################################
+
+# ===========================================================
+# Extract cluster size with the largest cluster size
+# and the most frequent cluster numbers
+# ===========================================================
+
+
+def hdb_cl_num(cl_size):
+    cl = hdbscan.HDBSCAN(
+        min_samples=1,
+        min_cluster_size=cl_size,
+        core_dist_n_jobs=threads,
+        memory=joblib.Memory(location=".DAJIN_temp/clustering", verbose=0),
+    )
+    tmp = cl.fit_predict(pc_score)
+    return len(np.unique(tmp))
+
+
+def hdb_predict(data, cl_size):
+    cl = hdbscan.HDBSCAN(
+        min_samples=1,
+        min_cluster_size=cl_size,
+        core_dist_n_jobs=threads,
+        memory=joblib.Memory(location=".DAJIN_temp/clustering", verbose=0),
+    )
+    return cl.fit_predict(data) + 1
+
+
+cl_range = [int(n) for n in np.linspace(
+    len(pc_score) * 0.2, len(pc_score) * 0.4, 10) + 2]
+
+hdb = [hdb_cl_num(cl_num) for cl_num in cl_range]
+# hdb = [i for i in hdb if i != 1]
+
+if len(hdb) > 0:
+    _uniqs, _counts = np.unique(hdb, return_counts=True)
+    max_mode = max(_uniqs[_counts == np.amax(_counts)])
+    cl_index = max([i for i, x in enumerate(hdb) if x == max_mode])
+    cl_size = cl_range[cl_index]
+else:
+    cl_size = max(cl_range)
+
+
+cl_hdb = hdb_predict(pc_score, cl_size) + 2
+
+# ===========================================================
+# Repeat clustering
+# ===========================================================
+
+for _cl in np.unique(cl_hdb):
+    if sum(cl_hdb == _cl) <= 5:
+        continue
+    _df_score = df_score[cl_hdb == _cl]
+    _pca = PCA(n_components=5)
+    _pc_score = _pca.fit_transform(_df_score)
+    _prop_var = _pca.explained_variance_ratio_
+    _pc_score = pd.DataFrame(_pc_score) * _prop_var
+    _cl_size = int(len(_pc_score) * 0.4 + 2)
+    _cl_hdb = hdb_predict(_pc_score, _cl_size) + 2
+    cl_hdb[cl_hdb == _cl] = _cl_hdb + (_cl * 100)
+
+cl_hdb = pd.Series(cl_hdb).rank(method="dense").astype(int)
+
+################################################################################
+# Output
+################################################################################
+
+cl_hdb.to_csv(sys.stdout, index=False, header=False)
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/colTable.R
 #!/usr/bin/env Rscript
 
@@ -390,9 +495,9 @@ cat <<'EMBED' >.DAJIN_temp/library/maskMIDS.R
 #!/usr/bin/env Rscript
 
 df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
-# df <- read.table("tmp.csv", sep = ",", header = FALSE, row.names = 1)
+# df <- read.table("tmp_maskMS.csv", sep = ",", header = FALSE, row.names = 1)
 
-replaceN <- function (vect) {
+replacen <- function(vect) {
   tmp_table <- table(vect)
   tmp_table_omitN <- tmp_table[!grepl("N|n", names(tmp_table))]
   tmp_max <- which.max(tmp_table_omitN)
@@ -404,11 +509,11 @@ replaceN <- function (vect) {
   return(vect)
 }
 
-df_replaceN <- apply(df, 2, replaceN)
+df_replacen <- apply(df, 2, replacen)
 
-#? （ほかの部位のほうが異常にDが集積しているという判定がされるため, ）
-#? アルビノ点変異部位には効果がありませんでした.
-#?  一旦コメントアウトします（2021-08-06）
+# ? （ほかの部位のほうが異常にDが集積しているという判定がされるため, ）
+# ? アルビノ点変異部位には効果がありませんでした.
+# ?  一旦コメントアウトします（2021-08-06）
 # # replace D
 # # Dの頻度が”異常”かつDが最頻度ではない→最頻度に置換
 # # それ以外→そのまま
@@ -422,7 +527,7 @@ df_replaceN <- apply(df, 2, replaceN)
 #   return(as.integer(tmp_table_D))
 # }
 
-# freq <- unlist(apply(df_replaceN, 2, freqD))
+# freq <- unlist(apply(df_replacen, 2, freqD))
 # freq <- log(freq)
 # hotelling <- (freq - mean(freq))^2/var(freq)
 # hotelling_cols <- which(hotelling > qchisq(0.95, 1))
@@ -438,10 +543,17 @@ df_replaceN <- apply(df, 2, replaceN)
 # }
 
 # if (length(hotelling_cols) > 0) {
-#   df_replaceN[, hotelling_cols] <- apply(df_replaceN[, hotelling_cols], 2, replaceD)
+#   df_replacen[, hotelling_cols] <- apply(df_replacen[, hotelling_cols], 2, replaceD)
 # }
 
-write.table(df_replaceN, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)
+write.table(df_replacen, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/maskMIDS.py
+import pandas as pd
+
+df = pd.read_csv("tmp_maskMS.csv", header=None)
+
+tmp = df[3]
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/maskMIDS.sh
 #!/bin/sh
@@ -1058,6 +1170,7 @@ mkdir -p .DAJIN_temp/fasta/
 formatFasta "${alleles}" |
   while read -r line; do
     output="$(echo ${line#>} | cut -d " " -f 1)"
+    [ _"$output" = "_wt" ] && output="control"
     echo "$line" | tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
   done
 EMBED
@@ -1338,7 +1451,60 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/040-clustering.sh
 #!/bin/sh
 
-echo END
+timestamp "HDBSCAN" | tee log_DAJIN.txt
+
+mkdir -p .DAJIN_temp/clustering/
+
+cat .DAJIN_temp/sv/"$sample_name".csv |
+  cut -d, -f 1 |
+  sort |
+  uniq -c |
+  while read -r num classif; do
+    allele="$classif"
+    [ _"$classif" = "_SV" ] && allele=control
+    #
+    grep "^$classif" .DAJIN_temp/sv/"$sample_name".csv |
+      cut -d, -f2 |
+      sort -u >.DAJIN_temp/clustering/tmp_id.csv
+    #
+    if [ "$num" -gt 5 ]; then
+      cat .DAJIN_temp/score/"$sample_name"_"$allele".csv |
+        join -t, - .DAJIN_temp/clustering/tmp_id.csv |
+        cut -d, -f2- >.DAJIN_temp/clustering/tmp_score.csv
+      python .DAJIN_temp/library/clustering.py .DAJIN_temp/clustering/tmp_score.csv "$threads"
+    else
+      awk -v num="$num" 'BEGIN{for(i=1;i<=num;i++) print 1}'
+    fi |
+      paste -d, - .DAJIN_temp/clustering/tmp_id.csv |
+      sed "s/^/${classif},/"
+  done |
+  #* format allele numbers
+  awk -F, 'BEGIN {OFS=","; clust_num=1} {
+    allele=$1
+    clust=$2
+    id=$1","$2
+    if(array_allele[allele]=="") {
+      array_allele[allele]++
+      clust_num=1
+    }
+    if(array_id[id]=="") {
+      array_id[id]++
+      allele_num[id]=clust_num
+      clust_num++
+      }
+    $2=allele_num[id]
+  }1' |
+  sort -u >.DAJIN_temp/clustering/"$sample_name".csv
+
+rm .DAJIN_temp/clustering/tmp* 2>/dev/null || :
+
+###? DEBUG
+cat .DAJIN_temp/clustering/"$sample_name".csv |
+  cut -d, -f 1-2 |
+  sort |
+  uniq -c
+
+echo "CLUSTERING FINISH"
 exit 0
 EMBED
 . .DAJIN_temp/script/01-init/01-init.sh

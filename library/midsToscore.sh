@@ -115,5 +115,5 @@ midsToscore() {
   rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
   colScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_col_"$suffix"
   rowColSums .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
-  # rm .DAJIN_temp/tmp_*"$suffix"
+  rm .DAJIN_temp/tmp_*"$suffix"
 }
