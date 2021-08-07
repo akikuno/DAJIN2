@@ -7,14 +7,14 @@ error_exit() {
   exit 1
 }
 
-terminate() {
-  trap '' TERM
-  kill -TERM 0
-  [ "${TEST:-}" ] || rm -rf .DAJIN_temp/ 2>/dev/null
-  exit "$1"
-}
-trap "terminate 130" INT
-trap "terminate 143" TERM
+# terminate() {
+#   trap '' TERM
+#   kill -TERM 0
+#   [ "${TEST:-}" ] || rm -rf .DAJIN_temp/ 2>/dev/null
+#   exit "$1"
+# }
+# trap "terminate 130" INT
+# trap "terminate 143" TERM
 
 timestamp() {
   echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"

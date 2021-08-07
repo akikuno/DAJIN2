@@ -46,6 +46,7 @@ threads=$(getconf _NPROCESSORS_ONLN | awk '{num=$0-2; if(num>0) print num; else 
 genome=mm10
 control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
+TEST=TRUE
 sh misc/build.sh
 bash -n ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 ###
