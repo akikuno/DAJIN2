@@ -101,7 +101,7 @@ rowScore() {
 }
 
 colScore() {
-  Rscript --vanilla .DAJIN_temp/library/colTable.R "$1"
+  Rscript --vanilla .DAJIN_temp/library/colScore.R "$1"
 }
 
 rowColSums() {

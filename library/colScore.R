@@ -4,7 +4,7 @@ args <- commandArgs(trailingOnly = TRUE)
 if (length(args) > 0) {
   df <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
 } else {
-  df <- read.table(".DAJIN_temp/tmp_expansion_barcode30_inversion.csv", sep = ",", header = FALSE, row.names = 1)
+  df <- read.table(".DAJIN_temp/tmp_expansion_barcode25_control.csv", sep = ",", header = FALSE, row.names = 1)
 }
 
 list_table <- apply(df, 2, table)
