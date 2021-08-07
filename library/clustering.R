@@ -22,13 +22,9 @@ if (length(args) > 0) {
   )
   threads <- as.integer(parallel::detectCores() - 1)
 }
+
 df_score <- df_score[, colSums(df_score) != 0]
-dev.new()
-png("tmp.png")
-plot(t(df_score[1, ]))
-plot(t(df_score[2, ]))
-plot(t(df_score[3, ]))
-dev.off()
+
 ################################################################################
 # PCA as a preprocessing step
 ################################################################################
@@ -46,8 +42,8 @@ pc_score <- sweep(pc_score, 2, prop_var, FUN = "*")
 # ggplot(df_pca, aes(x = PC1, y = PC2)) +
 #   geom_point()
 
-ggplot(pc_score, aes(x = seq_along(.data$PC1), y = PC1)) +
-  geom_point()
+# ggplot(pc_score, aes(x = seq_along(.data$PC1), y = PC1)) +
+#   geom_point()
 
 # sum(pc_score$PC1 > 0)
 # sum(pc_score$PC1 < 0)
@@ -76,7 +72,7 @@ cl_seq <-
   as.integer(seq(nrow(pc_score) * 0.2, nrow(pc_score) * 0.4, length.out = 10)) + 2
 
 hdb <- parallel::mclapply(cl_seq,
-  function(.x) length(unique(dbscan::hdbscan(df_score, minPts = .x)$cluster)),
+  function(.x) length(unique(dbscan::hdbscan(pc_score, minPts = .x)$cluster)),
   mc.cores = threads
 )
 hdb <- unlist(setNames(hdb, cl_seq))

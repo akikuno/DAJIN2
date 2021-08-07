@@ -7,6 +7,7 @@ error_exit() {
   exit 1
 }
 
+###? DEBUG
 # terminate() {
 #   trap '' TERM
 #   kill -TERM 0

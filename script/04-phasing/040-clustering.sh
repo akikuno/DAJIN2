@@ -14,11 +14,15 @@ cat .DAJIN_temp/sv/"$sample_name".csv |
     #
     grep "^$classif" .DAJIN_temp/sv/"$sample_name".csv |
       cut -d, -f2 |
-      sort -u >.DAJIN_temp/clustering/tmp_id.csv
+      sort -u |
+      join -t, .DAJIN_temp/score/"$sample_name"_"$allele".csv - |
+      cat >.DAJIN_temp/clustering/tmp_sample.csv
     #
+    cat .DAJIN_temp/clustering/tmp_sample.csv |
+      cut -d, -f1 >.DAJIN_temp/clustering/tmp_id.csv
+
     if [ "$num" -gt 5 ]; then
-      cat .DAJIN_temp/score/"$sample_name"_"$allele".csv |
-        join -t, - .DAJIN_temp/clustering/tmp_id.csv |
+      cat .DAJIN_temp/clustering/tmp_sample.csv |
         cut -d, -f2- >.DAJIN_temp/clustering/tmp_score.csv
       python .DAJIN_temp/library/clustering.py .DAJIN_temp/clustering/tmp_score.csv "$threads"
     else
@@ -47,11 +51,9 @@ cat .DAJIN_temp/sv/"$sample_name".csv |
 
 rm .DAJIN_temp/clustering/tmp* 2>/dev/null || :
 rm -rf .DAJIN_temp/clustering/joblib/ 2>/dev/null || :
+
 # ###? DEBUG
 # cat .DAJIN_temp/clustering/"$sample_name".csv |
 #   cut -d, -f 1-2 |
 #   sort |
 #   uniq -c
-
-# echo "CLUSTERING FINISH"
-# exit 0
