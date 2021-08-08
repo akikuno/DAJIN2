@@ -1,8 +1,11 @@
 #!/bin/sh
 
-timestamp "Clustering" | tee log_DAJIN.txt
+#----------------------------------------------------------
+timestamp "Clustering" log_DAJIN.txt
+#----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/clustering/
+. .DAJIN_temp/library/filterMinorCluster.sh
 
 cat .DAJIN_temp/sv/"$sample_name".csv |
   cut -d, -f 1 |
@@ -31,17 +34,20 @@ cat .DAJIN_temp/sv/"$sample_name".csv |
       paste -d, - .DAJIN_temp/clustering/tmp_id.csv |
       sed "s/^/${classif},/"
   done |
+  if [ _"${filter:-on}" = _"on" ]; then
+    filterMinorCluster
+  fi |
   #* format allele numbers
   awk -F, 'BEGIN {OFS=","; clust_num=1} {
     allele=$1
     clust=$2
     id=$1","$2
-    if(array_allele[allele]=="") {
-      array_allele[allele]++
+    if(a_allele[allele]=="") {
+      a_allele[allele]++
       clust_num=1
     }
-    if(array_id[id]=="") {
-      array_id[id]++
+    if(a_id[id]=="") {
+      a_id[id]++
       allele_num[id]=clust_num
       clust_num++
       }
