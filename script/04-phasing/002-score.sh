@@ -7,7 +7,7 @@ Classify alleles...
 EOF
 
 #----------------------------------------------------------
-timestamp "MIDS scoring" >>log_DAJIN.txt
+timestamp "MIDS scoring" log_DAJIN.txt
 #----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/score /tmp/DAJIN/score

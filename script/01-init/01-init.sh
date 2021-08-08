@@ -7,5 +7,6 @@ export LC_ALL=C
 [ "${BASH_VERSION:-}" ] && set -o posix -o pipefail
 [ "${ZSH_VERSION:-}" ] && setopt shwordsplit interactivecomments
 
-timestamp "Start analysis" | tee log_DAJIN.txt
-echo "DAJIN $*" | tee log_DAJIN.txt
+: >log_DAJIN.txt
+timestamp "Start analysis" log_DAJIN.txt
+echo "DAJIN $*" >>log_DAJIN.txt

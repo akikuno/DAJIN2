@@ -19,7 +19,7 @@ cat document/version.md |
 # Make directories
 cat <<EOF >>DAJIN
 find ./ -type d |
-  grep -e "./library" -e "./script" -e "./document" -e "./utils" |
+  grep -e "./library" -e "./script" -e "./document" -e "./util" |
   grep -v -e "past" -e ".DAJIN_temp" |
   sort -u |
   sed "s|^./|.DAJIN_temp/|" |

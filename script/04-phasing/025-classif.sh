@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #----------------------------------------------------------
-timestamp "Allele classification" >>log_DAJIN.txt
+timestamp "Allele classification" log_DAJIN.txt
 #----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/classif

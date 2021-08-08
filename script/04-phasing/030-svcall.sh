@@ -1,18 +1,14 @@
 #!/bin/sh
 
 #----------------------------------------------------------
-timestamp "SV allele detetction" >>log_DAJIN.txt
+timestamp "SV allele detetction" log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/sv/
 . .DAJIN_temp/library/calcHotelling.sh
-
-cat .DAJIN_temp/classif/"$sample_name".csv |
-  tee .DAJIN_temp/sv/tmp_sample |
-  cut -d, -f3 |
-  cat >.DAJIN_temp/sv/tmp_sample_score
-
+mkdir -p .DAJIN_temp/sv/
 control_scalar=$(find .DAJIN_temp/scalar/"$control_name"*)
+
+# control =================================================
 # LOFだと値が小さすぎる（きれいにマッピングされすぎる）リードもSVと判定されてしまうため,
 # 中央値よりも値が小さいリードはすべて正常と判定させる.
 median_score=$(
@@ -28,6 +24,15 @@ cat "$control_scalar" |
   paste -d, "$control_scalar" - |
   awk -F, -v median="$median_score" '!($2 > median && $NF > 3.841459) {print $2}' | #qchisq(0.95,1)
   cat >.DAJIN_temp/sv/tmp_control_score
+
+# sample =================================================
+
+cat .DAJIN_temp/classif/"$sample_name".csv |
+  tee .DAJIN_temp/sv/tmp_sample |
+  cut -d, -f3 |
+  cat >.DAJIN_temp/sv/tmp_sample_score
+
+# SV detection  =================================================
 
 python .DAJIN_temp/library/svLof.py \
   -c .DAJIN_temp/sv/tmp_control_score \

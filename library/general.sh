@@ -18,7 +18,8 @@ error_exit() {
 # trap "terminate 143" TERM
 
 timestamp() {
-  echo "$(date +'%Y-%m-%d %H:%M:%S') | $*"
+  echo "$(date +'%Y-%m-%d %H:%M:%S') | $1" >>"${2:-log_DAJIN.txt}"
+  echo "$(date +'%Y-%m-%d %H:%M:%S') | $1" >&2
 }
 
 load_control() {

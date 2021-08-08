@@ -1,6 +1,8 @@
 #!/bin/sh
 
-timestamp "Generate BAM files" | tee log_DAJIN.txt
+#----------------------------------------------------------
+timestamp "Generate BAM files" log_DAJIN.txt
+#----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/bam/ /tmp/DAJIN/bam/
 
