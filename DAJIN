@@ -1843,40 +1843,6 @@ rm -rf .DAJIN_temp/clustering/joblib/ 2>/dev/null || :
 #   sort |
 #   uniq -c
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/04-phasing/050-filter.sh
-#!/bin/sh
-
-filterMinorCluster() {
-  timestamp "Filter minor alleles" | tee log_DAJIN.txt 1>&2
-
-  threshold=1 # one percentage
-
-  cat - |
-    tee .DAJIN_temp/clustering/tmp_"$sample_name" |
-    cut -d, -f1-2 |
-    sort |
-    uniq -c |
-    awk '{
-      sum+=$1
-      num[NR]=$1
-      allele[NR]=$2
-      } END {
-      for(i=1; i<=NR; i++)
-        print allele[i],num[i],num[i]/sum*100
-    }' |
-    awk '$3>"$threshold" {print $1}' |
-    tr "," "_" |
-    sort >.DAJIN_temp/clustering/tmp_allele
-
-  cat .DAJIN_temp/clustering/tmp_"$sample_name" |
-    sed "s/,/_/" |
-    sort |
-    join -t, - .DAJIN_temp/clustering/tmp_allele |
-    sed "s/_/,/"
-
-  rm .DAJIN_temp/clustering/tmp_*
-}
-EMBED
 cat <<'EMBED' >.DAJIN_temp/script/05-bam/010-bam.sh
 #!/bin/sh
 
@@ -1934,7 +1900,7 @@ mkdir -p .DAJIN_temp/consensus /tmp/DAJIN/consensus
 
 # control =================================================
 
-cat .DAJIN_temp/midsmask/barcode32_control.csv |
+cat .DAJIN_temp/midsmask/"$control_name"_control.csv |
   cut -d, -f 2- |
   sed "s/^/control,/" |
   sed "s/,[0-9][0-9]*[MDS]/,I/g" |
@@ -1947,8 +1913,22 @@ cat .DAJIN_temp/midsmask/barcode32_control.csv |
 
 cat .DAJIN_temp/clustering/"$sample_name".csv |
   cut -d, -f1-2 |
-  sort -u
-.DAJIN_temp/midsmask/"$sample_name"*_control.csv |
+  sort -u |
+  while read -r line; do
+    grep "^$line" .DAJIN_temp/clustering/"$sample_name".csv |
+      cut -d, -f3 |
+      sort -u >tmp
+
+    cat .DAJIN_temp/midsmask/"$sample_name"*_control.csv |
+      join -t, - tmp |
+      sed "s/^/control,/" |
+      sed "s/,[0-9][0-9]*[MDS]/,I/g" |
+      calcFreqMIDS |
+      sed "s/,/@/" |
+      sort -u -t, |
+      join -t, - .DAJIN_temp/consensus/tmp_control_midsfreq.csv
+
+  done
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/06-consensus/consensus.sh
 #!/bin/sh
@@ -1995,7 +1975,6 @@ EMBED
 . .DAJIN_temp/script/04-phasing/025-classif.sh
 . .DAJIN_temp/script/04-phasing/030-svcall.sh
 . .DAJIN_temp/script/04-phasing/040-clustering.sh
-. .DAJIN_temp/script/04-phasing/050-filter.sh
 . .DAJIN_temp/script/05-bam/010-bam.sh
 . .DAJIN_temp/script/06-consensus/010-calcFreqMIDS.sh
 . .DAJIN_temp/script/06-consensus/consensus.sh
