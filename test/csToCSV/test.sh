@@ -5,3 +5,8 @@ minimap2 --cs=long -ax map-ont test/csToCSV/ref_long.fa test/csToCSV/que_long.fq
 
 head test/csToCSV/que.sam
 head test/csToCSV/que_long.sam
+
+cat test/csToCSV/que_long.sam |
+  fmtSam |
+  fmtIDS |
+  padding

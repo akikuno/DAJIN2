@@ -18,7 +18,9 @@ else
   cat .DAJIN_temp/midsmask/"$control_name"_control.csv |
     cut -d, -f 2- |
     sed "s/^/control,/" |
-    sed "s/,[0-9][0-9]*[MDS]/,I/g" |
+    sed "s/,[0-9][0-9]*M/,IM/g" |
+    sed "s/,[0-9][0-9]*D/,ID/g" |
+    sed "s/,[0-9][0-9]*S/,IS/g" |
     calcFreqMIDS |
     sed "s/,/@/" |
     sort -u -t, |
@@ -42,7 +44,9 @@ cat .DAJIN_temp/clustering/"$sample_name".csv |
       join -t, - .DAJIN_temp/clustering/tmp_"$suffix" |
       cut -d, -f 2- |
       sed "s/^/control,/" |
-      sed "s/,[0-9][0-9]*[MDS]/,I/g" |
+      sed "s/,[0-9][0-9]*M/,IM/g" |
+      sed "s/,[0-9][0-9]*D/,ID/g" |
+      sed "s/,[0-9][0-9]*S/,IS/g" |
       calcFreqMIDS |
       sed "s/,/@/" |
       sort -u -t, |
