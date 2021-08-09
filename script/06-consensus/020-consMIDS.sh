@@ -30,6 +30,6 @@ find .DAJIN_temp/consensus/freqmids/"$sample_name"* |
       }' |
       tr "@" "," |
       awk -F, '{print $2","$NF}' |
-      sort -t, |
+      sort -t, -n |
       grep ^ >"$outdir"/"$outfile"
   done

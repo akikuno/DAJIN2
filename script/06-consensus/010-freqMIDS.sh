@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. .DAJIN_temp/library/calcFreqMIDS.sh
+. "$(find .DAJIN_temp -name calcFreqMIDS.sh)"
 
 outdir=.DAJIN_temp/consensus/freqmids/
 mkdir -p "$outdir" /tmp/"$outdir"
@@ -38,10 +38,10 @@ cat .DAJIN_temp/clustering/"$sample_name".csv |
     suffix="$(echo "$line" | tr , _)"
     grep "^$line" .DAJIN_temp/clustering/"$sample_name".csv |
       cut -d, -f3 |
-      sort -u >.DAJIN_temp/clustering/tmp_"$suffix"
+      sort -u >"$outdir"/tmp_"$suffix"
 
     cat .DAJIN_temp/midsmask/"$sample_name"*_control.csv |
-      join -t, - .DAJIN_temp/clustering/tmp_"$suffix" |
+      join -t, - "$outdir"/tmp_"$suffix" |
       cut -d, -f 2- |
       sed "s/^/control,/" |
       sed "s/,[0-9][0-9]*M/,IM/g" |
@@ -52,3 +52,5 @@ cat .DAJIN_temp/clustering/"$sample_name".csv |
       sort -u -t, |
       cat >"$outdir"/"$sample_name"_"$suffix".csv
   done
+
+rm "$outdir"/tmp_*

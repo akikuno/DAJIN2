@@ -155,60 +155,11 @@ csToCSV() (
     # cat test/csToCSV/que.sam |
     fmtSam |
     matchToSpace |
-    subToSpace |
-    delToSpace |
+    subToNuc |
+    delToD |
     awk '{$1=$1","}1' |
-    #* Large deletion and Inversion -------------------------
-    awk -F, '
-      function padD(iter,    i,str) {
-        for (i=1; i<=iter; i++) str=str "D"
-        return str
-      }
-
-      function ins_rm(string) {
-        gsub("[acgt][acgt]*", "", string)
-        return string
-      }
-
-      function csCat(c_of, s_of, iter,    i,cs) {
-        for(i=1; i<=iter; i++) {
-          _cs=c_of[i]
-          ins_rm(_cs)
-          gap_length=s_of[i+1] - s_of[i] - gsub(/[ACGTacgt]/, "", _cs)
-          cs=cs c_of[i] padD(gap_length)
-        }
-        cs=cs c_of[iter+1]
-        return cs
-      }
-
-    {
-      num_of_alignment[$1]++
-      start_of[$1]=start_of[$1]","$3
-      allele=$4
-      reflen=$5
-      cstag_of[$1]=cstag_of[$1]","$6
-    } END {
-      for (read_id in num_of_alignment) {
-        sub(/^,/, "" ,start_of[read_id])
-        sub(/^,/, "" ,cstag_of[read_id])
-        split(start_of[read_id], s_of, ",")
-        split(cstag_of[read_id], c_of, ",")
-        #* normal
-        if (num_of_alignment[read_id]==1) {
-          cs=c_of[1]
-        }
-        #* large deletion
-        else if (num_of_alignment[read_id]==2) {
-          cs=csCat(c_of, s_of, 1)
-          }
-        #* inversion
-        else if (num_of_alignment[read_id]==3) {
-          c_of[2] = tolower(c_of[2])
-          cs=csCat(c_of, s_of, 2)
-        }
-      print read_id, s_of[1], reflen, cs
-    }}' |
-    insToNum |
+    largeDelAndInvToNuc |
+    insToNuc |
     padding |
     spaceTocomma |
     awk -F, 'NF==$3+3' |
