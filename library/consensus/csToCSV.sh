@@ -7,21 +7,35 @@
 ################################################################################
 
 fmtSam() {
-
+  cat - |
+    awk '
+    /^@SQ/ {
+      for(i=1;i<=NF;i++) {
+        if($i ~ /^SN:/) allele=$i
+        if($i ~ /^LN:/) reflen=$i
+      }
+      sub(/.*SN:/,"", allele)
+      sub(/.*LN:/,"", reflen)
+    }
+    /cs:Z:=/ {
+      id=$1; flag=$2; start=$4
+      for(i=1;i<=NF;i++) if ($i ~ /^cs:Z:=/) cstag=$i
+      sub("cs:Z:=","",cstag)
+      gsub("=", " ", cstag)
+      gsub(/\+/, " ", cstag)
+      gsub(/\-/, " -", cstag)
+      gsub(/\*/, " *", cstag)
+      gsub("~", " ~", cstag)
+      $1=id","flag","start","allele","reflen
+      $2=cstag
+      print $1,$2
+    }' |
+    sort -t "," -k 3,3n
 }
 
-csToCSV() (
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$*" ]; then
-    cat "$*"
-  else
-    echo "$*"
-  fi |
-    fmtSam |
-    grep -e "^@" -e "cs:Z" |
-    #* Get id,start,length, converted CStag (eg: A+cg*cG-c => A c@cG@c)
-    awk '
+grep -e "^@" -e "cs:Z" |
+  #* Get id,start,length, converted CStag (eg: A+cg*cG-c => A c@cG@c)
+  awk '
       /^@SQ/ && /LN:/ {
         for(i=1;i<=NF;i++) if($i ~ /^LN:/) len=$i
         sub(/.*LN:/,"", len); next}
@@ -34,12 +48,12 @@ csToCSV() (
         gsub(/\+/," ",cstag)
         gsub("~"," ~",cstag)
       print id","start","len" "cstag}' |
-    awk '{sub("$",",",$1)}1' |
-    sed "s/  */ /g" |
-    sed "s/, /,/g" |
-    sort -t, -k 2,2n |
-    #* Large deletion and Inversion -------------------------
-    awk -F, '{
+  awk '{sub("$",",",$1)}1' |
+  sed "s/  */ /g" |
+  sed "s/, /,/g" |
+  sort -t, -k 2,2n |
+  #* Large deletion and Inversion -------------------------
+  awk -F, '{
       id_of[$1]++
       start_of[$1]=start_of[$1]","$2
       reflen=$3
@@ -78,11 +92,11 @@ csToCSV() (
         print id, s_of[1], reflen, cs
       }
     }}' |
-    awk '{$1=$1","; $2=$2","}1' |
-    sed "s/  */ /g" |
-    sed "s/, /,/g" |
-    #* CSV format -------------------------------------------
-    awk 'BEGIN{OFS=","}{
+  awk '{$1=$1","; $2=$2","}1' |
+  sed "s/  */ /g" |
+  sed "s/, /,/g" |
+  #* CSV format -------------------------------------------
+  awk 'BEGIN{OFS=","}{
       for(i=2;i<=NF;i++){
       seq=""
       match($i,/^[acgt]+/)
@@ -106,19 +120,42 @@ csToCSV() (
         $i=seq
       }
     }}1' |
-    sed "s/@,@,@//g" |
-    sed "s/@@@//g" |
-    sed "s/,,/,/g" |
-    sed "s/,$//" |
-    #* Padding ----------------------------------------------
-    awk -F, 'BEGIN{OFS=","} {
-      id=$1;start=$2-1; end=$3; len=(NF-3+start)
-      pad_start=""; pad_end=""
-      for(i=1;i<=start;i++) pad_start=pad_start "=,"
-      $4=pad_start $4
-      for(i=len;i<end;i++) pad_end=pad_end ",="
-      $NF=$NF pad_end
-    }1' |
+  sed "s/@,@,@//g" |
+  sed "s/@@@//g" |
+  sed "s/,,/,/g" |
+  sed "s/,$//" |
+  padding() {
+    awk '{
+    start=$2-1
+    end=$3
+    len=NF-3+start
+    pad_start=""
+    pad_end=""
+    for(i=1;i<=start;i++) pad_start=pad_start "D "
+    $4=pad_start $4
+    for(i=len;i<end;i++) pad_end=pad_end " D"
+    $NF=$NF pad_end
+  }1' |
+      sed "s/  */ /g"
+  }
+
+spaceTocomma() {
+  sed -e "s/  */,/g" -e "s/,$//"
+}
+
+csToCSV() (
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$*" ]; then
+    cat "$*"
+  else
+    echo "$*"
+  fi |
+    fmtSam |
+    padding |
+    spaceTocomma |
+    awk -F, 'NF==$3+3' |
     cut -d, -f 1,4- |
-    sort -t ","
+    grep -v "^$" |
+    sort -t,
 )
