@@ -4,16 +4,16 @@
 timestamp "Generate BAM files" log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/bam/ /tmp/DAJIN/bam/
+mkdir -p .DAJIN_temp/bam/ /tmp/.DAJIN_temp/bam/
 
 # Control
-if find /tmp/DAJIN/bam/"$control_name".bam >/dev/null 2>&1; then
-  cp /tmp/DAJIN/bam/"$control_name".bam* .DAJIN_temp/bam/
+if find /tmp/.DAJIN_temp/bam/"$control_name".bam >/dev/null 2>&1; then
+  cp /tmp/.DAJIN_temp/bam/"$control_name".bam* .DAJIN_temp/bam/
 else
   cat .DAJIN_temp/sam/"$control_name"*_control.sam |
     samtools sort -@ "$threads" >.DAJIN_temp/bam/"$control_name".bam 2>/dev/null
   samtools index -@ "$threads" .DAJIN_temp/bam/"$control_name".bam
-  cp .DAJIN_temp/bam/"$control_name".bam /tmp/DAJIN/bam/
+  cp .DAJIN_temp/bam/"$control_name".bam /tmp/.DAJIN_temp/bam/
 fi
 
 # Sample

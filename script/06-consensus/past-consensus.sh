@@ -1,6 +1,6 @@
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/consensus /tmp/DAJIN/consensus
+mkdir -p .DAJIN_temp/consensus /tmp/.DAJIN_temp/consensus
 
 #----------------------------------------------------------
 # Preprocessing

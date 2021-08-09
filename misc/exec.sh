@@ -31,7 +31,7 @@ control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
 sh misc/build.sh
 ###
-# rm -rf .DAJIN_temp DAJIN_results /tmp/DAJIN/
+# rm -rf .DAJIN_temp DAJIN_results /tmp/.DAJIN_temp
 # sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
 sh misc/build.sh
 bash -n ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 ###
-# rm -rf .DAJIN_temp DAJIN_results /tmp/DAJIN/
+# rm -rf .DAJIN_temp DAJIN_results /tmp/.DAJIN_temp
 # sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------

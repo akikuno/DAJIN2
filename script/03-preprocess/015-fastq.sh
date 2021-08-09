@@ -1,6 +1,6 @@
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/fastq/ /tmp/DAJIN/fastq/
+mkdir -p .DAJIN_temp/fastq /tmp/.DAJIN_temp/fastq
 
 # if find /tmp/fastq/"$control_name"* 1>/dev/null 2>&1; then
 #   gzip -dc /tmp/fastq/"$control_name".fq.gz >.DAJIN_temp/fastq/"$control_name".fq

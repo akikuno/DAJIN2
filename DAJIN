@@ -6,12 +6,6 @@
 # Written by Akihiro Kuno
 # <https://github.com/akikuno/DAJIN2>.
 # ==================================
-find ./ -type d |
-  grep -e "./library" -e "./script" -e "./document" -e "./util" |
-  grep -v -e "past" -e ".DAJIN_temp" |
-  sort -u |
-  sed "s|^./|.DAJIN_temp/|" |
-  xargs mkdir -p
 cat <<'EMBED' >.DAJIN_temp/document/README_JP.md
 
 <p align="center">
@@ -369,42 +363,6 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/util/norm_colors.csv
 #33A02C,#E31A1C,#FF7F00,#6A3D9A,#B15928
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/calcFreqMIDS.sh
-#!/bin/sh
-
-################################################################################
-# Input: CSV including allele, MIDS (e.g: normal_control,M,M,M,M,M,M,M)
-# Output: CSV including allele, loc, M freq, I freq, D freq, and S freq (e.g: normal_control,998,0.888889,0,0.111111,0)
-################################################################################
-
-calcFreqMIDS() (
-  # Input from pipe or file or or stdin
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$*" ]; then
-    cat "$*"
-  else
-    echo "$*"
-  fi |
-    awk -F, 'BEGIN {OFS=","} {
-    num_of[$1]++
-    nf_of[$1]=NF
-    for(i=2;i<=NF;i++) {
-      mids[$1,i,$i]++
-      }
-    } END {
-    for(type in num_of) {
-      for(i=2;i<=nf_of[type];i++) {
-        (mids[type, i, "M"]) ? M=mids[type, i, "M"]/num_of[type] : M=0
-        (mids[type, i, "I"]) ? I=mids[type, i, "I"]/num_of[type] : I=0
-        (mids[type, i, "D"]) ? D=mids[type, i, "D"]/num_of[type] : D=0
-        (mids[type, i, "S"]) ? S=mids[type, i, "S"]/num_of[type] : S=0
-        print type,i-1,M,I,D,S
-      }
-    }
-  }'
-)
-EMBED
 cat <<'EMBED' >.DAJIN_temp/library/calcHotelling.sh
 #!/bin/sh
 
@@ -676,6 +634,45 @@ write.table(df,
   sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/consensus/calcFreqMIDS.sh
+#!/bin/sh
+
+################################################################################
+# Input: CSV including allele, MIDS (e.g: normal_control,M,M,M,M,M,M,M)
+# Output: CSV including allele, loc, M freq, I freq, D freq, and S freq (e.g: normal_control,998,0.888889,0,0.111111,0)
+################################################################################
+
+calcFreqMIDS() (
+  # Input from pipe or file or or stdin
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$*" ]; then
+    cat "$*"
+  else
+    echo "$*"
+  fi |
+    awk -F, 'BEGIN {OFS=","} {
+    num_of[$1]++
+    nf_of[$1]=NF
+    for(i=2;i<=NF;i++) {
+      mids[$1,i,$i]++
+      }
+    } END {
+    for(type in num_of) {
+      for(i=2;i<=nf_of[type];i++) {
+        (mids[type, i, "M"]) ? M=mids[type, i, "M"]/num_of[type] : M=0
+        (mids[type, i, "I"]) ? I=mids[type, i, "I"]/num_of[type] : I=0
+        (mids[type, i, "D"]) ? D=mids[type, i, "D"]/num_of[type] : D=0
+        (mids[type, i, "S"]) ? S=mids[type, i, "S"]/num_of[type] : S=0
+        print type,i-1,M,I,D,S
+      }
+    }
+  }'
+)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/consensus/fmtCStag.sh
+#!/bin/sh
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/filterMinorCluster.sh
 #!/bin/sh
 
@@ -749,7 +746,7 @@ timestamp() {
 load_control() {
   find "$1" -type f |
     while read -r line; do
-      output=${line#/tmp/DAJIN/}
+      output=${line#/tmp/.DAJIN_temp/}
       output=${output%.gz}
       gzip -dc "$line" >.DAJIN_temp/"$output"
     done
@@ -760,7 +757,7 @@ save_control() {
     grep "$control_name" |
     while read -r line; do
       output=${line#\.DAJIN_temp/}.gz
-      gzip -c "$line" >/tmp/DAJIN/"$output"
+      gzip -c "$line" >/tmp/.DAJIN_temp/"$output"
     done
 }
 
@@ -1297,17 +1294,18 @@ output = pd.Series(lof.predict(df_sample))
 
 output.to_csv(sys.stdout, index=False, header=False)
 EMBED
-. .DAJIN_temp/library/calcFreqMIDS.sh
-. .DAJIN_temp/library/calcHotelling.sh
-. .DAJIN_temp/library/filterMinorCluster.sh
 . .DAJIN_temp/library/formatFasta.sh
-. .DAJIN_temp/library/general.sh
-. .DAJIN_temp/library/maskFastq.sh
-. .DAJIN_temp/library/maskMIDS.sh
-. .DAJIN_temp/library/midsToscore.sh
-. .DAJIN_temp/library/samToMIDS.sh
-. .DAJIN_temp/library/samToPhred.sh
 . .DAJIN_temp/library/scoreToScalar.sh
+. .DAJIN_temp/library/consensus/calcFreqMIDS.sh
+. .DAJIN_temp/library/consensus/fmtCStag.sh
+. .DAJIN_temp/library/samToPhred.sh
+. .DAJIN_temp/library/general.sh
+. .DAJIN_temp/library/samToMIDS.sh
+. .DAJIN_temp/library/filterMinorCluster.sh
+. .DAJIN_temp/library/maskFastq.sh
+. .DAJIN_temp/library/midsToscore.sh
+. .DAJIN_temp/library/maskMIDS.sh
+. .DAJIN_temp/library/calcHotelling.sh
 ARGS="$*" && export ARGS
 cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
 #!/bin/sh
@@ -1489,7 +1487,7 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/015-fastq.sh
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/fastq/ /tmp/DAJIN/fastq/
+mkdir -p .DAJIN_temp/fastq /tmp/.DAJIN_temp/fastq
 
 # if find /tmp/fastq/"$control_name"* 1>/dev/null 2>&1; then
 #   gzip -dc /tmp/fastq/"$control_name".fq.gz >.DAJIN_temp/fastq/"$control_name".fq
@@ -1513,24 +1511,27 @@ cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/020-sam.sh
 timestamp "Generate SAM files" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/sam /tmp/DAJIN/sam
+outdir=.DAJIN_temp/sam/
+mkdir -p "$outdir" /tmp/"$outdir"/
 
 find .DAJIN_temp/fasta/*.fa |
   while read -r fasta; do
     allele_name="$(basename ${fasta%.fa})"
 
-    if find /tmp/DAJIN/sam/"$control_name"_"$allele_name".bam 1>/dev/null 2>&1; then
-      samtools view /tmp/DAJIN/sam/"$control_name"_"$allele_name".bam \
-        >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
+    if find /tmp/"$outdir"/"$control_name"_"$allele_name".bam 1>/dev/null 2>&1; then
+      samtools view /tmp/"$outdir"/"$control_name"_"$allele_name".bam \
+        >"$outdir"/"$control_name"_"$allele_name".sam
     else
-      minimap2 -t "$threads" -ax map-ont "$fasta" .DAJIN_temp/fastq/"$control_name".fq --cs=long 2>/dev/null \
-        >.DAJIN_temp/sam/"$control_name"_"$allele_name".sam
-      samtools sort -@ "$threads" .DAJIN_temp/sam/"$control_name"_"$allele_name".sam \
-        >/tmp/DAJIN/sam/"$control_name"_"$allele_name".bam 2>/dev/null
+      minimap2 -t "$threads" --cs=long \
+        -ax map-ont "$fasta" .DAJIN_temp/fastq/"$control_name".fq 2>/dev/null \
+        >"$outdir"/"$control_name"_"$allele_name".sam
+      samtools sort -@ "$threads" "$outdir"/"$control_name"_"$allele_name".sam \
+        >/tmp/"$outdir"/"$control_name"_"$allele_name".bam 2>/dev/null
     fi
 
-    minimap2 -t "$threads" -ax map-ont "$fasta" .DAJIN_temp/fastq/"$sample_name".fq --cs=long 2>/dev/null \
-      >.DAJIN_temp/sam/"$sample_name"_"$allele_name".sam
+    minimap2 -t "$threads" --cs=long \
+      -ax map-ont "$fasta" .DAJIN_temp/fastq/"$sample_name".fq 2>/dev/null \
+      >"$outdir"/"$sample_name"_"$allele_name".sam
   done
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/030-mids.sh
@@ -1540,16 +1541,16 @@ cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/030-mids.sh
 timestamp "MIDS encoding" >>log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/mids /tmp/DAJIN/mids
+mkdir -p .DAJIN_temp/mids /tmp/.DAJIN_temp/mids
 
 multi_samToMIDS() {
-  cmd='. .DAJIN_temp/library/samToMIDS.sh; samToMIDS '
+  cmd=". $(find .DAJIN_temp/ -name samToMIDS.sh); samToMIDS"
   find .DAJIN_temp/sam/"${1:-}"*.sam |
     while read -r line; do
       output="${line%.*}".csv
       output="$(echo $output | sed "s|/sam/|/mids/|")"
       echo "$line" |
-        sed "s|^|$cmd|" |
+        sed "s|^|$cmd |" |
         sed "s|$| >$output \&|"
     done |
     awk -v th="${threads:-1}" '
@@ -1558,9 +1559,9 @@ multi_samToMIDS() {
     sh
 }
 
-if find /tmp/DAJIN/mids/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/.DAJIN_temp/mids/"$control_name"* 1>/dev/null 2>&1; then
   multi_samToMIDS "$sample_name"
-  load_control /tmp/DAJIN/mids
+  load_control /tmp/.DAJIN_temp/mids
 else
   multi_samToMIDS
   save_control .DAJIN_temp/mids
@@ -1591,10 +1592,10 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-mids-mask.sh
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/midsmask /tmp/DAJIN/midsmask
+mkdir -p .DAJIN_temp/midsmask /tmp/.DAJIN_temp/midsmask
 
 multi_maskMIDS() {
-  cmd='. .DAJIN_temp/library/maskMIDS.sh; maskMIDS '
+  cmd=". $(find .DAJIN_temp/ -name maskMIDS.sh); maskMIDS"
   find .DAJIN_temp/sam/"${1:-}"*.sam -print0 |
     xargs -0 -I@ basename @ |
     sed "s/.sam$//" |
@@ -1603,7 +1604,7 @@ multi_maskMIDS() {
       mids=.DAJIN_temp/midsfilter/"$line".csv
       output="$(echo $mids | sed "s|/midsfilter/|/midsmask/|")"
       echo "$sam" "$mids" |
-        sed "s|^|$cmd|" |
+        sed "s|^|$cmd |" |
         sed "s|$| >$output \&|"
     done |
     awk -v th="${threads:-1}" '
@@ -1612,9 +1613,9 @@ multi_maskMIDS() {
     sh
 }
 
-if find /tmp/DAJIN/midsmask/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/.DAJIN_temp/midsmask/"$control_name"* 1>/dev/null 2>&1; then
   multi_maskMIDS "$sample_name"
-  load_control /tmp/DAJIN/midsmask/
+  load_control /tmp/.DAJIN_temp/midsmask/
 else
   multi_maskMIDS
   save_control .DAJIN_temp/midsmask/
@@ -1633,16 +1634,16 @@ EOF
 timestamp "MIDS scoring" log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/score /tmp/DAJIN/score
+mkdir -p .DAJIN_temp/score /tmp/.DAJIN_temp/score
 
 multi_midsToscore() {
-  cmd='. .DAJIN_temp/library/midsToscore.sh; midsToscore '
+  cmd=". $(find .DAJIN_temp/ -name midsToscore.sh); midsToscore"
   find .DAJIN_temp/midsmask/"${1:-}"*.csv |
     while read -r line; do
       output="${line%.*}".csv
       output="$(echo $output | sed "s|/midsmask/|/score/|")"
       echo "$line" |
-        sed "s|^|$cmd|" |
+        sed "s|^|$cmd |" |
         sed "s|$| >$output \&|"
     done |
     awk -v th="${threads:-1}" '
@@ -1651,9 +1652,9 @@ multi_midsToscore() {
     sh
 }
 
-if find /tmp/DAJIN/score/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/.DAJIN_temp/score/"$control_name"* 1>/dev/null 2>&1; then
   multi_midsToscore "$sample_name"
-  load_control /tmp/DAJIN/score
+  load_control /tmp/.DAJIN_temp/score
 else
   multi_midsToscore
   save_control .DAJIN_temp/score
@@ -1662,16 +1663,16 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/003-scalar.sh
 #!/bin/sh
 
-mkdir -p .DAJIN_temp/scalar /tmp/DAJIN/scalar
+mkdir -p .DAJIN_temp/scalar /tmp/.DAJIN_temp/scalar
 
 multiscoreToScalar() {
-  cmd='. .DAJIN_temp/library/scoreToScalar.sh; scoreToScalar '
+  cmd=". $(find .DAJIN_temp/ -name scoreToScalar.sh); scoreToScalar"
   find .DAJIN_temp/score/"${1:-}"* |
     grep -e "$sample_name" -e "$control_name"_wt -e "$control_name"_control |
     while read -r line; do
       output="$(echo $line | sed "s|/score/|/scalar/|")"
       echo "$line" |
-        sed "s|^|$cmd|" |
+        sed "s|^|$cmd |" |
         sed "s|$| >$output \&|"
     done |
     awk -v th="${threads:-1}" '
@@ -1680,9 +1681,9 @@ multiscoreToScalar() {
     sh
 }
 
-if find /tmp/DAJIN/scalar/"$control_name"* 1>/dev/null 2>&1; then
+if find /tmp/.DAJIN_temp/scalar/"$control_name"* 1>/dev/null 2>&1; then
   multiscoreToScalar "$sample_name"
-  load_control /tmp/DAJIN/scalar
+  load_control /tmp/.DAJIN_temp/scalar
 else
   multiscoreToScalar
   save_control .DAJIN_temp/scalar
@@ -1850,16 +1851,16 @@ cat <<'EMBED' >.DAJIN_temp/script/05-bam/010-bam.sh
 timestamp "Generate BAM files" log_DAJIN.txt
 #----------------------------------------------------------
 
-mkdir -p .DAJIN_temp/bam/ /tmp/DAJIN/bam/
+mkdir -p .DAJIN_temp/bam/ /tmp/.DAJIN_temp/bam/
 
 # Control
-if find /tmp/DAJIN/bam/"$control_name".bam >/dev/null 2>&1; then
-  cp /tmp/DAJIN/bam/"$control_name".bam* .DAJIN_temp/bam/
+if find /tmp/.DAJIN_temp/bam/"$control_name".bam >/dev/null 2>&1; then
+  cp /tmp/.DAJIN_temp/bam/"$control_name".bam* .DAJIN_temp/bam/
 else
   cat .DAJIN_temp/sam/"$control_name"*_control.sam |
     samtools sort -@ "$threads" >.DAJIN_temp/bam/"$control_name".bam 2>/dev/null
   samtools index -@ "$threads" .DAJIN_temp/bam/"$control_name".bam
-  cp .DAJIN_temp/bam/"$control_name".bam /tmp/DAJIN/bam/
+  cp .DAJIN_temp/bam/"$control_name".bam /tmp/.DAJIN_temp/bam/
 fi
 
 # Sample
@@ -1892,22 +1893,35 @@ cat .DAJIN_temp/clustering/"$sample_name".csv |
 
 rm .DAJIN_temp/bam/tmp_*
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/06-consensus/010-calcFreqMIDS.sh
+cat <<'EMBED' >.DAJIN_temp/script/06-consensus/010-freqMIDS.sh
 #!/bin/sh
 
 . .DAJIN_temp/library/calcFreqMIDS.sh
-mkdir -p .DAJIN_temp/consensus /tmp/DAJIN/consensus
+
+outdir=.DAJIN_temp/consensus/freqmids/
+mkdir -p "$outdir" /tmp/"$outdir"
+
+#? MEMO =========================
+#? calcFreqMIDSの１列目のID指定はいらないみたい
+#?  =========================
 
 # control =================================================
 
-cat .DAJIN_temp/midsmask/"$control_name"_control.csv |
-  cut -d, -f 2- |
-  sed "s/^/control,/" |
-  sed "s/,[0-9][0-9]*[MDS]/,I/g" |
-  calcFreqMIDS |
-  sed "s/,/@/" |
-  sort -u -t, |
-  cat >.DAJIN_temp/consensus/tmp_control_midsfreq.csv
+if [ -r /tmp/"$outdir"/"$control_name".csv.gz ]; then
+  cp /tmp/"$outdir"/"$control_name".csv.gz "$outdir"
+  gzip -f -d "$outdir"/"$control_name".csv.gz
+else
+  cat .DAJIN_temp/midsmask/"$control_name"_control.csv |
+    cut -d, -f 2- |
+    sed "s/^/control,/" |
+    sed "s/,[0-9][0-9]*[MDS]/,I/g" |
+    calcFreqMIDS |
+    sed "s/,/@/" |
+    sort -u -t, |
+    cat >"$outdir"/"$control_name".csv
+  cp "$outdir"/"$control_name".csv /tmp/"$outdir"/
+  gzip /tmp/"$outdir"/"$control_name".csv
+fi
 
 # sample  =================================================
 
@@ -1915,20 +1929,71 @@ cat .DAJIN_temp/clustering/"$sample_name".csv |
   cut -d, -f1-2 |
   sort -u |
   while read -r line; do
+    suffix="$(echo "$line" | tr , _)"
     grep "^$line" .DAJIN_temp/clustering/"$sample_name".csv |
       cut -d, -f3 |
-      sort -u >tmp
+      sort -u >.DAJIN_temp/clustering/tmp_"$suffix"
 
     cat .DAJIN_temp/midsmask/"$sample_name"*_control.csv |
-      join -t, - tmp |
+      join -t, - .DAJIN_temp/clustering/tmp_"$suffix" |
+      cut -d, -f 2- |
       sed "s/^/control,/" |
       sed "s/,[0-9][0-9]*[MDS]/,I/g" |
       calcFreqMIDS |
       sed "s/,/@/" |
       sort -u -t, |
-      join -t, - .DAJIN_temp/consensus/tmp_control_midsfreq.csv
-
+      cat >"$outdir"/"$sample_name"_"$suffix".csv
   done
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/06-consensus/020-consMIDS.sh
+#!/bin/sh
+
+outdir=.DAJIN_temp/consensus/consmids/
+mkdir -p "$outdir" /tmp/"$outdir"
+
+#? MEMO =========================
+#?  =========================
+
+find .DAJIN_temp/consensus/freqmids/"$sample_name"* |
+  while read -r line; do
+    outfile="$(basename "$line")"
+    cat "$line" |
+      join -t, - .DAJIN_temp/consensus/freqmids/"$control_name".csv |
+      awk -F, 'function RELU(v) {return v < 0 ? 0 : v}
+        BEGIN {OFS=","} {
+        subI=RELU($3-$7)
+        subD=RELU($4-$8)
+        subS=RELU($5-$9)
+        subM=RELU(1-subI-subD-subS)
+        # print subM,subI,subD,subS
+        if ($3>0.9) MIDS="I"
+        else if ($4>0.9) MIDS="D"
+        else if ($5>0.9) MIDS="S"
+        #* sequence error
+        else if (subI>subM && subI>subD && subI>subS) MIDS="I"
+        else if (subD>subM && subD>subI && subD>subS) MIDS="D"
+        else if (subS>subM && subS>subI && subS>subD) MIDS="S"
+        else MIDS="M"
+        print $0,MIDS
+      }' |
+      tr "@" "," |
+      awk -F, '{print $2","$NF}' |
+      sort -t, |
+      grep ^ >"$outdir"/"$outfile"
+  done
+EMBED
+cat <<'EMBED' >.DAJIN_temp/script/06-consensus/030-consCS.sh
+#!/bin/sh
+
+outdir=.DAJIN_temp/consensus/conscs/
+mkdir -p "$outdir" /tmp/"$outdir"
+
+#? MEMO =========================
+#? CSタグのコンセンサス配列をつくります
+#?  =========================
+
+cat .DAJIN_temp/sam/"$sample_name"_control.sam |
+  head
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/06-consensus/consensus.sh
 #!/bin/sh
@@ -1936,7 +2001,7 @@ cat <<'EMBED' >.DAJIN_temp/script/06-consensus/consensus.sh
 echo TEST #?????????????????
 exit 0    #?????????????????
 . .DAJIN_temp/library/calcHotelling.sh
-mkdir -p .DAJIN_temp/consensus /tmp/DAJIN/consensus
+mkdir -p .DAJIN_temp/consensus /tmp/.DAJIN_temp/consensus
 control_scalar=.DAJIN_temp/scalar/"$control_name"_control.csv
 
 # control =================================================
@@ -1976,5 +2041,7 @@ EMBED
 . .DAJIN_temp/script/04-phasing/030-svcall.sh
 . .DAJIN_temp/script/04-phasing/040-clustering.sh
 . .DAJIN_temp/script/05-bam/010-bam.sh
-. .DAJIN_temp/script/06-consensus/010-calcFreqMIDS.sh
+. .DAJIN_temp/script/06-consensus/010-freqMIDS.sh
+. .DAJIN_temp/script/06-consensus/020-consMIDS.sh
+. .DAJIN_temp/script/06-consensus/030-consCS.sh
 . .DAJIN_temp/script/06-consensus/consensus.sh

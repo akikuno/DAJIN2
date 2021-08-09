@@ -3,6 +3,8 @@
 
 embed_document() {
   while read -r line; do
+    outdir=.DAJIN_temp/"$(dirname "$line")"
+    mkdir -p "$outdir"
     echo 'cat <<'\'EMBED\'' >.DAJIN_temp/'"$line" >/tmp/tmp_header
     echo "EMBED" >/tmp/tmp_footer
     grep ^ "$line" |
@@ -16,23 +18,23 @@ cat document/version.md |
   sed 's/```/==================================/' |
   sed "s/^/# /" >>DAJIN
 
-# Make directories
-cat <<EOF >>DAJIN
-find ./ -type d |
-  grep -e "./library" -e "./script" -e "./document" -e "./util" |
-  grep -v -e "past" -e ".DAJIN_temp" |
-  sort -u |
-  sed "s|^./|.DAJIN_temp/|" |
-  xargs mkdir -p
-EOF
+# # Make directories
+# cat <<EOF >>DAJIN
+# find ./ -type d |
+#   grep -e "./library" -e "./script" -e "./document" -e "./util" |
+#   grep -v -e "past" -e ".DAJIN_temp" |
+#   sort -u |
+#   sed "s|^./|.DAJIN_temp/|" |
+#   xargs mkdir -p
+# EOF
 
 # Embed
 find document/*.md | embed_document | grep -v '```' >>DAJIN
 find util/*.html | embed_document >>DAJIN
 find util/*.csv | embed_document >>DAJIN
 
-find library/* | embed_document >>DAJIN
-find library/*.sh | sed "s|^|. .DAJIN_temp/|" >>DAJIN
+find library/* -type f | embed_document >>DAJIN
+find library/ -name "*.sh" | sed "s|^|. .DAJIN_temp/|" >>DAJIN
 
 echo 'ARGS="$*" && export ARGS' >>DAJIN
 find script/ -type f |

@@ -3,7 +3,7 @@
 echo TEST #?????????????????
 exit 0    #?????????????????
 . .DAJIN_temp/library/calcHotelling.sh
-mkdir -p .DAJIN_temp/consensus /tmp/DAJIN/consensus
+mkdir -p .DAJIN_temp/consensus /tmp/.DAJIN_temp/consensus
 control_scalar=.DAJIN_temp/scalar/"$control_name"_control.csv
 
 # control =================================================

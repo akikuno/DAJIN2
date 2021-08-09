@@ -6,7 +6,7 @@
 # output: Match(M), Insertion(1M), Deletion(D), Substitution(S), Inversion (mids) and "= (null)"
 ################################################################################
 
-fmt_sam() {
+fmtSam() {
   cat - |
     awk '
     /^@SQ/ {
@@ -90,7 +90,7 @@ samToMIDS() (
     echo "$*"
   fi |
     # cat test/samTomids/in/test_inv.sam |
-    fmt_sam |
+    fmtSam |
     matchToM |
     subToS |
     delToD |
