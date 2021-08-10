@@ -117,8 +117,14 @@ insToNuc() {
     for (i=4; i<=NF; i++) {
       if ($i ~ /^\+/){
         sub(/\+/, "", $i)
-        $i = "I" $i substr($(i+1), 1, 1)
-        sub(/[ACGT]/, "", $(i+1))
+        if ($(i+1) ~ /^[SD]/) {
+          $i = "I" $i $(i+1)
+          $(i+1) = ""
+        }
+        else {
+          $i = "I" $i substr($(i+1), 1, 1)
+          sub(/[ACGT]/, "", $(i+1))
+        }
       }
     }}1'
 }
