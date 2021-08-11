@@ -53,7 +53,7 @@ bash -n ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threa
 # sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
-# Cables2 BC14
+# Cables2
 ## chr5:128,991,721-128,996,151
 #------------------------------------------------------------------------------
 

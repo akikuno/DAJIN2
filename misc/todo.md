@@ -1,9 +1,17 @@
 # Todo
 
+## Ayabe-task1
 
-## clustering
++ Cables2 flox knockinが floxではなくcontrolになっている.
+  + `005a4c78-f58f-4ea3-aee2-e7091c74f563`はfloxなのにcontrolのほうがscoreが高くなっている.
 
-### ファジーな変異情報を無視するためにはどうしましょう？
+## Conseusns
++ HTML/FASTAレポート
+
+## アレル頻度のプロット
++ DAJIN2_tmp01の過去の遺産をコピー
+
+## Clustering:ファジーな変異情報を無視するためにはどうしましょう？
 + PhredスコアとMIDS頻度情報を用いる
   + MIDS頻度を用いて
   + Phredスコアが低いものを, 高いものに合わせる
