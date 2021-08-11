@@ -57,16 +57,19 @@ bash -n ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threa
 ## chr5:128,991,721-128,996,151
 #------------------------------------------------------------------------------
 
-control_name=barcode42
-control=$(find data/cables2/fastq | grep $control_name)
-alleles=data/cables2/cables2.fa
+conda activate DAJIN2
+sample=./example/flox-cables2/barcode31.fq.gz
+control=./example/flox-cables2/barcode42.fq.gz
+alleles=./example/flox-cables2/alleles.fa
 threads=$(getconf _NPROCESSORS_ONLN | awk '{num=$0-2; if(num>0) print num; else print 1}')
 genome=mm10
-sample=data/cables2/fastq/barcode14.fastq.gz
+control_name="$(echo ${control##*/} | sed "s/\..*$//" | tr " " "_")"
 sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
-./generate_DAJIN.sh
-# rm -rf .DAJIN_temp DAJIN_results
-# ./generate_DAJIN.sh && time bash ./DAJIN batch -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+sh misc/build.sh
+bash -n ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+###
+# rm -rf .DAJIN_temp DAJIN_results /tmp/.DAJIN_temp
+# sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 # Cables2
 sample=./example/cables2-simulated/target_aligned_reads.fasta.gz
