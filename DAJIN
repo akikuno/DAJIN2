@@ -670,34 +670,65 @@ calcFreqMIDS() (
   }'
 )
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/consensus/margeCStagMIDS.R
+cat <<'EMBED' >.DAJIN_temp/library/consensus/margeCStoMIDS.R
 #!/usr/bin/env Rscript
+
+###############################################################################
+# Input files
+###############################################################################
 
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) > 0) {
-  df <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+  df_cs <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+  df_mids <- read.table(args[2], sep = ",", header = FALSE, row.names = 1)
 } else {
-  df_cs <- read.table("tmp_cs", sep = ",", header = FALSE)
+  df_cs <- read.table("tmp_cs", sep = ",", header = FALSE, row.names = 1)
   df_mids <- read.table("tmp_mids", sep = ",", header = FALSE, row.names = 1)
 }
+colnames(df_cs) <- seq(ncol(df_cs))
+df_fa <- read.table(".DAJIN_temp/fasta/control.fa", skip = 1, header = FALSE)
+c_fa <- strsplit(df_fa$V1, "")[[1]]
 
-df_mut <- df_mids[which(df_mids != "M"), ]
-df_cs <- df_cs[which(df_mids != "M")]
+###############################################################################
+# Extract mutation
+###############################################################################
 
-list_table <- apply(df_cs, 2, table)
+locIDS <- which(df_mids != "M")
+df_mutIDS <- df_mids[locIDS, ]
+df_csIDS <- df_cs[locIDS]
 
-for (idx in seq(length(list_table))) {
-  values <- names(list_table[[idx]])
-  values <- as.integer(values)
-  for (val in values[values > 0]) {
-    df[[idx]][df[[idx]] == val] <-
-      list_table[[idx]][values == val]
-  }
-}
+l_csmut <-
+  lapply(seq_along(df_mutIDS), function(x) {
+  mut <- df_mutIDS[[x]]
+  cs <- df_csIDS[[x]]
+  csmut <- cs[grepl(mut, cs)]
+  return(csmut)
+})
+names(l_csmut) <- seq_along(df_mutIDS)
+l_table <- lapply(l_csmut, table)
+l_max <- (lapply(l_table, which.max))
+l_names <- lapply(l_max, names)
 
-write.table(df,
+v_mut <- unlist(l_names)
+v_mut <- sub("[IS]", "", v_mut)
+
+###############################################################################
+# Embed mutation to FASTA
+###############################################################################
+
+c_fa[locIDS] <- v_mut
+
+###############################################################################
+# Output embedded FASTA
+###############################################################################
+
+write.table(
+  cbind(df_mids, c_fa),
   file = "",
-  sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
+  sep = ",",
+  col.names = FALSE,
+  row.names = TRUE,
+  quote = FALSE
 )
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/consensus/csToCSV.sh
@@ -914,12 +945,13 @@ cat <<'EMBED' >.DAJIN_temp/library/formatFasta.sh
 
 formatFasta() {
   cat "$1" |
-    awk 'BEGIN{RS=">"} {
+    tr -d "\r" |
+    awk 'BEGIN {RS = ">"} {
       $1=">" $1 " "
       for(i=1;i<=NF;i++) printf $i
       print ""
       }' |
-    awk 'NF==2'
+    awk 'NF==2 {$2=toupper($2)}1'
 }
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/general.sh
@@ -1677,15 +1709,14 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/010-fasta.sh
 #!/bin/sh
 
-. .DAJIN_temp/library/formatFasta.sh
-
 mkdir -p .DAJIN_temp/fasta/
 
 formatFasta "${alleles}" |
   while read -r line; do
     output="$(echo ${line#>} | cut -d " " -f 1)"
     [ _"$output" = "_wt" ] && output="control"
-    echo "$line" | tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
+    echo "$line" |
+      tr " " "\n" >.DAJIN_temp/fasta/"$output".fa
   done
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/015-fastq.sh
@@ -2235,6 +2266,9 @@ rm .DAJIN_temp/consensus/fmtcs/*sam
 rm .DAJIN_temp/consensus/fmtcs/tmp*
 
 # #? DEBUG =========================================
+
+# cut -d, -f1-2 .DAJIN_temp/clustering/"$sample_name".csv | sort | uniq -c
+# wc -l "$outdir"/*
 # cat .DAJIN_temp/consensus/fmtcs/barcode31_SV_1.csv | cut -d, -f1 | sort >tmp_id
 # grep "^@" .DAJIN_temp/sam/"$sample_name"_control.sam >tmp_header
 # sort .DAJIN_temp/sam/"$sample_name"_control.sam |
@@ -2274,50 +2308,36 @@ rm .DAJIN_temp/consensus/fmtcs/tmp*
 #   cat >tmp
 # cat tmp | grep "G +t Sa St St A"
 
-# echo "001179a7-d376-42d5-9671-dde7bff87c93 1 2845 G +t Sa St St A" |
+# echo "id 1 2845 G +t Sa St St A" |
 #   insToNuc |
 #   padding |
 #   spaceTocomma
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/06-consensus/040-freqCStag.sh
+cat <<'EMBED' >.DAJIN_temp/script/06-consensus/040-mergeCStoMIDS.sh
 #!/bin/sh
 
-. "$(find .DAJIN_temp -name calcFreqMIDS.sh)"
-
-outdir=.DAJIN_temp/consensus/freqcs/
-mkdir -p "$outdir" /tmp/"$outdir"
-
-#? MEMO =========================
-#? calcFreqMIDSの１列目のID指定はいらないみたい
-#?  =========================
+outdir=.DAJIN_temp/consensus/merge/
+mkdir -p "$outdir"
 
 find .DAJIN_temp/consensus/fmtcs/*.csv |
   while read -r line; do
-    output="$outdir"/"$(basename "$line")"
-    consmids=.DAJIN_temp/consensus/consmids/"$(basename "$line")"
-
-    cat "$line" |
-      cut -d, -f 2- |
-      cat >tmp_cs
-
-    cat $consmids >tmp_mids
-    # calcFreqMIDS |
-    #   sed "s/,/@/" |
-    #   sort -u -t, |
-    #   cat >"$outdir"/"$sample_name"_"$suffix".csv
+    consMIDS=.DAJIN_temp/consensus/consmids/"$(basename "$line")"
+    if grep -q "[IDS]" "$consMIDS"; then
+      Rscript --vanilla "$(find .DAJIN_temp -name margeCStoMIDS.R)" \
+        "$line" "$consMIDS" |
+        cat >"$outdir"/"$(basename "$line")"
+    fi
   done
 
-rm "$outdir"/*
+#? DEBUG ============================================
+# cat "$line" >tmp_cs
+# cat "$consMIDS" >tmp_mids
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/06-consensus/050-consCStag.sh
-EMBED
-cat <<'EMBED' >.DAJIN_temp/script/06-consensus/060-mergeCStagMIDS.sh
-EMBED
-cat <<'EMBED' >.DAJIN_temp/script/06-consensus/consensus.sh
+cat <<'EMBED' >.DAJIN_temp/script/06-consensus/050-consensus.sh
 #!/bin/sh
 
-echo TEST #?????????????????
-exit 0    #?????????????????
+echo "consensus" #?????????????????
+exit 0           #?????????????????
 . .DAJIN_temp/library/calcHotelling.sh
 mkdir -p .DAJIN_temp/consensus /tmp/.DAJIN_temp/consensus
 control_scalar=.DAJIN_temp/scalar/"$control_name"_control.csv
@@ -2362,7 +2382,5 @@ EMBED
 . .DAJIN_temp/script/06-consensus/010-freqMIDS.sh
 . .DAJIN_temp/script/06-consensus/020-consMIDS.sh
 . .DAJIN_temp/script/06-consensus/030-fmtCStag.sh
-. .DAJIN_temp/script/06-consensus/040-freqCStag.sh
-. .DAJIN_temp/script/06-consensus/050-consCStag.sh
-. .DAJIN_temp/script/06-consensus/060-mergeCStagMIDS.sh
-. .DAJIN_temp/script/06-consensus/consensus.sh
+. .DAJIN_temp/script/06-consensus/040-mergeCStoMIDS.sh
+. .DAJIN_temp/script/06-consensus/050-consensus.sh
