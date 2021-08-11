@@ -4,7 +4,6 @@
 timestamp "SV allele detetction" log_DAJIN.txt
 #----------------------------------------------------------
 
-. .DAJIN_temp/library/calcHotelling.sh
 mkdir -p .DAJIN_temp/sv/
 control_scalar=$(find .DAJIN_temp/scalar/"$control_name"*)
 
@@ -33,8 +32,8 @@ cat .DAJIN_temp/classif/"$sample_name".csv |
   cat >.DAJIN_temp/sv/tmp_sample_score
 
 # SV detection  =================================================
-
-python .DAJIN_temp/library/svLof.py \
+svLof="$(find .DAJIN_temp -name "svLof.py")"
+python "$svLof" \
   -c .DAJIN_temp/sv/tmp_control_score \
   -s .DAJIN_temp/sv/tmp_sample_score \
   -t "$threads" |

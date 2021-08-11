@@ -5,7 +5,6 @@ timestamp "Clustering" log_DAJIN.txt
 #----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/clustering/
-. .DAJIN_temp/library/filterMinorCluster.sh
 
 cat .DAJIN_temp/sv/"$sample_name".csv |
   cut -d, -f 1 |
@@ -27,7 +26,8 @@ cat .DAJIN_temp/sv/"$sample_name".csv |
     if [ "$num" -gt 5 ]; then
       cat .DAJIN_temp/clustering/tmp_sample.csv |
         cut -d, -f2- >.DAJIN_temp/clustering/tmp_score.csv
-      python .DAJIN_temp/library/clustering.py .DAJIN_temp/clustering/tmp_score.csv "$threads"
+      clustering="$(find .DAJIN_temp/ -name "clustering.py")"
+      python "$clustering" .DAJIN_temp/clustering/tmp_score.csv "$threads"
     else
       awk -v num="$num" 'BEGIN{for(i=1;i<=num;i++) print 1}'
     fi |

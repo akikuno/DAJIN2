@@ -55,7 +55,6 @@ rm .DAJIN_temp/consensus/fmtcs/tmp*
 # # 001179a7-d376-42d5-9671-dde7bff87c93
 
 # sort .DAJIN_temp/sam/"$sample_name"_control.sam | awk '$6 ~ /H/' | head
-# . library/consensus/csToCSV.sh
 
 # cat tmp.sam |
 #   fmtSam |

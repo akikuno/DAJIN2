@@ -62,9 +62,10 @@ maskMS() {
 }
 
 maskMIDS() {
+  maskMIDS="$(find .DAJIN_temp/ -name "maskMIDS.R")"
   cat "$1" |
     fmtScore |
     join -t, - "$2" |
     maskMS |
-    Rscript --vanilla .DAJIN_temp/library/maskMIDS.R
+    Rscript --vanilla "$maskMIDS"
 }

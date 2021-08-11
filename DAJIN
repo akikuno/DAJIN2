@@ -363,34 +363,61 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/util/norm_colors.csv
 #33A02C,#E31A1C,#FF7F00,#6A3D9A,#B15928
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/calcHotelling.sh
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/formatFasta.sh
 #!/bin/sh
 
-calcHotelling() (
-  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
-    cat -
-  elif [ -r "$*" ]; then
-    cat "$*"
-  else
-    echo "$*"
-  fi |
-    awk '{
-      data[NR]=$0
-      sum+=$1
-    } END {
-      mean=sum/NR
-      for(i=1;i<=NR;i++) {
-        residual+=(data[i]-mean)^2
-      }
-      var=residual/NR
-      for(i=1;i<=NR;i++) {
-        hotelling=(data[i]-mean)^2/var
-        print hotelling
-      }
-    }'
-)
+formatFasta() {
+  cat "$1" |
+    tr -d "\r" |
+    paste - - |
+    awk 'NF==2 {$2=toupper($2)}1'
+}
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/clustering.R
+cat <<'EMBED' >.DAJIN_temp/library/04-phasing/svLof.py
+import sys
+import pandas as pd
+from sklearn.neighbors import LocalOutlierFactor
+import argparse
+
+################################################################################
+# Input
+################################################################################
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--control", default=".DAJIN_temp/classif/tmp_control")
+parser.add_argument("-s", "--sample", default=".DAJIN_temp/classif/tmp_control")
+parser.add_argument("-t", "--threads", default="1")
+args = parser.parse_args()
+
+df_control = pd.read_csv(args.control, header=None)
+df_sample = pd.read_csv(args.sample, header=None)
+threads = int(args.threads)
+
+################################################################################
+# LOF
+################################################################################
+
+lof = LocalOutlierFactor(
+    n_neighbors=20,
+    algorithm="auto",
+    leaf_size=30,
+    metric="euclidean",
+    contamination="auto",
+    novelty=True,
+    n_jobs=threads,
+)
+
+lof.fit(df_control)
+
+output = pd.Series(lof.predict(df_sample))
+
+################################################################################
+# Output
+################################################################################
+
+output.to_csv(sys.stdout, index=False, header=False)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/04-phasing/clustering.R
 ################################################################################
 # Install required packages
 ################################################################################
@@ -503,7 +530,7 @@ cl_hdb <- as.integer(as.factor(cl_hdb))
 
 write(cl_hdb, stdout(), ncolumns = 1)
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/clustering.py
+cat <<'EMBED' >.DAJIN_temp/library/04-phasing/clustering.py
 import sys
 import os
 import numpy as np
@@ -608,33 +635,7 @@ cl_hdb = pd.Series(cl_hdb).rank(method="dense").astype(int)
 
 cl_hdb.to_csv(sys.stdout, index=False, header=False)
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/colScore.R
-#!/usr/bin/env Rscript
-
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) > 0) {
-  df <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
-} else {
-  df <- read.table(".DAJIN_temp/tmp_expansion_barcode25_control.csv", sep = ",", header = FALSE, row.names = 1)
-}
-
-list_table <- apply(df, 2, table)
-
-for (idx in seq(length(list_table))) {
-  values <- names(list_table[[idx]])
-  values <- as.integer(values)
-  for (val in values[values > 0]) {
-    df[[idx]][df[[idx]] == val] <-
-      list_table[[idx]][values == val]
-  }
-}
-
-write.table(df,
-  file = "",
-  sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
-)
-EMBED
-cat <<'EMBED' >.DAJIN_temp/library/consensus/calcFreqMIDS.sh
+cat <<'EMBED' >.DAJIN_temp/library/06-consensus/calcFreqMIDS.sh
 #!/bin/sh
 
 ################################################################################
@@ -670,7 +671,7 @@ calcFreqMIDS() (
   }'
 )
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/consensus/margeCStoMIDS.R
+cat <<'EMBED' >.DAJIN_temp/library/06-consensus/margeCStoMIDS.R
 #!/usr/bin/env Rscript
 
 ###############################################################################
@@ -731,7 +732,7 @@ write.table(
   quote = FALSE
 )
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/consensus/csToCSV.sh
+cat <<'EMBED' >.DAJIN_temp/library/06-consensus/csToCSV.sh
 #!/bin/sh
 # shellcheck disable=SC1091,SC2120
 
@@ -908,6 +909,59 @@ csToCSV() (
     sort -t,
 )
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/calcHotelling.sh
+#!/bin/sh
+
+calcHotelling() (
+  if [ -p /dev/stdin ] && [ _"$*" = _"" ]; then
+    cat -
+  elif [ -r "$*" ]; then
+    cat "$*"
+  else
+    echo "$*"
+  fi |
+    awk '{
+      data[NR]=$0
+      sum+=$1
+    } END {
+      mean=sum/NR
+      for(i=1;i<=NR;i++) {
+        residual+=(data[i]-mean)^2
+      }
+      var=residual/NR
+      for(i=1;i<=NR;i++) {
+        hotelling=(data[i]-mean)^2/var
+        print hotelling
+      }
+    }'
+)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/colScore.R
+#!/usr/bin/env Rscript
+
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) > 0) {
+  df <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+} else {
+  df <- read.table(".DAJIN_temp/tmp_expansion_barcode25_control.csv", sep = ",", header = FALSE, row.names = 1)
+}
+
+list_table <- apply(df, 2, table)
+
+for (idx in seq(length(list_table))) {
+  values <- names(list_table[[idx]])
+  values <- as.integer(values)
+  for (val in values[values > 0]) {
+    df[[idx]][df[[idx]] == val] <-
+      list_table[[idx]][values == val]
+  }
+}
+
+write.table(df,
+  file = "",
+  sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
+)
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/filterMinorCluster.sh
 #!/bin/sh
 
@@ -938,20 +992,6 @@ filterMinorCluster() {
     sed "s/_/,/"
 
   rm .DAJIN_temp/clustering/tmp_*
-}
-EMBED
-cat <<'EMBED' >.DAJIN_temp/library/formatFasta.sh
-#!/bin/sh
-
-formatFasta() {
-  cat "$1" |
-    tr -d "\r" |
-    awk 'BEGIN {RS = ">"} {
-      $1=">" $1 " "
-      for(i=1;i<=NF;i++) printf $i
-      print ""
-      }' |
-    awk 'NF==2 {$2=toupper($2)}1'
 }
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/general.sh
@@ -1161,11 +1201,12 @@ maskMS() {
 }
 
 maskMIDS() {
+  maskMIDS="$(find .DAJIN_temp/ -name "maskMIDS.R")"
   cat "$1" |
     fmtScore |
     join -t, - "$2" |
     maskMS |
-    Rscript --vanilla .DAJIN_temp/library/maskMIDS.R
+    Rscript --vanilla "$maskMIDS"
 }
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/midsToscore.sh
@@ -1272,11 +1313,13 @@ rowScore() {
 }
 
 colScore() {
-  Rscript --vanilla .DAJIN_temp/library/colScore.R "$1"
+  colScore="$(find .DAJIN_temp/ -name "colScore.R")"
+  Rscript --vanilla "$colScore" "$1"
 }
 
 rowColSums() {
-  Rscript --vanilla .DAJIN_temp/library/rowColSums.R "$1" "$2"
+  rowColSums="$(find .DAJIN_temp/ -name "rowColSums.R")"
+  Rscript --vanilla "$rowColSums" "$1" "$2"
 }
 
 midsToscore() {
@@ -1486,54 +1529,8 @@ scoreToScalar() {
   }'
 }
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/svLof.py
-import sys
-import pandas as pd
-from sklearn.neighbors import LocalOutlierFactor
-import argparse
-
-################################################################################
-# Input
-################################################################################
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--control", default=".DAJIN_temp/classif/tmp_control")
-parser.add_argument("-s", "--sample", default=".DAJIN_temp/classif/tmp_control")
-parser.add_argument("-t", "--threads", default="1")
-args = parser.parse_args()
-
-df_control = pd.read_csv(args.control, header=None)
-df_sample = pd.read_csv(args.sample, header=None)
-threads = int(args.threads)
-
-################################################################################
-# LOF
-################################################################################
-
-lof = LocalOutlierFactor(
-    n_neighbors=20,
-    algorithm="auto",
-    leaf_size=30,
-    metric="euclidean",
-    contamination="auto",
-    novelty=True,
-    n_jobs=threads,
-)
-
-lof.fit(df_control)
-
-output = pd.Series(lof.predict(df_sample))
-
-################################################################################
-# Output
-################################################################################
-
-output.to_csv(sys.stdout, index=False, header=False)
-EMBED
-. .DAJIN_temp/library/formatFasta.sh
 . .DAJIN_temp/library/scoreToScalar.sh
-. .DAJIN_temp/library/consensus/calcFreqMIDS.sh
-. .DAJIN_temp/library/consensus/csToCSV.sh
+. .DAJIN_temp/library/03-preprocess/formatFasta.sh
 . .DAJIN_temp/library/samToPhred.sh
 . .DAJIN_temp/library/general.sh
 . .DAJIN_temp/library/samToMIDS.sh
@@ -1541,6 +1538,8 @@ EMBED
 . .DAJIN_temp/library/maskFastq.sh
 . .DAJIN_temp/library/midsToscore.sh
 . .DAJIN_temp/library/maskMIDS.sh
+. .DAJIN_temp/library/06-consensus/calcFreqMIDS.sh
+. .DAJIN_temp/library/06-consensus/csToCSV.sh
 . .DAJIN_temp/library/calcHotelling.sh
 ARGS="$*" && export ARGS
 cat <<'EMBED' >.DAJIN_temp/script/01-init/01-init.sh
@@ -1958,7 +1957,6 @@ cat <<'EMBED' >.DAJIN_temp/script/04-phasing/030-svcall.sh
 timestamp "SV allele detetction" log_DAJIN.txt
 #----------------------------------------------------------
 
-. .DAJIN_temp/library/calcHotelling.sh
 mkdir -p .DAJIN_temp/sv/
 control_scalar=$(find .DAJIN_temp/scalar/"$control_name"*)
 
@@ -1987,8 +1985,8 @@ cat .DAJIN_temp/classif/"$sample_name".csv |
   cat >.DAJIN_temp/sv/tmp_sample_score
 
 # SV detection  =================================================
-
-python .DAJIN_temp/library/svLof.py \
+svLof="$(find .DAJIN_temp -name "svLof.py")"
+python "$svLof" \
   -c .DAJIN_temp/sv/tmp_control_score \
   -s .DAJIN_temp/sv/tmp_sample_score \
   -t "$threads" |
@@ -2020,7 +2018,6 @@ timestamp "Clustering" log_DAJIN.txt
 #----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/clustering/
-. .DAJIN_temp/library/filterMinorCluster.sh
 
 cat .DAJIN_temp/sv/"$sample_name".csv |
   cut -d, -f 1 |
@@ -2042,7 +2039,8 @@ cat .DAJIN_temp/sv/"$sample_name".csv |
     if [ "$num" -gt 5 ]; then
       cat .DAJIN_temp/clustering/tmp_sample.csv |
         cut -d, -f2- >.DAJIN_temp/clustering/tmp_score.csv
-      python .DAJIN_temp/library/clustering.py .DAJIN_temp/clustering/tmp_score.csv "$threads"
+      clustering="$(find .DAJIN_temp/ -name "clustering.py")"
+      python "$clustering" .DAJIN_temp/clustering/tmp_score.csv "$threads"
     else
       awk -v num="$num" 'BEGIN{for(i=1;i<=num;i++) print 1}'
     fi |
@@ -2281,7 +2279,6 @@ rm .DAJIN_temp/consensus/fmtcs/tmp*
 # # 001179a7-d376-42d5-9671-dde7bff87c93
 
 # sort .DAJIN_temp/sam/"$sample_name"_control.sam | awk '$6 ~ /H/' | head
-# . library/consensus/csToCSV.sh
 
 # cat tmp.sam |
 #   fmtSam |
@@ -2338,7 +2335,7 @@ cat <<'EMBED' >.DAJIN_temp/script/06-consensus/050-consensus.sh
 
 echo "consensus" #?????????????????
 exit 0           #?????????????????
-. .DAJIN_temp/library/calcHotelling.sh
+
 mkdir -p .DAJIN_temp/consensus /tmp/.DAJIN_temp/consensus
 control_scalar=.DAJIN_temp/scalar/"$control_name"_control.csv
 

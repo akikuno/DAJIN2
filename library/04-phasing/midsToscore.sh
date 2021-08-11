@@ -101,11 +101,13 @@ rowScore() {
 }
 
 colScore() {
-  Rscript --vanilla .DAJIN_temp/library/colScore.R "$1"
+  colScore="$(find .DAJIN_temp/ -name "colScore.R")"
+  Rscript --vanilla "$colScore" "$1"
 }
 
 rowColSums() {
-  Rscript --vanilla .DAJIN_temp/library/rowColSums.R "$1" "$2"
+  rowColSums="$(find .DAJIN_temp/ -name "rowColSums.R")"
+  Rscript --vanilla "$rowColSums" "$1" "$2"
 }
 
 midsToscore() {
