@@ -12,8 +12,8 @@ timestamp "MIDS scoring" log_DAJIN.txt
 
 mkdir -p .DAJIN_temp/score /tmp/.DAJIN_temp/score
 
-multi_midsToscore() {
-  cmd=". $(find .DAJIN_temp/ -name midsToscore.sh); midsToscore"
+multi_midsToScore() {
+  cmd=". $(find .DAJIN_temp/ -name midsToScore.sh); midsToScore"
   find .DAJIN_temp/midsmask/"${1:-}"*.csv |
     while read -r line; do
       output="${line%.*}".csv
@@ -29,9 +29,9 @@ multi_midsToscore() {
 }
 
 if find /tmp/.DAJIN_temp/score/"$control_name"* 1>/dev/null 2>&1; then
-  multi_midsToscore "$sample_name"
+  multi_midsToScore "$sample_name"
   load_control /tmp/.DAJIN_temp/score
 else
-  multi_midsToscore
+  multi_midsToScore
   save_control .DAJIN_temp/score
 fi

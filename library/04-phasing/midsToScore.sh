@@ -31,16 +31,22 @@ expansion() {
     for(i=2;i<=NF;i++) {
       if($i=="M")
         mids_score(0,0,0)
+      #* insertion->match
       else if ($i~/[0-9]+M/) {
         sub("M$","",$i)
+        $i = $i * $i
         mids_score($i,0,0)
         }
+      #* insertion->deletion
       else if ($i~/[0-9]+D/) {
         sub("D$","",$i)
+        $i = $i * $i
         mids_score($i,1,0)
       }
+      #* insertion->substitution
       else if ($i~/[0-9]+S/) {
         sub("S$","",$i)
+        $i = $i * $i
         mids_score($i,0,1)
       }
       else if($i=="D") {
@@ -105,17 +111,22 @@ colScore() {
   Rscript --vanilla "$colScore" "$1"
 }
 
-rowColSums() {
-  rowColSums="$(find .DAJIN_temp/ -name "rowColSums.R")"
-  Rscript --vanilla "$rowColSums" "$1" "$2"
+# rowColSums() {
+#   rowColSums="$(find .DAJIN_temp/ -name "rowColSums.R")"
+#   Rscript --vanilla "$rowColSums" "$1" "$2"
+# }
+
+rowColMul() {
+  rowColMul="$(find .DAJIN_temp/ -name "rowColMul.R")"
+  Rscript --vanilla "$rowColMul" "$1" "$2"
 }
 
-midsToscore() {
+midsToScore() {
   mkdir -p .DAJIN_temp
   suffix="${1##*/}"
   expansion "$1" >.DAJIN_temp/tmp_expansion_"$suffix"
   rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
   colScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_col_"$suffix"
-  rowColSums .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
+  rowColMul .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
   rm .DAJIN_temp/tmp_*"$suffix"
 }

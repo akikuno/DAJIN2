@@ -3,7 +3,39 @@
 ## Ayabe-task1
 
 + Cables2 flox knockinが floxではなくcontrolになっている.
-  + `005a4c78-f58f-4ea3-aee2-e7091c74f563`はfloxなのにcontrolのほうがscoreが高くなっている.
+  + `67803dec0a5e`はfloxなのにcontrolのほうがscoreが高くなっている.
+
+```bash
+cat .DAJIN_temp/scalar/barcode31_control.csv | grep 67803dec0a5e
+cat .DAJIN_temp/scalar/barcode31_flox.csv | grep 67803dec0a5e
+cat .DAJIN_temp/score/barcode31_control.csv | grep 67803dec0a5e | awk -F, '{while(i!=(NF-1)/3) print i,$(i++)}' > tmp
+cat .DAJIN_temp/midsmask/barcode31_control.csv | grep 67803dec0a5e | grep [0-9][0-9] |
+awk -F, '{for(i=2;i<=NF;i++) {if ($i~/[0-9][0-9]M/) {print i,$i}}}'
+cat tmp | grep -e 1735 -e 2383
+
+echo $((38*38)) $((62*62))
+cat << EOF>tmp
+hoge,5M,D,D,D,D,D
+fuga,5M,D,D,D,D,D
+EOF
+
+echo "hoge,M,M,5M,M,62M,D,D,D,D,D" >tmp
+echo "fuga,M,M,5M,M,M,D,D,D,D,D" >>tmp
+. $(find library -name "midsToScore.sh")
+midsToScore tmp
+set tmp
+expansion "$1" >tmp_expansion
+rowScore tmp_expansion >tmp_row
+colScore tmp_expansion >tmp_col
+Rscript .DAJIN_temp/library/04-phasing/colScore.R tmp_expansion > tmp_col
+cat tmp_row tmp_col
+rowColSums tmp_row tmp_col
+rowColMul tmp_row tmp_col
+Rscript .DAJIN_temp/library/04-phasing/rowColMul.R tmp_row tmp_col
+
+cat .DAJIN_temp/scalar/barcode31_flox.csv | grep 67803dec0a5e
+cat .DAJIN_temp/scalar/barcode31_control.csv | grep 67803dec0a5e
+```
 
 ## Conseusns
 + HTML/FASTAレポート
