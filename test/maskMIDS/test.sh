@@ -1,7 +1,7 @@
 #!/bin/sh
 
-. library/samToMIDS.sh
-. library/maskMIDS.sh
+. library/*/samToMIDS.sh
+. library/*/maskMIDS.sh
 
 minimap2 -ax map-ont --cs=long test/maskMIDS/ref.fa test/maskMIDS/que.fq >tmp.sam
 minimap2 -ax map-ont --cs=long test/maskMIDS/ref_long.fa test/maskMIDS/que_long.fq >tmp_long.sam

@@ -662,17 +662,17 @@ maskMS() {
     split($2, cigar, "")
     idx=1
     for (i=3; i<=NF; i++) {
-      if ($i ~ /[MS]/ && cigar[idx] ~ /[!"#$%&'\''()*]/) {
-        $i="N"
-        idx++
+      if ($i ~ /[0-9]/) {
+        I=$i
+        sub(/[MDSmds]$/, "", I)
+        idx=idx+I+1
       }
       else if ($i == "D") {
         idx=idx
       }
-      else if ($i ~ /[0-9]/) {
-        I=$i
-        sub(/[MDSmis]$/, "", I)
-        idx=idx+I+1
+      else if ($i ~ /[MS]/ && cigar[idx] ~ /[!"#$%&'\''()*]/) {
+        $i="N"
+        idx++
       }
       else {
         idx++

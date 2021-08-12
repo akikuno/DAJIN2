@@ -2,6 +2,24 @@
 
 ## Ayabe-task1
 
++ `27db941cae33`はfloxなのにcontrolとされている
++ `205a6973c353`はfloxなのに片方のloxPがmaskされている midsmaskの問題
+```bash
+cat .DAJIN_temp/clustering/* | grep 205a6973c353
+cat .DAJIN_temp/mids/barcode31_control.csv | grep 205a6973c353 | grep -e 45 -e 68
+cat .DAJIN_temp/midsmask/barcode31_control.csv | grep 205a6973c353 | grep -e 45 -e 68
+
+cat .DAJIN_temp/sam/barcode31_control.sam | grep -e "^@" -e 205a6973c353 >tmp.sam
+cat .DAJIN_temp/mids/barcode31_control.csv | grep -e "^@" -e 205a6973c353 >tmp.csv
+set tmp.sam tmp.csv
+maskMIDS="$(find .DAJIN_temp/ -name "maskMIDS.R")"
+cat "$1" |
+  fmtScore |
+  join -t, - "$2" |
+  maskMS |
+  Rscript --vanilla "$maskMIDS"
+```
+
 + Cables2 flox knockinが floxではなくcontrolになっている.
   + `67803dec0a5e`はfloxなのにcontrolのほうがscoreが高くなっている.
 
