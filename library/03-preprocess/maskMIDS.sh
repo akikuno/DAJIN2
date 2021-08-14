@@ -1,6 +1,6 @@
 #!/bin/sh
 
-fmtScore() {
+fmtPhred() {
   cat - |
     grep -v "^@" |
     grep "cs:Z" |
@@ -64,7 +64,7 @@ maskMS() {
 maskMIDS() {
   maskMIDS="$(find .DAJIN_temp/ -name "maskMIDS.R")"
   cat "$1" |
-    fmtScore |
+    fmtPhred |
     join -t, - "$2" |
     maskMS |
     Rscript --vanilla "$maskMIDS"

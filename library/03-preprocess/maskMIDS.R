@@ -3,15 +3,26 @@
 df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
 # df <- read.table("tmp_maskMS.csv", sep = ",", header = FALSE, row.names = 1)
 
+# vect <- df$V830
 replacen <- function(vect) {
-  tmp_table <- table(vect)
-  tmp_table_omitN <- tmp_table[!grepl("N|n", names(tmp_table))]
-  tmp_max <- which.max(tmp_table_omitN)
-  tmp_names <- names(tmp_max)[1]
-  if (length(tmp_names) == 0) {
-    tmp_names <- "M"
+  
+  v_table <- table(vect)
+  v_omitn <- v_table[!grepl("N|n", names(v_table))]
+  n_numbers <- sum(grepl("N|n", vect))
+
+  if (length(v_omitn) == 0) {
+    n_replace <- "M"
+  } else {
+    n_replace <- sample(
+      names(v_omitn),
+      size = n_numbers,
+      replace = TRUE,
+      prob = prop.table(v_omitn)
+      )
   }
-  vect[grepl("N|n", vect)] <- tmp_names
+
+  vect[grepl("N|n", vect)] <- n_replace
+
   return(vect)
 }
 
