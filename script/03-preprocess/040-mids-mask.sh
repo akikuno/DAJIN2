@@ -22,9 +22,9 @@ multi_maskByPhred() {
 }
 
 if find /tmp/.DAJIN_temp/midsmask/"$control_name"* 1>/dev/null 2>&1; then
-  multi_maskMIDS "$sample_name"
+  multi_maskByPhred "$sample_name"
   load_control /tmp/.DAJIN_temp/midsmask/
 else
-  multi_maskMIDS
+  multi_maskByPhred
   save_control .DAJIN_temp/midsmask/
 fi

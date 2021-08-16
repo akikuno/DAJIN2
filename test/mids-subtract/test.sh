@@ -17,6 +17,8 @@ EOF
 
 set tmp_s.csv tmp_c.csv
 set .DAJIN_temp/midsmask/barcode31_control.csv .DAJIN_temp/midsmask/barcode32_control.csv
+# Stx2
+set .DAJIN_temp/midsmask/barcode25_control.csv .DAJIN_temp/midsmask/barcode30_control.csv
 cp -f $1 tmp_s.csv
 cp -f $2 tmp_c.csv
 fn="$(find library -name "mids-subtract.R")"

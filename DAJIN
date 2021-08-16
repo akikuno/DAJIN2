@@ -363,17 +363,169 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/util/norm_colors.csv
 #33A02C,#E31A1C,#FF7F00,#6A3D9A,#B15928
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/formatFasta.sh
-#!/bin/sh
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskByXXX.R
+#!/usr/bin/env Rscript
 
-formatFasta() {
-  cat "$1" |
-    tr -d "\r" |
-    paste - - |
-    awk 'NF==2 {$2=toupper($2)}1'
+###############################################################################
+# Controlにも存在するDeletionをマスクする
+###############################################################################
+
+args <- commandArgs(trailingOnly = TRUE)
+
+if (length(args) > 0) {
+  sample <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+  control <- read.table(args[2], sep = ",", header = FALSE, row.names = 1)
+} else {
+  sample <- read.table("tmp_s.csv", sep = ",", header = FALSE, row.names = 1)
+  control <- read.table("tmp_c.csv", sep = ",", header = FALSE, row.names = 1)
 }
+
+fn_prop <- function(x) prop.table(table(x))
+list_sample <- lapply(sample, fn_prop)
+list_control <- lapply(control, fn_prop)
+idx = 829 #???????????????????????????????
+idx = 1377 #???????????????????????????????
+sample[[idx]]
+
+# fn_max <- function(idx) {
+#   tmp <- list_control[[idx]]
+#   max(tmp[names(tmp) != "M"])
+# }
+
+# for (i in seq_along(list_control)) {
+#   tmp_max <- fn_max(i)
+# }
+# tmp_max <- lapply(seq_along(list_control), fn_max)
+# tmp_max <- unlist(tmp_max)
+# summary(tmp_max)
+# sum(tmp_max > 0.1)
+# png("tmp.png")
+# plot(tmp_max)
+# dev.off()
+
+# fn_match <- function(idx) {
+#   tmp <- list_control[[idx]]
+#   tmp[names(tmp) == "M"]
+# }
+
+# fn_sub <- function(idx) {
+#   tmp <- list_control[[idx]]
+#   tmp[names(tmp) == "S"]
+# }
+fn_del <- function(idx, list) {
+  tmp <- list[[idx]]
+  tmp[names(tmp) == "D"]
+}
+# fn_ins <- function(idx) {
+#   tmp <- list_control[[idx]]
+#   max(tmp[grepl("[0-9]",names(tmp))],0)
+# }
+# tmp_match <- unlist(lapply(seq_along(list_control), fn_match))
+# tmp_sub <- unlist(lapply(seq_along(list_control), fn_sub))
+# tmp_del <- unlist(lapply(seq_along(list_control), fn_del))
+# tmp_ins <- unlist(lapply(seq_along(list_control), fn_ins))
+# summary(tmp_sub)
+# summary(tmp_del)
+# summary(tmp_ins)
+# png("tmp.png")
+# par(mfrow=c(2,2))
+# plot(tmp_match, ylim=c(0,1))
+# plot(tmp_sub, ylim=c(0,1))
+# plot(tmp_del, ylim=c(0,1))
+# plot(tmp_ins, ylim=c(0,1))
+# dev.off()
+
+
+tmp_del_control <- unlist(lapply(seq_along(list_control), function(idx) fn_del(idx, list_control)))
+tmp_del_sample <- unlist(lapply(seq_along(list_sample), function(idx) fn_del(idx, list_sample)))
+which.max(tmp_del)
+png("tmp.png")
+par(mfrow=c(3,2))
+plot(tmp_del_control, ylim=c(0,1), main="cont")
+plot(tmp_del_sample, ylim=c(0,1), main="samp")
+plot(tmp_del_control[(2146-50):(2146+50)], ylim=c(0,1), main="cont")
+plot(tmp_del_sample[(2146-50):(2146+50)], ylim=c(0,1), main="samp")
+plot(tmp_del_control[(829-50):(829-30)], ylim=c(0,1), main="cont")
+plot(tmp_del_sample[(829-50):(829-30)], ylim=c(0,1), main="samp")
+dev.off()
+
+cossim <- function(v1, v2) {
+  sum(v1 * v2)/sqrt(sum(v1^2) * sum(v2^2))
+}
+tmp <- cossim(tmp_del_control, tmp_del_sample)
+
+cossim(tmp_del_control, tmp_del_control)
+
+# sum(tmp_match < 0.8)
+# sum((tmp_max > 0.1) | (tmp_match < 0.8))
+# summary(tmp_match[(tmp_max > 0.1) | (tmp_match < 0.8)])
+# which((tmp_max > 0.1) | (tmp_match < 0.8))
+
+# fn_error_rate <- function(idx, list_sample, list_control) {
+#   df_s <- as.data.frame(list_sample[[idx]])
+#   df_c <- as.data.frame(list_control[[idx]])
+#   df_sc <- merge(x = df_s, y = df_c, by = "x", all = TRUE)
+#   df_sc[is.na(df_sc)] <- (1/10)^10
+
+#   tmp <- 1 / (df_sc$Freq.x)
+#   v_sub <- 1 - (df_sc$Freq.y * tmp)
+#   v_sub[v_sub > 0.9] <- 1
+#   v_sub[v_sub < 0] <- 0
+#   names(v_sub) <- df_sc$x
+#   v_sub <- v_sub[!is.infinite(v_sub)]
+#   df_sub <- data.frame(x = names(v_sub), sc_ratio = v_sub)
+
+#   df_merge <- merge(x = df_s$x, y = df_sub, by = "x")
+#   return(df_merge)
+# }
+
+# list_error <- lapply(seq_along(list_sample),
+#   function(idx) fn_error_rate(idx, list_sample, list_control))
+
+# #? idx = 3
+# fn_correction <- function(idx, sample, list_error){
+
+#   df_x <- data.frame(x = sample[[idx]], id = rownames(sample))
+#   df_merge <- merge(
+#     x = df_x,
+#     y = list_error[[idx]],
+#     by = "x",
+#     all.x = TRUE)
+#   #? sum(df_merge$x == "D")
+#   df_tmp <- unique(df_merge[,-2])
+#   df_tmp <- df_tmp[df_tmp$sc_ratio != 1, ]
+
+#   for (i in seq_along(df_tmp$x)) {
+#     sc_ratio <- df_tmp[i, ]$sc_ratio
+#     x <- df_tmp[i, ]$x
+#     if ( sc_ratio == 0) {
+#       df_merge$x[df_merge$x == x] <- "M"
+#     } else {
+#       df_merge$x[df_merge$x == x] <- sample(
+#         c("M", x),
+#         size = sum(df_merge$x == x),
+#         replace = TRUE,
+#         prob = c(sc_ratio, 1 - sc_ratio)
+#         )
+#     }
+#   }
+#   return(df_merge$x)
+# }
+
+
+# list_corrected <-
+#   lapply(seq_along(sample),
+#     function(idx) fn_correction(idx, sample, list_error))
+
+# df_corrected <- as.data.frame(do.call(cbind, list_corrected))
+# rownames(df_corrected) <- rownames(sample)
+
+write.table(df_corrected,
+  file = "",
+  sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
+)
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskMIDS.R
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskByPhred.R
 #!/usr/bin/env Rscript
 
 df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
@@ -440,6 +592,89 @@ df_replacen <- apply(df, 2, replacen)
 # }
 
 write.table(df_replacen, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/formatFasta.sh
+#!/bin/sh
+
+formatFasta() {
+  cat "$1" |
+    tr -d "\r" |
+    paste - - |
+    awk 'NF==2 {$2=toupper($2)}1'
+}
+EMBED
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskByPhred.sh
+#!/bin/sh
+
+fmtPhred() {
+  cat - |
+    grep -v "^@" |
+    grep "cs:Z" |
+    sort -k 1,1 -k 4,4n |
+    cut -f 1,6,11 |
+    awk '{gsub(",", "_", $NF)}1' |
+    awk '
+      function trimcrip(cigar, score) {
+        match(cigar, /[0-9][0-9]*S/)
+        leftclip=substr(cigar, RSTART, RLENGTH-1)
+        sub(/[0-9][0-9]*S/, "", cigar)
+        match(cigar, /[0-9][0-9]*S/)
+        rightclip=substr(cigar, RSTART, RLENGTH-1)
+        score=substr(score, leftclip+1)
+        score=substr(score, 1, length(score)-rightclip)
+        return score
+      } {
+      n_id[$1]++
+      cigar=$2
+      score=$3
+      if(cigar~/S/) {
+        score_of[$1] = score_of[$1] trimcrip(cigar, score)
+      }
+      else {
+        score_of[$1] = score_of[$1] score
+      }
+    } END {
+      for(id in score_of) {
+        print id","score_of[id]
+      }
+    }' |
+    sort -t,
+}
+
+maskMS() {
+  awk -F, 'BEGIN {OFS=","} {
+    readid=$1
+    split($2, cigar, "")
+    idx=1
+    for (i=3; i<=NF; i++) {
+      if ($i ~ /[0-9]/) {
+        I=$i
+        sub(/[MDSmds]$/, "", I)
+        idx=idx+I+1
+      }
+      else if ($i == "D") {
+        idx=idx
+      }
+      else if ($i ~ /[MS]/ && cigar[idx] ~ /[!"#$%&'\''()*]/) {
+        $i="N"
+        idx++
+      }
+      else {
+        idx++
+      }
+    }
+  }1' |
+    cut -d, -f1,3-
+}
+
+maskByPhred() {
+  maskByPhred="$(find .DAJIN_temp/ -name "maskByPhred.R")"
+  cat "$1" |
+    fmtPhred |
+    join -t, - "$2" |
+    maskMS |
+    Rscript --vanilla "$maskByPhred"
+}
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/samToMIDS.sh
 #!/bin/sh
@@ -629,80 +864,7 @@ maskFastq() {
   }1'
 }
 EMBED
-cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskMIDS.sh
-#!/bin/sh
-
-fmtPhred() {
-  cat - |
-    grep -v "^@" |
-    grep "cs:Z" |
-    sort -k 1,1 -k 4,4n |
-    cut -f 1,6,11 |
-    awk '{gsub(",", "_", $NF)}1' |
-    awk '
-      function trimcrip(cigar, score) {
-        match(cigar, /[0-9][0-9]*S/)
-        leftclip=substr(cigar, RSTART, RLENGTH-1)
-        sub(/[0-9][0-9]*S/, "", cigar)
-        match(cigar, /[0-9][0-9]*S/)
-        rightclip=substr(cigar, RSTART, RLENGTH-1)
-        score=substr(score, leftclip+1)
-        score=substr(score, 1, length(score)-rightclip)
-        return score
-      } {
-      n_id[$1]++
-      cigar=$2
-      score=$3
-      if(cigar~/S/) {
-        score_of[$1] = score_of[$1] trimcrip(cigar, score)
-      }
-      else {
-        score_of[$1] = score_of[$1] score
-      }
-    } END {
-      for(id in score_of) {
-        print id","score_of[id]
-      }
-    }' |
-    sort -t,
-}
-
-maskMS() {
-  awk -F, 'BEGIN {OFS=","} {
-    readid=$1
-    split($2, cigar, "")
-    idx=1
-    for (i=3; i<=NF; i++) {
-      if ($i ~ /[0-9]/) {
-        I=$i
-        sub(/[MDSmds]$/, "", I)
-        idx=idx+I+1
-      }
-      else if ($i == "D") {
-        idx=idx
-      }
-      else if ($i ~ /[MS]/ && cigar[idx] ~ /[!"#$%&'\''()*]/) {
-        $i="N"
-        idx++
-      }
-      else {
-        idx++
-      }
-    }
-  }1' |
-    cut -d, -f1,3-
-}
-
-maskMIDS() {
-  maskMIDS="$(find .DAJIN_temp/ -name "maskMIDS.R")"
-  cat "$1" |
-    fmtPhred |
-    join -t, - "$2" |
-    maskMS |
-    Rscript --vanilla "$maskMIDS"
-}
-EMBED
-cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskMIDS.py
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskByPhred.py
 import pandas as pd
 
 df = pd.read_csv("tmp_maskMS.csv", header=None)
@@ -1564,9 +1726,9 @@ open() {
 }
 EMBED
 . .DAJIN_temp/library/03-preprocess/formatFasta.sh
+. .DAJIN_temp/library/03-preprocess/maskByPhred.sh
 . .DAJIN_temp/library/03-preprocess/samToMIDS.sh
 . .DAJIN_temp/library/03-preprocess/maskFastq.sh
-. .DAJIN_temp/library/03-preprocess/maskMIDS.sh
 . .DAJIN_temp/library/general.sh
 . .DAJIN_temp/library/06-consensus/calcFreqMIDS.sh
 . .DAJIN_temp/library/06-consensus/csToCSV.sh
@@ -1861,8 +2023,8 @@ cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-mids-mask.sh
 
 mkdir -p .DAJIN_temp/midsmask /tmp/.DAJIN_temp/midsmask
 
-multi_maskMIDS() {
-  cmd=". $(find .DAJIN_temp/ -name maskMIDS.sh); maskMIDS"
+multi_maskByPhred() {
+  cmd=". $(find .DAJIN_temp/ -name maskByPhred.sh); maskByPhred"
   find .DAJIN_temp/sam/"${1:-}"*.sam -print0 |
     xargs -0 -I@ basename @ |
     sed "s/.sam$//" |
@@ -1881,17 +2043,15 @@ multi_maskMIDS() {
 }
 
 if find /tmp/.DAJIN_temp/midsmask/"$control_name"* 1>/dev/null 2>&1; then
-  multi_maskMIDS "$sample_name"
+  multi_maskByPhred "$sample_name"
   load_control /tmp/.DAJIN_temp/midsmask/
 else
-  multi_maskMIDS
+  multi_maskByPhred
   save_control .DAJIN_temp/midsmask/
 fi
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/050-mids-subtract.sh
 #!/bin/sh
-
-set .DAJIN_temp/midsmask/barcode31_albino.csv .DAJIN_temp/midsmask/barcode32_albino.csv
 EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
 #!/bin/sh
