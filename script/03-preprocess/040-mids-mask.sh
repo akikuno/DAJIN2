@@ -2,8 +2,8 @@
 
 mkdir -p .DAJIN_temp/midsmask /tmp/.DAJIN_temp/midsmask
 
-multi_maskMIDS() {
-  cmd=". $(find .DAJIN_temp/ -name maskMIDS.sh); maskMIDS"
+multi_maskByPhred() {
+  cmd=". $(find .DAJIN_temp/ -name maskByPhred.sh); maskByPhred"
   find .DAJIN_temp/sam/"${1:-}"*.sam -print0 |
     xargs -0 -I@ basename @ |
     sed "s/.sam$//" |

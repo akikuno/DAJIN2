@@ -378,7 +378,8 @@ cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskMIDS.R
 
 df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
 # df <- read.table("tmp_maskMS.csv", sep = ",", header = FALSE, row.names = 1)
-vect <- df$V2
+
+# vect <- df$V830
 replacen <- function(vect) {
   
   v_table <- table(vect)
@@ -393,7 +394,7 @@ replacen <- function(vect) {
       size = n_numbers,
       replace = TRUE,
       prob = prop.table(v_omitn)
-    )
+      )
   }
 
   vect[grepl("N|n", vect)] <- n_replace
@@ -1887,6 +1888,11 @@ else
   save_control .DAJIN_temp/midsmask/
 fi
 EMBED
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/050-mids-subtract.sh
+#!/bin/sh
+
+set .DAJIN_temp/midsmask/barcode31_albino.csv .DAJIN_temp/midsmask/barcode32_albino.csv
+EMBED
 cat <<'EMBED' >.DAJIN_temp/script/04-phasing/002-score.sh
 #!/bin/sh
 
@@ -2402,6 +2408,7 @@ EMBED
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
 . .DAJIN_temp/script/03-preprocess/035-mids-filter.sh
 . .DAJIN_temp/script/03-preprocess/040-mids-mask.sh
+. .DAJIN_temp/script/03-preprocess/050-mids-subtract.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
 . .DAJIN_temp/script/04-phasing/003-scalar.sh
 . .DAJIN_temp/script/04-phasing/025-classif.sh

@@ -61,11 +61,11 @@ maskMS() {
     cut -d, -f1,3-
 }
 
-maskMIDS() {
-  maskMIDS="$(find .DAJIN_temp/ -name "maskMIDS.R")"
+maskPhred() {
+  maskPhred="$(find .DAJIN_temp/ -name "maskPhred.R")"
   cat "$1" |
     fmtPhred |
     join -t, - "$2" |
     maskMS |
-    Rscript --vanilla "$maskMIDS"
+    Rscript --vanilla "$maskPhred"
 }
