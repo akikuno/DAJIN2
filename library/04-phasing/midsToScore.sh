@@ -59,7 +59,7 @@ expansion() {
   }1'
 }
 
-mutToat() {
+mutToAt() {
   awk '
     BEGIN {
       FS=","
@@ -82,7 +82,7 @@ mutToat() {
   }1'
 }
 
-atToscore() {
+atToScore() {
   awk '
     BEGIN {
       FS=","
@@ -102,8 +102,8 @@ atToscore() {
 
 rowScore() {
   cat "$1" |
-    mutToat |
-    atToscore
+    mutToAt |
+    atToScore
 }
 
 colScore() {

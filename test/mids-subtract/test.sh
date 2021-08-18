@@ -16,6 +16,7 @@ e,D,M,M
 EOF
 
 set tmp_s.csv tmp_c.csv
+# Tyr
 set .DAJIN_temp/midsmask/barcode31_control.csv .DAJIN_temp/midsmask/barcode32_control.csv
 # Stx2
 set .DAJIN_temp/midsmask/barcode25_control.csv .DAJIN_temp/midsmask/barcode30_control.csv

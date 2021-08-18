@@ -3,9 +3,7 @@
 df <- read.table(file("stdin"), sep = ",", header = FALSE, row.names = 1)
 # df <- read.table("tmp_maskMS.csv", sep = ",", header = FALSE, row.names = 1)
 
-# vect <- df$V830
 replacen <- function(vect) {
-  
   v_table <- table(vect)
   v_omitn <- v_table[!grepl("N|n", names(v_table))]
   n_numbers <- sum(grepl("N|n", vect))
@@ -27,6 +25,9 @@ replacen <- function(vect) {
 }
 
 df_replacen <- apply(df, 2, replacen)
+write.table(df_replacen,
+  file = "", sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
+)
 
 # ? （ほかの部位のほうが異常にDが集積しているという判定がされるため, ）
 # ? アルビノ点変異部位には効果がありませんでした.
@@ -62,5 +63,3 @@ df_replacen <- apply(df, 2, replacen)
 # if (length(hotelling_cols) > 0) {
 #   df_replacen[, hotelling_cols] <- apply(df_replacen[, hotelling_cols], 2, replaceD)
 # }
-
-write.table(df_replacen, "", sep = ",", quote = FALSE, row.names = TRUE, col.names = FALSE)

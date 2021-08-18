@@ -2,8 +2,8 @@
 
 mkdir -p .DAJIN_temp/midsmask /tmp/.DAJIN_temp/midsmask
 
-multi_maskByPhred() {
-  cmd=". $(find .DAJIN_temp/ -name maskByPhred.sh); maskByPhred"
+multi_maskMS() {
+  cmd=". $(find .DAJIN_temp/ -name maskMS.sh); maskMS"
   find .DAJIN_temp/sam/"${1:-}"*.sam -print0 |
     xargs -0 -I@ basename @ |
     sed "s/.sam$//" |
@@ -22,9 +22,9 @@ multi_maskByPhred() {
 }
 
 if find /tmp/.DAJIN_temp/midsmask/"$control_name"* 1>/dev/null 2>&1; then
-  multi_maskByPhred "$sample_name"
+  multi_maskMS "$sample_name"
   load_control /tmp/.DAJIN_temp/midsmask/
 else
-  multi_maskByPhred
+  multi_maskMS
   save_control .DAJIN_temp/midsmask/
 fi

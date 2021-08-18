@@ -35,7 +35,7 @@ fmtPhred() {
     sort -t,
 }
 
-maskMS() {
+embedN() {
   awk -F, 'BEGIN {OFS=","} {
     readid=$1
     split($2, cigar, "")
@@ -61,11 +61,10 @@ maskMS() {
     cut -d, -f1,3-
 }
 
-maskByPhred() {
-  maskByPhred="$(find .DAJIN_temp/ -name "maskByPhred.R")"
+maskMS() {
   cat "$1" |
     fmtPhred |
     join -t, - "$2" |
-    maskMS |
-    Rscript --vanilla "$maskByPhred"
+    embedN |
+    Rscript --vanilla --slave "$(find .DAJIN_temp/ -name "maskMS.R")"
 }
