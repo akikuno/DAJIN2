@@ -43,6 +43,10 @@ query_prop_del <- unlist(lapply(seq_along(list_query), function(idx) prop_del(id
 gt <- control_prop_del > query_prop_del
 query_prop_del[gt] <- control_prop_del[gt]
 
+# plot(control_prop_del[1000:1200])
+# plot(control_prop_del[2126:2165])
+# which.max(control_prop_del)
+# summary(control_prop_del)
 ###############################################################################
 # controlとqueryにD頻度をあてる
 ###############################################################################
@@ -83,17 +87,23 @@ cossim <- function(v1, v2) {
 tmp <- rep(0, nrow(control_del_score))
 i=4032
 for (i in 1:nrow(control_del_score)) {
-  tmp_zero <- query_del_score[2,] + control_del_score[i,] == 0
-  tmp_que <- query_del_score[2,][!tmp_zero]
-  tmp_cont <- control_del_score[i,][!tmp_zero]
-  tmp[i] <- cossim(tmp_que, tmp_cont)
+  for (j in 1:nrow(query_del_score)) {
+    tmp_zero <- query_del_score[j, ] + control_del_score[i, ] == 0
+    tmp_que <- query_del_score[j, ][!tmp_zero]
+    tmp_cont <- control_del_score[i, ][!tmp_zero]
+    tmp_cossim <- cossim(tmp_que, tmp_cont)
+  }
+  tmp[i] <- which.max(tmp_cossim)
 }
-which.max(tmp)
+
+i <- which.max(tmp)
 max(tmp)
 summary(tmp)
 
-plot(query_del_score[2,], ylim = c(0,1))
-plot(control_del_score[4032,], ylim = c(0,1))
+par(mfrow=c(2,1))
+plot(query_del_score[1000,], ylim = c(0,1))
+plot(control_del_score[i,], ylim = c(0,1))
+dev.off()
 
 tmp_len <- length(control_prop_del)
 size <- 100
