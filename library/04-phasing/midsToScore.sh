@@ -125,8 +125,8 @@ midsToScore() {
   mkdir -p .DAJIN_temp
   suffix="${1##*/}"
   expansion "$1" >.DAJIN_temp/tmp_expansion_"$suffix"
-  rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
-  colScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_col_"$suffix"
-  rowColMul .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
+  # rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
+  colScore .DAJIN_temp/tmp_expansion_"$suffix" # >.DAJIN_temp/tmp_col_"$suffix"
+  # rowColMul .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
   rm .DAJIN_temp/tmp_*"$suffix"
 }
