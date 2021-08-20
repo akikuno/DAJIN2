@@ -38,16 +38,16 @@ qc_freq <- lapply(
   function(idx) concat_qc(idx, q_freq, c_freq)
   )
 
-take_deletion_rate <- function(qc_freq) {
-  qc_freq_ <- qc_freq
+take_deletion_rate <- function(idx, qc_freq) {
+  qc_freq_ <- qc_freq[[idx]]
   del <- qc_freq_$x == "D"
   del_freq <- qc_freq_[del, ]$Freq.y / qc_freq_[del, ]$Freq.x
   return(del_freq)
 }
 
 qc_delfreq_subtract <- lapply(
-  q_freq,
-  function(x) take_deletion_rate(x)
+  seq(length(q_freq)),
+  function(idx) take_deletion_rate(idx, qc_freq)
   )
 
 
@@ -83,7 +83,8 @@ for (idx in seq(ncol(query))) {
       )
     tmp_embed <- as.character(tmp_embed)
     tmp_embed_D <- rep("D", del_size - target_del_size)
-    query_corrected[, idx][query_corrected[, idx] == "D"] <- append(tmp_embed, tmp_embed_D)
+    tmp_embed_seq <- append(tmp_embed, tmp_embed_D)
+    query_corrected[, idx][query[, idx] == "D"] <- sample(tmp_embed_seq)
   }
 }
 
