@@ -523,98 +523,90 @@ cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskDel.R
 #!/usr/bin/env Rscript
 
 ###############################################################################
-# Controlにも存在するDeletionをマスクする
+# Mask the Deletion that also exists in Control
 ###############################################################################
 
 args <- commandArgs(trailingOnly = TRUE)
 
 if (length(args) > 0) {
-  sample <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+  query <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
   control <- read.table(args[2], sep = ",", header = FALSE, row.names = 1)
 } else {
-  sample <- read.table("tmp_s", sep = ",", header = FALSE, row.names = 1)
+  query <- read.table("tmp_s", sep = ",", header = FALSE, row.names = 1)
   control <- read.table("tmp_c", sep = ",", header = FALSE, row.names = 1)
 }
-
-prop_mids <- function(x) prop.table(table(x))
-list_sample <- lapply(sample, prop_mids)
-list_control <- lapply(control, prop_mids)
-
-#??????????????????????????????????????????????????
-# control_mut <- control
-# control_mut$V100 <- "D"
-# sample_mut <- sample
-# sample_mut$V1000 <- "D"
-# list_control_mut <- lapply(control_mut, prop_mids)
-# list_sample_mut <- lapply(sample_mut, prop_mids)
-#??????????????????????????????????????????????????
-
-# idx = 829 #???????????????????????????????
-# idx = 1377 #???????????????????????????????
-# idx = 2276
+colnames(query) <- seq(ncol(query))
+colnames(control) <- seq(ncol(control))
 
 ###############################################################################
-# Frequency of Deletion
+# MIDS frequency
 ###############################################################################
 
-prop_del <- function(idx, list) {
-  tmp <- list[[idx]]
-  tmp[names(tmp) == "D"]
+calculate_mids_frequency <- function(x) prop.table(table(x))
+
+q_freq <- lapply(query, calculate_mids_frequency)
+c_freq <- lapply(control, calculate_mids_frequency)
+
+concat_qc <- function(idx, q_freq, c_freq) {
+  df_q <- data.frame(q_freq[[idx]])
+  df_c <- data.frame(c_freq[[idx]])
+  df_qc <- merge(x = df_q, y = df_c, by = "x", all.x = TRUE)
+  df_qc[is.na(df_qc)] <- 0
+  return(df_qc)
 }
 
+qc_freq <- lapply(
+  seq(length(q_freq)),
+  function(idx) concat_qc(idx, q_freq, c_freq)
+  )
 
-del_control <- unlist(lapply(seq_along(list_control), function(idx) prop_del(idx, list_control)))
-del_sample <- unlist(lapply(seq_along(list_sample), function(idx) prop_del(idx, list_sample)))
-# del_control_mut <- unlist(lapply(seq_along(list_control_mut), function(idx) prop_del(idx, list_control_mut)))
-# del_sample_mut <- unlist(lapply(seq_along(list_sample_mut), function(idx) prop_del(idx, list_sample_mut)))
-
-###############################################################################
-# controlのほうがDeletionが多い場合、controlに合わせる。
-###############################################################################
-
-gt <- del_control > del_sample
-del_sample[gt] <- del_control[gt]
-
-###############################################################################
-# Cosine similarity
-###############################################################################
-
-cossim <- function(v1, v2) {
-  sum(v1 * v2) / sqrt(sum(v1^2) * sum(v2^2))
+take_deletion_rate <- function(idx, qc_freq) {
+  qc_freq_ <- qc_freq[[idx]]
+  del <- qc_freq_$x == "D"
+  del_freq <- qc_freq_[del, ]$Freq.y / qc_freq_[del, ]$Freq.x
+  return(del_freq)
 }
 
-tmp_len <- length(del_control)
-size <- 100
-window1 <- as.integer(seq(1, tmp_len, by = tmp_len / size))
-window2 <- window1 + as.integer(tmp_len / size) + 5
-# window2 <- as.integer(seq(tmp_len / size, tmp_len, by = tmp_len / size))
-if (tail(window2, 1) != tmp_len)
-  window2[size] <- tmp_len
+qc_delfreq_subtract <- lapply(
+  seq(length(q_freq)),
+  function(idx) take_deletion_rate(idx, qc_freq)
+  )
 
-list_cossim <- lapply(1:size, function(idx) {
-  cossim(
-    del_control[window1[idx] : window2[idx]],
-    del_sample[window1[idx] : window2[idx]]
-    )
-})
-v_cossim <- unlist(list_cossim)
-# sum(unlist(v_cossim) < 0.9)
 
-###############################################################################
-# Deletion error correction
-###############################################################################
+take_mis_rate <- function(idx, qc_freq) {
+  qc_freq_ <- qc_freq[[idx]]
+  qc_freq_ <- qc_freq_[qc_freq_$x != "D", ]
+  freqx <- qc_freq_$Freq.x
+  freqx <- freqx / (sum(freqx))
+  qc_freq_$Freq.x <- freqx
+  return(qc_freq_)
+}
 
-sample_corrected <- sample
+qc_misfreq <- lapply(
+  seq(length(q_freq)),
+  function(idx) take_mis_rate(idx, qc_freq)
+  )
 
-for (i in 1:100) {
-  w1 <- window1[i]
-  w2 <- window2[i]
-  tmp_samp <- sample[w1:w2]
-  if (v_cossim[i] > 0.9) {
-    tmp_samp[tmp_samp == "D"] <- "M"
-    sample_corrected[w1:w2] <- tmp_samp
-  } else {
-    #! コサイン類似度が低いときの対応はどうするか。引き算する？無視する？
+query_corrected <- query
+
+for (idx in seq(ncol(query))) {
+  tmp_delfreq <- qc_delfreq_subtract[[idx]]
+  tmp_misfreq <- qc_misfreq[[idx]]
+
+  if (tmp_delfreq < 1) {
+    del_size <- sum(query[, idx] == "D")
+    target_del_size <- as.integer(del_size * tmp_delfreq)
+
+    tmp_embed <- sample(
+      tmp_misfreq$x,
+      size = target_del_size,
+      replace = TRUE,
+      prob = tmp_misfreq$Freq.x
+      )
+    tmp_embed <- as.character(tmp_embed)
+    tmp_embed_D <- rep("D", del_size - target_del_size)
+    tmp_embed_seq <- append(tmp_embed, tmp_embed_D)
+    query_corrected[, idx][query[, idx] == "D"] <- sample(tmp_embed_seq)
   }
 }
 
@@ -622,154 +614,9 @@ for (i in 1:100) {
 # Output
 ###############################################################################
 
-write.table(sample_corrected,
+write.table(query_corrected,
   file = "", sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
 )
-
-
-# #? idx = 3
-# fn_correction <- function(idx, sample, list_error){
-
-#   df_x <- data.frame(x = sample[[idx]], id = rownames(sample))
-#   df_merge <- merge(
-#     x = df_x,
-#     y = list_error[[idx]],
-#     by = "x",
-#     all.x = TRUE)
-#   #? sum(df_merge$x == "D")
-#   df_tmp <- unique(df_merge[,-2])
-#   df_tmp <- df_tmp[df_tmp$sc_ratio != 1, ]
-
-#   for (i in seq_along(df_tmp$x)) {
-#     sc_ratio <- df_tmp[i, ]$sc_ratio
-#     x <- df_tmp[i, ]$x
-#     if ( sc_ratio == 0) {
-#       df_merge$x[df_merge$x == x] <- "M"
-#     } else {
-#       df_merge$x[df_merge$x == x] <- sample(
-#         c("M", x),
-#         size = sum(df_merge$x == x),
-#         replace = TRUE,
-#         prob = c(sc_ratio, 1 - sc_ratio)
-#         )
-#     }
-#   }
-#   return(df_merge$x)
-# }
-
-
-# list_corrected <-
-#   lapply(seq_along(sample),
-#     function(idx) fn_correction(idx, sample, list_error))
-
-# df_corrected <- as.data.frame(do.call(cbind, list_corrected))
-# rownames(df_corrected) <- rownames(sample)
-
-# gt <- del_control_mut > del_sample_mut
-# del_sample_mut[gt] <- del_control_mut[gt]
-
-# png("tmp.png")
-# par(mfrow=c(3,2))
-# plot(del_control, ylim=c(0,1), main="cont")
-# plot(del_sample, ylim=c(0,1), main="samp")
-# plot(del_control_mut, ylim=c(0,1), main="cont_mut")
-# plot(del_sample_mut, ylim=c(0,1), main="samp_mut")
-# # plot(del_control[(2146-50):(2146+50)], ylim=c(0,1), main="cont")
-# # plot(del_sample[(2146-50):(2146+50)], ylim=c(0,1), main="samp")
-# # plot(del_control[(829-50):(829-30)], ylim=c(0,1), main="cont")
-# # plot(del_sample[(829-50):(829-30)], ylim=c(0,1), main="samp")
-# dev.off()
-
-
-# ccf_ <- function(v1, v2) {
-#   tmp <- ccf(v1, v2)
-#   tmp <- data.frame(acf = tmp$acf, lag = tmp$lag)
-#   max_acf <- tmp[which.max(tmp$acf),]$acf
-#   return(max_acf)
-# }
-
-# tmp_ccf <- lapply(1:100, function(idx) {
-#   tmpw1 <- w1[idx]
-#   tmpw2 <- w2[idx]
-#   tmp <- ccf_(del_control[tmpw1:tmpw2], del_sample[tmpw1:tmpw2])
-#   return(tmp)
-# })
-# plot(unlist(tmp_ccf), ylim=c(0,1))
-# sum(unlist(tmp_ccf) < 0.9)
-# summary(unlist(tmp_ccf))
-
-# fn_max <- function(idx) {
-#   tmp <- list_control[[idx]]
-#   max(tmp[names(tmp) != "M"])
-# }
-
-# for (i in seq_along(list_control)) {
-#   tmp_max <- fn_max(i)
-# }
-# tmp_max <- lapply(seq_along(list_control), fn_max)
-# tmp_max <- unlist(tmp_max)
-# summary(tmp_max)
-# sum(tmp_max > 0.1)
-# png("tmp.png")
-# plot(tmp_max)
-# dev.off()
-
-# fn_match <- function(idx) {
-#   tmp <- list_control[[idx]]
-#   tmp[names(tmp) == "M"]
-# }
-
-# fn_sub <- function(idx) {
-#   tmp <- list_control[[idx]]
-#   tmp[names(tmp) == "S"]
-# }
-
-# fn_ins <- function(idx) {
-#   tmp <- list_control[[idx]]
-#   max(tmp[grepl("[0-9]",names(tmp))],0)
-# }
-# tmp_match <- unlist(lapply(seq_along(list_control), fn_match))
-# tmp_sub <- unlist(lapply(seq_along(list_control), fn_sub))
-# del <- unlist(lapply(seq_along(list_control), fn_del))
-# tmp_ins <- unlist(lapply(seq_along(list_control), fn_ins))
-# summary(tmp_sub)
-# summary(del)
-# summary(tmp_ins)
-# png("tmp.png")
-# par(mfrow=c(2,2))
-# plot(tmp_match, ylim=c(0,1))
-# plot(tmp_sub, ylim=c(0,1))
-# plot(del, ylim=c(0,1))
-# plot(tmp_ins, ylim=c(0,1))
-# dev.off()
-
-
-
-# sum(tmp_match < 0.8)
-# sum((tmp_max > 0.1) | (tmp_match < 0.8))
-# summary(tmp_match[(tmp_max > 0.1) | (tmp_match < 0.8)])
-# which((tmp_max > 0.1) | (tmp_match < 0.8))
-
-# fn_error_rate <- function(idx, list_sample, list_control) {
-#   df_s <- as.data.frame(list_sample[[idx]])
-#   df_c <- as.data.frame(list_control[[idx]])
-#   df_sc <- merge(x = df_s, y = df_c, by = "x", all = TRUE)
-#   df_sc[is.na(df_sc)] <- (1/10)^10
-
-#   tmp <- 1 / (df_sc$Freq.x)
-#   v_sub <- 1 - (df_sc$Freq.y * tmp)
-#   v_sub[v_sub > 0.9] <- 1
-#   v_sub[v_sub < 0] <- 0
-#   names(v_sub) <- df_sc$x
-#   v_sub <- v_sub[!is.infinite(v_sub)]
-#   df_sub <- data.frame(x = names(v_sub), sc_ratio = v_sub)
-
-#   df_merge <- merge(x = df_s$x, y = df_sub, by = "x")
-#   return(df_merge)
-# }
-
-# list_error <- lapply(seq_along(list_sample),
-#   function(idx) fn_error_rate(idx, list_sample, list_control))
 EMBED
 cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/samToMIDS.sh
 #!/bin/sh
@@ -1350,9 +1197,9 @@ midsToScore() {
   mkdir -p .DAJIN_temp
   suffix="${1##*/}"
   expansion "$1" >.DAJIN_temp/tmp_expansion_"$suffix"
-  rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
-  colScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_col_"$suffix"
-  rowColMul .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
+  # rowScore .DAJIN_temp/tmp_expansion_"$suffix" >.DAJIN_temp/tmp_row_"$suffix"
+  colScore .DAJIN_temp/tmp_expansion_"$suffix" # >.DAJIN_temp/tmp_col_"$suffix"
+  # rowColMul .DAJIN_temp/tmp_row_"$suffix" .DAJIN_temp/tmp_col_"$suffix"
   rm .DAJIN_temp/tmp_*"$suffix"
 }
 EMBED
@@ -2109,6 +1956,7 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/040-mids-maskMS.sh
 #!/bin/sh
 
+. $(find .DAJIN_temp/ -name general.sh)
 mkdir -p .DAJIN_temp/midsmask /tmp/.DAJIN_temp/midsmask
 
 multi_maskMS() {
@@ -2147,13 +1995,17 @@ find .DAJIN_temp/midsmask/"$sample_name"* >.DAJIN_temp/midsmask/tmp_sample
 find .DAJIN_temp/midsmask/"$control_name"* >.DAJIN_temp/midsmask/tmp_control
 
 paste .DAJIN_temp/midsmask/tmp_sample .DAJIN_temp/midsmask/tmp_control |
-  while read -r sample control; do
-    Rscript --vanilla --slave "$maskDel" "$sample" "$control" \
+  while read -r line; do
+    set $line
+    Rscript --vanilla --slave "$maskDel" "$1" "$2" \
       >.DAJIN_temp/midsmask/tmp_maskDel
-    mv .DAJIN_temp/midsmask/tmp_maskDel "$sample"
+    mv .DAJIN_temp/midsmask/tmp_maskDel "$1"
   done
 
-# cp .DAJIN_temp/midsmask/barcode31_control.csv tmp_s
+# set .DAJIN_temp/midsmask/barcode25_control.csv .DAJIN_temp/midsmask/barcode30_control.csv
+# cp $1 tmp_s
+# cp $2 tmp_c
+# set --
 # cp .DAJIN_temp/midsmask/barcode32_control.csv tmp_c
 # Rscript --vanilla --slave "$maskDel" tmp_s tmp_c >tmp_del
 # head -n 1 .DAJIN_temp/midsmask/barcode31_control.csv

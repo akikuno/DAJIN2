@@ -1,5 +1,6 @@
 #!/bin/sh
 
+. $(find .DAJIN_temp/ -name general.sh)
 mkdir -p .DAJIN_temp/midsmask /tmp/.DAJIN_temp/midsmask
 
 multi_maskMS() {
