@@ -49,8 +49,8 @@ sample_name="$(echo ${sample##*/} | sed "s/\..*$//" | tr " " "_")"
 sh misc/build.sh
 bash -n ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 ###
-rm -rf .DAJIN_temp DAJIN_results /tmp/.DAJIN_temp
-sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
+# rm -rf .DAJIN_temp DAJIN_results /tmp/.DAJIN_temp
+# sh misc/build.sh && time bash ./DAJIN -a "$alleles" -c "$control" -s "$sample" -g "$genome" -t "$threads"
 
 #------------------------------------------------------------------------------
 # Ayabe Task1: Cables2

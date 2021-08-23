@@ -5,22 +5,36 @@ timestamp "SV allele detetction" log_DAJIN.txt
 #----------------------------------------------------------
 
 mkdir -p .DAJIN_temp/sv/
-control_scalar=$(find .DAJIN_temp/scalar/"$control_name"*)
 
 # control =================================================
+
+# control_scalarのSVがあるとsampleのSV判定が甘くなるので、事前にcontrol_scalarのSVを取り除きます。
+cat .DAJIN_temp/midsmask/"$control_name"*_control.csv |
+  sed "s/,/ /" |
+  awk '{
+    numI = gsub(/[5-9][0-9][0-9]*/, "@", $2)
+    numD = gsub("(D,){50}", "@", $2)
+    numS = gsub("(S,){50}", "@", $2)
+    if (numI + numD + numS == 0)
+      print $1
+  }' |
+  sort |
+  join -t, - .DAJIN_temp/scalar/"$control_name"_control.csv |
+  cat >.DAJIN_temp/sv/tmp_control_scalar
+
 # LOFだと値が小さすぎる（きれいにマッピングされすぎる）リードもSVと判定されてしまうため,
 # 中央値よりも値が小さいリードはすべて正常と判定させる.
 median_score=$(
-  cat $control_scalar |
+  cat .DAJIN_temp/sv/tmp_control_scalar |
     awk -F, '$NF ~ /e-/ {$NF=0}1' |
     sort -t, -n -k2,2 |
-    awk -F, -v wc="$(wc -l <$control_scalar)" 'NR==int(wc/2) {print $NF}'
+    awk -F, -v wc="$(wc -l <.DAJIN_temp/sv/tmp_control_scalar)" 'NR==int(wc/2) {print $NF}'
 )
 
-cat "$control_scalar" |
+cat .DAJIN_temp/sv/tmp_control_scalar |
   cut -d, -f2 |
   calcHotelling |
-  paste -d, "$control_scalar" - |
+  paste -d, .DAJIN_temp/sv/tmp_control_scalar - |
   awk -F, -v median="$median_score" '!($2 > median && $NF > 3.841459) {print $2}' | #qchisq(0.95,1)
   cat >.DAJIN_temp/sv/tmp_control_score
 

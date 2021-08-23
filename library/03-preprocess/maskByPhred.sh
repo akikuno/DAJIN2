@@ -61,10 +61,15 @@ embedN() {
     cut -d, -f1,3-
 }
 
-maskMS() {
+maskR() {
+  script="maskByPhred.R"
+  Rscript --vanilla "$(find .DAJIN_temp/ -name "$script")"
+}
+
+maskByPhred() {
   cat "$1" |
     fmtPhred |
     join -t, - "$2" |
     embedN |
-    Rscript --vanilla --slave "$(find .DAJIN_temp/ -name "maskMS.R")"
+    maskR
 }
