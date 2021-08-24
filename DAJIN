@@ -363,6 +363,91 @@ EMBED
 cat <<'EMBED' >.DAJIN_temp/util/norm_colors.csv
 #33A02C,#E31A1C,#FF7F00,#6A3D9A,#B15928
 EMBED
+cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskBySubtract.R
+#!/usr/bin/env Rscript
+
+###############################################################################
+# Mask the Sequence error by subtraction from query to control
+###############################################################################
+
+args <- commandArgs(trailingOnly = TRUE)
+
+if (length(args) > 0) {
+  query <- read.table(args[1], sep = ",", header = FALSE, row.names = 1)
+  control <- read.table(args[2], sep = ",", header = FALSE, row.names = 1)
+} else {
+  query <- read.table("tmp_query.csv", sep = ",", header = FALSE, row.names = 1)
+  control <- read.table("tmp_control.csv", sep = ",", header = FALSE, row.names = 1)
+}
+colnames(query) <- seq(ncol(query))
+colnames(control) <- seq(ncol(control))
+
+###############################################################################
+# MIDS frequency
+###############################################################################
+
+calculate_mids_frequency <- function(x) prop.table(table(x))
+
+q_freq <- lapply(query, calculate_mids_frequency)
+c_freq <- lapply(control, calculate_mids_frequency)
+
+concat_qc <- function(idx, q_freq, c_freq) {
+  df_q <- data.frame(q_freq[[idx]])
+  df_c <- data.frame(c_freq[[idx]])
+  df_qc <- merge(x = df_q, y = df_c, by = "x", all.x = TRUE)
+  df_qc[is.na(df_qc)] <- 0
+  return(df_qc)
+}
+
+qc_freq <- lapply(
+  seq(length(q_freq)),
+  function(idx) concat_qc(idx, q_freq, c_freq)
+  )
+
+
+detect_mutation <- function(idx, qc_freq) {
+  tmp_freq <- qc_freq[[idx]]
+  tmp_freq <- tmp_freq[tmp_freq$x != "M", ]
+  tmp_freq$abssub <- abs(tmp_freq$Freq.y - tmp_freq$Freq.x)
+  tmp_freq$mut <- tmp_freq$abssub > 0.1
+  tmp_freq$mut <- tmp_freq$mut * !(tmp_freq$Freq.y > 0.1 & tmp_freq$Freq.x > 0.1)
+  tmp_freq$prob <- tmp_freq$mut * tmp_freq$abssub
+  tmp_freq$prob <- tmp_freq$prob / sum(tmp_freq$prob)
+  tmp_return <- data.frame(x = tmp_freq$x, mut = tmp_freq$mut, prob = tmp_freq$prob)
+  return(tmp_return)
+}
+
+qc_detect <- lapply(seq(length(q_freq)),
+  function(idx) detect_mutation(idx, qc_freq)
+  )
+
+# idx <- 829
+# idx <- 2071
+# qc_detect[[idx]]
+# tmp <- data.frame(x = c("S"), mut = 1, prob = 0.5)
+
+query_corrected <- query
+for (idx in seq(length(qc_detect))) {
+  tmp_freq <- qc_detect[[idx]]
+  if (sum(tmp_freq$mut) > 0) {
+    for (mut in tmp_freq$x[tmp_freq$mut == FALSE])
+      tmp_embed <- sample(tmp_freq$x,
+        size = sum(query[, idx] == mut),
+        replace = TRUE, prob = tmp_freq$prob)
+      query_corrected[, idx][query[, idx] == mut] <- as.character(tmp_embed)
+  } else {
+    query_corrected[, idx] <- "M"
+  }
+}
+
+###############################################################################
+# Output
+###############################################################################
+
+write.table(query_corrected,
+  file = "", sep = ",", col.names = FALSE, row.names = TRUE, quote = FALSE
+)
+EMBED
 cat <<'EMBED' >.DAJIN_temp/library/03-preprocess/maskByPhred.R
 #!/usr/bin/env Rscript
 
@@ -1991,25 +2076,26 @@ else
   save_control .DAJIN_temp/midsmaskByPhred/
 fi
 EMBED
-cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/050-mids-maskDel.sh
+cat <<'EMBED' >.DAJIN_temp/script/03-preprocess/050-mids-maskBySubtract.sh
 #!/bin/sh
 
-maskDel="$(find .DAJIN_temp -name "maskDel.R")"
+mkdir -p .DAJIN_temp/midsmaskBySubtract
+midsmaskBySubtract="$(find .DAJIN_temp -name "maskBySubtract.R")"
 
-find .DAJIN_temp/midsmask/"$sample_name"* >.DAJIN_temp/midsmask/tmp_sample
-find .DAJIN_temp/midsmask/"$control_name"* >.DAJIN_temp/midsmask/tmp_control
+find .DAJIN_temp/midsmaskByPhred/"$sample_name"* >.DAJIN_temp/midsmaskBySubtract/tmp_sample
+find .DAJIN_temp/midsmaskByPhred/"$control_name"* >.DAJIN_temp/midsmaskBySubtract/tmp_control
 
-paste .DAJIN_temp/midsmask/tmp_sample .DAJIN_temp/midsmask/tmp_control |
+paste .DAJIN_temp/midsmaskBySubtract/tmp_sample .DAJIN_temp/midsmaskBySubtract/tmp_control |
   while read -r line; do
     set $line
-    Rscript --vanilla --slave "$maskDel" "$1" "$2" \
-      >.DAJIN_temp/midsmask/tmp_maskDel
-    mv .DAJIN_temp/midsmask/tmp_maskDel "$1"
+    Rscript --vanilla "$midsmaskBySubtract" "$1" "$2" \
+      >.DAJIN_temp/midsmaskBySubtract/$(basename "$1")
   done
 
-# set .DAJIN_temp/midsmask/barcode25_control.csv .DAJIN_temp/midsmask/barcode30_control.csv
-# cp $1 tmp_s
-# cp $2 tmp_c
+rm .DAJIN_temp/midsmaskBySubtract/tmp_*
+
+# cp $1 tmp_query.csv
+# cp $2 tmp_control.csv
 # set --
 # cp .DAJIN_temp/midsmask/barcode32_control.csv tmp_c
 # Rscript --vanilla --slave "$maskDel" tmp_s tmp_c >tmp_del
@@ -2034,10 +2120,10 @@ mkdir -p .DAJIN_temp/score /tmp/.DAJIN_temp/score
 
 multi_midsToScore() {
   cmd=". $(find .DAJIN_temp/ -name midsToScore.sh); midsToScore"
-  find .DAJIN_temp/midsmask/"${1:-}"*.csv |
+  find .DAJIN_temp/midsmaskBySubtract/"${1:-}"*.csv |
     while read -r line; do
       output="${line%.*}".csv
-      output="$(echo $output | sed "s|/midsmask/|/score/|")"
+      output="$(echo $output | sed "s|/midsmaskBySubtract/|/score/|")"
       echo "$line" |
         sed "s|^|$cmd |" |
         sed "s|$| >$output \&|"
@@ -2546,7 +2632,7 @@ EMBED
 . .DAJIN_temp/script/03-preprocess/030-mids.sh
 . .DAJIN_temp/script/03-preprocess/035-mids-filter.sh
 . .DAJIN_temp/script/03-preprocess/040-mids-maskByPhred.sh
-. .DAJIN_temp/script/03-preprocess/050-mids-maskDel.sh
+. .DAJIN_temp/script/03-preprocess/050-mids-maskBySubtract.sh
 . .DAJIN_temp/script/04-phasing/002-score.sh
 . .DAJIN_temp/script/04-phasing/003-scalar.sh
 . .DAJIN_temp/script/04-phasing/025-classif.sh

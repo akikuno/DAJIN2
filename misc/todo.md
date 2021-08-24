@@ -1,5 +1,10 @@
 # Todo
 
+## padding
+
++ paddingはmids-filterのときだけに使えば良い。
++ その他はmatchとして扱ってよさそ合う
+
 ## Ayabe-task1
 
 + `27db941cae33`はfloxなのにcontrolとされている

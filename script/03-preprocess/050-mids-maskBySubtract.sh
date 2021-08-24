@@ -1,7 +1,7 @@
 #!/bin/sh
 
 mkdir -p .DAJIN_temp/midsmaskBySubtract
-maskDel="$(find .DAJIN_temp -name "maskDel.R")"
+midsmaskBySubtract="$(find .DAJIN_temp -name "maskBySubtract.R")"
 
 find .DAJIN_temp/midsmaskByPhred/"$sample_name"* >.DAJIN_temp/midsmaskBySubtract/tmp_sample
 find .DAJIN_temp/midsmaskByPhred/"$control_name"* >.DAJIN_temp/midsmaskBySubtract/tmp_control
@@ -9,10 +9,11 @@ find .DAJIN_temp/midsmaskByPhred/"$control_name"* >.DAJIN_temp/midsmaskBySubtrac
 paste .DAJIN_temp/midsmaskBySubtract/tmp_sample .DAJIN_temp/midsmaskBySubtract/tmp_control |
   while read -r line; do
     set $line
-    Rscript --vanilla --slave "$maskDel" "$1" "$2" \
-      >.DAJIN_temp/midsmask/tmp_maskDel
-    mv .DAJIN_temp/midsmask/tmp_maskDel "$1"
+    Rscript --vanilla "$midsmaskBySubtract" "$1" "$2" \
+      >.DAJIN_temp/midsmaskBySubtract/$(basename "$1")
   done
+
+rm .DAJIN_temp/midsmaskBySubtract/tmp_*
 
 # cp $1 tmp_query.csv
 # cp $2 tmp_control.csv

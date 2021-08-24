@@ -39,43 +39,38 @@ qc_freq <- lapply(
   )
 
 
-# idx = 987 #?------------------------------------------------------------------------
-# table(query[[idx]])#?------------------------------------------------------------------------
-# idx = 829 #?------------------------------------------------------------------------
-# table(control[[idx]])#?------------------------------------------------------------------------
-idx = 829
-subtract_mids <- function(idx, qc_freq) {
+detect_mutation <- function(idx, qc_freq) {
   tmp_freq <- qc_freq[[idx]]
   tmp_freq <- tmp_freq[tmp_freq$x != "M", ]
-  tmp_subtract <- tmp_freq$Freq.y - tmp_freq$Freq.x
-  # tmp_subtract[tmp_subtract < 0] <- 0
-  # tmp_match <- 1 - sum(tmp_subtract)
-  # tmp_subtract[tmp_freq$x == "M"] <- tmp_match
-  # data.frame(x = tmp_freq$x, subtract = tmp_subtract)
-  sum(tmp_subtract)
+  tmp_freq$abssub <- abs(tmp_freq$Freq.y - tmp_freq$Freq.x)
+  tmp_freq$mut <- tmp_freq$abssub > 0.1
+  tmp_freq$mut <- tmp_freq$mut * !(tmp_freq$Freq.y > 0.1 & tmp_freq$Freq.x > 0.1)
+  tmp_freq$prob <- tmp_freq$mut * tmp_freq$abssub
+  tmp_freq$prob <- tmp_freq$prob / sum(tmp_freq$prob)
+  tmp_return <- data.frame(x = tmp_freq$x, mut = tmp_freq$mut, prob = tmp_freq$prob)
+  return(tmp_return)
 }
 
-qc_subtract <- sapply(seq(length(q_freq)),
-  function(idx) subtract_mids(idx, qc_freq)
+qc_detect <- lapply(seq(length(q_freq)),
+  function(idx) detect_mutation(idx, qc_freq)
   )
 
-query_corrected <- query
-for (idx in seq(ncol(query))) {
-  tmp_freq <- qc_subtract[[idx]]
-  if (tmp_delfreq < 1) {
-    del_size <- sum(query[, idx] == "D")
-    target_del_size <- as.integer(del_size * tmp_delfreq)
+# idx <- 829
+# idx <- 2024
+# qc_detect[[idx]]
+# tmp <- data.frame(x = c("S"), mut = 1, prob = 0.5)
 
-    tmp_embed <- sample(
-      tmp_misfreq$x,
-      size = target_del_size,
-      replace = TRUE,
-      prob = tmp_misfreq$Freq.x
-      )
-    tmp_embed <- as.character(tmp_embed)
-    tmp_embed_D <- rep("D", del_size - target_del_size)
-    tmp_embed_seq <- append(tmp_embed, tmp_embed_D)
-    query_corrected[, idx][query[, idx] == "D"] <- sample(tmp_embed_seq)
+query_corrected <- query
+for (idx in seq(length(qc_detect))) {
+  tmp_freq <- qc_detect[[idx]]
+  if (sum(tmp_freq$mut) > 0) {
+    for (mut in tmp_freq$x[tmp_freq$mut == FALSE])
+      tmp_embed <- sample(tmp_freq$x,
+        size = sum(query[, idx] == mut),
+        replace = TRUE, prob = tmp_freq$prob)
+      query_corrected[, idx][query[, idx] == mut] <- as.character(tmp_embed)
+  } else {
+    query_corrected[, idx] <- "M"
   }
 }
 

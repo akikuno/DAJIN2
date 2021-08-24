@@ -14,10 +14,10 @@ mkdir -p .DAJIN_temp/score /tmp/.DAJIN_temp/score
 
 multi_midsToScore() {
   cmd=". $(find .DAJIN_temp/ -name midsToScore.sh); midsToScore"
-  find .DAJIN_temp/midsmask/"${1:-}"*.csv |
+  find .DAJIN_temp/midsmaskBySubtract/"${1:-}"*.csv |
     while read -r line; do
       output="${line%.*}".csv
-      output="$(echo $output | sed "s|/midsmask/|/score/|")"
+      output="$(echo $output | sed "s|/midsmaskBySubtract/|/score/|")"
       echo "$line" |
         sed "s|^|$cmd |" |
         sed "s|$| >$output \&|"
