@@ -1,7 +1,0 @@
-LICENSE
-README.md
-setup.py
-DAJIN2.egg-info/PKG-INFO
-DAJIN2.egg-info/SOURCES.txt
-DAJIN2.egg-info/dependency_links.txt
-DAJIN2.egg-info/top_level.txt

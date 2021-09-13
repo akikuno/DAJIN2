@@ -2,3 +2,4 @@
 log_DAJIN*
 .DAJIN_temp/*
 DAJIN_results*
+.pytest_cache/*
