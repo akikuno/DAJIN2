@@ -31,8 +31,9 @@ def parse():
     parser.add_argument('-v', '--version',
                         action='version',
                         version='DAJIN version 2.0.0')
-
     args = parser.parse_args()
+
+    os.makedirs(args.output, exist_ok=True)
     os_cpus = int(os.cpu_count())  # len(os.sched_getaffinity(0))
     if args.threads > os_cpus:
         threads = os_cpus
@@ -40,4 +41,5 @@ def parse():
         threads = 1
     else:
         threads = args.threads
-    return args.sample, args.control, args.output, args.genome, args.debug, threads
+    return (args.sample, args.control, args.output,
+            args.genome, args.debug, threads)

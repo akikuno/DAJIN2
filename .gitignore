@@ -1,6 +1,7 @@
 # Temporary
 tmp/*
 tmp*
+.tmp_DAJIN/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
