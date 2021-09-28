@@ -1,5 +1,8 @@
+import args
+
+
 def main():
-    pass
+    args.parse()
 
 
 if __name__ == "__main__":
