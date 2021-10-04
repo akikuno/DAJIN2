@@ -10,8 +10,12 @@ def parse():
                         help="Give the full path to a control FASTQ file")
     parser.add_argument("-c", "--control",
                         required=True,
-                        metavar="<control.fasta>",
-                        help="Give the full path to a control FASTA file")
+                        metavar="<control.fastq>",
+                        help="Give the full path to a control FASTQ file")
+    parser.add_argument("-a", "--allele",
+                        required=True,
+                        metavar="<allele.fasta>",
+                        help="Give the full path to allele FASTA file")
     parser.add_argument("-o", "--output",
                         metavar="<output directory>",
                         default="DAJIN_results",
@@ -21,14 +25,14 @@ def parse():
                         default="",
                         metavar="<genome id>",
                         help="Reference genome ID (e.g hg38, mm10)")
-    parser.add_argument("-d", "--debug",
-                        action="store_true",
-                        help="Retain all intermediate files at .tmpDAJIN/")
     parser.add_argument("-t", "--threads",
                         default=1,
                         type=int,
                         metavar="<threads>",
                         help="Number of threads [default: 1]",)
+    parser.add_argument("-d", "--debug",
+                        action="store_true",
+                        help=argparse.SUPPRESS)
     parser.add_argument('-v', '--version',
                         action='version',
                         version='DAJIN version 2.0.0')

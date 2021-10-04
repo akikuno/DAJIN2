@@ -1,8 +1,8 @@
-import args
+import argparser
 
 
 def main():
-    args.parse()
+    sample, control, output, genome, debug, threads = argparser.parse()
 
 
 if __name__ == "__main__":
