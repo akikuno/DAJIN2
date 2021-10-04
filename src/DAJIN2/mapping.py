@@ -1,32 +1,36 @@
 import re
 import os
 import subprocess
-fasta_path = "tests/data/ref.fa"
-fastq_path = "tests/data/query.fq"
-fasta_dir = ".tmpDAJIN/fasta"
-sam_dir = ".tmpDAJIN/sam"
-threads = 10
-os.makedirs(fasta_dir, exist_ok=True)
-os.makedirs(sam_dir, exist_ok=True)
 
 
-with open(fasta_path, "r") as f:
-    regex = re.compile("(>.*?)\n([A-Za-z\n]*)", re.DOTALL)
-    fasta_wrap = re.findall(regex, f.read())
-    fasta_ids = [f[0].replace(">", "") for f in fasta_wrap]
-    fasta_contents = ["\n".join(f) for f in fasta_wrap]
+def split_fasta(fasta_file: str, output_dir: str) -> None:
 
-for id, content in zip(fasta_ids, fasta_contents):
-    with open(f'{fasta_dir}/{id}.fasta', 'w') as f:
-        f.write(content)
+    with open(fasta_file, "r") as f:
+        regex = re.compile("(>.*?)\n([A-Za-z\n]*)", re.DOTALL)
+        fasta_wrap = re.findall(regex, f.read())
+        fasta_headers = [f[0].replace(">", "") for f in fasta_wrap]
+        fasta_contents = ["\n".join(f) for f in fasta_wrap]
+
+    for head, content in zip(fasta_headers, fasta_contents):
+        output = os.path.join(output_dir, head) + ".fasta"
+        with open(output, 'w') as f:
+            f.write(content)
 
 
-def ls_fullpath(d):
-    return [os.path.join(d, f) for f in os.listdir(d)]
+def minimap2(fasta_dir, fastq_file, output_dir, threads=1):
+    fasta_files = [os.path.join(fasta_dir, f) for f in os.listdir(fasta_dir)]
+    heads = [f.replace(".fasta", "") for f in os.listdir(fasta_dir)]
+    for head, fasta in zip(heads, fasta_files):
+        output_sam = os.path.join(output_dir, head) + ".sam"
+        with open(output_sam, "w") as f:
+            minimap2 = ["minimap2", "-ax", "map-ont", "--cs=long",
+                        "-t", str(threads), fasta, fastq_file]
+            subprocess.run(minimap2, stdout=f, check=True)
 
 
-for id, fasta in zip(fasta_ids, ls_fullpath(fasta_dir)):
-    with open(f"{sam_dir}/{id}.sam", "w") as f:
-        minimap2 = ["minimap2", "-ax", "map-ont", "--cs=long",
-                    "-t", str(threads), fasta, fastq_path]
-        subprocess.run(minimap2, stdout=f, check=True,)
+# fastq_file = "tests/data/query.fq"
+# fasta_dir = os.path.join(".tmpDAJIN", "fasta")
+# output_dir = os.path.join(".tmpDAJIN", "sam")
+# threads = 10
+
+# minimap2(fasta_dir, fastq_file, output_dir, threads)
