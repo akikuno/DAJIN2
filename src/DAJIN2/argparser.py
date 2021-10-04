@@ -48,5 +48,11 @@ def parse():
         threads = 1
     else:
         threads = args.threads
-    return (args.sample, args.control, args.output,
-            args.genome, args.debug, threads)
+
+    return (args.sample,
+            args.control,
+            args.allele,
+            args.output,
+            args.genome,
+            args.debug,
+            threads)
