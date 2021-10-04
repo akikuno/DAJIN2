@@ -1,7 +1,6 @@
 import re
 import os
 import subprocess
-
 fasta_path = "tests/data/ref.fa"
 fastq_path = "tests/data/query.fq"
 fasta_dir = ".tmpDAJIN/fasta"
