@@ -18,11 +18,12 @@ def parse():
                         type=str,
                         help="Name of the output directory")
     parser.add_argument("-g", "--genome",
+                        default="",
                         metavar="<genome id>",
                         help="Reference genome ID (e.g hg38, mm10)")
     parser.add_argument("-d", "--debug",
                         action="store_true",
-                        help="Retain all intermediate files")
+                        help="Retain all intermediate files at .tmpDAJIN/")
     parser.add_argument("-t", "--threads",
                         default=1,
                         type=int,
@@ -34,7 +35,9 @@ def parse():
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
-    os_cpus = int(os.cpu_count())  # len(os.sched_getaffinity(0))
+    os.makedirs(".tmpDAJIN", exist_ok=True)
+
+    os_cpus = int(os.cpu_count())
     if args.threads > os_cpus:
         threads = os_cpus
     elif args.threads < 1:
