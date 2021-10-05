@@ -5,7 +5,7 @@ import os
 import mapping
 from typing import List
 import tempfile
-import glob
+import cache
 
 
 def check_deps(dependencies: List[str]) -> None:
@@ -25,6 +25,7 @@ def main():
     check_deps(["minimap2", "samtools"])
 
     TMPDIR = ".tmpDAJIN"
+    os.makedirs(TMPDIR, exist_ok=True)
     make_dirs(TMPDIR, ["fasta", "sam"])
     TMPDIRS = {_: os.path.join(TMPDIR, _) for _ in os.listdir(TMPDIR)}
 
@@ -33,9 +34,30 @@ def main():
 
     sample, control, allele, output, genome, debug, threads = argparser.parse()
 
+    if cache.exists(control, CACHEDIR) and cache.is_same_size(control, CACHEDIR):
+        IS_CACHED = True
+    else:
+        shutil.copy(control, CACHEDIR)
+        IS_CACHED = False
+
+    ########################################################################
+    # minimap2
+    ########################################################################
+
     mapping.split_fasta(allele, TMPDIRS["fasta"])
-    mapping.minimap2(control, TMPDIRS["fasta"], TMPDIRS["sam"], threads)
+
+    if IS_CACHED:
+        cache.load(CACHEDIR, TMPDIRS["sam"])
+    else:
+        mapping.minimap2(control, TMPDIRS["fasta"], TMPDIRS["sam"], threads)
+        cache.save(control, TMPDIRS["sam"], CACHEDIR)
+
     mapping.minimap2(sample, TMPDIRS["fasta"], TMPDIRS["sam"], threads)
+
+    ########################################################################
+    # MIDS conversion
+    ########################################################################
+
     if debug is False:
         shutil.rmtree(".tmpDAJIN")
 

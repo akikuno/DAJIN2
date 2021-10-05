@@ -3,29 +3,27 @@ import os
 import glob
 
 
-def save_fastq(control: str, cachedir: str) -> None:
-    shutil.copy(control, cachedir)
-
-
 def exists(control: str, cachedir: str) -> bool:
     control_name = os.path.basename(control)
     f = os.path.join(cachedir, control_name)
     return os.path.exists(f)
 
 
-def is_same(control: str, cachedir: str) -> bool:
+def is_same_size(control: str, cachedir: str) -> bool:
     control_name = os.path.basename(control)
     f = os.path.join(cachedir, control_name)
-    os.path.getsize(control) == os.path.getsize(f)
-    shutil.copy(p, dst_path)
+    return os.path.getsize(control) == os.path.getsize(f)
 
 
-def save(control: str, cachedir: str) -> None:
+def save(control: str, tmpdir: str, cachedir: str) -> None:
     control_name = os.path.basename(control).split(".", 1)[0]
     control_files = glob.glob(os.path.join(tmpdir, control_name) + "*")
     for f in control_files:
         shutil.copy(f, cachedir)
 
 
-def load(control: str, cachedir: str) -> None:
-    pass
+def load(cachedir: str, tmpdir: str) -> None:
+    suffix = os.path.basename(tmpdir)
+    control_files = glob.glob(os.path.join(cachedir, "*" + suffix))
+    for f in control_files:
+        shutil.copy(f, tmpdir)

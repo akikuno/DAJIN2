@@ -27,12 +27,15 @@ def minimap2(fastq_file, fasta_dir, sam_dir, threads=1):
         with open(output_sam, "w") as f:
             minimap2 = ["minimap2", "-ax", "map-ont", "--cs=long",
                         "-t", str(threads), fasta, fastq_file]
-            subprocess.run(minimap2, stdout=f, check=True)
+            subprocess.run(minimap2,
+                           stdout=f,
+                           stderr=subprocess.DEVNULL,
+                           check=True)
 
 
-fastq_file = "tests/data/query.fq"
-fasta_dir = os.path.join(".tmpDAJIN", "fasta")
-output_dir = os.path.join(".tmpDAJIN", "sam")
-threads = 10
+# fastq_file = "tests/data/query.fq"
+# fasta_dir = os.path.join(".tmpDAJIN", "fasta")
+# output_dir = os.path.join(".tmpDAJIN", "sam")
+# threads = 10
 
-minimap2(fastq_file, fasta_dir, output_dir, threads)
+# minimap2(fastq_file, fasta_dir, output_dir, threads)
