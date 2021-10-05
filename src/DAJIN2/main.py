@@ -2,7 +2,7 @@ import argparser
 import shutil
 import sys
 import os
-import re
+import mapping
 from typing import List
 
 
@@ -21,12 +21,16 @@ def make_dirs(main: str, subfolders: List[str]) -> None:
 
 def main():
     check_deps(["minimap2", "samtools"])
-
-    make_dirs(".tmpDAJIN", ["fasta", "sam"])
+    TMPDIR = ".tmpDAJIN"
+    make_dirs(TMPDIR, ["fasta", "sam"])
 
     sample, control, allele, output, genome, debug, threads = argparser.parse()
 
-    split_fasta()
+    mapping.split_fasta(allele, os.path.join(TMPDIR, "fasta"))
+    mapping.minimap2(control, os.path.join(TMPDIR, "fasta"),
+                     os.path.join(TMPDIR, "sam"), threads)
+    mapping.minimap2(sample, os.path.join(TMPDIR, "fasta"),
+                     os.path.join(TMPDIR, "sam"), threads)
     if debug is False:
         shutil.rmtree(".tmpDAJIN")
 
