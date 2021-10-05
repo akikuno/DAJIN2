@@ -4,6 +4,8 @@ import sys
 import os
 import mapping
 from typing import List
+import tempfile
+import glob
 
 
 def check_deps(dependencies: List[str]) -> None:
@@ -21,16 +23,19 @@ def make_dirs(main: str, subfolders: List[str]) -> None:
 
 def main():
     check_deps(["minimap2", "samtools"])
+
     TMPDIR = ".tmpDAJIN"
     make_dirs(TMPDIR, ["fasta", "sam"])
+    TMPDIRS = {_: os.path.join(TMPDIR, _) for _ in os.listdir(TMPDIR)}
+
+    CACHEDIR = os.path.join(tempfile.gettempdir(), "DAJIN")
+    os.makedirs(CACHEDIR, exist_ok=True)
 
     sample, control, allele, output, genome, debug, threads = argparser.parse()
 
-    mapping.split_fasta(allele, os.path.join(TMPDIR, "fasta"))
-    mapping.minimap2(control, os.path.join(TMPDIR, "fasta"),
-                     os.path.join(TMPDIR, "sam"), threads)
-    mapping.minimap2(sample, os.path.join(TMPDIR, "fasta"),
-                     os.path.join(TMPDIR, "sam"), threads)
+    mapping.split_fasta(allele, TMPDIRS["fasta"])
+    mapping.minimap2(control, TMPDIRS["fasta"], TMPDIRS["sam"], threads)
+    mapping.minimap2(sample, TMPDIRS["fasta"], TMPDIRS["sam"], threads)
     if debug is False:
         shutil.rmtree(".tmpDAJIN")
 
