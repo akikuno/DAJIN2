@@ -21,6 +21,7 @@ def minimap2(fastq_file, fasta_dir, sam_dir, threads=1):
     fastq_name = os.path.basename(fastq_file).split(".", 1)[0]
     fasta_files = [os.path.join(fasta_dir, f) for f in os.listdir(fasta_dir)]
     fasta_names = [f.replace(".fasta", "") for f in os.listdir(fasta_dir)]
+
     output_names = [fastq_name + "_" + f for f in fasta_names]
     for name, fasta in zip(output_names, fasta_files):
         output_sam = os.path.join(sam_dir, name) + ".sam"
