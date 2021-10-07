@@ -41,4 +41,5 @@ with open(sam, "r") as f:
             pos = record[3]
             reflen = SQ[rname]
             cs = [_ for _ in record if "cs:Z:" in _][0]
+
             print(cs, reflen)
