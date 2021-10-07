@@ -60,7 +60,7 @@ SAMDIR = os.path.join("tests", "samTomids", "input")
 SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
 
 
-sam = SAMFILES[-2]
+sam = SAMFILES[3]
 
 
 with open(sam, "r") as f:
@@ -78,5 +78,8 @@ with open(sam, "r") as f:
             cstags = format_cstag(cstag)
             cstags_fixlen = list(map(to_fixed_length, cstags))
             mids = ''.join(cstags_fixlen).rstrip(",")
+            #! PADDING =========================
+            mids.count(",") + 1
+            len(mids.replace(",", ""))
             output = ','.join([qname, mids])
-            print(mids, str(len(mids)))
+            print(output)
