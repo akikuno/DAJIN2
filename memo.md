@@ -1,12 +1,7 @@
 # メモ
 
-## Pythonで書き換え
++ [ ] samToMIDS.shをPythonで書き換え中…
 
-+ [ ] PysimpleGUI
-+ [ ] concurrent.futureとmap
-+ [ ] argparse
-+ [ ] pysam
-+ [ ] WSL, macOS, Linux
 
 ## DAJIN2の設計
 
