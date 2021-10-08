@@ -1,3 +1,3 @@
 @SQ	SN:control	LN:100
-@PG	ID:minimap2	PN:minimap2	VN:2.21-r1071	CL:minimap2 -ax map-ont --cs=long tests/samTomids/tmp/test_ref.fa tests/samTomids/tmp/test_padding.fq
+@PG	ID:minimap2	PN:minimap2	VN:2.22-r1101	CL:minimap2 -ax map-ont --cs=long tests/samTomids/tmp/test_ref.fa tests/samTomids/tmp/test_padding.fq
 test_padding	0	control	11	47	80M	*	0	0	ATACTTAATTATACATTTGAAACGCGCCCAAGTGACGCTAGGCAAGTCAGAGCAGGTTCCCGTGTTAGCTTAAGGGTAAA	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	NM:i:0	ms:i:160	AS:i:160	nn:i:0	tp:A:P	cm:i:11	s1:i:67	s2:i:0	de:f:0	cs:Z:=ATACTTAATTATACATTTGAAACGCGCCCAAGTGACGCTAGGCAAGTCAGAGCAGGTTCCCGTGTTAGCTTAAGGGTAAA	rl:i:0
