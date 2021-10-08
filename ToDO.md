@@ -1,6 +1,6 @@
 # ToDO
 
-+ [ ] samToMIDS.shをPythonで書き換え中…
++ [ ] samToMIDS.shをPythonで書き換え中… (test_mids.py)
   + [x] MIDS conversion
   + [ ] Large deletion
   + [ ] Padding
