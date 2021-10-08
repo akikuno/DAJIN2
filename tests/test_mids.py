@@ -77,9 +77,11 @@ with open(sam, "r") as f:
             cstag = [_ for _ in record if "cs:Z:" in _][0]
             cstags = format_cstag(cstag)
             cstags_fixlen = list(map(to_fixed_length, cstags))
-            mids = ''.join(cstags_fixlen).rstrip(",")
+            mids = ''.join(cstags_fixlen)
             #! PADDING =========================
-            mids.count(",") + 1
-            len(mids.replace(",", ""))
-            output = ','.join([qname, mids])
+            midslen = mids.count(",")
+            left_pad = "=," * (int(pos) - 1)
+            right_pad = "=," * (reflen - midslen - int(pos) + 1)
+            mids = ''.join([left_pad, mids, right_pad])
+            output = ','.join([qname, mids]).rstrip(",")
             print(output)
