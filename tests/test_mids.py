@@ -139,3 +139,9 @@ with open(samfile, "r") as f:
             output = ','.join([qname, mids_padding]).rstrip(",")
             print(output)
             print(output.count(","))
+
+
+len("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
+len("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
+
+"M," * 50 + "D," * 1300 + "M," * 150
