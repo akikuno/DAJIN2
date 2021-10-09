@@ -68,49 +68,6 @@ def trim(mids_padding: str, reflen: int):
     return mids_trim
 
 
-SAMDIR = os.path.join("tests", "samTomids", "input")
-SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
-
-samfile = SAMFILES[4]
-# samfile = SAMFILES[0]
-
-with open(samfile, "r") as f:
-    sam = f.readlines()
-
-sqheaders = (s for s in sam if s.startswith("@SQ"))
-sqheaders = fmt_sqheaders(sqheaders)
-
-alignments = (s for s in sam if not s.startswith("@"))
-alignments = [s for s in alignments if "cs:Z:" in s]
-
-alignments = [s.replace("\t" + s.split("\t")[2],
-                        "\t" + str(sqheaders[s.split("\t")[2]]))
-              for s in alignments]
-
-aligndict = [{"qname": s.split("\t")[0], "alignments":s} for s in alignments]
-aligndict = sorted(aligndict, key=lambda x: x["qname"])
-
-aligngroup = [list(group)
-              for _, group in groupby(aligndict, lambda x: x["qname"])]
-
-
-# for i in aligngroup:
-#     print(i)
-#     print(len(i))
-
-# qnames = [s.split("\t")[0] for s in alignments]
-qnames = {s.split("\t")[0]: s for s in alignments}
-qnames_counts = collections.Counter(qnames.keys())
-qnames_unique = [k for k, v in qnames_counts.items() if v == 1]
-qnames_duplicated = [k for k, v in qnames_counts.items() if v > 1]
-qnames_largedel = [k for k, v in qnames_counts.items() if v == 2]
-qnames_largeinv = [k for k, v in qnames_counts.items() if v == 3]
-
-alignments_unique = [v for k, v in qnames.items() if k in qnames_unique]
-alignments_duplicated = [
-    v for k, v in qnames.items() if k in qnames_duplicated]
-
-
 def mids_small_mutation(alignments_unique: list) -> list:
     read = alignments_unique[0]["alignments"]
     record = read.split("\t")
@@ -167,8 +124,47 @@ def sam_to_mids(alignments: list):
     return output
 
 
-alignment = aligngroup[0]
-list(map(sam_to_mids, aligngroup))
+SAMDIR = os.path.join("tests", "samTomids", "input")
+SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
 
-for alignments in aligngroup:
-    mids_small_mutation(alignments)
+samfile = SAMFILES[4]
+# samfile = SAMFILES[0]
+
+with open(samfile, "r") as f:
+    sam = f.readlines()
+
+sqheaders = (s for s in sam if s.startswith("@SQ"))
+sqheaders = fmt_sqheaders(sqheaders)
+
+alignments = (s for s in sam if not s.startswith("@"))
+alignments = [s for s in alignments if "cs:Z:" in s]
+
+alignments = [s.replace("\t" + s.split("\t")[2],
+                        "\t" + str(sqheaders[s.split("\t")[2]]))
+              for s in alignments]
+
+aligndict = [{"qname": s.split("\t")[0], "alignments":s} for s in alignments]
+aligndict = sorted(aligndict, key=lambda x: x["qname"])
+
+aligngroup = [list(group)
+              for _, group in groupby(aligndict, lambda x: x["qname"])]
+
+
+# for i in aligngroup:
+#     print(i)
+#     print(len(i))
+
+# qnames = [s.split("\t")[0] for s in alignments]
+# qnames = {s.split("\t")[0]: s for s in alignments}
+# qnames_counts = collections.Counter(qnames.keys())
+# qnames_unique = [k for k, v in qnames_counts.items() if v == 1]
+# qnames_duplicated = [k for k, v in qnames_counts.items() if v > 1]
+# qnames_largedel = [k for k, v in qnames_counts.items() if v == 2]
+# qnames_largeinv = [k for k, v in qnames_counts.items() if v == 3]
+
+# alignments_unique = [v for k, v in qnames.items() if k in qnames_unique]
+# alignments_duplicated = [
+#     v for k, v in qnames.items() if k in qnames_duplicated]
+
+
+list(map(sam_to_mids, aligngroup))
