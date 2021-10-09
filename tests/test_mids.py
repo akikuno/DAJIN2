@@ -74,10 +74,13 @@ def padding(mids: str, pos: int, reflen: int):
     return mids_padding
 
 
+def trim(mids_padding: str, reflen: int):
+    mids_trim = ",".join(mids_padding.split(",")[0:reflen])
+    return mids_trim
+
+
 SAMDIR = os.path.join("tests", "samTomids", "input")
-
 SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
-
 
 samfile = SAMFILES[0]
 # samfile = SAMFILES[6]
@@ -99,7 +102,7 @@ qnames_largedel = [k for k, v in qnames_counts.items() if v == 2]
 qnames_largeinv = [k for k, v in qnames_counts.items() if v == 3]
 
 # len(set(qnames_duplicated)) == len(set(qnames_duplicated + qnames))
-for qname in qnames_largedel:
+for qname in qnames_duplicated:
     reads = [s for s in contents if s.startswith(qname)]
     saminfo = list()
     for read in reads:
@@ -120,7 +123,14 @@ for qname in qnames_largedel:
     del_seq = "D," * del_len
     mids = ''.join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
     mids_padding = padding(mids, saminfo[0]["pos"], saminfo[0]["reflen"])
-    output = ','.join([qname, mids_padding]).rstrip(",")
+    mids_trim = trim(mids_padding, saminfo[0]["reflen"])
+    output = ','.join([qname, mids_trim]).rstrip(",")
+
+with open("tests/samTomids/output/test_del_long.csv") as f:
+    expected = f.readlines()[0]
+
+output == output
+output == expected
 
 with open(samfile, "r") as f:
     for line in f:
@@ -141,7 +151,7 @@ with open(samfile, "r") as f:
             print(output.count(","))
 
 
-len("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
+len("GTAGGTTGTGAGATGCGGGAGAGGTTCTCGATCTTCCCGTGGGACGTCAAC")
 len("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
 
 "M," * 50 + "D," * 1300 + "M," * 150
