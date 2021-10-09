@@ -9,6 +9,8 @@ def split_fasta(fasta_file: str, fasta_dir: str) -> None:
         regex = re.compile("(>.*?)\n([A-Za-z\n]*)", re.DOTALL)
         fasta_wrap = re.findall(regex, f.read())
         fasta_headers = [f[0].replace(">", "") for f in fasta_wrap]
+        fasta_headers = fasta_headers.replace("\t", " ")
+        fasta_headers = fasta_headers.replace(",", "_")
         fasta_contents = ["\n".join(f) for f in fasta_wrap]
 
     for head, content in zip(fasta_headers, fasta_contents):
