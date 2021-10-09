@@ -104,19 +104,23 @@ for qname in qnames_largedel:
     saminfo = list()
     for read in reads:
         record = read.split("\t")
-        _ = dict(
+        samdict = dict(
             qname=record[0],
             flag=record[1],
             reflen=int(SQ[record[2]]),
             pos=int(record[3]),
             cstag=[_ for _ in record if "cs:Z:" in _][0],
         )
-        saminfo.append(_)
+        saminfo.append(samdict)
     saminfo = sorted(saminfo, key=lambda x: x['pos'])
-    _ = [to_mids(s["cstag"]) for s in saminfo]
-    for i, mids in enumerate(_):
-        saminfo[i]["mids"] = mids
-
+    mids = [to_mids(s["cstag"]) for s in saminfo]
+    _ = [saminfo[i].update({"mids": s}) for i, s in enumerate(mids)]
+    left_len = saminfo[0]["mids"].count(",") - 1
+    del_len = saminfo[1]["pos"] - saminfo[0]["pos"] - left_len
+    del_seq = "D," * del_len
+    mids = ''.join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
+    mids_padding = padding(mids, saminfo[0]["pos"], saminfo[0]["reflen"])
+    output = ','.join([qname, mids_padding]).rstrip(",")
 
 with open(samfile, "r") as f:
     for line in f:
@@ -135,7 +139,3 @@ with open(samfile, "r") as f:
             output = ','.join([qname, mids_padding]).rstrip(",")
             print(output)
             print(output.count(","))
-
-
-len("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
-len("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
