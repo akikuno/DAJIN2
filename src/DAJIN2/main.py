@@ -5,9 +5,9 @@ import os
 import tempfile
 
 # Custom modules
-import mids
 import cache
-import mapping
+from preprocess import mids
+from preprocess import mapping
 
 
 def check_deps(dependencies: list) -> None:
