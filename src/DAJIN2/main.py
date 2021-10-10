@@ -64,8 +64,8 @@ def main():
 
     samfile = SAMFILES[-3]
 
-    mids = mids.samfile_to_mids(samfile)
-    print(mids)
+    mids_csv = mids.samfile_to_mids(samfile)
+    print(mids_csv)
 
     if debug is False:
         shutil.rmtree(".tmpDAJIN")

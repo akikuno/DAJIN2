@@ -1,5 +1,9 @@
 # Todo
 
++ [ ] テストの用意
+  + [ ] main
+  + [ ] mids
+
 ## padding
 
 + paddingはmids-filterのときだけに使えば良い。
@@ -103,7 +107,3 @@ cat .DAJIN_temp/scalar/barcode31_control.csv | grep 67803dec0a5e
 ## 2021-07-26
 + [x] paddingの”=”のあつかいはどうしよう. MatchかDeletionか？ → ひとまずDeletionとしてあつかう
 + [x] inversionアレルの変異情報が消えてしまう → 小文字にすることで完成しました. 
-
----
-
-### メモ
