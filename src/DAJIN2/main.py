@@ -2,22 +2,24 @@ import argparser
 import shutil
 import sys
 import os
-import mapping
-from typing import List
 import tempfile
+
+# Custom modules
+import mids
 import cache
+import mapping
 
 
-def check_deps(dependencies: List[str]) -> None:
+def check_deps(dependencies: list) -> None:
     for dep in dependencies:
         if not shutil.which(dep):
             print(f"{dep} is not found. Please install it.")
             sys.exit(1)
 
 
-def make_dirs(main: str, subfolders: List[str]) -> None:
-    for sub in subfolders:
-        dir = os.path.join(main, sub)
+def make_dirs(maindir: str, subdirs: list) -> None:
+    for sub in subdirs:
+        dir = os.path.join(maindir, sub)
         os.makedirs(dir, exist_ok=True)
 
 
@@ -57,6 +59,13 @@ def main():
     ########################################################################
     # MIDS conversion
     ########################################################################
+    SAMDIR = os.path.join("tests", "samTomids", "input")
+    SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
+
+    samfile = SAMFILES[-3]
+
+    mids = mids.samfile_to_mids(samfile)
+    print(mids)
 
     if debug is False:
         shutil.rmtree(".tmpDAJIN")
