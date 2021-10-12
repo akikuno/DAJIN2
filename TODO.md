@@ -1,9 +1,12 @@
 # ToDO
 
 + [ ] samToMIDS.shをPythonで書き換え中… (test_mids.py)
-  + [x] MIDS conversion
+  + [x] insertion
+  + [x] substitution
+  + [x] deletion
+  + [ ] padding
+  + [ ] mix condition
   + [ ] Large deletion
-  + [ ] Padding
   + [ ] Large inversion
 
 

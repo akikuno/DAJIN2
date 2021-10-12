@@ -13,35 +13,38 @@ def fmt_sqheaders(sqheaders: list) -> dict:
     return sq
 
 
+def format_cstag(cstag: str) -> list:
+    cstag = cstag.replace("cs:Z:", "")
+    cstag = cstag.replace("-", "=D")
+    cstag = cstag.replace("+", "=I")
+    cstag = re.sub("[ACGT]", "M", cstag)
+    cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
+    cstags = cstag.split("=")
+    cstags = [cs for cs in cstags if cs != '']
+    return cstags
+
+
+def append_next_mids_to_ins(cstags: list) -> list:
+    for i, cs in enumerate(cstags):
+        if "I" in cs:
+            cstags[i] = cs + cstags[i+1][0]
+            cstags[i+1] = cstags[i+1][1:]
+    return cstags
+
+
+def to_fixed_length(cs: str) -> str:
+    if "D" in cs:
+        cs = re.sub("[acgt]", "D,", cs[1:])
+    elif "I" in cs:
+        cs = f"{len(cs)-2}{cs[-1]},"
+    elif "S" in cs:
+        cs = "S,"
+    elif "M" in cs:
+        cs = cs.replace("M", "M,")
+    return(cs)
+
+
 def cstag_to_mids(cstag: str) -> str:
-    def format_cstag(cstag: str) -> list:
-        cstag = cstag.replace("cs:Z:", "")
-        cstag = cstag.replace("-", "=D")
-        cstag = cstag.replace("+", "=I")
-        cstag = re.sub("[ACGT]", "M", cstag)
-        cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
-        cstags = cstag.split("=")
-        cstags = [cs for cs in cstags if cs != '']
-        return cstags
-
-    def append_next_mids_to_ins(cstags: list) -> list:
-        for i, cs in enumerate(cstags):
-            if "I" in cs:
-                cstags[i] = cs + cstags[i+1][0]
-                cstags[i+1] = cstags[i+1][1:]
-        return cstags
-
-    def to_fixed_length(cs: str) -> str:
-        if "D" in cs:
-            cs = re.sub("[acgt]", "D,", cs[1:])
-        elif "I" in cs:
-            cs = f"{len(cs)-2}{cs[-1]},"
-        elif "S" in cs:
-            cs = "S,"
-        elif "M" in cs:
-            cs = cs.replace("M", "M,")
-        return(cs)
-
     cstags = format_cstag(cstag)
     cstags = append_next_mids_to_ins(cstags)
     cstags_fixlen = list(map(to_fixed_length, cstags))
@@ -124,23 +127,21 @@ def sam_to_mids(alignments: list) -> str:
 def samfile_to_mids(sampath: str) -> list:
     with open(sampath, "r") as f:
         sam = f.readlines()
-
+    # SQ
     sqheaders = (s for s in sam if s.startswith("@SQ"))
     sqheaders = fmt_sqheaders(sqheaders)
-
+    # Alignments
     alignments = (s for s in sam if not s.startswith("@"))
     alignments = [s for s in alignments if "cs:Z:" in s]
-
     alignments = [s.replace("\t" + s.split("\t")[2],
                             "\t" + str(sqheaders[s.split("\t")[2]]))
                   for s in alignments]
-
+    # Group by qname
     aligndict = [{"qname": s.split("\t")[0], "alignments":s}
                  for s in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["qname"])
-
     aligngroup = (list(group)
                   for _, group in groupby(aligndict, lambda x: x["qname"]))
-
+    # MIDS conversion
     mids = list(map(sam_to_mids, aligngroup))
     return mids

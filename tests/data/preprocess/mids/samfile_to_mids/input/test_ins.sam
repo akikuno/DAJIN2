@@ -1,3 +1,3 @@
 @SQ	SN:control	LN:100
-@PG	ID:minimap2	PN:minimap2	VN:2.22-r1101	CL:minimap2 -ax map-ont --cs=long tests/samTomids/tmp/test_ref.fa tests/samTomids/tmp/test_ins.fq
+@PG	ID:minimap2	PN:minimap2	VN:2.22-r1101	CL:minimap2 -ax map-ont --cs=long tests/data/preprocess/mids/samfile_to_mids/tmp/test_ref.fa tests/data/preprocess/mids/samfile_to_mids/tmp/test_ins.fq
 test_ins	0	control	1	60	50M10I50M	*	0	0	ACTGTGCGGCATACTTAATTATACATTTGAAACGCGCCCAAGTGACGCTATTTTTTTTTTGGCAAGTCAGAGCAGGTTCCCGTGTTAGCTTAAGGGTAAACATACAAGTC	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	NM:i:10	ms:i:189	AS:i:176	nn:i:0	tp:A:P	cm:i:12	s1:i:91	s2:i:0	de:f:0.0099	cs:Z:=ACTGTGCGGCATACTTAATTATACATTTGAAACGCGCCCAAGTGACGCTA+tttttttttt=GGCAAGTCAGAGCAGGTTCCCGTGTTAGCTTAAGGGTAAACATACAAGTC	rl:i:0
