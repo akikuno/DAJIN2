@@ -40,3 +40,19 @@ def test_sub():
     with open(expfile) as f:
         expected = f.readlines()
     assert mids.samfile_to_mids(infile) == expected
+
+
+def test_del_long():
+    infile = [s for s in input_files if "del_long.sam" in s][0]
+    expfile = [s for s in expectation_files if "del_long.csv" in s][0]
+    with open(expfile) as f:
+        expected = f.readlines()
+    assert mids.samfile_to_mids(infile) == expected
+
+
+def test_inv():
+    infile = [s for s in input_files if "inv.sam" in s][0]
+    expfile = [s for s in expectation_files if "inv.csv" in s][0]
+    with open(expfile) as f:
+        expected = f.readlines()
+    assert mids.samfile_to_mids(infile) == expected
