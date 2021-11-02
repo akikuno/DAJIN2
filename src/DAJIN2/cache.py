@@ -9,7 +9,7 @@ def exists(control: str, cachedir: str) -> bool:
     return os.path.exists(f)
 
 
-def is_same_size(control: str, cachedir: str) -> bool:
+def is_same_filesize(control: str, cachedir: str) -> bool:
     control_name = os.path.basename(control)
     f = os.path.join(cachedir, control_name)
     return os.path.getsize(control) == os.path.getsize(f)
