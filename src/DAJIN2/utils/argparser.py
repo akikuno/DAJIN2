@@ -38,9 +38,6 @@ def parse():
                         version='DAJIN version 2.0.0')
     args = parser.parse_args()
 
-    os.makedirs(args.output, exist_ok=True)
-    os.makedirs(".tmpDAJIN", exist_ok=True)
-
     os_cpus = int(os.cpu_count())
     if args.threads > os_cpus:
         threads = os_cpus
