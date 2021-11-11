@@ -2,7 +2,7 @@ from itertools import groupby
 import re
 
 
-def fmt_sqheaders(sqheaders: list) -> dict:
+def get_sqheaders(sqheaders: list) -> dict:
     sq = {}
     for sqheader in sqheaders:
         sn = [_ for _ in sqheader.split("\t") if "SN:" in _][0]
@@ -20,15 +20,15 @@ def format_cstag(cstag: str) -> list:
     cstag = re.sub("[ACGT]", "M", cstag)
     cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
     cstags = cstag.split("=")
-    cstags = [cs for cs in cstags if cs != '']
+    cstags = [cs for cs in cstags if cs != ""]
     return cstags
 
 
 def append_next_mids_to_ins(cstags: list) -> list:
     for i, cs in enumerate(cstags):
         if "I" in cs:
-            cstags[i] = cs + cstags[i+1][0]
-            cstags[i+1] = cstags[i+1][1:]
+            cstags[i] = cs + cstags[i + 1][0]
+            cstags[i + 1] = cstags[i + 1][1:]
     return cstags
 
 
@@ -41,14 +41,14 @@ def to_fixed_length(cs: str) -> str:
         cs = "S,"
     elif "M" in cs:
         cs = cs.replace("M", "M,")
-    return(cs)
+    return cs
 
 
 def cstag_to_mids(cstag: str) -> str:
     cstags = format_cstag(cstag)
     cstags = append_next_mids_to_ins(cstags)
     cstags_fixlen = list(map(to_fixed_length, cstags))
-    mids = ''.join(cstags_fixlen)
+    mids = "".join(cstags_fixlen)
     return mids
 
 
@@ -56,7 +56,7 @@ def padding(mids: str, pos: int, reflen: int) -> str:
     midslen = mids.count(",")
     left_pad = "=," * (int(pos) - 1)
     right_pad = "=," * (reflen - midslen - int(pos) + 1)
-    mids_padding = ''.join([left_pad, mids, right_pad])
+    mids_padding = "".join([left_pad, mids, right_pad])
     return mids_padding
 
 
@@ -75,10 +75,9 @@ def mids_small_mutation(alignments_unique: list) -> list:
         cstag=[_ for _ in record if "cs:Z:" in _][0],
     )
     samdict["mids"] = cstag_to_mids(samdict["cstag"])
-    mids_padding = padding(
-        samdict["mids"], samdict["pos"], samdict["reflen"])
+    mids_padding = padding(samdict["mids"], samdict["pos"], samdict["reflen"])
     mids_trim = trim(mids_padding, samdict["reflen"])
-    output = ','.join([samdict["qname"], mids_trim]).rstrip(",")
+    output = ",".join([samdict["qname"], mids_trim]).rstrip(",")
     return output
 
 
@@ -94,7 +93,7 @@ def mids_large_mutation(alignments_duplicated: list) -> str:
             cstag=[_ for _ in record if "cs:Z:" in _][0],
         )
         saminfo.append(samdict)
-    saminfo = sorted(saminfo, key=lambda x: x['pos'])
+    saminfo = sorted(saminfo, key=lambda x: x["pos"])
     mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
     _ = [saminfo[i].update({"mids": s}) for i, s in enumerate(mids)]
     # large deletion
@@ -102,21 +101,23 @@ def mids_large_mutation(alignments_duplicated: list) -> str:
         left_len = saminfo[0]["mids"].count(",") - 1
         del_len = saminfo[1]["pos"] - saminfo[0]["pos"] - left_len
         del_seq = "D," * del_len
-        mids_join = ''.join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
+        mids_join = "".join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
     # large inversion
     elif read_nums == 3:
         midslow = saminfo[1]["mids"].lower()
         saminfo[1]["mids"] = midslow
-        mids_join = ''.join([saminfo[0]["mids"],
-                             saminfo[1]["mids"],
-                             saminfo[2]["mids"]])
+        mids_join = "".join(
+            [saminfo[0]["mids"], saminfo[1]["mids"], saminfo[2]["mids"]]
+        )
+    else:
+        return
     mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
     mids_trim = trim(mids_padding, saminfo[0]["reflen"])
-    output = ','.join([saminfo[0]["qname"], mids_trim]).rstrip(",")
+    output = ",".join([saminfo[0]["qname"], mids_trim]).rstrip(",")
     return output
 
 
-def sam_to_mids(alignments: list) -> str:
+def to_mids(alignments: list) -> str:
     if len(alignments) > 1:
         output = mids_large_mutation(alignments)
     else:
@@ -124,24 +125,23 @@ def sam_to_mids(alignments: list) -> str:
     return output
 
 
-def samfile_to_mids(sampath: str) -> list:
+def sam_to_mids(sampath: str) -> list:
     with open(sampath, "r") as f:
         sam = f.readlines()
     # SQ
     sqheaders = (s for s in sam if s.startswith("@SQ"))
-    sqheaders = fmt_sqheaders(sqheaders)
+    sqheaders = get_sqheaders(sqheaders)
     # Alignments
     alignments = (s for s in sam if not s.startswith("@"))
-    alignments = [s for s in alignments if "cs:Z:" in s]
-    alignments = [s.replace("\t" + s.split("\t")[2],
-                            "\t" + str(sqheaders[s.split("\t")[2]]))
-                  for s in alignments]
+    alignments = (s for s in alignments if "cs:Z:" in s)
+    alignments = [
+        s.replace("\t" + s.split("\t")[2], "\t" + str(sqheaders[s.split("\t")[2]]))
+        for s in alignments
+    ]
     # Group by qname
-    aligndict = [{"qname": s.split("\t")[0], "alignments":s}
-                 for s in alignments]
+    aligndict = [{"qname": s.split("\t")[0], "alignments": s} for s in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["qname"])
-    aligngroup = (list(group)
-                  for _, group in groupby(aligndict, lambda x: x["qname"]))
+    aligngroup = (list(group) for _, group in groupby(aligndict, lambda x: x["qname"]))
     # MIDS conversion
-    mids = list(map(sam_to_mids, aligngroup))
+    mids = list(map(to_mids, aligngroup))
     return mids

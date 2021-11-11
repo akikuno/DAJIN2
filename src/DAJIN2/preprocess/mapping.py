@@ -9,14 +9,14 @@ def split_fasta(fasta_file: str, fasta_dir: str) -> None:
         regex = re.compile("(>.*?)\n([A-Za-z\n]*)", re.DOTALL)
         fasta_wrap = re.findall(regex, f.read())
         fasta_headers = [f[0].replace(">", "") for f in fasta_wrap]
-        fasta_headers = fasta_headers.replace("\t", " ")
-        fasta_headers = fasta_headers.replace(",", "_")
-        fasta_contents = ["\n".join(f) for f in fasta_wrap]
+        fasta_headers = [f.replace("\t", " ") for f in fasta_headers]
+        fasta_headers = [f.replace(",", "_") for f in fasta_headers]
+        fasta_contents = [f[1].strip().upper() for f in fasta_wrap]
 
-    for head, content in zip(fasta_headers, fasta_contents):
-        output = os.path.join(fasta_dir, head) + ".fasta"
-        with open(output, 'w') as f:
-            f.write(content)
+    for header, content in zip(fasta_headers, fasta_contents):
+        output = os.path.join(fasta_dir, header) + ".fasta"
+        with open(output, "w") as f:
+            f.write(f">{header}\n{content}\n")
 
 
 def minimap2(fastq_file, fasta_dir, sam_dir, threads=1):
@@ -28,12 +28,17 @@ def minimap2(fastq_file, fasta_dir, sam_dir, threads=1):
     for name, fasta in zip(output_names, fasta_files):
         output_sam = os.path.join(sam_dir, name) + ".sam"
         with open(output_sam, "w") as f:
-            minimap2 = ["minimap2", "-ax", "map-ont", "--cs=long",
-                        "-t", str(threads), fasta, fastq_file]
-            subprocess.run(minimap2,
-                           stdout=f,
-                           stderr=subprocess.DEVNULL,
-                           check=True)
+            minimap2 = [
+                "minimap2",
+                "-ax",
+                "map-ont",
+                "--cs=long",
+                "-t",
+                str(threads),
+                fasta,
+                fastq_file,
+            ]
+            subprocess.run(minimap2, stdout=f, stderr=subprocess.DEVNULL, check=True)
 
 
 # fastq_file = "tests/data/query.fq"
