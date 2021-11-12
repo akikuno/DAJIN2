@@ -10,6 +10,7 @@ def check_dependencies(dependencies: list) -> None:
 
 
 def make_directories(maindir: str, subdirs: list) -> None:
+    os.makedirs(maindir, exist_ok=True)
     for sub in subdirs:
         dir = os.path.join(maindir, sub)
         os.makedirs(dir, exist_ok=True)

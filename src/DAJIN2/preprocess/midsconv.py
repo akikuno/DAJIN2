@@ -1,5 +1,6 @@
 from itertools import groupby
 import re
+from concurrent.futures import ProcessPoolExecutor
 
 
 def get_sqheaders(sqheaders: list) -> dict:
@@ -110,7 +111,7 @@ def mids_large_mutation(alignments_duplicated: list) -> str:
             [saminfo[0]["mids"], saminfo[1]["mids"], saminfo[2]["mids"]]
         )
     else:
-        return
+        return ""
     mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
     mids_trim = trim(mids_padding, saminfo[0]["reflen"])
     output = ",".join([saminfo[0]["qname"], mids_trim]).rstrip(",")
@@ -118,14 +119,14 @@ def mids_large_mutation(alignments_duplicated: list) -> str:
 
 
 def to_mids(alignments: list) -> str:
-    if len(alignments) > 1:
-        output = mids_large_mutation(alignments)
-    else:
+    if len(alignments) == 1:
         output = mids_small_mutation(alignments)
+    else:
+        output = mids_large_mutation(alignments)
     return output
 
 
-def sam_to_mids(sampath: str) -> list:
+def sam_to_mids(sampath: str, threads: int) -> list:
     with open(sampath, "r") as f:
         sam = f.readlines()
     # SQ
@@ -142,6 +143,7 @@ def sam_to_mids(sampath: str) -> list:
     aligndict = [{"qname": s.split("\t")[0], "alignments": s} for s in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["qname"])
     aligngroup = (list(group) for _, group in groupby(aligndict, lambda x: x["qname"]))
-    # MIDS conversion
-    mids = list(map(to_mids, aligngroup))
+    with ProcessPoolExecutor(max_workers=threads) as executor:
+        # MIDS conversion
+        mids = list(executor.map(to_mids, aligngroup))
     return mids
