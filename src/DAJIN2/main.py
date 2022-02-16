@@ -39,7 +39,10 @@ def make_directories(maindir: str, subdirs: list) -> None:
 
 
 TMPDIR = ".tmpDAJIN"
-util.make_directories(TMPDIR, ["fasta", "sam", "midsconv", "midsqc"])
+SUBDIRS = ["fasta", "sam", "midsconv", "midsqc"]
+for sub in SUBDIRS:
+    dir = os.path.join(TMPDIR, sub)
+    os.makedirs(dir, exist_ok=True)
 
 TMPDIR_PATHS = {
     dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)
