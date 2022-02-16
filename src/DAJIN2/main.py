@@ -4,7 +4,6 @@ import os
 import tempfile
 
 # Custom modules
-import src.DAJIN2.utils.util as util
 from src.DAJIN2.utils import cache_control
 from src.DAJIN2.utils import argparser
 from src.DAJIN2.preprocess import mapping
@@ -12,7 +11,7 @@ from src.DAJIN2.preprocess import midsconv
 from src.DAJIN2.preprocess import midsqc
 
 # For development
-import importlib
+# import importlib
 
 
 #! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -21,10 +20,27 @@ import importlib
 # Setting
 ########################################################################
 
-util.check_dependencies(["minimap2", "samtools"])
+
+def check_dependencies(dependencies: list) -> None:
+    for dep in dependencies:
+        if not shutil.which(dep):
+            print(f"{dep} is not found. Please install it.")
+            sys.exit(1)
+
+
+check_dependencies(["minimap2", "samtools"])
+
+
+def make_directories(maindir: str, subdirs: list) -> None:
+    os.makedirs(maindir, exist_ok=True)
+    for sub in subdirs:
+        dir = os.path.join(maindir, sub)
+        os.makedirs(dir, exist_ok=True)
+
 
 TMPDIR = ".tmpDAJIN"
 util.make_directories(TMPDIR, ["fasta", "sam", "midsconv", "midsqc"])
+
 TMPDIR_PATHS = {
     dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)
 }
