@@ -3,15 +3,18 @@ import re
 from concurrent.futures import ProcessPoolExecutor
 
 
-def get_sqheaders(sqheaders: list) -> dict:
-    sq = {}
+def extract_SNLN(sam: list) -> dict:
+    """
+    Extract SN (Reference sequence name) and LN (Reference sequence length) information at SQ header from SAM file
+    """
+    sqheaders = (s for s in sam if s.startswith("@SQ"))
+    SNLN = {}
     for sqheader in sqheaders:
-        sn = [_ for _ in sqheader.split("\t") if "SN:" in _][0]
-        sn = sn.replace("SN:", "")
-        ln = [_ for _ in sqheader.split("\t") if "LN:" in _][0]
-        ln = int(ln.replace("LN:", ""))
-        sq.update({sn: ln})
-    return sq
+        sn_ln = [sq for sq in sqheader.split("\t") if re.search(("SN:|LN:"), sq)]
+        sn = sn_ln[0].replace("SN:", "")
+        ln = int(sn_ln[1].replace("LN:", ""))
+        SNLN.update({sn: ln})
+    return SNLN
 
 
 def format_cstag(cstag: str) -> list:
@@ -128,10 +131,9 @@ def to_mids(alignments: list) -> str:
 
 def sam_to_mids(sampath: str, threads: int) -> list:
     with open(sampath, "r") as f:
-        sam = f.readlines()
+        sam = f.read().splitlines()
     # SQ
-    sqheaders = (s for s in sam if s.startswith("@SQ"))
-    sqheaders = get_sqheaders(sqheaders)
+    sqheaders = extract_SNLN(sam)
     # Alignments
     alignments = (s for s in sam if not s.startswith("@"))
     alignments = (s for s in alignments if "cs:Z:" in s)
