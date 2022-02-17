@@ -105,7 +105,7 @@ sampath = ".tmpDAJIN/sam/barcode31_albino.sam"
 
 for samfile in os.listdir(TMPDIR_PATHS["sam"]):
     sampath = os.path.join(TMPDIR_PATHS["sam"], samfile)
-    output = sampath.replace(".sam", ".csv").replace("sam", "midsconv")
+    output = os.path.join(TMPDIR_PATHS["midsconv"], samfile.replace(".sam", ".csv"))
     midscsv = midsconv.sam_to_mids(sampath, threads)
     with open(output, "w") as f:
         f.write("\n".join(midscsv))
