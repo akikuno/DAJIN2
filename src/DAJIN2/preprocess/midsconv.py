@@ -1,3 +1,4 @@
+# from ctypes import alignment
 from itertools import groupby
 import re
 from concurrent.futures import ProcessPoolExecutor
@@ -12,7 +13,7 @@ def extract_SNLN(sam: list) -> dict:
     for sqheader in sqheaders:
         sn_ln = [sq for sq in sqheader.split("\t") if re.search(("SN:|LN:"), sq)]
         sn = sn_ln[0].replace("SN:", "")
-        ln = int(sn_ln[1].replace("LN:", ""))
+        ln = sn_ln[1].replace("LN:", "")
         SNLN.update({sn: ln})
     return SNLN
 
@@ -69,12 +70,12 @@ def trim(mids_padding: str, reflen: int) -> str:
     return mids_trim
 
 
-def mids_small_mutation(alignments_unique: list) -> list:
-    read = alignments_unique[0]["alignments"]
+def mids_small_mutation(alignments: list) -> list:
+    read = alignments[0]["alignments"]
     record = read.split("\t")
     samdict = dict(
         qname=record[0].replace(",", "_"),
-        reflen=int(record[2]),
+        reflen=int(record[-1]),
         pos=int(record[3]),
         cstag=[_ for _ in record if "cs:Z:" in _][0],
     )
@@ -92,7 +93,7 @@ def mids_large_mutation(alignments_duplicated: list) -> str:
         record = read["alignments"].split("\t")
         samdict = dict(
             qname=record[0].replace(",", "_"),
-            reflen=int(record[2]),
+            reflen=int(record[-1]),
             pos=int(record[3]),
             cstag=[_ for _ in record if "cs:Z:" in _][0],
         )
@@ -135,16 +136,17 @@ def sam_to_mids(sampath: str, threads: int) -> list:
     # SQ
     sqheaders = extract_SNLN(sam)
     # Alignments
-    alignments = (s for s in sam if not s.startswith("@"))
-    alignments = (s for s in alignments if "cs:Z:" in s)
-    alignments = [
-        s.replace("\t" + s.split("\t")[2], "\t" + str(sqheaders[s.split("\t")[2]]))
-        for s in alignments
-    ]
-    # Group by qname
-    aligndict = [{"qname": s.split("\t")[0], "alignments": s} for s in alignments]
-    aligndict = sorted(aligndict, key=lambda x: x["qname"])
-    aligngroup = (list(group) for _, group in groupby(aligndict, lambda x: x["qname"]))
+    alignments = []
+    for alignment in sam:
+        if not "cs:Z:" in alignment:
+            continue
+        RNAME = alignment.split("\t")[2]
+        LN = sqheaders[RNAME]
+        alignments.append("\t".join([alignment, LN]))
+    # Group by QNAME
+    aligndict = [{"QNAME": a.split("\t")[0], "alignment": a} for a in alignments]
+    aligndict = sorted(aligndict, key=lambda x: x["QNAME"])
+    aligngroup = [list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])]
     with ProcessPoolExecutor(max_workers=threads) as executor:
         # MIDS conversion
         mids = list(executor.map(to_mids, aligngroup))
