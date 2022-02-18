@@ -126,3 +126,9 @@ if debug is False:
 if __name__ == "__main__":
     main()
 
+
+cstag = "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
+
+cstag = samdict["cstag"]
+
+cstags = ["MMMM", "S", "M", "Dg", "M", "It", "MMMM"]

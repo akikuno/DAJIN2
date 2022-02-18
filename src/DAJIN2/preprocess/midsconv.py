@@ -19,14 +19,16 @@ def extract_SNLN(sam: list) -> dict:
 
 
 def format_cstag(cstag: str) -> list:
+    """
+    Input  "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
+    Output "['MMMM', 'S', 'M', 'Dg', 'M', 'It', 'MMMM']"
+    """
     cstag = cstag.replace("cs:Z:", "")
     cstag = cstag.replace("-", "=D")
     cstag = cstag.replace("+", "=I")
     cstag = re.sub("[ACGT]", "M", cstag)
     cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
-    cstags = cstag.split("=")
-    cstags = [cs for cs in cstags if cs != ""]
-    return cstags
+    return cstag.split("=")[1:]
 
 
 def append_next_mids_to_ins(cstags: list) -> list:
@@ -50,52 +52,55 @@ def to_fixed_length(cs: str) -> str:
 
 
 def cstag_to_mids(cstag: str) -> str:
+    """
+    Input:  "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
+    Output: "M,M,M,M,S,M,D,M,1M,M,M,M"
+    """
     cstags = format_cstag(cstag)
     cstags = append_next_mids_to_ins(cstags)
     cstags_fixlen = list(map(to_fixed_length, cstags))
-    mids = "".join(cstags_fixlen)
-    return mids
+    return "".join(cstags_fixlen).rstrip(",")
 
 
 def padding(mids: str, pos: int, reflen: int) -> str:
     midslen = mids.count(",")
     left_pad = "=," * (int(pos) - 1)
     right_pad = "=," * (reflen - midslen - int(pos) + 1)
-    mids_padding = "".join([left_pad, mids, right_pad])
-    return mids_padding
+    return "".join([left_pad, mids, right_pad]).rstrip(",")
 
 
 def trim(mids_padding: str, reflen: int) -> str:
-    mids_trim = ",".join(mids_padding.split(",")[0:reflen])
-    return mids_trim
+    """
+    Trim bases that are longer than the reference sequence
+    """
+    return ",".join(mids_padding.split(",")[0:reflen])
 
 
-def mids_small_mutation(alignments: list) -> list:
-    read = alignments[0]["alignments"]
-    record = read.split("\t")
+def mids_small_mutation(alignment: list) -> list:
+    record = alignment[0]["alignment"].split("\t")
     samdict = dict(
         qname=record[0].replace(",", "_"),
         reflen=int(record[-1]),
         pos=int(record[3]),
-        cstag=[_ for _ in record if "cs:Z:" in _][0],
+        qual=record[10],
+        cstag=record[-3],
     )
     samdict["mids"] = cstag_to_mids(samdict["cstag"])
     mids_padding = padding(samdict["mids"], samdict["pos"], samdict["reflen"])
     mids_trim = trim(mids_padding, samdict["reflen"])
-    output = ",".join([samdict["qname"], mids_trim]).rstrip(",")
-    return output
+    return ",".join([samdict["qname"], mids_trim])
 
 
-def mids_large_mutation(alignments_duplicated: list) -> str:
-    read_nums = len(alignments_duplicated)
+def mids_large_mutation(alignments: list) -> str:
+    read_nums = len(alignments)
     saminfo = list()
-    for read in alignments_duplicated:
-        record = read["alignments"].split("\t")
+    for read in alignments:
+        record = read["alignment"].split("\t")
         samdict = dict(
             qname=record[0].replace(",", "_"),
             reflen=int(record[-1]),
             pos=int(record[3]),
-            cstag=[_ for _ in record if "cs:Z:" in _][0],
+            cstag=record[-3],
         )
         saminfo.append(samdict)
     saminfo = sorted(saminfo, key=lambda x: x["pos"])
@@ -118,7 +123,7 @@ def mids_large_mutation(alignments_duplicated: list) -> str:
         return ""
     mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
     mids_trim = trim(mids_padding, saminfo[0]["reflen"])
-    output = ",".join([saminfo[0]["qname"], mids_trim]).rstrip(",")
+    output = ",".join([saminfo[0]["qname"], mids_trim])
     return output
 
 
@@ -151,3 +156,14 @@ def sam_to_mids(sampath: str, threads: int) -> list:
         # MIDS conversion
         mids = list(executor.map(to_mids, aligngroup))
     return mids
+
+
+###############################################################################
+# Scratch
+###############################################################################
+
+# with ProcessPoolExecutor(max_workers=threads) as executor:
+#     # MIDS conversion
+#     mids = list(executor.map(to_mids, aligngroup))
+
+# tmp_mids = mids[0:5]
