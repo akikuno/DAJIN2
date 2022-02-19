@@ -130,8 +130,12 @@ def mids_large_mutation(alignments: list) -> str:
 def to_mids(alignments: list) -> str:
     if len(alignments) == 1:
         output = mids_small_mutation(alignments)
+    elif len(alignments) == 2:
+        output = mids_large_deletion(alignments)
+    elif len(alignments) == 3:
+        output = mids_large_inversion(alignments)
     else:
-        output = mids_large_mutation(alignments)
+        pass
     return output
 
 
