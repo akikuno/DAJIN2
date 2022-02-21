@@ -91,8 +91,7 @@ def mids_small_mutation(alignment: list) -> list:
     return ",".join([samdict["qname"], mids_trim])
 
 
-def mids_large_mutation(alignments: list) -> str:
-    read_nums = len(alignments)
+def mids_large_deletion(alignments: list) -> str:
     saminfo = list()
     for read in alignments:
         record = read["alignment"].split("\t")
@@ -106,25 +105,71 @@ def mids_large_mutation(alignments: list) -> str:
     saminfo = sorted(saminfo, key=lambda x: x["pos"])
     mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
     _ = [saminfo[i].update({"mids": s}) for i, s in enumerate(mids)]
-    # large deletion
-    if read_nums == 2:
-        left_len = saminfo[0]["mids"].count(",") - 1
-        del_len = saminfo[1]["pos"] - saminfo[0]["pos"] - left_len
-        del_seq = "D," * del_len
-        mids_join = "".join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
-    # large inversion
-    elif read_nums == 3:
-        midslow = saminfo[1]["mids"].lower()
-        saminfo[1]["mids"] = midslow
-        mids_join = "".join(
-            [saminfo[0]["mids"], saminfo[1]["mids"], saminfo[2]["mids"]]
-        )
-    else:
-        return ""
+    left_len = saminfo[0]["mids"].count(",") - 1
+    del_len = saminfo[1]["pos"] - saminfo[0]["pos"] - left_len
+    del_seq = "D," * del_len
+    mids_join = "".join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
     mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
     mids_trim = trim(mids_padding, saminfo[0]["reflen"])
-    output = ",".join([saminfo[0]["qname"], mids_trim])
-    return output
+    return ",".join([saminfo[0]["qname"], mids_trim])
+
+
+def mids_large_inversion(alignments: list) -> str:
+    saminfo = list()
+    for read in alignments:
+        record = read["alignment"].split("\t")
+        samdict = dict(
+            qname=record[0].replace(",", "_"),
+            reflen=int(record[-1]),
+            pos=int(record[3]),
+            cstag=record[-3],
+        )
+        saminfo.append(samdict)
+    saminfo = sorted(saminfo, key=lambda x: x["pos"])
+    mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
+    _ = [saminfo[i].update({"mids": s}) for i, s in enumerate(mids)]
+    midslow = saminfo[1]["mids"].lower()
+    saminfo[1]["mids"] = midslow
+    mids_join = "".join([saminfo[0]["mids"], saminfo[1]["mids"], saminfo[2]["mids"]])
+    mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
+    mids_trim = trim(mids_padding, saminfo[0]["reflen"])
+    return ",".join([saminfo[0]["qname"], mids_trim])
+
+
+# def mids_large_mutation(alignments: list) -> str:
+#     read_nums = len(alignments)
+#     saminfo = list()
+#     for read in alignments:
+#         record = read["alignment"].split("\t")
+#         samdict = dict(
+#             qname=record[0].replace(",", "_"),
+#             reflen=int(record[-1]),
+#             pos=int(record[3]),
+#             cstag=record[-3],
+#         )
+#         saminfo.append(samdict)
+#     saminfo = sorted(saminfo, key=lambda x: x["pos"])
+#     mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
+#     _ = [saminfo[i].update({"mids": s}) for i, s in enumerate(mids)]
+#     # large deletion
+#     if read_nums == 2:
+#         left_len = saminfo[0]["mids"].count(",") - 1
+#         del_len = saminfo[1]["pos"] - saminfo[0]["pos"] - left_len
+#         del_seq = "D," * del_len
+#         mids_join = "".join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
+#     # large inversion
+#     elif read_nums == 3:
+#         midslow = saminfo[1]["mids"].lower()
+#         saminfo[1]["mids"] = midslow
+#         mids_join = "".join(
+#             [saminfo[0]["mids"], saminfo[1]["mids"], saminfo[2]["mids"]]
+#         )
+#     else:
+#         return ""
+#     mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
+#     mids_trim = trim(mids_padding, saminfo[0]["reflen"])
+#     output = ",".join([saminfo[0]["qname"], mids_trim])
+#     return output
 
 
 def to_mids(alignments: list) -> str:
