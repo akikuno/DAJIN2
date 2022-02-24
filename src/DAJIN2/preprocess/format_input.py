@@ -40,14 +40,18 @@ def fwrite(infile: list, outfilepath: str) -> None:
 ########################################################################
 
 
-def dictionize_allele(allele: str) -> dict:
+def format_allele(allele: str) -> dict:
+    """
+    - Dictionize allele fasta file
+    - Save allele fasta file at ".tmpDAJIN/fasta" directory
+    """
     fasta = fread(allele)
     key = []
     seq = []
     s = []
     for f in fasta:
         if ">" in f:
-            key.append(f[1:])
+            key.append(f)
             seq.append("".join(s))
         else:
             s.append(f.upper())
@@ -59,25 +63,33 @@ def dictionize_allele(allele: str) -> dict:
             file=sys.stderr,
         )
         sys.exit(1)
-    if key.count("control") == 0:
+    if key.count(">control") == 0:
         print(
             f"Error: '{allele}' does not contain 'control' sequences.\n'{allele}' must include 'control' or 'wt' sequences.",
             file=sys.stderr,
         )
         sys.exit(1)
-    return {k: s for k, s in zip(key, seq)}
+    for k, s in zip(key, seq):
+        with open(f".tmpDAJIN/fasta/{k[1:]}.fa", "w") as f:
+            f.write("\n".join([k, s]) + "\n")
+    return {k[1:]: s for k, s in zip(key, seq)}
 
 
-dict_allele = dictionize_allele(allele)
-control_length = len(dict_allele["hoge"])
+dict_allele = format_allele(allele)
 
 ########################################################################
 # Fastqのうち過剰に長い配列にTooLongフラグを立てる
 ########################################################################
 
 
-for file in [sample, control]:
-    fastq = fread(file)
+def format_fastq(fastqpath: str, dict_allele: dict) -> None:
+    """
+    - Annotate "TooLong" tag after a header when sequence lenth is more than 1.1 control length
+    - Save fastq file at ".tmpDAJIN/fastq" directory
+    """
+    fastq = fread(fastqpath)
+    control_length = len(dict_allele["control"])
+    # Combine four lines into one list
     fastq = [fastq[i : i + 4] for i in range(0, len(fastq), 4)]
     fastq_anno = []
     for f in fastq:
@@ -85,6 +97,6 @@ for file in [sample, control]:
         if len(f[1]) > control_length * 1.1:
             header = "-".join([header, "TooLong"])
         fastq_anno.append([header, *f[1:]])
-    p = os.path.basename(file)
-    fwrite(fastq_anno, f".tmpDAJIN/fastq/{p}")
+    basename = os.path.basename(fastqpath)
+    fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
 
