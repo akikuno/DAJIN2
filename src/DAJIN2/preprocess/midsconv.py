@@ -4,7 +4,7 @@ import re
 from concurrent.futures import ProcessPoolExecutor
 
 
-def extract_SNLN(sam: list) -> dict:
+def extract_name_length(sam: list) -> dict:
     """
     Extract SN (Reference sequence name) and LN (Reference sequence length) information at SQ header from SAM file
     """
@@ -172,15 +172,15 @@ def mids_large_inversion(alignments: list) -> str:
 #     return output
 
 
-def to_mids(alignments: list) -> str:
-    if len(alignments) == 1:
-        output = mids_small_mutation(alignments)
-    elif len(alignments) == 2:
-        output = mids_large_deletion(alignments)
-    elif len(alignments) == 3:
-        output = mids_large_inversion(alignments)
+def to_mids(aligngroupby: list) -> str:
+    if len(aligngroupby) == 1:
+        output = mids_small_mutation(aligngroupby)
+    elif len(aligngroupby) == 2:
+        output = mids_large_deletion(aligngroupby)
+    elif len(aligngroupby) == 3:
+        output = mids_large_inversion(aligngroupby)
     else:
-        pass
+        output = 
     return output
 
 
@@ -188,8 +188,8 @@ def sam_to_mids(sampath: str, threads: int) -> list:
     with open(sampath, "r") as f:
         sam = f.read().splitlines()
     # SQ
-    sqheaders = extract_SNLN(sam)
-    # Alignments
+    sqheaders = extract_name_length(sam)
+        # Alignments
     alignments = []
     for alignment in sam:
         if not "cs:Z:" in alignment:
@@ -200,19 +200,33 @@ def sam_to_mids(sampath: str, threads: int) -> list:
     # Group by QNAME
     aligndict = [{"QNAME": a.split("\t")[0], "alignment": a} for a in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["QNAME"])
-    aligngroup = [list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])]
+    aligngroupby = [list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])]
     with ProcessPoolExecutor(max_workers=threads) as executor:
         # MIDS conversion
-        mids = list(executor.map(to_mids, aligngroup))
+        mids = list(executor.map(to_mids, aligngroupby))
     return mids
 
 
 ###############################################################################
-# Scratch
+# MEMO
 ###############################################################################
+import collections
+c = collections.Counter()
+
+len(aligngroupby)
+len3 = []
+for a in aligngroupby:
+    c[len(a)] += 1
+    if len(a) == 3:
+        len3.append(a[0]["QNAME"])
+
+print(*len3, sep="\n")
+c
+
+sampath = ".tmpDAJIN/sam/barcode31_control.sam"
 
 # with ProcessPoolExecutor(max_workers=threads) as executor:
 #     # MIDS conversion
-#     mids = list(executor.map(to_mids, aligngroup))
+#     mids = list(executor.map(to_mids, aligngroupby))
 
 # tmp_mids = mids[0:5]
