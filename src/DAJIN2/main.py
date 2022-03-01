@@ -4,11 +4,25 @@ import os
 import tempfile
 
 # Custom modules
-from src.DAJIN2.utils import cache_control
-from src.DAJIN2.utils import argparser
-from src.DAJIN2.preprocess import mapping
-from src.DAJIN2.preprocess import midsconv
-from src.DAJIN2.preprocess import midsqc
+import src.DAJIN2.utils
+from src.DAJIN2 import utils
+from src.DAJIN2 import preprocess
+from src.DAJIN2 import classification
+from src.DAJIN2 import clustering
+from src.DAJIN2 import consensus
+
+from src.DAJIN2.utils import hello
+from src.DAJIN2.utils import io
+
+hello.hello1()
+
+utils.hello.hello1()
+
+dir(src.DAJIN2.utils)
+dir(tempfile)
+dir(utils)
+utils.hello
+utils.hello.hello1()
 
 # For development
 # import importlib
@@ -78,6 +92,11 @@ if cache_control.exists(control, CACHEDIR):
 else:
     cache_control.save_header(control, CACHEDIR)
     IS_CACHED = False
+
+########################################################################
+# Format inputs (sample/control/allele)
+########################################################################
+
 
 ########################################################################
 # minimap2
