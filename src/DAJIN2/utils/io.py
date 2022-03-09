@@ -8,7 +8,7 @@ def fread(filepath: str) -> list:
     with gzip.open(filepath, "rt") as f:
         try:
             out = f.read().splitlines()
-        except:
+        except gzip.BadGzipFile:
             with open(filepath) as f:
                 out = f.read().splitlines()
     return out
@@ -21,4 +21,3 @@ def fwrite(infile: list, outfilepath: str) -> None:
     with gzip.open(outfilepath, "wt") as f:
         for i in infile:
             f.write("\n".join(i) + "\n")
-

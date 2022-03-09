@@ -4,25 +4,18 @@ import os
 import tempfile
 
 # Custom modules
-import src.DAJIN2.utils
-from src.DAJIN2 import utils
-from src.DAJIN2 import preprocess
-from src.DAJIN2 import classification
-from src.DAJIN2 import clustering
-from src.DAJIN2 import consensus
-
-from src.DAJIN2.utils import hello
+from src.DAJIN2.utils import cache_control
 from src.DAJIN2.utils import io
+from src.DAJIN2.utils import argparser
+from src.DAJIN2.preprocess import format_input
+from src.DAJIN2.preprocess import mapping
+from src.DAJIN2.preprocess import midsconv
+from src.DAJIN2.preprocess import midsqc
 
-hello.hello1()
+# from src.DAJIN2.classification import classification
+# from src.DAJIN2.clustering import clustering
+# from src.DAJIN2.consensus import consensus
 
-utils.hello.hello1()
-
-dir(src.DAJIN2.utils)
-dir(tempfile)
-dir(utils)
-utils.hello
-utils.hello.hello1()
 
 # For development
 # import importlib
@@ -34,23 +27,11 @@ utils.hello.hello1()
 # Setting
 ########################################################################
 
-
-def check_dependencies(dependencies: list) -> None:
-    for dep in dependencies:
-        if not shutil.which(dep):
-            print(f"{dep} is not found. Please install it.")
-            sys.exit(1)
-
-
-check_dependencies(["minimap2", "samtools"])
-
-
-def make_directories(maindir: str, subdirs: list) -> None:
-    os.makedirs(maindir, exist_ok=True)
-    for sub in subdirs:
-        dir = os.path.join(maindir, sub)
-        os.makedirs(dir, exist_ok=True)
-
+# Check dependencies
+# for dependence in ["minimap2", "samtools"]:
+#     if not shutil.which(dependence):
+#         print(f"{dependence} is not found. Please install it.")
+#         sys.exit(1)
 
 TMPDIR = ".tmpDAJIN"
 SUBDIRS = ["fasta", "fastq", "sam", "midsconv", "midsqc"]
@@ -97,9 +78,21 @@ else:
 # Format inputs (sample/control/allele)
 ########################################################################
 
+dict_allele = format_input.dictionize_allele(allele)
+
+for header, sequence in dict_allele.items():
+    print(header)
+    contents = "\n".join([">" + header, sequence]) + "\n"
+    with open(f".tmpDAJIN/fasta/{header}.fasta", "w") as f:
+        f.write(contents)
+
+for fastqpath in [sample, control]:
+    fastq_anno = format_input.annotate_TooLong_to_fastq(fastqpath, dict_allele)
+    basename = os.path.basename(fastqpath)
+    io.fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
 
 ########################################################################
-# minimap2
+# minimap2/mappy
 ########################################################################
 # importlib.reload(mapping)
 
@@ -131,8 +124,8 @@ for samfile in os.listdir(TMPDIR_PATHS["sam"]):
 
 ########################################################################
 # MIDS QC filtering
-## 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
-## Phread scoreが0.1以下のリードについて再分配する
+# 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
+# Phread scoreが0.1以下のリードについて再分配する
 ########################################################################
 
 print(mids_csv[0])

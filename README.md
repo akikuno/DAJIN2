@@ -12,13 +12,16 @@ You can install `DAJIN2` using bioconda or pip:
 
 ```bash
 conda install -c bioconda DAJIN2
+# conda create -y -n DAJIN2
+# conda activate DAJIN2
+# conda install -y numpy scikit-learn hdbscan plotnine mappy pysam
 ```
 
 ```bash
 pip install DAJIN2
 ```
 
-> :warning: install `minimap2` and `samtools` when you use pip.
+<!-- > :warning: install `minimap2` and `samtools` when you use pip. -->
 
 ## Usage
 
