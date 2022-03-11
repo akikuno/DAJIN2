@@ -3,18 +3,18 @@ import os
 import subprocess
 
 
-def split_fasta(fasta_file: str, fasta_dir: str) -> None:
-    with open(fasta_file, "r") as f:
-        regex = re.compile("(>.*?)\n([A-Za-z\n]*)", re.DOTALL)
-        fasta_wrap = re.findall(regex, f.read())
-        fasta_headers = [f[0].replace(">", "") for f in fasta_wrap]
-        fasta_headers = [f.replace("\t", " ") for f in fasta_headers]
-        fasta_headers = [f.replace(",", "_") for f in fasta_headers]
-        fasta_contents = [f[1].strip().upper() for f in fasta_wrap]
-    for header, content in zip(fasta_headers, fasta_contents):
-        output = os.path.join(fasta_dir, header) + ".fasta"
-        with open(output, "w") as f:
-            f.write(f">{header}\n{content}\n")
+# def split_fasta(fasta_file: str, fasta_dir: str) -> None:
+#     with open(fasta_file, "r") as f:
+#         regex = re.compile("(>.*?)\n([A-Za-z\n]*)", re.DOTALL)
+#         fasta_wrap = re.findall(regex, f.read())
+#         fasta_headers = [f[0].replace(">", "") for f in fasta_wrap]
+#         fasta_headers = [f.replace("\t", " ") for f in fasta_headers]
+#         fasta_headers = [f.replace(",", "_") for f in fasta_headers]
+#         fasta_contents = [f[1].strip().upper() for f in fasta_wrap]
+#     for header, content in zip(fasta_headers, fasta_contents):
+#         output = os.path.join(fasta_dir, header) + ".fasta"
+#         with open(output, "w") as f:
+#             f.write(f">{header}\n{content}\n")
 
 
 def minimap2(fastq_file, fasta_dir, sam_dir, threads=1):

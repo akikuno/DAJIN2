@@ -1,0 +1,6 @@
+barcode01,Intact control,1000
+barcode02,Intact control,500
+barcode02,Abnormal,500
+barcode03,Control with mutation,100
+barcode03,Expected substitution,600
+barcode03,Substitution with mutation,100

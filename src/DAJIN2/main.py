@@ -80,24 +80,37 @@ else:
 
 dict_allele = format_input.dictionize_allele(allele)
 
+# Export fasta files as single-FASTA format
 for header, sequence in dict_allele.items():
-    print(header)
     contents = "\n".join([">" + header, sequence]) + "\n"
     with open(f".tmpDAJIN/fasta/{header}.fasta", "w") as f:
-        f.write(contents)
+        _ = f.write(contents)
 
-for fastqpath in [sample, control]:
-    fastq_anno = format_input.annotate_TooLong_to_fastq(fastqpath, dict_allele)
-    basename = os.path.basename(fastqpath)
-    io.fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
+# for fastqpath in [sample, control]:
+#     fastq_anno = format_input.annotate_TooLong_to_fastq(fastqpath, dict_allele)
+#     basename = os.path.basename(fastqpath)
+#     io.fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
 
 ########################################################################
 # minimap2/mappy
 ########################################################################
 # importlib.reload(mapping)
 
-mapping.split_fasta(allele, TMPDIR_PATHS["fasta"])
+# mapping.split_fasta(allele, TMPDIR_PATHS["fasta"])
+mapping.mappy
+import mappy as mp
 
+a = mp.Aligner(".tmpDAJIN/fasta/control.fasta")  # load or build index
+if not a:
+    raise Exception("ERROR: failed to load/build index")
+
+tmp = []
+for name, seq, qual in mp.fastx_read(sample):  # read a fasta/q sequence
+    for hit in a.map(seq, cs=True):  # traverse alignments
+        tmp.append([hit.ctg, hit.r_st, hit.r_en])
+        # print(f"{hit.ctg}, {hit.r_st}, {hit.r_en}, {hit.cs}")
+
+tmp[0:10]
 if IS_CACHED:
     cache_control.load(CACHEDIR, TMPDIR_PATHS["sam"])
 else:
