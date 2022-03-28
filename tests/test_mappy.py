@@ -10,40 +10,39 @@ quefq = "tests/data/mappy/query.fq"
 refname, refseq, _ = list(mp.fastx_read(reffa))[0]
 
 
-def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, mp.Alignment]:
+def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, str, str, mp.Alignment]:
     ref = mp.Aligner(REFFA)
-    for qname, seq, _ in mp.fastx_read(QUEFQ):
-        for hit in ref.map(seq, cs=True):
-            yield qname, hit
+    for qname, qseq, qual in mp.fastx_read(QUEFQ):
+        for hit in ref.map(qseq, cs=True):
+            yield qname, qseq, qual, hit
 
 
-def generate_query_seq(CSTAG: str, REFSEQ: str, R_ST: str) -> str:
-    refseq = REFSEQ[R_ST:]
-    cs = re.split(r"([-:+*])", CSTAG)[1:]
-    cs = [i + j for i, j in zip(cs[0::2], cs[1::2])]
-    query_seq = []
-    start = 0
-    for c in cs:
-        if c[0] == ":":
-            end = start + int(c[1:])
-            query_seq.append(refseq[start:end])
-            start = end
-        elif c[0] == "+":
-            query_seq.append(c[1:])
-        elif c[0] == "-":
-            start += len(c[1:])
-        elif c[0] == "*":
-            query_seq.append("N")
-            start += 1
-    return "".join(query_seq).upper()
+# def generate_query_seq(CSTAG: str, REFSEQ: str, R_ST: str) -> str:
+#     refseq = REFSEQ[R_ST:]
+#     cs = re.split(r"([-:+*])", CSTAG)[1:]
+#     cs = [i + j for i, j in zip(cs[0::2], cs[1::2])]
+#     query_seq = []
+#     start = 0
+#     for c in cs:
+#         if c[0] == ":":
+#             end = start + int(c[1:])
+#             query_seq.append(refseq[start:end])
+#             start = end
+#         elif c[0] == "+":
+#             query_seq.append(c[1:])
+#         elif c[0] == "-":
+#             start += len(c[1:])
+#         elif c[0] == "*":
+#             query_seq.append("N")
+#             start += 1
+#     return "".join(query_seq).upper()
 
 
 cslengthen = []
 qname_cslengthen = []
-for qname, hit in extract_mappy_tag(reffa, quefq):
-    r_st, cigar, cs = hit.r_st, hit.cigar_str, hit.cs
-    queseq = generate_query_seq(cs, refseq, r_st)
-    cslong = cstag.lengthen(cs, cigar, queseq)
+for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
+    cs, cigar, q_st = hit.cs, hit.cigar_str, hit.q_st
+    cslong = cstag.lengthen(cs, cigar, qseq[q_st:])
     cslengthen.append(cslong)
     qname_cslengthen.append([qname, cslong])
 
