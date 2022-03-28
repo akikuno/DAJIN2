@@ -1,18 +1,17 @@
-import re
+# https://github.com/lh3/minimap2/blob/master/python/README.rst
+
 import cstag
-import mappy as mp
+import mappy
+import pysam
 from collections.abc import Iterator
 
 reffa = "tests/data/mappy/ref.fa"
 quefq = "tests/data/mappy/query.fq"
 
 
-refname, refseq, _ = list(mp.fastx_read(reffa))[0]
-
-
-def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, str, str, mp.Alignment]:
-    ref = mp.Aligner(REFFA)
-    for qname, qseq, qual in mp.fastx_read(QUEFQ):
+def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, str, str, mappy.Alignment]:
+    ref = mappy.Aligner(REFFA)
+    for qname, qseq, qual in mappy.fastx_read(QUEFQ):
         for hit in ref.map(qseq, cs=True):
             yield qname, qseq, qual, hit
 
@@ -37,6 +36,9 @@ def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, str, str, mp.Alig
 #             start += 1
 #     return "".join(query_seq).upper()
 
+# ------------------------------------------------------------------------------
+# cslengthen
+# ------------------------------------------------------------------------------
 
 cslengthen = []
 qname_cslengthen = []
@@ -46,7 +48,32 @@ for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
     cslengthen.append(cslong)
     qname_cslengthen.append([qname, cslong])
 
+# ------------------------------------------------------------------------------
+# mappy2sam
+# ------------------------------------------------------------------------------
 
+refname, refseq, _ = list(mappy.fastx_read(reffa))[0]
+SQ = f"@SQ\tSN:{refname}\tLN:{len(refseq)}"
+
+SAM = [SQ]
+
+for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
+    if hit.is_primary:
+        if hit.strand == 1:
+            flag = 0
+        else:
+            flag = 16
+    else:
+        if hit.strand == 1:
+            flag = 2048
+        else:
+            flag = 2064
+    alignment = [qname, flag, refname, hit.r_st, hit.mapq, hit.cigar_str, "*", 0, 0, qseq, qual]
+    alignment = [str(a) for a in alignment]
+    SAM.append("\t".join(alignment))
+
+
+# print(hit)
 ###############################################################################
 # Evaluate
 ###############################################################################
@@ -67,6 +94,10 @@ def test_cslengthen():
 def test_qname_cslengthen():
     for cs, cs_ans in zip(qname_cslengthen, zip(qname, cslong)):
         assert tuple(cs) == cs_ans
+
+
+def test_mappy2sam():
+    pass
 
 
 # END
