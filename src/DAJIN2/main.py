@@ -39,9 +39,7 @@ for sub in SUBDIRS:
     dir = os.path.join(TMPDIR, sub)
     os.makedirs(dir, exist_ok=True)
 
-TMPDIR_PATHS = {
-    dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)
-}
+TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
 
 ########################################################################
 # Argument parse
@@ -97,20 +95,27 @@ for header, sequence in dict_allele.items():
 # importlib.reload(mapping)
 
 # mapping.split_fasta(allele, TMPDIR_PATHS["fasta"])
-mapping.mappy
 import mappy as mp
+import cstag
 
-a = mp.Aligner(".tmpDAJIN/fasta/control.fasta")  # load or build index
-if not a:
-    raise Exception("ERROR: failed to load/build index")
+ref_fasta = ".tmpDAJIN/fasta/control.fasta"
+sample = "examples/pm-tyr/barcode31.fq.gz"
+
+ref_name, ref_seq, _ = list(mp.fastx_read(ref_fasta))[0]
+ref = mp.Aligner(ref_fasta)
+if not ref:
+    raise Exception("ERROR: failed to load fasta file")
 
 tmp = []
-for name, seq, qual in mp.fastx_read(sample):  # read a fasta/q sequence
-    for hit in a.map(seq, cs=True):  # traverse alignments
-        tmp.append([hit.ctg, hit.r_st, hit.r_en])
-        # print(f"{hit.ctg}, {hit.r_st}, {hit.r_en}, {hit.cs}")
+for name, seq, qual in mp.fastx_read(sample):
+    for hit in ref.map(seq, cs=True):
+        tmp.append([hit.strand, hit.cigar_str, hit.cs])
 
-tmp[0:10]
+for t in tmp:
+    if "S" in t[1]:
+        break
+
+tmp_cslong = [cstag.lengthen(cs) for _, _, _, cs in tmp]
 if IS_CACHED:
     cache_control.load(CACHEDIR, TMPDIR_PATHS["sam"])
 else:
