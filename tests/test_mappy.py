@@ -1,6 +1,7 @@
 import re
 import cstag
 import mappy as mp
+from collections.abc import Iterator
 
 reffa = "tests/data/mappy/ref.fa"
 quefq = "tests/data/mappy/query.fq"
@@ -9,15 +10,14 @@ quefq = "tests/data/mappy/query.fq"
 refname, refseq, _ = list(mp.fastx_read(reffa))[0]
 
 
-def extract_mappy_tag(REFFA, QUEFQ):
+def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, mp.Alignment]:
     ref = mp.Aligner(REFFA)
-    qname = [qname for qname, _, _ in mp.fastx_read(QUEFQ)]
-    for i, (_, seq, _) in enumerate(mp.fastx_read(QUEFQ)):
+    for qname, seq, _ in mp.fastx_read(QUEFQ):
         for hit in ref.map(seq, cs=True):
-            yield qname[i], hit.r_st, hit.cigar_str, hit.cs
+            yield qname, hit
 
 
-def generate_query_seq(CSTAG, REFSEQ, R_ST):
+def generate_query_seq(CSTAG: str, REFSEQ: str, R_ST: str) -> str:
     refseq = REFSEQ[R_ST:]
     cs = re.split(r"([-:+*])", CSTAG)[1:]
     cs = [i + j for i, j in zip(cs[0::2], cs[1::2])]
@@ -40,10 +40,12 @@ def generate_query_seq(CSTAG, REFSEQ, R_ST):
 
 cslengthen = []
 qname_cslengthen = []
-for qname, r_st, cigar, cs in extract_mappy_tag(reffa, quefq):
+for qname, hit in extract_mappy_tag(reffa, quefq):
+    r_st, cigar, cs = hit.r_st, hit.cigar_str, hit.cs
     queseq = generate_query_seq(cs, refseq, r_st)
-    cslengthen.append(cstag.lengthen(cs, cigar, queseq))
-    qname_cslengthen.append([qname, cstag.lengthen(cs, cigar, queseq)])
+    cslong = cstag.lengthen(cs, cigar, queseq)
+    cslengthen.append(cslong)
+    qname_cslengthen.append([qname, cslong])
 
 
 ###############################################################################
