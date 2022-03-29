@@ -44,7 +44,11 @@ cslengthen = []
 qname_cslengthen = []
 for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
     cs, cigar, q_st = hit.cs, hit.cigar_str, hit.q_st
-    cslong = cstag.lengthen(cs, cigar, qseq[q_st:])
+    if hit.q_st > 0:
+        cigar = str(hit.q_st) + "S" + cigar
+    if len(qseq) - hit.q_en > 0:
+        cigar = cigar + str(len(qseq) - hit.q_en) + "S"
+    cslong = cstag.lengthen(cs, cigar, qseq)
     cslengthen.append(cslong)
     qname_cslengthen.append([qname, cslong])
 
@@ -68,11 +72,14 @@ for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
             flag = 2048
         else:
             flag = 2064
-    alignment = [qname, flag, refname, hit.r_st, hit.mapq, hit.cigar_str, "*", 0, 0, qseq, qual]
+    alignment = [qname, flag, refname, hit.r_st + 1, hit.mapq, hit.cigar_str, "*", 0, 0, qseq, qual]
     alignment = [str(a) for a in alignment]
     SAM.append("\t".join(alignment))
 
+with open("tmp.sam", "w") as f:
+    f.write("\n".join(SAM))
 
+# pysam.view("-S", "-b", "tmp.sam", ">", "tmp.bam", catch_stdout=False)
 # print(hit)
 ###############################################################################
 # Evaluate
