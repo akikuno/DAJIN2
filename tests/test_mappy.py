@@ -3,38 +3,43 @@
 import cstag
 import mappy
 import pysam
-from collections.abc import Iterator
 
 reffa = "tests/data/mappy/ref.fa"
 quefq = "tests/data/mappy/query.fq"
 
+# ------------------------------------------------------------------------------
+# mappy2sam
+# ------------------------------------------------------------------------------
 
-def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, str, str, mappy.Alignment]:
+
+def mappy2sam(REFFA: str, QUEFQ: str) -> list:
+    # SQ header
+    refname, refseq, _ = list(mappy.fastx_read(reffa))[0]
+    SQ = f"@SQ\tSN:{refname}\tLN:{len(refseq)}"
+    SAM = [SQ]
+    # Mappy
     ref = mappy.Aligner(REFFA)
     for qname, qseq, qual in mappy.fastx_read(QUEFQ):
         for hit in ref.map(qseq, cs=True):
-            yield qname, qseq, qual, hit
+            # flag
+            if hit.is_primary:
+                flag = 0 if hit.strand == 1 else 16
+            else:
+                flag = 2048 if hit.strand == 1 else 2064
+            # Append softclips to CIGAR
+            cigar = hit.cigar_str
+            if hit.q_st > 0:
+                cigar = str(hit.q_st) + "S" + cigar
+            if len(qseq) - hit.q_en > 0:
+                cigar = cigar + str(len(qseq) - hit.q_en) + "S"
+            # summarize
+            alignment = [qname, flag, refname, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, "cs:Z:" + hit.cs]
+            alignment = [str(a) for a in alignment]
+            SAM.append("\t".join(alignment))
+    return SAM
 
 
-# def generate_query_seq(CSTAG: str, REFSEQ: str, R_ST: str) -> str:
-#     refseq = REFSEQ[R_ST:]
-#     cs = re.split(r"([-:+*])", CSTAG)[1:]
-#     cs = [i + j for i, j in zip(cs[0::2], cs[1::2])]
-#     query_seq = []
-#     start = 0
-#     for c in cs:
-#         if c[0] == ":":
-#             end = start + int(c[1:])
-#             query_seq.append(refseq[start:end])
-#             start = end
-#         elif c[0] == "+":
-#             query_seq.append(c[1:])
-#         elif c[0] == "-":
-#             start += len(c[1:])
-#         elif c[0] == "*":
-#             query_seq.append("N")
-#             start += 1
-#     return "".join(query_seq).upper()
+SAM = mappy2sam(reffa, quefq)
 
 # ------------------------------------------------------------------------------
 # cslengthen
@@ -42,45 +47,15 @@ def extract_mappy_tag(REFFA: str, QUEFQ: str) -> Iterator[str, str, str, mappy.A
 
 cslengthen = []
 qname_cslengthen = []
-for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
-    cs, cigar, q_st = hit.cs, hit.cigar_str, hit.q_st
-    if hit.q_st > 0:
-        cigar = str(hit.q_st) + "S" + cigar
-    if len(qseq) - hit.q_en > 0:
-        cigar = cigar + str(len(qseq) - hit.q_en) + "S"
+for sam in SAM:
+    if sam[0] == "@":
+        continue
+    sam = sam.split("\t")
+    qname, cigar, qseq, cs = sam[0], sam[5], sam[9], sam[-1]
     cslong = cstag.lengthen(cs, cigar, qseq)
     cslengthen.append(cslong)
     qname_cslengthen.append([qname, cslong])
 
-# ------------------------------------------------------------------------------
-# mappy2sam
-# ------------------------------------------------------------------------------
-
-refname, refseq, _ = list(mappy.fastx_read(reffa))[0]
-SQ = f"@SQ\tSN:{refname}\tLN:{len(refseq)}"
-
-SAM = [SQ]
-
-for qname, qseq, qual, hit in extract_mappy_tag(reffa, quefq):
-    if hit.is_primary:
-        if hit.strand == 1:
-            flag = 0
-        else:
-            flag = 16
-    else:
-        if hit.strand == 1:
-            flag = 2048
-        else:
-            flag = 2064
-    alignment = [qname, flag, refname, hit.r_st + 1, hit.mapq, hit.cigar_str, "*", 0, 0, qseq, qual]
-    alignment = [str(a) for a in alignment]
-    SAM.append("\t".join(alignment))
-
-with open("tmp.sam", "w") as f:
-    f.write("\n".join(SAM))
-
-# pysam.view("-S", "-b", "tmp.sam", ">", "tmp.bam", catch_stdout=False)
-# print(hit)
 ###############################################################################
 # Evaluate
 ###############################################################################
@@ -103,8 +78,16 @@ def test_qname_cslengthen():
         assert tuple(cs) == cs_ans
 
 
+sam = "tests/data/mappy/mappy2sam.sam"
+with open(sam) as f:
+    sam = f.read().splitlines()
+
+# pysam.sort("-o", "tests/data/mappy2sam.bam", "tmp.sam", catch_stdout=False)
+# pysam.index("tests/data/mappy2sam.bam")
+
+
 def test_mappy2sam():
-    pass
+    assert SAM == sam
 
 
 # END
