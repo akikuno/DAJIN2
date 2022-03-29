@@ -94,7 +94,6 @@ for header, sequence in dict_allele.items():
 ########################################################################
 # importlib.reload(mapping)
 
-# mapping.split_fasta(allele, TMPDIR_PATHS["fasta"])
 import mappy as mp
 import cstag
 
@@ -103,8 +102,7 @@ sample = "examples/pm-tyr/barcode31.fq.gz"
 
 ref_name, ref_seq, _ = list(mp.fastx_read(ref_fasta))[0]
 ref = mp.Aligner(ref_fasta)
-if not ref:
-    raise Exception("ERROR: failed to load fasta file")
+
 
 tmp = []
 for name, seq, qual in mp.fastx_read(sample):
