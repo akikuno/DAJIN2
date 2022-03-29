@@ -14,9 +14,7 @@ quefq = "tests/data/mappy/query.fq"
 
 def mappy2sam(REFFA: str, QUEFQ: str) -> list:
     # SQ header
-    refname, refseq, _ = list(mappy.fastx_read(reffa))[0]
-    SQ = f"@SQ\tSN:{refname}\tLN:{len(refseq)}"
-    SAM = [SQ]
+    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(reffa)]
     # Mappy
     ref = mappy.Aligner(REFFA)
     for qname, qseq, qual in mappy.fastx_read(QUEFQ):
@@ -33,7 +31,7 @@ def mappy2sam(REFFA: str, QUEFQ: str) -> list:
             if len(qseq) - hit.q_en > 0:
                 cigar = cigar + str(len(qseq) - hit.q_en) + "S"
             # summarize
-            alignment = [qname, flag, refname, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, "cs:Z:" + hit.cs]
+            alignment = [qname, flag, hit.ctg, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, "cs:Z:" + hit.cs]
             alignment = [str(a) for a in alignment]
             SAM.append("\t".join(alignment))
     return SAM
