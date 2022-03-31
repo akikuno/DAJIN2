@@ -96,7 +96,6 @@ for header, sequence in dict_allele.items():
 
 from src.DAJIN2 import mappy2sam
 import cstag
-import pysam
 
 ref_fasta = ".tmpDAJIN/fasta/control.fasta"
 sample = "examples/pm-tyr/barcode31.fq.gz"
@@ -104,33 +103,29 @@ threads = 14
 
 SAM = mappy2sam(ref_fasta, sample)
 
-with open("tmp.sam", "w") as f:
-    f.write("\n".join(SAM))
+qname_pos_cslong = []
+for sam in SAM:
+    if sam[0] == "@":
+        continue
+    sam = sam.split("\t")
+    qname, pos, cigar, qseq, cs = sam[0], sam[3], sam[5], sam[9], sam[-1]
+    cslong = cstag.lengthen(cs, cigar, qseq)
+    qname_pos_cslong.append([qname, pos, cslong])
 
-pysam.sort("-@", f"{threads}", "-o", "tmp.bam", "tmp.sam", catch_stdout=False)
-pysam.index("tmp.bam", catch_stdout=False)
+# with open("tmp.sam", "w") as f:
+#     f.write("\n".join(SAM))
+# import pysam
+# pysam.sort("-@", f"{threads}", "-o", "tmp.bam", "tmp.sam", catch_stdout=False)
+# pysam.index("tmp.bam", catch_stdout=False)
 
-ref_name, ref_seq, _ = list(mp.fastx_read(ref_fasta))[0]
-ref = mp.Aligner(ref_fasta)
 
+# tmp_cslong = [cstag.lengthen(cs) for _, _, _, cs in tmp]
+# if IS_CACHED:
+#     cache_control.load(CACHEDIR, TMPDIR_PATHS["sam"])
+# else:
+#     mapping.minimap2(control, TMPDIR_PATHS["fasta"], TMPDIR_PATHS["sam"], threads)
+#     cache_control.save(control, TMPDIR_PATHS["sam"], CACHEDIR)
 
-tmp = []
-for name, seq, qual in mp.fastx_read(sample):
-    for hit in ref.map(seq, cs=True):
-        tmp.append([hit.strand, hit.cigar_str, hit.cs])
-
-for t in tmp:
-    if "S" in t[1]:
-        break
-
-tmp_cslong = [cstag.lengthen(cs) for _, _, _, cs in tmp]
-if IS_CACHED:
-    cache_control.load(CACHEDIR, TMPDIR_PATHS["sam"])
-else:
-    mapping.minimap2(control, TMPDIR_PATHS["fasta"], TMPDIR_PATHS["sam"], threads)
-    cache_control.save(control, TMPDIR_PATHS["sam"], CACHEDIR)
-
-mapping.minimap2(sample, TMPDIR_PATHS["fasta"], TMPDIR_PATHS["sam"], threads)
 
 ########################################################################
 # MIDS conversion
