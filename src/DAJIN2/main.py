@@ -103,14 +103,14 @@ threads = 14
 
 SAM = mappy2sam(ref_fasta, sample)
 
-qname_pos_cslong = []
+qname_pos_qual_cslong = []
 for sam in SAM:
     if sam[0] == "@":
         continue
     sam = sam.split("\t")
-    qname, pos, cigar, qseq, cs = sam[0], sam[3], sam[5], sam[9], sam[-1]
+    qname, pos, cigar, qseq, qual, cs = sam[0], sam[3], sam[5], sam[9], sam[10], sam[11]
     cslong = cstag.lengthen(cs, cigar, qseq)
-    qname_pos_cslong.append([qname, pos, cslong])
+    qname_pos_qual_cslong.append([qname, pos, qual, cslong])
 
 # with open("tmp.sam", "w") as f:
 #     f.write("\n".join(SAM))
