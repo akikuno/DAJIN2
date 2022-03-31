@@ -1,5 +1,7 @@
 import mappy
 
+complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
+
 
 def mappy2sam(REFFA: str, QUEFQ: str) -> list:
     # SQ header
@@ -18,9 +20,14 @@ def mappy2sam(REFFA: str, QUEFQ: str) -> list:
             # Append softclips to CIGAR
             cigar = hit.cigar_str
             if hit.q_st > 0:
-                cigar = str(hit.q_st) + "S" + cigar
+                softclip = str(hit.q_st) + "S"
+                cigar = softclip + cigar if hit.strand == 1 else cigar + softclip
             if len(qseq) - hit.q_en > 0:
-                cigar = cigar + str(len(qseq) - hit.q_en) + "S"
+                softclip = str(len(qseq) - hit.q_en) + "S"
+                cigar = cigar + softclip if hit.strand == 1 else softclip + cigar
+            # Revcomp
+            if not hit.strand == 1:
+                qseq = "".join(complement[nt] for nt in qseq[::-1])
             # summarize
             alignment = [qname, flag, hit.ctg, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, "cs:Z:" + hit.cs]
             alignment = [str(a) for a in alignment]

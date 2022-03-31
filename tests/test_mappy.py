@@ -51,12 +51,16 @@ sam = "tests/data/mappy/mappy2sam.sam"
 with open(sam) as f:
     sam = f.read().splitlines()
 
-# pysam.sort("-o", "tests/data/mappy2sam.bam", "tmp.sam", catch_stdout=False)
-# pysam.index("tests/data/mappy2sam.bam")
-
 
 def test_mappy2sam():
     assert SAM == sam
 
+
+# Output as BAM
+# with open("tmp.sam", "w") as f:
+#     f.write(SAM)
+
+# pysam.sort("-o", "tests/data/mappy2sam.bam", "tmp.sam", catch_stdout=False)
+# pysam.index("tests/data/mappy2sam.bam")
 
 # END

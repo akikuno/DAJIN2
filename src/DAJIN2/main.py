@@ -94,11 +94,21 @@ for header, sequence in dict_allele.items():
 ########################################################################
 # importlib.reload(mapping)
 
-import mappy as mp
+from src.DAJIN2 import mappy2sam
 import cstag
+import pysam
 
 ref_fasta = ".tmpDAJIN/fasta/control.fasta"
 sample = "examples/pm-tyr/barcode31.fq.gz"
+threads = 14
+
+SAM = mappy2sam(ref_fasta, sample)
+
+with open("tmp.sam", "w") as f:
+    f.write("\n".join(SAM))
+
+pysam.sort("-@", f"{threads}", "-o", "tmp.bam", "tmp.sam", catch_stdout=False)
+pysam.index("tmp.bam", catch_stdout=False)
 
 ref_name, ref_seq, _ = list(mp.fastx_read(ref_fasta))[0]
 ref = mp.Aligner(ref_fasta)
