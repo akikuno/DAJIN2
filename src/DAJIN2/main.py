@@ -90,18 +90,26 @@ for header, sequence in dict_allele.items():
 #     io.fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
 
 ########################################################################
-# minimap2/mappy
+# Mapping with minimap2/mappy
 ########################################################################
 # importlib.reload(mapping)
 
 from src.DAJIN2 import mappy2sam
 import cstag
+import pathlib
+
+p = pathlib.Path(".tmpDAJIN/fasta")
+for name in p.glob("*.fasta"):
+    print(name)
 
 ref_fasta = ".tmpDAJIN/fasta/control.fasta"
 sample = "examples/pm-tyr/barcode31.fq.gz"
 threads = 14
 
 SAM = mappy2sam(ref_fasta, sample)
+with open("tmp.sam", "w") as f:
+    f.write("\n".join(SAM))
+
 
 qname_pos_cslong = []
 for sam in SAM:
@@ -112,33 +120,6 @@ for sam in SAM:
     cslong = cstag.lengthen(cs, cigar, qseq)
     cslong_masked = cstag.mask(cslong, cigar, qual, 5)
     qname_pos_cslong.append([qname, pos, cslong_masked, qual])
-
-import collections
-
-collections.Counter(cslong_masked)
-qseq[:30]
-qual[:30]
-qseq[softclip : softclip + 19]
-cslong[:10]
-len(qseq)
-len(qual)
-cslong
-qname_pos_cslong[3][-2].replace("cs:Z:=", "")[:15]
-qname_pos_cslong[3][-1][:15]
-
-# with open("tmp.sam", "w") as f:
-#     f.write("\n".join(SAM))
-# import pysam
-# pysam.sort("-@", f"{threads}", "-o", "tmp.bam", "tmp.sam", catch_stdout=False)
-# pysam.index("tmp.bam", catch_stdout=False)
-
-
-# tmp_cslong = [cstag.lengthen(cs) for _, _, _, cs in tmp]
-# if IS_CACHED:
-#     cache_control.load(CACHEDIR, TMPDIR_PATHS["sam"])
-# else:
-#     mapping.minimap2(control, TMPDIR_PATHS["fasta"], TMPDIR_PATHS["sam"], threads)
-#     cache_control.save(control, TMPDIR_PATHS["sam"], CACHEDIR)
 
 
 ########################################################################
