@@ -18,48 +18,52 @@ def extract_name_length(sam: list) -> dict:
     return SNLN
 
 
-def append_next_mids_to_ins(cstags: list) -> list:
-    for i, cs in enumerate(cstags):
+def slide_insertion(CSTAGS: list) -> list:
+    """
+    Input:  ['MMMM', 'S', 'M', 'Dg', 'M', 'It', 'MMMM']
+    Output: ['MMMM', 'S', 'M', 'Dg', 'M', 'ItM', 'MMM']
+    """
+    for i, cs in enumerate(CSTAGS):
         if "I" in cs:
-            cstags[i] = cs + cstags[i + 1][0]
-            cstags[i + 1] = cstags[i + 1][1:]
-    return cstags
+            CSTAGS[i] = cs + CSTAGS[i + 1][0]
+            CSTAGS[i + 1] = CSTAGS[i + 1][1:]
+    return CSTAGS
 
 
-def to_fixed_length(cs: str) -> str:
-    if "D" in cs:
-        cs = re.sub("[acgt]", "D,", cs[1:])
-    elif "I" in cs:
-        cs = f"{len(cs)-2}{cs[-1]},"
-    elif "S" in cs:
-        cs = "S,"
-    elif "M" in cs:
-        cs = cs.replace("M", "M,")
-    return cs
+def to_fixed_length(CSTAG: str) -> str:
+    if "D" in CSTAG:
+        CSTAG = re.sub("[acgt]", "D,", CSTAG[1:])
+    elif "I" in CSTAG:
+        CSTAG = f"{len(CSTAG)-2}{CSTAG[-1]},"
+    elif "S" in CSTAG:
+        CSTAG = "S,"
+    elif "M" in CSTAG:
+        CSTAG = CSTAG.replace("M", "M,")
+    return CSTAG
 
 
-def cstag_to_mids(cstag: str) -> str:
+def cstag_to_mids(CSTAG: str) -> str:
     """
     Input:  "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
     Output: "M,M,M,M,S,M,D,M,1M,M,M,M"
     """
-    cstag = "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
-    cstag = cstag.replace("cs:Z:", "")
-    cstag = cstag.replace("-", "=D")
-    cstag = cstag.replace("+", "=I")
-    cstag = re.sub("[ACGT]", "M", cstag)
-    cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
-    cstags = cstag.split("=")[1:]
-    cstags = append_next_mids_to_ins(cstags)
-    cstags_fixlen = list(map(to_fixed_length, cstags))
-    return "".join(cstags_fixlen).rstrip(",")
+    # CSTAG = "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
+    CSTAG = CSTAG.replace("cs:Z:", "")
+    CSTAG = CSTAG.replace("-", "=D")
+    CSTAG = CSTAG.replace("+", "=I")
+    CSTAG = re.sub("[ACGT]", "M", CSTAG)
+    CSTAG = re.sub("\\*[acgt][acgt]", "=S", CSTAG)
+    CSTAGS = CSTAG.split("=")[1:]
+    CSTAGS = slide_insertion(CSTAGS)
+    CSTAGS_fixlen = [to_fixed_length(cs) for cs in CSTAGS]
+    return "".join(CSTAGS_fixlen).rstrip(",")
 
 
 def padding(mids: str, pos: int, reflen: int) -> str:
-    midslen = mids.count(",")
+    midslen = mids.count(",") + 1
     left_pad = "=," * (int(pos) - 1)
-    right_pad = "=," * (reflen - midslen - int(pos) + 1)
-    return "".join([left_pad, mids, right_pad]).rstrip(",")
+    right_pad = ",=" * (reflen - midslen - int(pos) + 1)
+    return "".join([left_pad, mids, right_pad])
 
 
 def trim(mids_padding: str, reflen: int) -> str:
@@ -72,12 +76,13 @@ def trim(mids_padding: str, reflen: int) -> str:
 def mids_small_mutation(alignment: list) -> list:
     # alignment = aligngroupby[0]
     record = alignment[0]["alignment"].split("\t")
+    idx = [i for i, a in enumerate(record) if "cs:Z" in a][0]
     samdict = dict(
         qname=record[0].replace(",", "_"),
         reflen=int(record[-1]),
         pos=int(record[3]),
         qual=record[10],
-        cstag=record[-3],
+        cstag=record[idx],
     )
     samdict["mids"] = cstag_to_mids(samdict["cstag"])
     mids_padding = padding(samdict["mids"], samdict["pos"], samdict["reflen"])
@@ -89,12 +94,13 @@ def mids_large_deletion(alignments: list) -> str:
     saminfo = list()
     for read in alignments:
         record = read["alignment"].split("\t")
+        idx = [i for i, a in enumerate(record) if "cs:Z" in a][0]
         samdict = dict(
             qname=record[0].replace(",", "_"),
             reflen=int(record[-1]),
             pos=int(record[3]),
             qual=record[10],
-            cstag=record[-3],
+            cstag=record[idx],
         )
         saminfo.append(samdict)
     saminfo = sorted(saminfo, key=lambda x: x["pos"])
@@ -113,7 +119,14 @@ def mids_large_inversion(alignments: list) -> str:
     saminfo = list()
     for read in alignments:
         record = read["alignment"].split("\t")
-        samdict = dict(qname=record[0].replace(",", "_"), reflen=int(record[-1]), pos=int(record[3]), cstag=record[-3],)
+        idx = [i for i, a in enumerate(record) if "cs:Z" in a][0]
+        samdict = dict(
+            qname=record[0].replace(",", "_"),
+            reflen=int(record[-1]),
+            pos=int(record[3]),
+            qual=record[10],
+            cstag=record[idx],
+        )
         saminfo.append(samdict)
     saminfo = sorted(saminfo, key=lambda x: x["pos"])
     mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
