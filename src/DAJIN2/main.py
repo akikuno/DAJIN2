@@ -9,7 +9,6 @@ from src.DAJIN2.utils import io
 from src.DAJIN2.utils import argparser
 from src.DAJIN2.preprocess import format_input
 from src.DAJIN2.preprocess import mapping
-from src.DAJIN2.preprocess import midsconv
 from src.DAJIN2.preprocess import midsqc
 
 # from src.DAJIN2.classification import classification
@@ -98,42 +97,50 @@ from src.DAJIN2 import mappy2sam
 import cstag
 import pathlib
 
-p = pathlib.Path(".tmpDAJIN/fasta")
-for name in p.glob("*.fasta"):
-    print(name)
-
-ref_fasta = ".tmpDAJIN/fasta/control.fasta"
 sample = "examples/pm-tyr/barcode31.fq.gz"
-threads = 14
 
-SAM = mappy2sam(ref_fasta, sample)
-with open("tmp.sam", "w") as f:
-    f.write("\n".join(SAM))
+p = pathlib.Path(".tmpDAJIN/fasta")
+for input_fasta in p.glob("*.fasta"):
+    input_fasta = str(input_fasta)
+    fasta_name = input_fasta.split("/")[-1].split(".f")[0]
+    sample_name = sample.split("/")[-1].split(".f")[0]
+    output_sam = f".tmpDAJIN/sam/{sample_name}_{fasta_name}.sam"
+    # Todo: 並行処理で高速化！！
+    SAM = mappy2sam(input_fasta, sample)
+    with open(output_sam, "w") as f:
+        f.write("\n".join(SAM))
 
 
-qname_pos_cslong = []
-for sam in SAM:
-    if sam[0] == "@":
-        continue
-    sam = sam.split("\t")
-    qname, pos, cigar, qseq, qual, cs = sam[0], sam[3], sam[5], sam[9], sam[10], sam[11]
-    cslong = cstag.lengthen(cs, cigar, qseq)
-    cslong_masked = cstag.mask(cslong, cigar, qual, 5)
-    qname_pos_cslong.append([qname, pos, cslong_masked, qual])
+########################################################################
+# Mask CS tag
+########################################################################
+
+# qname_pos_cslong = []
+# for sam in SAM:
+#     if sam[0] == "@":
+#         continue
+#     sam = sam.split("\t")
+#     qname, pos, cigar, qseq, qual, cs = sam[0], sam[3], sam[5], sam[9], sam[10], sam[11]
+#     cslong = cstag.lengthen(cs, cigar, qseq)
+#     cslong_masked = cstag.mask(cslong, cigar, qual, 5)
+#     qname_pos_cslong.append([qname, pos, cslong_masked, qual])
 
 
 ########################################################################
 # MIDS conversion
 ########################################################################
 # importlib.reload(midsconv)
+import os
+from src.DAJIN2.preprocess import midsconv
 
 sampath = ".tmpDAJIN/sam/barcode31_albino.sam"
+threads = 20
 # SAMDIR = os.path.join("tests", "samTomids", "input")
 # SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
 
-for samfile in os.listdir(TMPDIR_PATHS["sam"]):
-    sampath = os.path.join(TMPDIR_PATHS["sam"], samfile)
-    output = os.path.join(TMPDIR_PATHS["midsconv"], samfile.replace(".sam", ".csv"))
+for samfile in os.listdir(".tmpDAJIN/sam"):
+    sampath = os.path.join(".tmpDAJIN", "sam", samfile)
+    output = os.path.join(".tmpDAJIN/midsconv", samfile.replace(".sam", ".csv"))
     midscsv = midsconv.sam_to_mids(sampath, threads)
     with open(output, "w") as f:
         f.write("\n".join(midscsv))
