@@ -1,9 +1,10 @@
 import mappy
+import cstag
 
 complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
 
 
-def mappy2sam(REFFA: str, QUEFQ: str) -> list:
+def mappy2sam(REFFA: str, QUEFQ: str, cslong: bool = True) -> list:
     # SQ header
     SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(REFFA)]
     # Mappy
@@ -28,8 +29,12 @@ def mappy2sam(REFFA: str, QUEFQ: str) -> list:
             # Revcomp
             if not hit.strand == 1:
                 qseq = "".join(complement[nt] for nt in qseq[::-1])
+            # cslong
+            cs = "cs:Z:" + hit.cs
+            if cslong:
+                cs = cstag.lengthen(hit.cs, cigar, qseq)
             # summarize
-            alignment = [qname, flag, hit.ctg, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, "cs:Z:" + hit.cs]
+            alignment = [qname, flag, hit.ctg, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, cs]
             alignment = [str(a) for a in alignment]
             SAM.append("\t".join(alignment))
     return SAM
