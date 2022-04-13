@@ -18,19 +18,6 @@ def extract_name_length(sam: list) -> dict:
     return SNLN
 
 
-def format_cstag(cstag: str) -> list:
-    """
-    Input  "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
-    Output "['MMMM', 'S', 'M', 'Dg', 'M', 'It', 'MMMM']"
-    """
-    cstag = cstag.replace("cs:Z:", "")
-    cstag = cstag.replace("-", "=D")
-    cstag = cstag.replace("+", "=I")
-    cstag = re.sub("[ACGT]", "M", cstag)
-    cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
-    return cstag.split("=")[1:]
-
-
 def append_next_mids_to_ins(cstags: list) -> list:
     for i, cs in enumerate(cstags):
         if "I" in cs:
@@ -56,7 +43,13 @@ def cstag_to_mids(cstag: str) -> str:
     Input:  "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
     Output: "M,M,M,M,S,M,D,M,1M,M,M,M"
     """
-    cstags = format_cstag(cstag)
+    cstag = "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
+    cstag = cstag.replace("cs:Z:", "")
+    cstag = cstag.replace("-", "=D")
+    cstag = cstag.replace("+", "=I")
+    cstag = re.sub("[ACGT]", "M", cstag)
+    cstag = re.sub("\\*[acgt][acgt]", "=S", cstag)
+    cstags = cstag.split("=")[1:]
     cstags = append_next_mids_to_ins(cstags)
     cstags_fixlen = list(map(to_fixed_length, cstags))
     return "".join(cstags_fixlen).rstrip(",")
@@ -77,6 +70,7 @@ def trim(mids_padding: str, reflen: int) -> str:
 
 
 def mids_small_mutation(alignment: list) -> list:
+    # alignment = aligngroupby[0]
     record = alignment[0]["alignment"].split("\t")
     samdict = dict(
         qname=record[0].replace(",", "_"),
@@ -99,6 +93,7 @@ def mids_large_deletion(alignments: list) -> str:
             qname=record[0].replace(",", "_"),
             reflen=int(record[-1]),
             pos=int(record[3]),
+            qual=record[10],
             cstag=record[-3],
         )
         saminfo.append(samdict)
@@ -118,12 +113,7 @@ def mids_large_inversion(alignments: list) -> str:
     saminfo = list()
     for read in alignments:
         record = read["alignment"].split("\t")
-        samdict = dict(
-            qname=record[0].replace(",", "_"),
-            reflen=int(record[-1]),
-            pos=int(record[3]),
-            cstag=record[-3],
-        )
+        samdict = dict(qname=record[0].replace(",", "_"), reflen=int(record[-1]), pos=int(record[3]), cstag=record[-3],)
         saminfo.append(samdict)
     saminfo = sorted(saminfo, key=lambda x: x["pos"])
     mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
@@ -136,42 +126,6 @@ def mids_large_inversion(alignments: list) -> str:
     return ",".join([saminfo[0]["qname"], mids_trim])
 
 
-# def mids_large_mutation(alignments: list) -> str:
-#     read_nums = len(alignments)
-#     saminfo = list()
-#     for read in alignments:
-#         record = read["alignment"].split("\t")
-#         samdict = dict(
-#             qname=record[0].replace(",", "_"),
-#             reflen=int(record[-1]),
-#             pos=int(record[3]),
-#             cstag=record[-3],
-#         )
-#         saminfo.append(samdict)
-#     saminfo = sorted(saminfo, key=lambda x: x["pos"])
-#     mids = [cstag_to_mids(s["cstag"]) for s in saminfo]
-#     _ = [saminfo[i].update({"mids": s}) for i, s in enumerate(mids)]
-#     # large deletion
-#     if read_nums == 2:
-#         left_len = saminfo[0]["mids"].count(",") - 1
-#         del_len = saminfo[1]["pos"] - saminfo[0]["pos"] - left_len
-#         del_seq = "D," * del_len
-#         mids_join = "".join([saminfo[0]["mids"], del_seq, saminfo[1]["mids"]])
-#     # large inversion
-#     elif read_nums == 3:
-#         midslow = saminfo[1]["mids"].lower()
-#         saminfo[1]["mids"] = midslow
-#         mids_join = "".join(
-#             [saminfo[0]["mids"], saminfo[1]["mids"], saminfo[2]["mids"]]
-#         )
-#     else:
-#         return ""
-#     mids_padding = padding(mids_join, saminfo[0]["pos"], saminfo[0]["reflen"])
-#     mids_trim = trim(mids_padding, saminfo[0]["reflen"])
-#     output = ",".join([saminfo[0]["qname"], mids_trim])
-#     return output
-
-
 def to_mids(aligngroupby: list) -> str:
     if len(aligngroupby) == 1:
         output = mids_small_mutation(aligngroupby)
@@ -180,7 +134,7 @@ def to_mids(aligngroupby: list) -> str:
     elif len(aligngroupby) == 3:
         output = mids_large_inversion(aligngroupby)
     else:
-        output = 
+        output = ""
     return output
 
 
@@ -189,14 +143,13 @@ def sam_to_mids(sampath: str, threads: int) -> list:
         sam = f.read().splitlines()
     # SQ
     sqheaders = extract_name_length(sam)
-        # Alignments
+    # Alignments
     alignments = []
     for alignment in sam:
         if not "cs:Z:" in alignment:
             continue
         RNAME = alignment.split("\t")[2]
-        LN = sqheaders[RNAME]
-        alignments.append("\t".join([alignment, LN]))
+        alignments.append("\t".join([alignment, sqheaders[RNAME]]))
     # Group by QNAME
     aligndict = [{"QNAME": a.split("\t")[0], "alignment": a} for a in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["QNAME"])
@@ -210,20 +163,19 @@ def sam_to_mids(sampath: str, threads: int) -> list:
 ###############################################################################
 # MEMO
 ###############################################################################
-import collections
-c = collections.Counter()
+# import collections
+# c = collections.Counter()
+# len(aligngroupby)
+# len3 = []
+# for a in aligngroupby:
+#     c[len(a)] += 1
+#     if len(a) == 3:
+#         len3.append(a[0]["QNAME"])
 
-len(aligngroupby)
-len3 = []
-for a in aligngroupby:
-    c[len(a)] += 1
-    if len(a) == 3:
-        len3.append(a[0]["QNAME"])
+# print(*len3, sep="\n")
+# c
 
-print(*len3, sep="\n")
-c
-
-sampath = ".tmpDAJIN/sam/barcode31_control.sam"
+# sampath = ".tmpDAJIN/sam/barcode31_control.sam"
 
 # with ProcessPoolExecutor(max_workers=threads) as executor:
 #     # MIDS conversion
