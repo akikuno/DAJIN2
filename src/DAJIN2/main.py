@@ -151,6 +151,7 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 # Phread scoreが0.1以下のリードについて再分配する
 ########################################################################
 
+
 print(mids_csv[0])
 
 if debug is False:
@@ -160,10 +161,3 @@ if debug is False:
 
 if __name__ == "__main__":
     main()
-
-
-cstag = "cs:Z:=ACGT*ag=C-g=T+t=ACGT"
-
-cstag = samdict["cstag"]
-
-cstags = ["MMMM", "S", "M", "Dg", "M", "It", "MMMM"]
