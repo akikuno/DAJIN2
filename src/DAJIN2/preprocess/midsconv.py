@@ -74,7 +74,7 @@ def trim(mids_padding: str, reflen: int) -> str:
 
 
 def mids_small_mutation(alignment: list) -> list:
-    # alignment = aligngroupby[0]
+    # alignment = aligngroupby[2]
     record = alignment[0]["alignment"].split("\t")
     idx = [i for i, a in enumerate(record) if "cs:Z" in a][0]
     samdict = dict(
@@ -159,7 +159,13 @@ def sam_to_mids(sampath: str, threads: int) -> list:
     # Alignments
     alignments = []
     for alignment in sam:
-        if not "cs:Z:" in alignment:
+        if "cs:Z:" not in alignment:
+            continue
+        # Avoid reads with too long SoftClip
+        CIGAR = alignment.split("\t")[5]
+        SOFTCLIPS = sum(int(S[:-1]) for S in re.split("([0-9]+S)", CIGAR) if "S" in S)
+        SEQLEN = len(alignment.split("\t")[11])
+        if SOFTCLIPS > SEQLEN / 2:
             continue
         RNAME = alignment.split("\t")[2]
         alignments.append("\t".join([alignment, sqheaders[RNAME]]))
@@ -176,6 +182,8 @@ def sam_to_mids(sampath: str, threads: int) -> list:
 ###############################################################################
 # MEMO
 ###############################################################################
+# to_mids(aligngroupby[2])
+
 # import collections
 # c = collections.Counter()
 # len(aligngroupby)

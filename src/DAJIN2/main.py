@@ -16,10 +16,6 @@ from src.DAJIN2.preprocess import midsqc
 # from src.DAJIN2.consensus import consensus
 
 
-# For development
-# import importlib
-
-
 #! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # def main():
 ########################################################################
@@ -91,7 +87,6 @@ for header, sequence in dict_allele.items():
 ########################################################################
 # Mapping with minimap2/mappy
 ########################################################################
-# importlib.reload(mapping)
 
 from src.DAJIN2 import mappy2sam
 import cstag
@@ -129,10 +124,15 @@ for input_fasta in p.glob("*.fasta"):
 ########################################################################
 # MIDS conversion
 ########################################################################
-# importlib.reload(midsconv)
+# For development
+
 import os
 from src.DAJIN2.preprocess import midsconv
+import importlib
 
+importlib.reload(midsconv)
+
+samfile = "barcode31_albino.sam"
 sampath = ".tmpDAJIN/sam/barcode31_albino.sam"
 threads = 20
 # SAMDIR = os.path.join("tests", "samTomids", "input")
