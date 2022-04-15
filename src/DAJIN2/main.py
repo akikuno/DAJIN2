@@ -145,6 +145,7 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
     with open(output, "w") as f:
         f.write("\n".join(midscsv))
 
+midscsv[1:4]
 ########################################################################
 # MIDS QC filtering
 # 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
