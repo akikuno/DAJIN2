@@ -13,8 +13,8 @@ You can install `DAJIN2` using bioconda or pip:
 ```bash
 conda install -c bioconda DAJIN2
 # conda create -y -n DAJIN2
+# conda install -y -n DAJIN2 cstag numpy scikit-learn hdbscan plotnine mappy pysam
 # conda activate DAJIN2
-# conda install -y numpy scikit-learn hdbscan plotnine mappy pysam
 ```
 
 ```bash
