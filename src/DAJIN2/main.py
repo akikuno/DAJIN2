@@ -131,8 +131,8 @@ import importlib
 
 importlib.reload(midsconv)
 
-samfile = "barcode31_albino.sam"
-sampath = ".tmpDAJIN/sam/barcode31_albino.sam"
+samfile = "barcode31_control.sam"
+sampath = ".tmpDAJIN/sam/barcode31_control.sam"
 threads = 20
 # SAMDIR = os.path.join("tests", "samTomids", "input")
 # SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
@@ -151,16 +151,50 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 ########################################################################
 
 # 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
-midscsv[1:4]
-
 
 ########################################################################
 # MIDS 異常検知
 ########################################################################
 
+read_len = len(midscsv[0].split(",")) - 1
+
+tmp = []
+for mids in midscsv:
+    match_score = 0
+    read_id, *X = mids.split(",")
+    for x in X:
+        if x == "M":
+            match_score += 1
+        elif x[0].isdigit():
+            match_score -= int(x[:-1])
+        else:
+            match_score -= 1
+    tmp.append([read_id, match_score])
+
+mids = midscsv[0].split(",")[1:]
+
 ########################################################################
 # MIDS アレル分類
 ########################################################################
+
+
+########################################################################
+# MIDS スコア
+########################################################################
+
+from collections import defaultdict
+
+midsscore = defaultdict(int)
+
+read_num = len(midscsv)
+for mids in midscsv:
+    mids_split = mids.split(",")[1:]
+    for i, x in enumerate(mids_split):
+        midsscore[(i, x)] += 1 / read_num
+
+for (i, mids), v in midsscore.items():
+    if i == 828:
+        print(mids, v)
 
 
 ########################################################################
