@@ -93,4 +93,3 @@ def annotate_TooLong_to_fastq(fastqpath: str, dict_allele: dict) -> None:
             header = "-".join([header, "TooLong"])
         fastq_anno.append([header, *f[1:]])
     return fastq_anno
-

@@ -34,7 +34,9 @@ for sub in SUBDIRS:
     dir = os.path.join(TMPDIR, sub)
     os.makedirs(dir, exist_ok=True)
 
-TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
+TMPDIR_PATHS = {
+    dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)
+}
 
 ########################################################################
 # Argument parse
@@ -157,7 +159,14 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 ########################################################################
 
 from collections import defaultdict
+
 mids_classification_score = defaultdict(list)
+
+import glob
+
+# midsfile = "barcode31_albino.csv"
+for midsfile in glob.glob(".tmpDAJIN/midsconv/*"):
+    allele_type = os.path.basename(midsfile).replace(".csv", "")
 
 read_len = len(midscsv[0].split(",")) - 1
 allele_type = "control"
@@ -174,8 +183,8 @@ for mids in midscsv:
             match_score -= 1
     mids_classification_score[read_id].append([allele_type, match_score])
 
-mids_classification_score[read_id]
-= midscsv[0].split(",")[1:]
+# mids_classification_score[read_id]
+# = midscsv[0].split(",")[1:]
 
 ########################################################################
 # MIDS アレル分類

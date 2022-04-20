@@ -34,7 +34,20 @@ def mappy2sam(REFFA: str, QUEFQ: str, cslong: bool = True) -> list:
             if cslong:
                 cs = cstag.lengthen(hit.cs, cigar, qseq)
             # summarize
-            alignment = [qname, flag, hit.ctg, hit.r_st + 1, hit.mapq, cigar, "*", 0, 0, qseq, qual, cs]
+            alignment = [
+                qname,
+                flag,
+                hit.ctg,
+                hit.r_st + 1,
+                hit.mapq,
+                cigar,
+                "*",
+                0,
+                0,
+                qseq,
+                qual,
+                cs,
+            ]
             alignment = [str(a) for a in alignment]
             SAM.append("\t".join(alignment))
     return SAM

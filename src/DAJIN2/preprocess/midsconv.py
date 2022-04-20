@@ -172,7 +172,9 @@ def sam_to_mids(sampath: str, threads: int) -> list:
     # Group by QNAME
     aligndict = [{"QNAME": a.split("\t")[0], "alignment": a} for a in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["QNAME"])
-    aligngroupby = [list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])]
+    aligngroupby = [
+        list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])
+    ]
     with ProcessPoolExecutor(max_workers=threads) as executor:
         # MIDS conversion
         mids = list(executor.map(to_mids, aligngroupby))

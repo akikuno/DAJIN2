@@ -46,4 +46,3 @@ def save(control: str, tmpdir: str, cachedir: str) -> None:
     control_files = glob.glob(os.path.join(tmpdir, control_name) + "*")
     for f in control_files:
         shutil.copy(f, cachedir)
-

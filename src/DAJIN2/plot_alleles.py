@@ -27,4 +27,3 @@ g = (
 )
 
 g.save(filename="tests/plot_alleles/test_output.png", dpi=350)
-
