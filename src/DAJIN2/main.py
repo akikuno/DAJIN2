@@ -153,12 +153,15 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 # 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
 
 ########################################################################
-# MIDS 異常検知
+# MIDS アレル分類・異常検知スコア
 ########################################################################
 
-read_len = len(midscsv[0].split(",")) - 1
+from collections import defaultdict
+mids_classification_score = defaultdict(list)
 
-tmp = []
+read_len = len(midscsv[0].split(",")) - 1
+allele_type = "control"
+
 for mids in midscsv:
     match_score = 0
     read_id, *X = mids.split(",")
@@ -169,17 +172,22 @@ for mids in midscsv:
             match_score -= int(x[:-1])
         else:
             match_score -= 1
-    tmp.append([read_id, match_score])
+    mids_classification_score[read_id].append([allele_type, match_score])
 
-mids = midscsv[0].split(",")[1:]
+mids_classification_score[read_id]
+= midscsv[0].split(",")[1:]
 
 ########################################################################
 # MIDS アレル分類
 ########################################################################
 
+########################################################################
+# MIDS 異常検知
+########################################################################
+
 
 ########################################################################
-# MIDS スコア
+# MIDS クラスタリングスコア
 ########################################################################
 
 from collections import defaultdict
