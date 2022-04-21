@@ -34,9 +34,7 @@ for sub in SUBDIRS:
     dir = os.path.join(TMPDIR, sub)
     os.makedirs(dir, exist_ok=True)
 
-TMPDIR_PATHS = {
-    dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)
-}
+TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
 
 ########################################################################
 # Argument parse
@@ -158,16 +156,39 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 # MIDS アレル分類・異常検知スコア
 ########################################################################
 
+import glob
 from collections import defaultdict
 
 mids_classification_score = defaultdict(list)
 
-import glob
-
 # midsfile = "barcode31_albino.csv"
 for midsfile in glob.glob(".tmpDAJIN/midsconv/*"):
-    allele_type = os.path.basename(midsfile).replace(".csv", "")
+    tmp_name = os.path.basename(midsfile).replace(".csv", "").split("_")
+    sample_name = "_".join(tmp_name[:-1])
+    allele_type = tmp_name[-1]
+    with open(midsfile) as f:
+        midscsv = f.read().splitlines()
+    read_len = len(midscsv[0].split(",")) - 1
+    for mids in midscsv:
+        match_score = 0
+        read_id, *X = mids.split(",")
+        for x in X:
+            if x == "M":
+                match_score += 1
+            elif x[0].isdigit():
+                match_score -= int(x[:-1])
+            else:
+                match_score -= 1
+        match_score /= read_len
+        mids_classification_score[sample_name, read_id].append([allele_type, match_score])
 
+mids_classification_score2 = []
+for key, val in mids_classification_score.items():
+    val = sorted(val, key=lambda x: -x[1])[0]
+    mids_classification_score2.append([*key, *val])
+
+mids_classification_score2[-5:]
+midscsv[0]
 read_len = len(midscsv[0].split(",")) - 1
 allele_type = "control"
 
