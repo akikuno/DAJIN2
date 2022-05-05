@@ -7,7 +7,6 @@ import tempfile
 from src.DAJIN2.utils import cache_control
 from src.DAJIN2.utils import io
 from src.DAJIN2.utils import argparser
-from src.DAJIN2.preprocess import format_input
 from src.DAJIN2.preprocess import mapping
 from src.DAJIN2.preprocess import midsqc
 
@@ -42,10 +41,22 @@ TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir
 
 sample, control, allele, output, genome, debug, threads = argparser.parse()
 
+## Point mutation
 # sample, control, allele, output, genome, debug, threads = (
 #     "examples/pm-tyr/barcode31.fq.gz",
 #     "examples/pm-tyr/barcode32.fq.gz",
 #     "examples/pm-tyr/design_tyr.fa",
+#     "DAJIN_results",
+#     "mm10",
+#     True,
+#     14
+#     )
+
+##* 2-cut deletion
+# sample, control, allele, output, genome, debug, threads = (
+#     "examples/del-stx2/barcode25.fq.gz",
+#     "examples/del-stx2/barcode30.fq.gz",
+#     "examples/del-stx2/design_stx2.fa",
 #     "DAJIN_results",
 #     "mm10",
 #     True,
@@ -58,8 +69,8 @@ os.makedirs(output, exist_ok=True)
 # Whether existing cached control
 ########################################################################
 
-CACHEDIR = os.path.join(tempfile.gettempdir(), "DAJIN")
-os.makedirs(CACHEDIR, exist_ok=True)
+# CACHEDIR = os.path.join(tempfile.gettempdir(), "DAJIN")
+# os.makedirs(CACHEDIR, exist_ok=True)
 
 # if cache_control.exists(control, CACHEDIR):
 #     IS_CACHED = True
@@ -70,6 +81,8 @@ os.makedirs(CACHEDIR, exist_ok=True)
 ########################################################################
 # Format inputs (sample/control/allele)
 ########################################################################
+
+from src.DAJIN2.preprocess import format_input
 
 dict_allele = format_input.dictionize_allele(allele)
 
@@ -156,6 +169,7 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 # MIDS アレル分類・異常検知スコア
 ########################################################################
 
+import os
 import glob
 from collections import defaultdict
 
