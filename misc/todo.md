@@ -1,5 +1,8 @@
 # ToDO
 
+## 開発一般
+
++ [ ] GitHub Workflowによるテスト自動化
 ## 前処理
 
 + mapping.py
