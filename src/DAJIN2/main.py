@@ -54,14 +54,14 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 
 ##* 2-cut deletion
 # sample, control, allele, output, genome, debug, threads = (
-#     "examples/del-stx2/barcode25.fq.gz",
-#     "examples/del-stx2/barcode30.fq.gz",
-#     "examples/del-stx2/design_stx2.fa",
+#     "examples/nanosim/del-stx2/deletion.fq.gz",
+#     "examples/nanosim/del-stx2/control.fq.gz",
+#     "examples/nanosim/del-stx2/design_stx2.fa",
 #     "DAJIN_results",
 #     "mm10",
 #     True,
-#     14
-#     )
+#     14,
+# )
 
 os.makedirs(output, exist_ok=True)
 
@@ -103,19 +103,21 @@ for header, sequence in dict_allele.items():
 
 from src.DAJIN2 import mappy2sam
 import pathlib
+import os
 
-sample = "examples/pm-tyr/barcode31.fq.gz"
+sample = "examples/nanosim/del-stx2/deletion.fq.gz"
 
 p = pathlib.Path(".tmpDAJIN/fasta")
 for input_fasta in p.glob("*.fasta"):
     input_fasta = str(input_fasta)
-    fasta_name = input_fasta.split("/")[-1].split(".f")[0]
-    sample_name = sample.split("/")[-1].split(".f")[0]
-    output_sam = f".tmpDAJIN/sam/{sample_name}_{fasta_name}.sam"
-    # Todo: 並行処理で高速化！！
-    SAM = mappy2sam(input_fasta, sample)
-    with open(output_sam, "w") as f:
-        f.write("\n".join(SAM))
+    fasta_name = os.path.basename(input_fasta).rstrip(".fasta")
+    for fastq in [control, sample]:
+        fastq_name = os.path.basename(fastq).split(".f")[0]
+        output_sam = f".tmpDAJIN/sam/{fastq_name}_{fasta_name}.sam"
+        # Todo: 並行処理で高速化！！
+        SAM = mappy2sam(input_fasta, fastq)
+        with open(output_sam, "w") as f:
+            f.write("\n".join(SAM))
 
 
 ########################################################################

@@ -1,68 +1,33 @@
 import os
 import sys
+import mappy
 from src.DAJIN2.utils import io
+
+########################################################################
+# サンプルが適切なフォーマットなのかチェックする
+########################################################################
+
+list(mappy.fastx_read("test.fa"))
+list(mappy.fastx_read("test.hogehoge"))
 
 ########################################################################
 # アレルを辞書型およびシングルfastaフォーマットに変換
 ########################################################################
 
 
-# def split_fasta(allele: str) -> None:
-#     fasta = io.fread(allele)
-#     header = []
-#     sequence = []
-#     idx = -1
-#     for f in fasta:
-#         if ">" in f:
-#             header.append(f)
-#             sequence.append([])
-#             idx += 1
-#         else:
-#             sequence[idx] += f
-#     sequence = ["".join(s).upper() for s in sequence]
-#     if len(header) > len(set(header)):
-#         print(
-#             f"Error: '{allele}' includes duplicated sequences.\n"
-#             f"'{allele}' must contain only unique DNA sequences.",
-#             file=sys.stderr,
-#         )
-#         sys.exit(1)
-#     if header.count(">control") == 0:
-#         print(
-#             f"Error: '{allele}' does not contain 'control' sequence.\n"
-#             f"'{allele}' must include a 'control' sequence.",
-#             file=sys.stderr,
-#         )
-#         sys.exit(1)
-#     for h, s in zip(header, sequence):
-#         filename = h.replace(">", "")
-#         contents = "\n".join([h, s]) + "\n"
-#         with open(f".tmpDAJIN/fasta/{filename}.fasta", "w") as f:
-#             f.write(contents)
-
-
 def dictionize_allele(allele: str) -> dict:
-    fasta = io.fread(allele)
-    header = []
-    sequence = []
-    idx = -1
-    for f in fasta:
-        if ">" in f:
-            header.append(f)
-            sequence.append([])
-            idx += 1
-        else:
-            sequence[idx] += f
-    sequence = ["".join(s).upper() for s in sequence]
+    header, sequence = [], []
+    for name, seq, _ in mappy.fastx_read(allele):
+        header.append(name)
+        sequence.append(seq.upper())
     # Error handling ------------
     if len(header) > len(set(header)):
         print(
-            f"Error: '{allele}' includes duplicated sequences.\n"
-            f"'{allele}' must contain only unique DNA sequences.",
+            f"Error: '{allele}' includes duplicated sequences.\n" f"'{allele}' must contain only unique DNA sequences.",
             file=sys.stderr,
         )
         sys.exit(1)
-    if header.count(">control") == 0:
+    if header.count("control") == 0:
         print(
             f"Error: '{allele}' does not contain 'control' sequence.\n"
             f"'{allele}' must include a 'control' sequence.",
@@ -70,7 +35,7 @@ def dictionize_allele(allele: str) -> dict:
         )
         sys.exit(1)
     # Error handling ------------
-    return {h.replace(">", ""): s for h, s in zip(header, sequence)}
+    return {h: s for h, s in zip(header, sequence)}
 
 
 ########################################################################
