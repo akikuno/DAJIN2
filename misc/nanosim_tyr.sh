@@ -15,12 +15,12 @@ cat examples/pm-tyr/design_tyr.fa |
     tr "\t" "\n" |
     cat >tmp_query.fa
 
-cont=examples/pm-tyr/barcode32.fq.gz
+control=examples/pm-tyr/barcode32.fq.gz
 threads=20
 
 conda activate nanosim
 
-read_analysis.py genome -t "$threads" -i "$cont" -rg tmp_ref.fa
+read_analysis.py genome -t "$threads" -i "$control" -rg tmp_ref.fa
 
 simulator.py genome -t "$threads" -n 1000 -rg tmp_ref.fa -b guppy --fastq -o control
 simulator.py genome -t "$threads" -n 1000 -rg tmp_query.fa -b guppy --fastq -o albino
