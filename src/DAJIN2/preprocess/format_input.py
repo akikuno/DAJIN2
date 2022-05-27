@@ -1,14 +1,37 @@
-import os
 import sys
 import mappy
+from src.DAJIN2.utils.exceptions import InputFileError
 from src.DAJIN2.utils import io
 
 ########################################################################
 # サンプルが適切なフォーマットなのかチェックする
 ########################################################################
 
-list(mappy.fastx_read("test.fa"))
-list(mappy.fastx_read("test.hogehoge"))
+
+def check_fastq(fastq_path: str):
+    name, seq, qual = [], [], []
+    for n, s, q in mappy.fastx_read(fastq_path):
+        name.append(n)
+        seq.append(s)
+        qual.append(q)
+    if len(name) == len(seq) == len(qual) > 0:
+        pass
+    else:
+        raise InputFileError(f"{fastq_path} is not a FASTQ format")
+
+
+def check_fasta(fasta_path: str):
+    name, seq = [], []
+    for n, s, _ in mappy.fastx_read(fasta_path):
+        name.append(n)
+        seq.append(s)
+    if not len(name) == len(seq) > 0:
+        raise InputFileError(f"{fasta_path} is not a FASTA format")
+    if len(name) > len(set(name)):
+        raise InputFileError(f"{fasta_path} must include unique DNA sequences")
+    if name.count("control") == 0:
+        raise InputFileError(f"{fasta_path} must include a 'control' sequence")
+
 
 ########################################################################
 # アレルを辞書型およびシングルfastaフォーマットに変換
