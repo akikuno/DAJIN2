@@ -4,3 +4,4 @@ scikit-learn
 plotnine
 mappy
 pysam
+cstag
