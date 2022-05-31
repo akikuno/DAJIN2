@@ -2,14 +2,12 @@
 
 ## New planned features
 
-### nCATS compatibility
-
-### Simple implementation and installation
-
-- Minimize dependencies
+- [ ] support nCATs
+- [ ] output VCF
+- [ ] Minimize dependencies
   - Python, R, Bash -> Python
   - minimap2 -> mappy
   - samtools -> pysam
   - remove NanoSim
   - remove Tensorflow (GPU computation)
-- Upload to PyPI and BioConda
+- [ ] Upload to PyPI and BioConda
