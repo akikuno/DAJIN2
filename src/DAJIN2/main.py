@@ -52,7 +52,7 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     14
 #     )
 
-##* 2-cut deletion
+# #* 2-cut deletion
 # sample, control, allele, output, genome, debug, threads = (
 #     "examples/nanosim/del-stx2/deletion.fq.gz",
 #     "examples/nanosim/del-stx2/control.fq.gz",
@@ -78,15 +78,36 @@ os.makedirs(output, exist_ok=True)
 #     cache_control.save_header(control, CACHEDIR)
 #     IS_CACHED = False
 
-########################################################################
+###############################################################################
 # Format inputs (sample/control/allele)
-########################################################################
+###############################################################################
 
 from src.DAJIN2.preprocess import format_input
 
+# ------------------------------------------------------------------------------
+# Check formats (extensions and contents)
+# ------------------------------------------------------------------------------
+for file_name in sample, control:
+    format_input.check_fastq_extension(file_name)
+
+for file_name in sample, control:
+    format_input.check_fastq_content(file_name)
+
+format_input.check_fasta_content(allele)
+
+# ------------------------------------------------------------------------------
+# Formats
+# ------------------------------------------------------------------------------
+
+sample_name = format_input.extract_basename(sample)
+control_name = format_input.extract_basename(control)
+
 dict_allele = format_input.dictionize_allele(allele)
 
+# ------------------------------------------------------------------------------
 # Export fasta files as single-FASTA format
+# ------------------------------------------------------------------------------
+# TODO: use yeild, not export
 for header, sequence in dict_allele.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
     with open(f".tmpDAJIN/fasta/{header}.fasta", "w") as f:
@@ -97,9 +118,9 @@ for header, sequence in dict_allele.items():
 #     basename = os.path.basename(fastqpath)
 #     io.fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
 
-########################################################################
+###############################################################################
 # Mapping with minimap2/mappy
-########################################################################
+###############################################################################
 
 from src.DAJIN2 import mappy2sam
 import pathlib
