@@ -108,6 +108,7 @@ dict_allele = format_input.dictionize_allele(allele)
 # Export fasta files as single-FASTA format
 # ------------------------------------------------------------------------------
 # TODO: use yeild, not export
+
 for header, sequence in dict_allele.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
     with open(f".tmpDAJIN/fasta/{header}.fasta", "w") as f:
@@ -126,14 +127,10 @@ from src.DAJIN2 import mappy2sam
 import pathlib
 import os
 
-sample = "examples/nanosim/del-stx2/deletion.fq.gz"
-
-p = pathlib.Path(".tmpDAJIN/fasta")
-for input_fasta in p.glob("*.fasta"):
+for input_fasta in pathlib.Path(".tmpDAJIN/fasta").glob("*.fasta"):
     input_fasta = str(input_fasta)
-    fasta_name = os.path.basename(input_fasta).rstrip(".fasta")
-    for fastq in [control, sample]:
-        fastq_name = os.path.basename(fastq).split(".f")[0]
+    fasta_name = os.path.basename(input_fasta).replace(".fasta", "")
+    for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
         output_sam = f".tmpDAJIN/sam/{fastq_name}_{fasta_name}.sam"
         # Todo: 並行処理で高速化！！
         SAM = mappy2sam(input_fasta, fastq)

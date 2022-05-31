@@ -50,7 +50,8 @@ def check_fasta_content(fasta_path: str):
 
 def extract_basename(fastq_path: str) -> str:
     name = os.path.basename(fastq_path)
-    return re.sub(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", "", name)
+    name = re.sub(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", "", name)
+    return re.sub(r'[\\|/|:|?|.|\'|"|<|>|\|]', "-", name)
 
 
 ########################################################################
@@ -62,6 +63,7 @@ def dictionize_allele(allele: str) -> dict:
     header, sequence = [], []
     for name, seq, _ in mappy.fastx_read(allele):
         header.append(name)
+        header = re.sub(r'[\\|/|:|?|.|\'|"|<|>|\|]', "-", header)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
 

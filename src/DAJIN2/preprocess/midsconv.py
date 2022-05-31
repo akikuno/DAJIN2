@@ -1,6 +1,6 @@
 # from ctypes import alignment
-from itertools import groupby
 import re
+from itertools import groupby
 from concurrent.futures import ProcessPoolExecutor
 
 
