@@ -1,4 +1,5 @@
 import sys
+import re
 import mappy
 from src.DAJIN2.utils.exceptions import InputFileError
 from src.DAJIN2.utils import io
@@ -6,6 +7,14 @@ from src.DAJIN2.utils import io
 ########################################################################
 # サンプルが適切なフォーマットなのかチェックする
 ########################################################################
+
+
+def check_fastq_extension(fastq_path: str):
+    correct_extension = False
+    if re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", fastq_path):
+        correct_extension = True
+    if not correct_extension:
+        raise InputFileError(f"{fastq_path} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
 
 
 def check_fastq(fastq_path: str):

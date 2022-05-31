@@ -1,6 +1,22 @@
 import pytest
 from src.DAJIN2.preprocess.format_input import *
 
+# Extension check
+def test_check_fastq_extension():
+    try:
+        _ = check_fastq_extension("test.fqq")
+    except:
+        pytest.fail("error")
+
+
+def test_check_fastq_extension():
+    try:
+        _ = check_fastq_extension("test.fq")
+    except InputFileError as e:
+        pytest.fail(e)
+
+
+# Contents check
 
 fastq_path = "tests/data/empty.txt"
 
