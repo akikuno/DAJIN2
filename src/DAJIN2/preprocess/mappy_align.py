@@ -1,10 +1,13 @@
-import mappy
 import cstag
+import mappy
 
 complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
 
 
-def mappy2sam(REFFA: str, QUEFQ: str, cslong: bool = True) -> list:
+def to_sam(REFFA: str, QUEFQ: str, cslong: bool = True) -> list:
+    """
+    Align seqences using mappy and Convert PAF to SAM
+    """
     # SQ header
     SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(REFFA)]
     # Mappy
@@ -29,6 +32,7 @@ def mappy2sam(REFFA: str, QUEFQ: str, cslong: bool = True) -> list:
             # Revcomp
             if not hit.strand == 1:
                 qseq = "".join(complement[nt] for nt in qseq[::-1])
+            qseq = qseq.upper()
             # cslong
             cs = "cs:Z:" + hit.cs
             if cslong:

@@ -123,7 +123,7 @@ for header, sequence in dict_allele.items():
 # Mapping with minimap2/mappy
 ###############################################################################
 
-from src.DAJIN2 import mappy2sam
+from src.DAJIN2.preprocess import mappy_align
 import pathlib
 import os
 
@@ -133,7 +133,7 @@ for input_fasta in pathlib.Path(".tmpDAJIN/fasta").glob("*.fasta"):
     for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
         output_sam = f".tmpDAJIN/sam/{fastq_name}_{fasta_name}.sam"
         # Todo: 並行処理で高速化！！
-        SAM = mappy2sam(input_fasta, fastq)
+        SAM = mappy_align.to_sam(input_fasta, fastq)
         with open(output_sam, "w") as f:
             f.write("\n".join(SAM))
 
@@ -164,18 +164,18 @@ import importlib
 
 importlib.reload(midsconv)
 
-samfile = "barcode31_control.sam"
-sampath = ".tmpDAJIN/sam/barcode31_control.sam"
-threads = 20
-# SAMDIR = os.path.join("tests", "samTomids", "input")
-# SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
-
 for samfile in os.listdir(".tmpDAJIN/sam"):
     sampath = os.path.join(".tmpDAJIN", "sam", samfile)
     output = os.path.join(".tmpDAJIN/midsconv", samfile.replace(".sam", ".csv"))
     midscsv = midsconv.sam_to_mids(sampath, threads)
     with open(output, "w") as f:
         f.write("\n".join(midscsv))
+
+# samfile = "barcode31_control.sam"
+# sampath = ".tmpDAJIN/sam/barcode31_control.sam"
+# threads = 20
+# # SAMDIR = os.path.join("tests", "samTomids", "input")
+# # SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
 
 ########################################################################
 # MIDS QC filtering
