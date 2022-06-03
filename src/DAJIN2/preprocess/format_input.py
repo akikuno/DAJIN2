@@ -2,7 +2,6 @@ import os
 import re
 import mappy
 from src.DAJIN2.utils.exceptions import InputFileError
-from src.DAJIN2.utils import io
 
 ########################################################################
 # Check if the sample is in the proper format.
@@ -59,11 +58,11 @@ def extract_basename(fastq_path: str) -> str:
 ########################################################################
 
 
-def dictionize_allele(allele: str) -> dict:
+def dictionize_allele(allele_path: str) -> dict:
     header, sequence = [], []
-    for name, seq, _ in mappy.fastx_read(allele):
+    for name, seq, _ in mappy.fastx_read(allele_path):
+        name = re.sub(r'[\\|/|:|?|.|\'|"|<|>|\|]', "-", name)
         header.append(name)
-        header = re.sub(r'[\\|/|:|?|.|\'|"|<|>|\|]', "-", header)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
 

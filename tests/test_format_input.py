@@ -40,3 +40,4 @@ def test_check_fastq_without_error():
 def test_check_fasta_without_error():
     fasta_path = "examples/nanosim/del-stx2/design_stx2.fa"
     assert check_fasta_content(fasta_path) == None
+

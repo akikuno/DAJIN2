@@ -17,23 +17,6 @@ from src.DAJIN2.preprocess import midsqc
 
 #! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # def main():
-########################################################################
-# Setting
-########################################################################
-
-# Check dependencies
-# for dependence in ["minimap2", "samtools"]:
-#     if not shutil.which(dependence):
-#         print(f"{dependence} is not found. Please install it.")
-#         sys.exit(1)
-
-TMPDIR = ".tmpDAJIN"
-SUBDIRS = ["fasta", "fastq", "sam", "midsconv", "midsqc"]
-for sub in SUBDIRS:
-    dir = os.path.join(TMPDIR, sub)
-    os.makedirs(dir, exist_ok=True)
-
-TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
 
 ########################################################################
 # Argument parse
@@ -63,6 +46,29 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     14,
 # )
 
+# #* 2-cut deletion
+# sample, control, allele, output, genome, debug, threads = (
+#     "examples/del-stx2/barcode25.fq.gz",
+#     "examples/del-stx2/barcode30.fq.gz",
+#     "examples/del-stx2/design_stx2.fa",
+#     "DAJIN_results",
+#     "mm10",
+#     True,
+#     14,
+# )
+
+########################################################################
+# Make directories
+########################################################################
+
+TMPDIR = ".tmpDAJIN"
+SUBDIRS = ["fasta", "fastq", "sam", "midsconv", "midsqc"]
+for sub in SUBDIRS:
+    dir = os.path.join(TMPDIR, sub)
+    os.makedirs(dir, exist_ok=True)
+
+TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
+
 os.makedirs(output, exist_ok=True)
 
 ########################################################################
@@ -82,8 +88,10 @@ os.makedirs(output, exist_ok=True)
 # Format inputs (sample/control/allele)
 ###############################################################################
 
+import importlib
 from src.DAJIN2.preprocess import format_input
 
+importlib.reload(format_input)
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
 # ------------------------------------------------------------------------------
@@ -123,9 +131,9 @@ for header, sequence in dict_allele.items():
 # Mapping with minimap2/mappy
 ###############################################################################
 
-from src.DAJIN2.preprocess import mappy_align
-import pathlib
 import os
+import pathlib
+from src.DAJIN2.preprocess import mappy_align
 
 for input_fasta in pathlib.Path(".tmpDAJIN/fasta").glob("*.fasta"):
     input_fasta = str(input_fasta)
@@ -136,21 +144,6 @@ for input_fasta in pathlib.Path(".tmpDAJIN/fasta").glob("*.fasta"):
         SAM = mappy_align.to_sam(input_fasta, fastq)
         with open(output_sam, "w") as f:
             f.write("\n".join(SAM))
-
-
-########################################################################
-# Mask CS tag
-########################################################################
-
-# qname_pos_cslong = []
-# for sam in SAM:
-#     if sam[0] == "@":
-#         continue
-#     sam = sam.split("\t")
-#     qname, pos, cigar, qseq, qual, cs = sam[0], sam[3], sam[5], sam[9], sam[10], sam[11]
-#     cslong = cstag.lengthen(cs, cigar, qseq)
-#     cslong_masked = cstag.mask(cslong, cigar, qual, 5)
-#     qname_pos_cslong.append([qname, pos, cslong_masked, qual])
 
 
 ########################################################################
@@ -189,11 +182,19 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 # Phread scoreが0.1以下のリードについて再分配する
 ########################################################################
 
-# 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
+########################################################################
+# Mask CS tag
+########################################################################
 
-for mids in midscsv[:2]:
-    extract(mids.split(","))
-
+# qname_pos_cslong = []
+# for sam in SAM:
+#     if sam[0] == "@":
+#         continue
+#     sam = sam.split("\t")
+#     qname, pos, cigar, qseq, qual, cs = sam[0], sam[3], sam[5], sam[9], sam[10], sam[11]
+#     cslong = cstag.lengthen(cs, cigar, qseq)
+#     cslong_masked = cstag.mask(cslong, cigar, qual, 5)
+#     qname_pos_cslong.append([qname, pos, cslong_masked, qual])
 
 ########################################################################
 # MIDS アレル分類・異常検知スコア
