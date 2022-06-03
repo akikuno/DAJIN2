@@ -4,6 +4,11 @@ tmp*
 .tmp*
 DAJIN_results/*
 
+# Nanosim
+*aligned_reads*
+*error_profile*
+training_*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

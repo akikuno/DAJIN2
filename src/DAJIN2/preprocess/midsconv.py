@@ -3,6 +3,10 @@ import re
 from itertools import groupby
 from concurrent.futures import ProcessPoolExecutor
 
+###############################################################################
+# MIDS Conversion
+###############################################################################
+
 
 def extract_name_length(sam: list) -> dict:
     """
@@ -172,13 +176,28 @@ def sam_to_mids(sampath: str, threads: int) -> list:
     # Group by QNAME
     aligndict = [{"QNAME": a.split("\t")[0], "alignment": a} for a in alignments]
     aligndict = sorted(aligndict, key=lambda x: x["QNAME"])
-    aligngroupby = [
-        list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])
-    ]
+    aligngroupby = [list(group) for _, group in groupby(aligndict, lambda x: x["QNAME"])]
     with ProcessPoolExecutor(max_workers=threads) as executor:
         # MIDS conversion
         mids = list(executor.map(to_mids, aligngroupby))
     return mids
+
+
+###############################################################################
+# Extract full-length leads only
+###############################################################################
+
+
+def extract_full_length_reads(mids: list) -> list:
+    """
+    Extract full-length leads only
+    """
+    left_cut = mids[1:51].count("=")
+    right_cut = mids[-50:].count("=")
+    if left_cut < 50 and right_cut < 50:
+        return ",".join(mids)
+    else:
+        return
 
 
 ###############################################################################

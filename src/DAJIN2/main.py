@@ -168,6 +168,12 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
     sampath = os.path.join(".tmpDAJIN", "sam", samfile)
     output = os.path.join(".tmpDAJIN/midsconv", samfile.replace(".sam", ".csv"))
     midscsv = midsconv.sam_to_mids(sampath, threads)
+    tmp = []
+    for m in midscsv:
+        x = midsconv.extract_full_length_reads(m.split(","))
+        if x:
+            tmp.append(x)
+    midscsv = tmp
     with open(output, "w") as f:
         f.write("\n".join(midscsv))
 
@@ -184,6 +190,10 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 ########################################################################
 
 # 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
+
+for mids in midscsv[:2]:
+    extract(mids.split(","))
+
 
 ########################################################################
 # MIDS アレル分類・異常検知スコア
