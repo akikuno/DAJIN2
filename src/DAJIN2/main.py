@@ -160,9 +160,9 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
     sampath = os.path.join(".tmpDAJIN", "sam", samfile)
     output = os.path.join(".tmpDAJIN/midsconv", samfile.replace(".sam", ".csv"))
     midscsv = []
-    for m in midsconv.sam_to_mids(sampath, threads):
+    for mids in midsconv.sam_to_mids(sampath, threads):
         # Extract full length reads
-        x = midsconv.extract_full_length_reads(m.split(","))
+        x = midsconv.extract_full_length_reads(mids)
         if x:
             midscsv.append(x)
     with open(output, "w") as f:
@@ -172,20 +172,7 @@ for samfile in os.listdir(".tmpDAJIN/sam"):
 # Phread scoreが0.1以下のリードについて再分配する
 ########################################################################
 
-
-########################################################################
-# Mask CS tag
-########################################################################
-
-# qname_pos_cslong = []
-# for sam in SAM:
-#     if sam[0] == "@":
-#         continue
-#     sam = sam.split("\t")
-#     qname, pos, cigar, qseq, qual, cs = sam[0], sam[3], sam[5], sam[9], sam[10], sam[11]
-#     cslong = cstag.lengthen(cs, cigar, qseq)
-#     cslong_masked = cstag.mask(cslong, cigar, qual, 5)
-#     qname_pos_cslong.append([qname, pos, cslong_masked, qual])
+# Under construction...
 
 ########################################################################
 # MIDS アレル分類・異常検知スコア

@@ -188,10 +188,11 @@ def sam_to_mids(sampath: str, threads: int) -> list:
 ###############################################################################
 
 
-def extract_full_length_reads(mids: list) -> list:
+def extract_full_length_reads(mids: str) -> str:
     """
     Extract full-length leads only
     """
+    mids = mids.split(",")
     left_cut = mids[1:51].count("=")
     right_cut = mids[-50:].count("=")
     if len(mids) > 100 and left_cut < 50 and right_cut < 50:
