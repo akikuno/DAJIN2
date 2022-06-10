@@ -194,10 +194,8 @@ def extract_full_length_reads(mids: list) -> list:
     """
     left_cut = mids[1:51].count("=")
     right_cut = mids[-50:].count("=")
-    if left_cut < 50 and right_cut < 50:
+    if len(mids) > 100 and left_cut < 50 and right_cut < 50:
         return ",".join(mids)
-    else:
-        return
 
 
 ###############################################################################

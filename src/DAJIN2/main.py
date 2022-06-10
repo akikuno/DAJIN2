@@ -60,6 +60,7 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 ########################################################################
 # Make directories
 ########################################################################
+import os
 
 TMPDIR = ".tmpDAJIN"
 SUBDIRS = ["fasta", "fastq", "sam", "midsconv", "midsqc"]
@@ -131,17 +132,15 @@ for header, sequence in dict_allele.items():
 # Mapping with minimap2/mappy
 ###############################################################################
 
-import os
 import pathlib
 from src.DAJIN2.preprocess import mappy_align
 
 for input_fasta in pathlib.Path(".tmpDAJIN/fasta").glob("*.fasta"):
-    input_fasta = str(input_fasta)
-    fasta_name = os.path.basename(input_fasta).replace(".fasta", "")
+    fasta_name = input_fasta.name.replace(".fasta", "")
     for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
         output_sam = f".tmpDAJIN/sam/{fastq_name}_{fasta_name}.sam"
         # Todo: 並行処理で高速化！！
-        SAM = mappy_align.to_sam(input_fasta, fastq)
+        SAM = mappy_align.to_sam(str(input_fasta), fastq)
         with open(output_sam, "w") as f:
             f.write("\n".join(SAM))
 
@@ -160,27 +159,19 @@ importlib.reload(midsconv)
 for samfile in os.listdir(".tmpDAJIN/sam"):
     sampath = os.path.join(".tmpDAJIN", "sam", samfile)
     output = os.path.join(".tmpDAJIN/midsconv", samfile.replace(".sam", ".csv"))
-    midscsv = midsconv.sam_to_mids(sampath, threads)
-    tmp = []
-    for m in midscsv:
+    midscsv = []
+    for m in midsconv.sam_to_mids(sampath, threads):
+        # Extract full length reads
         x = midsconv.extract_full_length_reads(m.split(","))
         if x:
-            tmp.append(x)
-    midscsv = tmp
+            midscsv.append(x)
     with open(output, "w") as f:
         f.write("\n".join(midscsv))
 
-# samfile = "barcode31_control.sam"
-# sampath = ".tmpDAJIN/sam/barcode31_control.sam"
-# threads = 20
-# # SAMDIR = os.path.join("tests", "samTomids", "input")
-# # SAMFILES = [os.path.join(SAMDIR, _) for _ in os.listdir(SAMDIR)]
-
 ########################################################################
-# MIDS QC filtering
-# 完全長リードのみを取り出す：両端から50bp連続して"="であるリードを除く
 # Phread scoreが0.1以下のリードについて再分配する
 ########################################################################
+
 
 ########################################################################
 # Mask CS tag
