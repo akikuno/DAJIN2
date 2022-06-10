@@ -60,17 +60,14 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 ########################################################################
 # Make directories
 ########################################################################
-import os
+import pathlib
 
-TMPDIR = ".tmpDAJIN"
-SUBDIRS = ["fasta", "fastq", "sam", "midsconv", "midsqc"]
-for sub in SUBDIRS:
-    dir = os.path.join(TMPDIR, sub)
-    os.makedirs(dir, exist_ok=True)
+pathlib.Path(output).mkdir(exist_ok=True)
 
-TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
+for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
+    pathlib.Path(".tmpDAJIN", subdir).mkdir(exist_ok=True)
 
-os.makedirs(output, exist_ok=True)
+# TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
 
 ########################################################################
 # Whether existing cached control
@@ -93,6 +90,7 @@ import importlib
 from src.DAJIN2.preprocess import format_input
 
 importlib.reload(format_input)
+
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
 # ------------------------------------------------------------------------------
@@ -145,23 +143,22 @@ for input_fasta in pathlib.Path(".tmpDAJIN", "fasta").glob("*.fasta"):
 ########################################################################
 # For development
 
-import os
+import pathlib
 from src.DAJIN2.preprocess import midsconv
 import importlib
 
 importlib.reload(midsconv)
 
-for samfile in os.listdir(".tmpDAJIN/sam"):
-    sampath = os.path.join(".tmpDAJIN", "sam", samfile)
-    output = os.path.join(".tmpDAJIN/midsconv", samfile.replace(".sam", ".csv"))
+for sampath in pathlib.Path(".tmpDAJIN", "sam").iterdir():
     midscsv = []
-    for mids in midsconv.sam_to_mids(sampath, threads):
+    for mids in midsconv.sam_to_mids(str(sampath), threads):
         # Extract full length reads
-        x = midsconv.extract_full_length_reads(mids)
-        if x:
-            midscsv.append(x)
-    with open(output, "w") as f:
-        f.write("\n".join(midscsv))
+        mids = midsconv.extract_full_length_reads(mids)
+        if mids:
+            midscsv.append(mids)
+    output_mids = pathlib.Path(".tmpDAJIN", "midsconv", f"{sampath.stem}.csv")
+    output_mids.write_text("\n".join(midscsv))
+
 
 ########################################################################
 # Phread scoreが0.1以下のリードについて再分配する
