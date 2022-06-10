@@ -11,5 +11,6 @@
   - remove NanoSim
   - remove Tensorflow (GPU computation)
 - [ ] support macOS
+- [ ] support PacBio
 - [ ] upload to PyPI and BioConda
 
