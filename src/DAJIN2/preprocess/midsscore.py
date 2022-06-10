@@ -25,7 +25,7 @@ from itertools import groupby
 
 
 def calc(mids: str) -> float:
-    mids_list = mids.split(",")[1:]
+    mids_list = mids.split(",")
     mids_length = len(mids_list)
     for ins in mids_list:
         if ins[0].isdigit():
@@ -37,13 +37,14 @@ readid_allele_score = []
 
 # def append_name(sample_name: str) -> dict:
 
-midspath = pathlib.Path(".tmpDAJIN", "midsconv").glob(f"{sample_name}*")
-for mids in midspath:
-    allele_name = mids.stem.replace(f"{sample_name}_", "")
-    for midscsv in mids.read_text().split():
+midspaths = pathlib.Path(".tmpDAJIN", "midsconv").glob(f"{sample_name}*")
+for midspath in midspaths:
+    allele_name = midspath.stem.replace(f"{sample_name}_", "")
+    for midscsv in midspath.read_text().split():
         readid = midscsv.split(",")[0]
-        score = calc(midscsv)
-        readid_allele_score.append({"readid": readid, "allele": allele_name, "score": score})
+        mids = ",".join(midscsv.split(",")[1:])
+        score = calc(mids)
+        readid_allele_score.append({"readid": readid, "allele": allele_name, "score": score, "mids": mids})
 
 readid_allele_score.sort(key=lambda x: x["readid"])
 
@@ -56,8 +57,50 @@ for key, group in groupby(readid_allele_score, key=lambda x: x["readid"]):
             max_score = member["score"]
     readid_allele_score_extract.append(tmp_read)
 
-from collections import defaultdict
+###########
+Python might do not have I/O methods for JSONL.
 
-d = defaultdict(int)
-for x in readid_allele_score_extract:
-    d[x["allele"]] += 1
+
+import json
+
+
+def write_jsonl(dicts: list[dict], filepath: str):
+    with open(filepath, "w") as output:
+        for d in dicts:
+            json.dump(d, output)
+            output.write("\n")
+
+
+def read_jsonl(filepath: str) -> list[dict]:
+    dicts = []
+    with open(filepath, "r") as f:
+        for line in f:
+            dicts.append(json.JSONDecoder().decode(line))
+    return dicts
+
+
+# Example
+dicts = [{"name": "taro", "math": 10, "english": 20}, {"name": "hanako", "math": 100, "english": 90}]
+
+write_jsonl(dicts, "test.jsonl")
+read_jsonl("test.jsonl")
+
+res = []
+decoder = json.JSONDecoder()
+with open("tmp.jsonl", "r") as f:
+    line = f.readline()
+    while line:
+        res.append(decoder.raw_decode(line))
+        line = f.readline()
+
+x = json.dumps(readid_allele_score_extract[:1])
+x
+
+
+#####
+# from collections import defaultdict
+
+# d = defaultdict(int)
+# for x in readid_allele_score_extract:
+#     d[x["allele"]] += 1
+
