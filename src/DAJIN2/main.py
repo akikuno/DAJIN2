@@ -117,16 +117,13 @@ dict_allele = format_input.dictionize_allele(allele)
 # Export fasta files as single-FASTA format
 # ------------------------------------------------------------------------------
 # TODO: use yeild, not export
+import pathlib
 
 for header, sequence in dict_allele.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
-    with open(f".tmpDAJIN/fasta/{header}.fasta", "w") as f:
-        _ = f.write(contents)
+    output_fasta = pathlib.Path(".tmpDAJIN", "fasta", f"{header}.fasta")
+    output_fasta.write_text(contents)
 
-# for fastqpath in [sample, control]:
-#     fastq_anno = format_input.annotate_TooLong_to_fastq(fastqpath, dict_allele)
-#     basename = os.path.basename(fastqpath)
-#     io.fwrite(fastq_anno, f".tmpDAJIN/fastq/{basename}")
 
 ###############################################################################
 # Mapping with minimap2/mappy
@@ -135,15 +132,13 @@ for header, sequence in dict_allele.items():
 import pathlib
 from src.DAJIN2.preprocess import mappy_align
 
-for input_fasta in pathlib.Path(".tmpDAJIN/fasta").glob("*.fasta"):
+for input_fasta in pathlib.Path(".tmpDAJIN", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
     for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
-        output_sam = f".tmpDAJIN/sam/{fastq_name}_{fasta_name}.sam"
         # Todo: 並行処理で高速化！！
         SAM = mappy_align.to_sam(str(input_fasta), fastq)
-        with open(output_sam, "w") as f:
-            f.write("\n".join(SAM))
-
+        output_sam = pathlib.Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
+        output_sam.write_text("\n".join(SAM))
 
 ########################################################################
 # MIDS conversion
