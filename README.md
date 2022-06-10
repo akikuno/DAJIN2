@@ -4,10 +4,12 @@
 
 - [ ] support nCATs
 - [ ] output VCF
-- [ ] Minimize dependencies
+- [ ] minimize dependencies
   - Python, R, Bash -> Python
   - minimap2 -> mappy
   - samtools -> pysam
   - remove NanoSim
   - remove Tensorflow (GPU computation)
-- [ ] Upload to PyPI and BioConda
+- [ ] support macOS
+- [ ] upload to PyPI and BioConda
+
