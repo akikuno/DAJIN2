@@ -58,8 +58,6 @@ for key, group in groupby(readid_allele_score, key=lambda x: x["readid"]):
     readid_allele_score_extract.append(tmp_read)
 
 ###########
-Python might do not have I/O methods for JSONL.
-
 
 import json
 
