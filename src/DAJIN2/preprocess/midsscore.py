@@ -22,6 +22,7 @@ output: 各リードごとに一番ミスマッチが少なかったアレル
 import re
 import pathlib
 from itertools import groupby
+from src.DAJIN2.utils.io import read_jsonl, write_jsonl
 
 
 def calc(mids: str) -> float:
@@ -56,43 +57,6 @@ for key, group in groupby(readid_allele_score, key=lambda x: x["readid"]):
             tmp_read = member
             max_score = member["score"]
     readid_allele_score_extract.append(tmp_read)
-
-###########
-
-import json
-
-
-def write_jsonl(dicts: list[dict], filepath: str):
-    with open(filepath, "w") as output:
-        for d in dicts:
-            json.dump(d, output)
-            output.write("\n")
-
-
-def read_jsonl(filepath: str) -> list[dict]:
-    dicts = []
-    with open(filepath, "r") as f:
-        for line in f:
-            dicts.append(json.JSONDecoder().decode(line))
-    return dicts
-
-
-# Example
-dicts = [{"name": "taro", "math": 10, "english": 20}, {"name": "hanako", "math": 100, "english": 90}]
-
-write_jsonl(dicts, "test.jsonl")
-read_jsonl("test.jsonl")
-
-res = []
-decoder = json.JSONDecoder()
-with open("tmp.jsonl", "r") as f:
-    line = f.readline()
-    while line:
-        res.append(decoder.raw_decode(line))
-        line = f.readline()
-
-x = json.dumps(readid_allele_score_extract[:1])
-x
 
 
 #####

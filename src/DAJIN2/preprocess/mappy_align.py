@@ -4,17 +4,24 @@ import mappy
 complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
 
 
-def to_sam(REFFA: str, QUEFQ: str, cslong: bool = True) -> list:
-    """
-    Align seqences using mappy and Convert PAF to SAM
+def to_sam(PATH_REFFA: str, PATH_QUEFQ: str, cslong: bool = True) -> list:
+    """Align seqences using mappy and Convert PAF to SAM
+
+    Args:
+        PATH_REFFA (str): Path of reference fasta
+        PATH_QUEFQ (str): Path of query fasta/fastq
+        cslong (bool, optional): long formatted CS tag if True. Defaults to True.
+
+    Returns:
+        list: List of SAM
     """
     # SQ header
-    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(REFFA)]
+    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(PATH_REFFA)]
     # Mappy
-    ref = mappy.Aligner(REFFA)
+    ref = mappy.Aligner(PATH_REFFA)
     if not ref:
         raise Exception("ERROR: failed to load fasta file")
-    for qname, qseq, qual in mappy.fastx_read(QUEFQ):
+    for qname, qseq, qual in mappy.fastx_read(PATH_QUEFQ):
         for hit in ref.map(qseq, cs=True):
             # flag
             if hit.is_primary:
