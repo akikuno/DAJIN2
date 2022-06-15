@@ -58,18 +58,6 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 # )
 
 ########################################################################
-# Make directories
-########################################################################
-import pathlib
-
-pathlib.Path(output).mkdir(exist_ok=True)
-
-for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
-    pathlib.Path(".tmpDAJIN", subdir).mkdir(exist_ok=True)
-
-# TMPDIR_PATHS = {dirname: os.path.join(TMPDIR, dirname) for dirname in os.listdir(TMPDIR)}
-
-########################################################################
 # Whether existing cached control
 ########################################################################
 
@@ -82,14 +70,22 @@ for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
 #     cache_control.save_header(control, CACHEDIR)
 #     IS_CACHED = False
 
+########################################################################
+# Make directories
+########################################################################
+import pathlib
+
+pathlib.Path(output).mkdir(exist_ok=True)
+
+for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
+    pathlib.Path(".tmpDAJIN", subdir).mkdir(exist_ok=True)
+
 ###############################################################################
 # Format inputs (sample/control/allele)
 ###############################################################################
 
 import importlib
 from src.DAJIN2.preprocess import format_input
-
-importlib.reload(format_input)
 
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
@@ -141,7 +137,6 @@ for input_fasta in pathlib.Path(".tmpDAJIN", "fasta").glob("*.fasta"):
 ########################################################################
 # MIDS conversion
 ########################################################################
-# For development
 
 import pathlib
 from src.DAJIN2.preprocess import midsconv

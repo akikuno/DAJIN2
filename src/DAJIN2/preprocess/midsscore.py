@@ -34,35 +34,40 @@ def calc(mids: str) -> float:
     return mids_list.count("M") / mids_length
 
 
-readid_allele_score = []
+def extract_possible_allele_and_score(basename: str) -> list[dict]:
+    readid_allele_score_of_all_alleles = []
+    midspaths = pathlib.Path(".tmpDAJIN", "midsconv").glob(f"{basename}*")
+    for midspath in midspaths:
+        allele_name = midspath.stem.replace(f"{basename}_", "")
+        for midscsv in midspath.read_text().split():
+            readid = midscsv.split(",")[0]
+            mids = ",".join(midscsv.split(",")[1:])
+            score = calc(mids)
+            readid_allele_score_of_all_alleles.append(
+                {"readid": readid, "allele": allele_name, "score": score, "mids": mids}
+            )
+    readid_allele_score_of_all_alleles.sort(key=lambda x: x["readid"])
+    readid_allele_score = []
+    for _, group in groupby(readid_allele_score_of_all_alleles, key=lambda x: x["readid"]):
+        max_score = 0
+        for readinfo in group:
+            if readinfo["score"] > max_score:
+                max_read = readinfo
+                max_score = readinfo["score"]
+        readid_allele_score.append(max_read)
+    return readid_allele_score
 
-# def append_name(sample_name: str) -> dict:
 
-midspaths = pathlib.Path(".tmpDAJIN", "midsconv").glob(f"{sample_name}*")
-for midspath in midspaths:
-    allele_name = midspath.stem.replace(f"{sample_name}_", "")
-    for midscsv in midspath.read_text().split():
-        readid = midscsv.split(",")[0]
-        mids = ",".join(midscsv.split(",")[1:])
-        score = calc(mids)
-        readid_allele_score.append({"readid": readid, "allele": allele_name, "score": score, "mids": mids})
-
-readid_allele_score.sort(key=lambda x: x["readid"])
-
-readid_allele_score_extract = []
-for key, group in groupby(readid_allele_score, key=lambda x: x["readid"]):
-    max_score = 0
-    for member in group:
-        if member["score"] > max_score:
-            tmp_read = member
-            max_score = member["score"]
-    readid_allele_score_extract.append(tmp_read)
+tmp = extract_possible_allele_and_score(sample_name)
 
 
 #####
-# from collections import defaultdict
+from collections import defaultdict
 
-# d = defaultdict(int)
-# for x in readid_allele_score_extract:
-#     d[x["allele"]] += 1
+d = defaultdict(int)
+for x in tmp:
+    if x["allele"] == "control":
+        print(x)
+    d[x["allele"]] += 1
 
+d
