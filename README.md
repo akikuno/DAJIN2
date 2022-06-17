@@ -2,6 +2,7 @@
 
 ## New planned features
 
+- [ ] support samples without a reference genome
 - [ ] support nCATs
 - [ ] output VCF
 - [ ] minimize dependencies
