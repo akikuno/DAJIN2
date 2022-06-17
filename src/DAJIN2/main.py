@@ -73,12 +73,13 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 ########################################################################
 # Make directories
 ########################################################################
+
 from pathlib import Path
 
 Path(output).mkdir(exist_ok=True)
 
 for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
-    Path(".tmpDAJIN", subdir).mkdir(exist_ok=True)
+    Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
 
 ###############################################################################
 # Format inputs (sample/control/allele)
@@ -125,6 +126,9 @@ for header, sequence in dict_allele.items():
 
 from pathlib import Path
 from src.DAJIN2.preprocess import mappy_align
+from importlib import reload
+
+reload(mappy_align)
 
 for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
@@ -132,7 +136,7 @@ for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
         # Todo: 並行処理で高速化！！
         SAM = mappy_align.to_sam(str(input_fasta), fastq)
         SAM = mappy_align.remove_unmapped_reads(SAM)
-        SAM = mappy_align.remove_long_softclipped_reads(SAM)
+        SAM = mappy_align.remove_overlapped_reads(SAM)
         output_sam = Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
         output_sam.write_text("\n".join(SAM))
 

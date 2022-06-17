@@ -17,6 +17,13 @@ def test_remove_unmapped_reads():
     assert value == answer
 
 
+def test_remove_overlaped_reads():
+    sam = Path("tests", "data", "mappy", "overlapped.sam").read_text().strip().split("\n")
+    value = mappy_align.remove_overlapped_reads(sam)
+    answer = Path("tests", "data", "mappy", "overlapped_removed.sam").read_text().strip().split("\n")
+    assert value == answer
+
+
 def test_remove_long_softclipped_reads():
     sam = Path("tests", "data", "mappy", "long_softclip.sam").read_text().strip().split("\n")
     value = mappy_align.remove_long_softclipped_reads(sam)
