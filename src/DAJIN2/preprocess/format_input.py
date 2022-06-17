@@ -51,7 +51,11 @@ def check_fasta_content(fasta_path: str):
 def extract_basename(fastq_path: str) -> str:
     name = os.path.basename(fastq_path)
     name = re.sub(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", "", name)
-    return re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\|]', "-", name)
+    name = name.lstrip()
+    if not name:
+        raise AttributeError(f"{fastq_path} is an invalid file name")
+    else:
+        return re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
 
 
 ########################################################################
@@ -62,24 +66,11 @@ def extract_basename(fastq_path: str) -> str:
 def dictionize_allele(allele_path: str) -> dict:
     header, sequence = [], []
     for name, seq, _ in mappy.fastx_read(allele_path):
-        name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\|]', "-", name)
+        name = name.lstrip()
+        if not name:
+            raise AttributeError(f"{allele_path} contains an invalid header name")
+        else:
+            name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
         header.append(name)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
-
-
-# def annotate_TooLong_to_fastq(fastqpath: str, dict_allele: dict) -> None:
-#     """
-#     Annotate "TooLong" tag after a header when sequence lenth is more than 1.2 times of max sequence length
-#     """
-#     fastq = io.fread(fastqpath)
-#     max_length = max(len(seq) for seq in dict_allele.values())
-#     # Combine four lines into one list
-#     fastq = [fastq[i : i + 4] for i in range(0, len(fastq), 4)]
-#     fastq_anno = []
-#     for f in fastq:
-#         header = f[0].split()[0]
-#         if len(f[1]) > max_length * 1.2:
-#             header = "-".join([header, "TooLong"])
-#         fastq_anno.append([header, *f[1:]])
-#     return fastq_anno
