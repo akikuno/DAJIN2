@@ -1,5 +1,8 @@
 from pathlib import Path
 from src.DAJIN2.preprocess import mappy_align
+from importlib import reload
+
+reload(mappy_align)
 
 
 def test_to_sam():
@@ -24,11 +27,12 @@ def test_remove_overlaped_reads():
     assert value == answer
 
 
-def test_remove_long_softclipped_reads():
-    sam = Path("tests", "data", "mappy", "long_softclip.sam").read_text().strip().split("\n")
-    value = mappy_align.remove_long_softclipped_reads(sam)
-    answer = Path("tests", "data", "mappy", "long_softclip_removed.sam").read_text().strip().split("\n")
-    assert value == answer
+def test_remove_overlaped_reads_2():
+    """Input is truely inversion so the function must return the same of the input.
+    """
+    sam = Path("tests", "data", "mappy", "inversion.sam").read_text().strip().split("\n")
+    value = mappy_align.remove_overlapped_reads(sam)
+    assert value == sam
 
 
 # Create test data

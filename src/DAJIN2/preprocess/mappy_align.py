@@ -104,9 +104,9 @@ def remove_overlapped_reads(sam: list[str]) -> list[str]:
             cigar = record[5]
             cigar_split = re.split(r"([A-Z])", cigar)
             for i, cigar in enumerate(cigar_split):
-                if cigar == "M" or cigar == "I":
+                if cigar == "M" or cigar == "D":
                     record_length += int(cigar_split[i - 1])
-            end_of_previous_read = start_of_current_read + record_length
+            end_of_previous_read = start_of_current_read + record_length - 1
         if is_overraped:
             continue
         for record in records:
