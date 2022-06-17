@@ -11,12 +11,13 @@ wget -O - https://hgdownload.soe.ucsc.edu/goldenPath/mm39/chromosomes/chr2.fa.gz
 
 mkdir -p mm39
 
-find barcode*.fq.gz |
+find examples/flox-cables2/AyabeTask2/barcode*.fq.gz |
     while read -r fq; do
         output="${fq%.fq.gz}".bam
-        minimap2 -t "$threads" -ax map-ont tmp_chr.fa "$fq" |
-            samtools sort -@ "$threads" >mm39/"$output"
-        samtools index -@ "$threads" mm39/"$output"
+        minimap2 -t "$threads" -ax map-ont tmp_chr.fa "$fq" --cs=long |
+            samtools sort -@ "$threads" >"$output"
+        samtools index -@ "$threads" "$output"
+        mv "$output"* examples/flox-cables2/AyabeTask2/mm39
     done
 
 rm tmp_*

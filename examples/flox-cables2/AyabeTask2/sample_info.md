@@ -12,4 +12,4 @@
 
 ## read numbers
 
-- 1000 reads/sample
+- 1250 reads/sample
