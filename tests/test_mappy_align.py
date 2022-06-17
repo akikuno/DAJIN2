@@ -9,6 +9,7 @@ def test_to_sam():
     reffa = Path("tests", "data", "mappy", "tyr_control.fa")
     quefq = Path("tests", "data", "mappy", "tyr_query.fq")
     value = mappy_align.to_sam(str(reffa), str(quefq))
+    value = list(value)
     answer = Path("tests", "data", "mappy", "tyr_query.sam").read_text().strip().split("\n")
     assert value == answer
 
@@ -16,6 +17,7 @@ def test_to_sam():
 def test_remove_unmapped_reads():
     sam = Path("tests", "data", "mappy", "unmapped.sam").read_text().strip().split("\n")
     value = mappy_align.remove_unmapped_reads(sam)
+    value = list(value)
     answer = Path("tests", "data", "mappy", "unmapped_removed.sam").read_text().strip().split("\n")
     assert value == answer
 
@@ -23,6 +25,7 @@ def test_remove_unmapped_reads():
 def test_remove_overlaped_reads():
     sam = Path("tests", "data", "mappy", "overlapped.sam").read_text().strip().split("\n")
     value = mappy_align.remove_overlapped_reads(sam)
+    value = list(value)
     answer = Path("tests", "data", "mappy", "overlapped_removed.sam").read_text().strip().split("\n")
     assert value == answer
 
@@ -32,6 +35,7 @@ def test_remove_overlaped_reads_2():
     """
     sam = Path("tests", "data", "mappy", "inversion.sam").read_text().strip().split("\n")
     value = mappy_align.remove_overlapped_reads(sam)
+    value = list(value)
     assert value == sam
 
 

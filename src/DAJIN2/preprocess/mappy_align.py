@@ -1,7 +1,10 @@
 from __future__ import annotations
+from collections.abc import Generator
 
 import re
 from itertools import groupby
+from collections import deque
+
 import cstag
 import mappy
 
@@ -11,7 +14,7 @@ def revcomp(sequence: str) -> str:
     return "".join(complement[nt] for nt in sequence[::-1])
 
 
-def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True) -> list[str]:
+def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True) -> Generator[str]:
     """Align seqences using mappy and Convert PAF to SAM
 
     Args:
@@ -68,10 +71,11 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
             ]
             alignment = [str(a) for a in alignment]
             SAM.append("\t".join(alignment))
-    return SAM
+    for record in SAM:
+        yield record
 
 
-def remove_unmapped_reads(sam: list[str]) -> list[str]:
+def remove_unmapped_reads(sam: list[str]) -> Generator[str]:
     sam_mapped_reads = []
     for record in sam:
         if record.startswith("@"):
@@ -79,18 +83,19 @@ def remove_unmapped_reads(sam: list[str]) -> list[str]:
             continue
         if not record.split("\t")[2] == "*":
             sam_mapped_reads.append(record)
-    return sam_mapped_reads
+    for record in sam_mapped_reads:
+        yield record
 
 
-def remove_overlapped_reads(sam: list[str]) -> list[str]:
+def remove_overlapped_reads(sam: list[str]) -> Generator[str]:
     sam = [s.split("\t") for s in sam]
     sam.sort(key=lambda x: x[0])
     sam_groupby = groupby(sam, lambda x: x[0])
-    sam_nonoverlapped = []
+    sam_nonoverlapped = deque()
     for key, record_gropby in sam_groupby:
         if key.startswith("@"):
             for record in record_gropby:
-                sam_nonoverlapped.append("\t".join(record))
+                sam_nonoverlapped.appendleft("\t".join(record))
             continue
         records = sorted(record_gropby, key=lambda x: x[3])
         is_overraped = False
@@ -111,10 +116,11 @@ def remove_overlapped_reads(sam: list[str]) -> list[str]:
             continue
         for record in records:
             sam_nonoverlapped.append("\t".join(record))
-    return sam_nonoverlapped
+    for record in list(sam_nonoverlapped):
+        yield record
 
 
-# def remove_long_softclipped_reads(sam: list[str]) -> list[str]:
+# def remove_long_softclipped_reads(sam: list[str]) -> Generator[str]:
 #     """Remove reads with soft clips longer than 1/10 of the reference sequence length
 #     """
 #     sam_short_softcliped_reads = []

@@ -33,4 +33,10 @@ cat .tmpDAJIN/sam/barcode25_control.sam |
     samtools sort >tmp2.bam
 samtools index tmp2.bam
 
-# extract_full_length_readsが仕事していない？
+# Large deletion
+
+minimap2 -ax map-ont -t 20 .tmpDAJIN/fasta/control.fasta examples/del-stx2/barcode25.fq.gz >tmp.sam
+cat tmp.sam | cut -f 1 | sort | uniq -c | awk '$1 == 2 {print $2}' >tmp_largedel
+grep -e "^@" -f tmp_largedel tmp.sam >tmp_largedel.sam
+samtools sort tmp_largedel.sam >tmp_largedel.bam
+samtools index tmp_largedel.bam

@@ -85,9 +85,10 @@ for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
 # Format inputs (sample/control/allele)
 ###############################################################################
 
-import importlib
+from importlib import reload
 from src.DAJIN2.preprocess import format_input
 
+reload(format_input)
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
 # ------------------------------------------------------------------------------
