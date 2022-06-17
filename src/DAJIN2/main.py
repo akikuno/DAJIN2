@@ -73,12 +73,12 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 ########################################################################
 # Make directories
 ########################################################################
-import pathlib
+from pathlib import Path
 
-pathlib.Path(output).mkdir(exist_ok=True)
+Path(output).mkdir(exist_ok=True)
 
 for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
-    pathlib.Path(".tmpDAJIN", subdir).mkdir(exist_ok=True)
+    Path(".tmpDAJIN", subdir).mkdir(exist_ok=True)
 
 ###############################################################################
 # Format inputs (sample/control/allele)
@@ -111,11 +111,11 @@ dict_allele = format_input.dictionize_allele(allele)
 # Export fasta files as single-FASTA format
 # ------------------------------------------------------------------------------
 # TODO: use yeild, not export
-import pathlib
+from pathlib import Path
 
 for header, sequence in dict_allele.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
-    output_fasta = pathlib.Path(".tmpDAJIN", "fasta", f"{header}.fasta")
+    output_fasta = Path(".tmpDAJIN", "fasta", f"{header}.fasta")
     output_fasta.write_text(contents)
 
 
@@ -123,35 +123,37 @@ for header, sequence in dict_allele.items():
 # Mapping with minimap2/mappy
 ###############################################################################
 
-import pathlib
+from pathlib import Path
 from src.DAJIN2.preprocess import mappy_align
 
-for input_fasta in pathlib.Path(".tmpDAJIN", "fasta").glob("*.fasta"):
+for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
     for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
         # Todo: 並行処理で高速化！！
         SAM = mappy_align.to_sam(str(input_fasta), fastq)
-        output_sam = pathlib.Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
+        SAM = mappy_align.remove_unmapped_reads(SAM)
+        SAM = mappy_align.remove_long_softclipped_reads(SAM)
+        output_sam = Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
         output_sam.write_text("\n".join(SAM))
 
 ########################################################################
 # MIDS conversion
 ########################################################################
 
-import pathlib
+from pathlib import Path
 from src.DAJIN2.preprocess import midsconv
 import importlib
 
 importlib.reload(midsconv)
 
-for sampath in pathlib.Path(".tmpDAJIN", "sam").iterdir():
+for sampath in Path(".tmpDAJIN", "sam").iterdir():
     midscsv = []
     for mids in midsconv.sam_to_mids(str(sampath), threads):
         # Extract full length reads
         mids = midsconv.extract_full_length_reads(mids)
         if mids:
             midscsv.append(mids)
-    output_mids = pathlib.Path(".tmpDAJIN", "midsconv", f"{sampath.stem}.csv")
+    output_mids = Path(".tmpDAJIN", "midsconv", f"{sampath.stem}.csv")
     output_mids.write_text("\n".join(midscsv))
 
 

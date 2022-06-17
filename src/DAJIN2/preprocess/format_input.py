@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import os
 import re
 import mappy
-from src.DAJIN2.utils.exceptions import InputFileError
 
 ########################################################################
 # Check if the sample is in the proper format.
@@ -13,7 +14,7 @@ def check_fastq_extension(fastq_path: str):
     if re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", fastq_path):
         correct_extension = True
     if not correct_extension:
-        raise InputFileError(f"{fastq_path} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
+        raise AttributeError(f"{fastq_path} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
 
 
 # File content
@@ -26,7 +27,7 @@ def check_fastq_content(fastq_path: str):
     if len(name) == len(seq) == len(qual) > 0:
         pass
     else:
-        raise InputFileError(f"{fastq_path} is not a FASTQ format")
+        raise AttributeError(f"{fastq_path} is not a FASTQ format")
 
 
 def check_fasta_content(fasta_path: str):
@@ -35,11 +36,11 @@ def check_fasta_content(fasta_path: str):
         name.append(n)
         seq.append(s)
     if not len(name) == len(seq) > 0:
-        raise InputFileError(f"{fasta_path} is not a FASTA format")
+        raise AttributeError(f"{fasta_path} is not a FASTA format")
     if len(name) > len(set(name)):
-        raise InputFileError(f"{fasta_path} must include unique DNA sequences")
+        raise AttributeError(f"{fasta_path} must include unique DNA sequences")
     if name.count("control") == 0:
-        raise InputFileError(f"{fasta_path} must include a 'control' sequence")
+        raise AttributeError(f"{fasta_path} must include a 'control' sequence")
 
 
 ########################################################################
@@ -65,11 +66,6 @@ def dictionize_allele(allele_path: str) -> dict:
         header.append(name)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
-
-
-########################################################################
-# "TooLong" flag for excessively long arrays out of Fastq
-########################################################################
 
 
 # def annotate_TooLong_to_fastq(fastqpath: str, dict_allele: dict) -> None:

@@ -1,16 +1,27 @@
+from pathlib import Path
 from src.DAJIN2.preprocess import mappy_align
 
-reffa = "tests/data/mappy/tyr_control.fa"
-quefq = "tests/data/mappy/tyr_query.fq"
 
-SAM = mappy_align.to_sam(reffa, quefq)
+def test_to_sam():
+    reffa = Path("tests", "data", "mappy", "tyr_control.fa")
+    quefq = Path("tests", "data", "mappy", "tyr_query.fq")
+    value = mappy_align.to_sam(str(reffa), str(quefq))
+    answer = Path("tests", "data", "mappy", "tyr_query.sam").read_text().strip().split("\n")
+    assert value == answer
 
-with open("tests/data/mappy/tyr_query.sam") as f:
-    SAM_EVAL = f.read().splitlines()
+
+def test_remove_unmapped_reads():
+    sam = Path("tests", "data", "mappy", "unmapped.sam").read_text().strip().split("\n")
+    value = mappy_align.remove_unmapped_reads(sam)
+    answer = Path("tests", "data", "mappy", "unmapped_removed.sam").read_text().strip().split("\n")
+    assert value == answer
 
 
-def test_mappy_align():
-    assert SAM == SAM_EVAL
+def test_remove_long_softclipped_reads():
+    sam = Path("tests", "data", "mappy", "long_softclip.sam").read_text().strip().split("\n")
+    value = mappy_align.remove_long_softclipped_reads(sam)
+    answer = Path("tests", "data", "mappy", "long_softclip_removed.sam").read_text().strip().split("\n")
+    assert value == answer
 
 
 # Create test data
