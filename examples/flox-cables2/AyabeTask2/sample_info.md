@@ -4,12 +4,16 @@
 
 - mm39: chr2:179,903,300-179,906,300
 
-## sample genotype
+## Sequence condition
+
+- Flow Cell: R9.4.1
+- Guppy: version 6.1.7+21b93d1 (2022-06-29 basecall)
+## Sample genotype
 
 - barcode41,flox
 - barcode47,inversion
 - barcode48,wild-type control
 
-## read numbers
+## Read numbers
 
 - 1250 reads/sample
