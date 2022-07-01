@@ -18,4 +18,4 @@
 
 ## Read numbers
 
-- 2500 reads/sample
+- 1000 reads/sample
