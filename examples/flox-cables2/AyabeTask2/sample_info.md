@@ -6,8 +6,11 @@
 
 ## Sequence condition
 
+
 - Flow Cell: R9.4.1
-- Guppy: version 6.1.7+21b93d1 (2022-06-29 basecall)
+- Guppy: version 6.1.7+21b93d1 (2022-07-01 basecall)
+- minimap2: version 2.24-r1122
+
 ## Sample genotype
 
 - barcode41,flox
@@ -16,4 +19,4 @@
 
 ## Read numbers
 
-- 1250 reads/sample
+- 1000 reads/sample

@@ -8,6 +8,7 @@
 
 - Flow Cell: R9.4.1
 - Guppy: version 6.1.7+21b93d1 (2022-06-30 basecall)
+- minimap2: version 2.24-r1122
 
 ## sample genotype
 
