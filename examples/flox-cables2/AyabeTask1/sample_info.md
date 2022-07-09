@@ -1,4 +1,6 @@
-# Cables2, artificial plasmid
+# Cables2, artificial plasmid + wild-type genome
+
+The wild-type genomic DNA is mixed with each plasmid to imitate the heterozygous genotype. 
 
 ## Genomic region
 
