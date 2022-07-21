@@ -119,32 +119,3 @@ def remove_overlapped_reads(sam: list[str]) -> Generator[str]:
     for record in list(sam_nonoverlapped):
         yield record
 
-
-# def remove_long_softclipped_reads(sam: list[str]) -> Generator[str]:
-#     """Remove reads with soft clips longer than 1/10 of the reference sequence length
-#     """
-#     sam_short_softcliped_reads = []
-#     sqheaders = dict()
-#     for record in sam:
-#         if record.startswith("@"):
-#             sam_short_softcliped_reads.append(record)
-#         if record.startswith("@SQ"):
-#             for sqheader in record.split("\t"):
-#                 if sqheader.startswith("SN:"):
-#                     SN = sqheader.replace("SN:", "")
-#                 if sqheader.startswith("LN:"):
-#                     LN = int(sqheader.replace("LN:", ""))
-#             sqheaders.update({SN: LN})
-#             continue
-#         rname = record.split("\t")[2]
-#         reference_sequence_length = sqheaders[rname]
-#         cigar = record.split("\t")[5]
-#         cigar_split = re.split(r"([A-Z])", cigar)
-#         softclip = 0
-#         for i, s in enumerate(cigar_split):
-#             if s == "S":
-#                 softclip += int(cigar_split[i - 1])
-#         if softclip < reference_sequence_length // 10:
-#             sam_short_softcliped_reads.append(record)
-#     return sam_short_softcliped_reads
-
