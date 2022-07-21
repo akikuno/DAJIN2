@@ -78,7 +78,7 @@ from pathlib import Path
 
 Path(output).mkdir(exist_ok=True)
 
-for subdir in ["fasta", "fastq", "sam", "midsconv", "midsqc"]:
+for subdir in ["fasta", "fastq", "sam", "midsv"]:
     Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
 
 ###############################################################################
@@ -136,30 +136,21 @@ for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
     for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
         # Todo: 並行処理で高速化！！
         SAM = mappy_align.to_sam(str(input_fasta), fastq)
-        SAM = mappy_align.remove_unmapped_reads(SAM)
-        SAM = mappy_align.remove_overlapped_reads(SAM)
         output_sam = Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
         output_sam.write_text("\n".join(SAM))
 
 ########################################################################
-# MIDS conversion
+# MIDSV conversion
 ########################################################################
 
 from pathlib import Path
-from src.DAJIN2.preprocess import midsconv
-import importlib
-
-importlib.reload(midsconv)
+import midsv
 
 for sampath in Path(".tmpDAJIN", "sam").iterdir():
-    midscsv = []
-    for mids in midsconv.sam_to_mids(str(sampath), threads):
-        # Extract full length reads
-        mids = midsconv.extract_full_length_reads(mids)
-        if mids:
-            midscsv.append(mids)
-    output_mids = Path(".tmpDAJIN", "midsconv", f"{sampath.stem}.csv")
-    output_mids.write_text("\n".join(midscsv))
+    output = Path(".tmpDAJIN", "midsv", f"{sampath.stem}.csv")
+    sam = midsv.read_sam(sampath)
+    midsv_jsonl = midsv.transform(sam)
+    midsv.write_jsonl(midsv_jsonl, output)
 
 
 ########################################################################
