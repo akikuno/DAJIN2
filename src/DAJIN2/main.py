@@ -160,7 +160,7 @@ for sampath in Path(".tmpDAJIN", "sam").iterdir():
 # Under construction...
 
 ########################################################################
-# MIDS アレル分類・異常検知スコア
+# MIDSV scoring
 ########################################################################
 
 from src.DAJIN2.preprocess import midsvscore
@@ -169,74 +169,22 @@ from importlib import reload
 reload(midsvscore)
 midsv_score_sample = midsvscore.extract_possible_allele_and_score(sample_name)
 midsv_score_control = midsvscore.extract_possible_allele_and_score(control_name)
-import pandas as pd
 
-df_control = pd.DataFrame(midsv_score_control)
-df_sample = pd.DataFrame(midsv_score_sample)
-df_control.SCORE.describe()
-df_sample.SCORE.describe()
+########################################################################
+# Detect Structural variants
+########################################################################
 
-midsv_score_sample[0]
+from src.DAJIN2.classification import detect_sv
+from importlib import reload
 
-import os
-import glob
-from collections import defaultdict
+reload(detect_sv)
 
-mids_classification_score = defaultdict(list)
-
-# midsfile = "barcode31_albino.csv"
-for midsfile in glob.glob(".tmpDAJIN/midsconv/*"):
-    tmp_name = os.path.basename(midsfile).replace(".csv", "").split("_")
-    sample_name = "_".join(tmp_name[:-1])
-    allele_type = tmp_name[-1]
-    with open(midsfile) as f:
-        midscsv = f.read().splitlines()
-    read_len = len(midscsv[0].split(",")) - 1
-    for mids in midscsv:
-        match_score = 0
-        read_id, *X = mids.split(",")
-        for x in X:
-            if x == "M":
-                match_score += 1
-            elif x[0].isdigit():
-                match_score -= int(x[:-1])
-            else:
-                match_score -= 1
-        match_score /= read_len
-        mids_classification_score[sample_name, read_id].append([allele_type, match_score])
-
-mids_classification_score2 = []
-for key, val in mids_classification_score.items():
-    val = sorted(val, key=lambda x: -x[1])[0]
-    mids_classification_score2.append([*key, *val])
-
-mids_classification_score2[-5:]
-midscsv[0]
-read_len = len(midscsv[0].split(",")) - 1
-allele_type = "control"
-
-for mids in midscsv:
-    match_score = 0
-    read_id, *X = mids.split(",")
-    for x in X:
-        if x == "M":
-            match_score += 1
-        elif x[0].isdigit():
-            match_score -= int(x[:-1])
+for dict_midsvs in [midsv_score_sample, midsv_score_control]:
+    for i, dict_midsv in enumerate(dict_midsvs):
+        if detect_sv.is_sv(dict_midsv["CSSPLIT"]):
+            dict_midsvs[i]["SV"] = True
         else:
-            match_score -= 1
-    mids_classification_score[read_id].append([allele_type, match_score])
-
-# mids_classification_score[read_id]
-# = midscsv[0].split(",")[1:]
-
-########################################################################
-# MIDS アレル分類
-########################################################################
-
-########################################################################
-# MIDS 異常検知
-########################################################################
+            dict_midsvs[i]["SV"] = False
 
 
 ########################################################################
