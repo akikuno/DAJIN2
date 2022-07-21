@@ -163,6 +163,21 @@ for sampath in Path(".tmpDAJIN", "sam").iterdir():
 # MIDS アレル分類・異常検知スコア
 ########################################################################
 
+from src.DAJIN2.preprocess import midsvscore
+from importlib import reload
+
+reload(midsvscore)
+midsv_score_sample = midsvscore.extract_possible_allele_and_score(sample_name)
+midsv_score_control = midsvscore.extract_possible_allele_and_score(control_name)
+import pandas as pd
+
+df_control = pd.DataFrame(midsv_score_control)
+df_sample = pd.DataFrame(midsv_score_sample)
+df_control.SCORE.describe()
+df_sample.SCORE.describe()
+
+midsv_score_sample[0]
+
 import os
 import glob
 from collections import defaultdict

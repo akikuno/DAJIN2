@@ -1,1 +1,1 @@
-from __future__ import annotations
+from .detect_sv import is_sv
