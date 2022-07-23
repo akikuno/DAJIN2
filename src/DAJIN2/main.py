@@ -24,7 +24,7 @@ from src.DAJIN2.preprocess import midsqc
 
 sample, control, allele, output, genome, debug, threads = argparser.parse()
 
-## Point mutation
+# #* Point mutation
 # sample, control, allele, output, genome, debug, threads = (
 #     "examples/pm-tyr/barcode31.fq.gz",
 #     "examples/pm-tyr/barcode32.fq.gz",
@@ -35,16 +35,6 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     14
 #     )
 
-# #* 2-cut deletion
-# sample, control, allele, output, genome, debug, threads = (
-#     "examples/nanosim/del-stx2/deletion.fq.gz",
-#     "examples/nanosim/del-stx2/control.fq.gz",
-#     "examples/nanosim/del-stx2/design_stx2.fa",
-#     "DAJIN_results",
-#     "mm10",
-#     True,
-#     14,
-# )
 
 # #* 2-cut deletion
 # sample, control, allele, output, genome, debug, threads = (
@@ -109,9 +99,10 @@ control_name = format_input.extract_basename(control)
 
 dict_allele = format_input.dictionize_allele(allele)
 
-# ------------------------------------------------------------------------------
+################################################################################
 # Export fasta files as single-FASTA format
-# ------------------------------------------------------------------------------
+################################################################################
+
 # TODO: use yeild, not export
 from pathlib import Path
 
