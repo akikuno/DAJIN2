@@ -47,6 +47,17 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     14,
 # )
 
+# #* flox insertion
+# sample, control, allele, output, genome, debug, threads = (
+#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+#     "DAJIN_results",
+#     "mm10",
+#     True,
+#     14,
+# )
+
 ########################################################################
 # Whether existing cached control
 ########################################################################
@@ -60,14 +71,29 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     cache_control.save_header(control, CACHEDIR)
 #     IS_CACHED = False
 
+###############################################################################
+# Check input path
+###############################################################################
+
+if not Path(control).exists():
+    raise FileNotFoundError(f"{control} is not found")
+elif not Path(sample).exists():
+    raise FileNotFoundError(f"{sample} is not found")
+elif not Path(allele).exists():
+    raise FileNotFoundError(f"{allele} is not found")
+
+
 ########################################################################
 # Make directories
 ########################################################################
 
 from pathlib import Path
+import shutil
 
+shutil.rmtree(output)
 Path(output).mkdir(exist_ok=True)
 
+shutil.rmtree(".tmpDAJIN")
 for subdir in ["fasta", "fastq", "sam", "midsv"]:
     Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
 
@@ -177,6 +203,20 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
         else:
             dict_midsvs[i]["SV"] = False
 
+# #? read check
+# from collections import defaultdict
+
+# d = defaultdict(int)
+
+# for m in midsv_score_control:
+#     d["total"] += 1
+#     if m["SV"]:
+#         d["SV"] += 1
+#         print(m["QNAME"], m["CSSPLIT"])
+#     else:
+#         d[m["ALLELE"]] += 1
+
+# d
 
 ########################################################################
 # MIDS クラスタリングスコア
@@ -217,10 +257,8 @@ for (i, mids), v in midsscore.items():
 # ゲノム情報が入力されていたらその情報をもとにSAMの染色体位置情報を上書きする
 
 
-if debug is False:
+if not debug:
     shutil.rmtree(".tmpDAJIN")
 
-#! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
