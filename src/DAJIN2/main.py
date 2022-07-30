@@ -204,6 +204,17 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
             dict_midsvs[i]["SV"] = False
 
 # #? read check
+
+# p = Path("tmp_id.txt")
+# p.write_text("^@\n")
+# with p.open("a") as f:
+#     for m in midsv_score_sample:
+#         f.write("^" + m["QNAME"] + "\n")
+
+# for m in midsv_score_control:
+#     if "7cdb4acdbb1b" in m["QNAME"]:
+#         print(m)
+
 # from collections import defaultdict
 
 # d = defaultdict(int)
@@ -221,6 +232,31 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
 ########################################################################
 # MIDS クラスタリングスコア
 ########################################################################
+
+# -----------------------------------------------------------------------
+# 変異部位のスコアリング
+# -----------------------------------------------------------------------
+
+"""
+1. とりあえず計算量は考えずに一塩基ごとにやってみる
+2. その後Kmerなどで計算量を削減する
+
+read1:=C,+T|+G|=T,=A,=G,-C,=T,*GA,=G
+read2:=C,+T|+G|=T,=A,=G,-C,=T,=A,=G
+↓
+# I, D, S, N
+[
+    {"read1": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0]]},
+    {"read2": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]}
+]
+↓
+# persentage
+[
+    {"percentage": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0]]},
+    {"read2": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]}
+]
+
+"""
 
 from collections import defaultdict
 
