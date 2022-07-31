@@ -1,14 +1,10 @@
 import shutil
-import sys
-import os
-import tempfile
+from pathlib import Path
 
 # Custom modules
 from src.DAJIN2.utils import cache_control
 from src.DAJIN2.utils import io
 from src.DAJIN2.utils import argparser
-from src.DAJIN2.preprocess import mapping
-from src.DAJIN2.preprocess import midsqc
 
 # from src.DAJIN2.classification import classification
 # from src.DAJIN2.clustering import clustering
@@ -75,6 +71,8 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 # Check input path
 ###############################################################################
 
+from pathlib import Path
+
 if not Path(control).exists():
     raise FileNotFoundError(f"{control} is not found")
 elif not Path(sample).exists():
@@ -90,10 +88,13 @@ elif not Path(allele).exists():
 from pathlib import Path
 import shutil
 
-shutil.rmtree(output)
+if Path(output).exists():
+    shutil.rmtree(output)
 Path(output).mkdir(exist_ok=True)
 
-shutil.rmtree(".tmpDAJIN")
+if Path(".tmpDAJIN").exists():
+    shutil.rmtree(".tmpDAJIN")
+
 for subdir in ["fasta", "fastq", "sam", "midsv"]:
     Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
 
@@ -218,12 +219,11 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
 # from collections import defaultdict
 
 # d = defaultdict(int)
-
-# for m in midsv_score_control:
+# for m in midsv_score_sample:
 #     d["total"] += 1
 #     if m["SV"]:
 #         d["SV"] += 1
-#         print(m["QNAME"], m["CSSPLIT"])
+#         # print(m["QNAME"], m["CSSPLIT"])
 #     else:
 #         d[m["ALLELE"]] += 1
 
@@ -238,8 +238,9 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
 # -----------------------------------------------------------------------
 
 """
-1. とりあえず計算量は考えずに一塩基ごとにやってみる
-2. その後Kmerなどで計算量を削減する
+- ControlでLOFをして、
+- Sampleでmatchが99.5%の塩基位置は解析対象から除く
+- その後Kmerなどで計算量を削減する
 
 read1:=C,+T|+G|=T,=A,=G,-C,=T,*GA,=G
 read2:=C,+T|+G|=T,=A,=G,-C,=T,=A,=G
@@ -255,22 +256,42 @@ read2:=C,+T|+G|=T,=A,=G,-C,=T,=A,=G
     {"percentage": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0]]},
     {"read2": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]}
 ]
-
 """
 
 from collections import defaultdict
+from copy import deepcopy
 
-midsscore = defaultdict(int)
+allelereads = defaultdict(int)
+midsscore = defaultdict(list)
 
-read_num = len(midscsv)
-for mids in midscsv:
-    mids_split = mids.split(",")[1:]
-    for i, x in enumerate(mids_split):
-        midsscore[(i, x)] += 1 / read_num
+for m in midsv_score_control:
+    ALLELE = m["ALLELE"]
+    CSSPLIT = m["CSSPLIT"].split(",")
+    allelereads[ALLELE] += 1
+    if not midsscore[ALLELE]:
+        length = len(m["CSSPLIT"].split(","))
+        midsscore[ALLELE] = [0] * length
+    for i, cs in enumerate(CSSPLIT):
+        if cs.startswith("="):
+            midsscore[ALLELE][i] += 1
 
-for (i, mids), v in midsscore.items():
-    if i == 828:
-        print(mids, v)
+mids_match = deepcopy(midsscore)
+
+for (allele, readnum), scores in zip(allelereads.items(), midsscore.values()):
+    for i, score in enumerate(scores):
+        mids_match[allele][i] = score / readnum * 100
+
+print(*mids_match["control"][:100], sep="\n")
+
+# read_num = len(midscsv)
+# for mids in midscsv:
+#     mids_split = mids.split(",")[1:]
+#     for i, x in enumerate(mids_split):
+#         midsscore[(i, x)] += 1 / read_num
+
+# for (i, mids), v in midsscore.items():
+#     if i == 828:
+#         print(mids, v)
 
 
 ########################################################################

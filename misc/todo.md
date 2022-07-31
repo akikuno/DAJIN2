@@ -2,20 +2,26 @@
 
 ## 開発一般
 
-+ [ ] GitHub Workflowによるテスト自動化
++ [x] GitHub Actionsによるテスト自動化
+
 ## 前処理
 
-+ mapping.py
-  + [ ] mappyによるマッピング
+### mapping.py
++ [x] mappyによるマッピング
 
-+ samToMIDS.shをPythonで書き換え中… (test_mids.py)
-  + [x] insertion
-  + [x] substitution
-  + [x] deletion
-  + [ ] padding
-  + [ ] mix condition
-  + [ ] Large deletion
-  + [ ] Large inversion
+### samToMIDS.shをPythonで書き換え中… (midsvパッケージ)
++ [x] insertion
++ [x] substitution
++ [x] deletion
++ [x] padding
++ [x] mix condition
++ [x] Large deletion
++ [x] Large inversion
+
++ **CSSPLITしか使っておらず、無駄にMIDSVとQSCOREの計算時間がかかっている…→MIDSVパッケージの引数で計算するかしないかのオプションを付けたほうが良さそう（midsv=False, cssplit=True, qscore=False, など）**
+
+## クラスタリング
+
 
 ## アリル割合の可視化
 + [x] plot_alleles.pyの草稿作成（2022-03-11）
