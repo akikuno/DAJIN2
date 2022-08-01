@@ -178,15 +178,16 @@ for sampath in Path(".tmpDAJIN", "sam").iterdir():
 # Under construction...
 
 ########################################################################
-# MIDSV scoring
+# Classify alleles
 ########################################################################
 
-from src.DAJIN2.preprocess import midsvscore
+from src.DAJIN2.classification import midsvscore
 from importlib import reload
 
 reload(midsvscore)
-midsv_score_sample = midsvscore.extract_possible_allele_and_score(sample_name)
-midsv_score_control = midsvscore.extract_possible_allele_and_score(control_name)
+
+classif_sample = midsvscore.classify_alleles(sample_name)
+classif_control = midsvscore.classify_alleles(control_name)
 
 ########################################################################
 # Detect Structural variants
@@ -197,7 +198,7 @@ from importlib import reload
 
 reload(detect_sv)
 
-for dict_midsvs in [midsv_score_sample, midsv_score_control]:
+for dict_midsvs in [classif_sample, classif_control]:
     for i, dict_midsv in enumerate(dict_midsvs):
         if detect_sv.is_sv(dict_midsv["CSSPLIT"]):
             dict_midsvs[i]["SV"] = True
@@ -209,7 +210,7 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
 # p = Path("tmp_id.txt")
 # p.write_text("^@\n")
 # with p.open("a") as f:
-#     for m in midsv_score_sample:
+#     for m in classif_sample:
 #         f.write("^" + m["QNAME"] + "\n")
 
 # for m in midsv_score_control:
@@ -219,7 +220,7 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
 # from collections import defaultdict
 
 # d = defaultdict(int)
-# for m in midsv_score_sample:
+# for m in classif_control:
 #     d["total"] += 1
 #     if m["SV"]:
 #         d["SV"] += 1
@@ -238,7 +239,7 @@ for dict_midsvs in [midsv_score_sample, midsv_score_control]:
 # -----------------------------------------------------------------------
 
 """
-- ControlでLOFをして、
+- controlとtargetで分散の違いをFisherの正確検定して、有意差のある塩基位置のみに注目する？
 - Sampleでmatchが99.5%の塩基位置は解析対象から除く
 - その後Kmerなどで計算量を削減する
 
@@ -258,6 +259,13 @@ read2:=C,+T|+G|=T,=A,=G,-C,=T,=A,=G
 ]
 """
 
+sample_cssplit = [m["CSSPLIT"] for m in midsv_score_sample]
+control_cssplit = [m["CSSPLIT"] for m in midsv_score_control]
+
+count_match = []
+for i, (sample_cs, control_cs) in enumerate(zip(sample_cssplit, control_cssplit)):
+    
+    
 from collections import defaultdict
 from copy import deepcopy
 
