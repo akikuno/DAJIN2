@@ -25,7 +25,7 @@ def classify_alleles(sample_name: str) -> list[dict]:
     score_of_each_allels.sort(key=lambda x: x["QNAME"])
     possible_allele = []
     for _, group in groupby(score_of_each_allels, key=lambda x: x["QNAME"]):
-        max_score = 0
+        max_score = -float("inf")
         for readinfo in group:
             if readinfo["SCORE"] > max_score:
                 max_score = readinfo["SCORE"]
