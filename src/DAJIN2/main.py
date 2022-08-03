@@ -68,10 +68,18 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     IS_CACHED = False
 
 ###############################################################################
-# Check input path
+# Check and format inputs (sample/control/allele)
 ###############################################################################
 
 from pathlib import Path
+from importlib import reload
+from src.DAJIN2.preprocess import format_input
+
+reload(format_input)
+
+# ------------------------------------------------------------------------------
+# Check input path
+# ------------------------------------------------------------------------------
 
 if not Path(control).exists():
     raise FileNotFoundError(f"{control} is not found")
@@ -79,15 +87,6 @@ elif not Path(sample).exists():
     raise FileNotFoundError(f"{sample} is not found")
 elif not Path(allele).exists():
     raise FileNotFoundError(f"{allele} is not found")
-
-###############################################################################
-# Format inputs (sample/control/allele)
-###############################################################################
-
-from importlib import reload
-from src.DAJIN2.preprocess import format_input
-
-reload(format_input)
 
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
@@ -165,9 +164,9 @@ from pathlib import Path
 import midsv
 
 for sampath in Path(".tmpDAJIN", "sam").iterdir():
-    output = Path(".tmpDAJIN", "midsv", f"{sampath.stem}.csv")
+    output = Path(".tmpDAJIN", "midsv", f"{sampath.stem}.jsonl")
     sam = midsv.read_sam(sampath)
-    midsv_jsonl = midsv.transform(sam)
+    midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
     midsv.write_jsonl(midsv_jsonl, output)
 
 
