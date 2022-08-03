@@ -2,16 +2,16 @@
 
 ## New planned features
 
-- [ ] support samples without a reference genome
 - [ ] support nCATs
-- [ ] output VCF
-- [ ] minimize dependencies
-  - Python, R, Bash -> Python
-  - minimap2 -> mappy
-  - samtools -> pysam
-  - remove NanoSim
-  - remove Tensorflow (GPU computation)
 - [ ] support macOS
 - [ ] support PacBio
+- [ ] support samples without a reference genome
+- [ ] minimize dependencies
+  - [ ] Python, R, Bash -> Python
+  - [ ] samtools -> pysam
+  - [x] minimap2 -> mappy
+  - [x] remove NanoSim
+  - [x] remove Tensorflow (GPU computation)
+- [ ] output VCF
 - [ ] upload to PyPI and BioConda
-
+- [ ] multi-allele phasing
