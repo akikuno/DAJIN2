@@ -80,6 +80,34 @@ elif not Path(sample).exists():
 elif not Path(allele).exists():
     raise FileNotFoundError(f"{allele} is not found")
 
+###############################################################################
+# Format inputs (sample/control/allele)
+###############################################################################
+
+from importlib import reload
+from src.DAJIN2.preprocess import format_input
+
+reload(format_input)
+
+# ------------------------------------------------------------------------------
+# Check formats (extensions and contents)
+# ------------------------------------------------------------------------------
+
+for file_name in sample, control:
+    format_input.check_fastq_extension(file_name)
+
+for file_name in sample, control:
+    format_input.check_fastq_content(file_name)
+
+format_input.check_fasta_content(allele)
+
+# ------------------------------------------------------------------------------
+# Formats
+# ------------------------------------------------------------------------------
+
+sample_name = format_input.extract_basename(sample)
+control_name = format_input.extract_basename(control)
+dict_allele = format_input.dictionize_allele(allele)
 
 ########################################################################
 # Make directories
@@ -97,34 +125,6 @@ if Path(".tmpDAJIN").exists():
 
 for subdir in ["fasta", "fastq", "sam", "midsv"]:
     Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
-
-###############################################################################
-# Format inputs (sample/control/allele)
-###############################################################################
-
-from importlib import reload
-from src.DAJIN2.preprocess import format_input
-
-reload(format_input)
-# ------------------------------------------------------------------------------
-# Check formats (extensions and contents)
-# ------------------------------------------------------------------------------
-for file_name in sample, control:
-    format_input.check_fastq_extension(file_name)
-
-for file_name in sample, control:
-    format_input.check_fastq_content(file_name)
-
-format_input.check_fasta_content(allele)
-
-# ------------------------------------------------------------------------------
-# Formats
-# ------------------------------------------------------------------------------
-
-sample_name = format_input.extract_basename(sample)
-control_name = format_input.extract_basename(control)
-
-dict_allele = format_input.dictionize_allele(allele)
 
 ################################################################################
 # Export fasta files as single-FASTA format
@@ -181,13 +181,13 @@ for sampath in Path(".tmpDAJIN", "sam").iterdir():
 # Classify alleles
 ########################################################################
 
-from src.DAJIN2.classification import midsvscore
+from src.DAJIN2 import classification
 from importlib import reload
 
-reload(midsvscore)
+reload(classification)
 
-classif_sample = midsvscore.classify_alleles(sample_name)
-classif_control = midsvscore.classify_alleles(control_name)
+classif_sample = classification.classify_alleles(sample_name)
+classif_control = classification.classify_alleles(control_name)
 
 ########################################################################
 # Detect Structural variants
