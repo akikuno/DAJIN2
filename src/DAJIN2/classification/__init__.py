@@ -1,1 +1,1 @@
-from .detect_sv import is_sv
+from .detect_sv import detect_sv

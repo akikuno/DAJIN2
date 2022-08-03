@@ -193,14 +193,14 @@ classif_control = midsvscore.classify_alleles(control_name)
 # Detect Structural variants
 ########################################################################
 
-from src.DAJIN2.classification import detect_sv
+from src.DAJIN2 import classification
 from importlib import reload
 
-reload(detect_sv)
+reload(classification)
 
 for dict_midsvs in [classif_sample, classif_control]:
     for i, dict_midsv in enumerate(dict_midsvs):
-        if detect_sv.is_sv(dict_midsv["CSSPLIT"]):
+        if classification.detect_sv(dict_midsv["CSSPLIT"], threshold=50):
             dict_midsvs[i]["SV"] = True
         else:
             dict_midsvs[i]["SV"] = False
@@ -220,7 +220,7 @@ for dict_midsvs in [classif_sample, classif_control]:
 # from collections import defaultdict
 
 # d = defaultdict(int)
-# for m in classif_control:
+# for m in classif_sample:
 #     d["total"] += 1
 #     if m["SV"]:
 #         d["SV"] += 1
