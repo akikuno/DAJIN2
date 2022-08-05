@@ -1,3 +1,4 @@
+from itertools import groupby
 import shutil
 from pathlib import Path
 
@@ -197,25 +198,14 @@ from importlib import reload
 
 reload(classification)
 
-for dict_midsvs in [classif_sample, classif_control]:
-    for i, dict_midsv in enumerate(dict_midsvs):
-        if classification.detect_sv(dict_midsv["CSSPLIT"], threshold=50):
-            dict_midsvs[i]["SV"] = True
+for classifs in [classif_sample, classif_control]:
+    for classif in classifs:
+        if classification.detect_sv(classif["CSSPLIT"], threshold=50):
+            classif["SV"] = True
         else:
-            dict_midsvs[i]["SV"] = False
+            classif["SV"] = False
 
 # #? read check
-
-# p = Path("tmp_id.txt")
-# p.write_text("^@\n")
-# with p.open("a") as f:
-#     for m in classif_sample:
-#         f.write("^" + m["QNAME"] + "\n")
-
-# for m in midsv_score_control:
-#     if "7cdb4acdbb1b" in m["QNAME"]:
-#         print(m)
-
 # from collections import defaultdict
 
 # d = defaultdict(int)
@@ -229,9 +219,53 @@ for dict_midsvs in [classif_sample, classif_control]:
 
 # d
 
+# p = Path("tmp_id.txt")
+# p.write_text("^@\n")
+# with p.open("a") as f:
+#     for m in classif_sample:
+#         f.write("^" + m["QNAME"] + "\n")
+
+# for m in midsv_score_control:
+#     if "7cdb4acdbb1b" in m["QNAME"]:
+#         print(m)
+
 ########################################################################
-# MIDS クラスタリングスコア
+# Clustering
 ########################################################################
+
+# -----------------------------------------------------------------------
+# Output significantly different base loci between Sample and Control
+# -----------------------------------------------------------------------
+
+import midsv
+from pathlib import Path
+from collections import defaultdict
+from importlib import reload
+from itertools import groupby
+from src.DAJIN2.clustering import find_difference
+
+reload(find_difference)
+
+
+classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
+classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+
+allele_diffloci = defaultdict(list)
+for (ALLELE, SV), group in classif_sample_groupby:
+    dict_control_cssplit = defaultdict(list[dict])
+    if not dict_control_cssplit[ALLELE]:
+        control_path = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
+        control_cssplit = [cs["CSSPLIT"] for cs in midsv.read_jsonl(control_path)]
+        dict_control_cssplit[ALLELE] = control_cssplit
+    control_cssplit = dict_control_cssplit[ALLELE]
+    sample_cssplit = []
+    for record in group:
+        sample_cssplit.append(record["CSSPLIT"])
+    diffloci = find_difference.screen_different_loci(sample_cssplit, control_cssplit)
+    allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
+
+# allele_diffloci
+
 
 # -----------------------------------------------------------------------
 # 変異部位のスコアリング
