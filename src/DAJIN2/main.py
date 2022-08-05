@@ -271,6 +271,46 @@ for (ALLELE, SV), group in classif_sample_groupby:
 # 変異部位のスコアリング
 # -----------------------------------------------------------------------
 
+import re
+from collections import defaultdict
+
+dict_diff_idsvn = defaultdict(list)
+classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+for (ALLELE, SV), group in classif_sample_groupby:
+    print(f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}')
+    diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+    diff_idsvn = [[0, 0, 0, 0, 0] for _ in range(len(diffloci))]
+    for record in group:
+        cs = record["CSSPLIT"].split(",")
+        QNAME = record["QNAME"]
+        for i, difflocus in enumerate(diffloci):
+            if cs[difflocus].startswith("="):
+                continue
+            if re.search(r"[acgtn]", cs[difflocus]):
+                diff_idsvn[i][3] += 1
+            elif cs[difflocus].startswith("+"):
+                diff_idsvn[i][0] += cs[difflocus].count("+")
+            elif cs[difflocus].startswith("-"):
+                diff_idsvn[i][1] += 1
+            elif cs[difflocus].startswith("*"):
+                diff_idsvn[i][2] += 1
+            elif cs[difflocus].startswith("N"):
+                diff_idsvn[i][4] += 1
+        dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "QNAME": "{QNAME}"}}'] = diff_idsvn
+
+dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "QNAME": "{QNAME}"}}']
+ALLELE = "flox"
+SV = False
+
+for keys, values in dict_diff_idsvn.items():
+    ALLELE, SV, QNAME = eval(keys).values()
+    if QNAME == "af4aab64-d008-4b66-977e-d726d1245363":
+        print(values)
+
+diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+diff_idsvn = [[0, 0, 0, 0, 0] for _ in range(len(diffloci))]
+classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+
 """
 - controlとtargetで分散の違いをFisherの正確検定して、有意差のある塩基位置のみに注目する？
 - Sampleでmatchが99.5%の塩基位置は解析対象から除く
@@ -297,8 +337,8 @@ control_cssplit = [m["CSSPLIT"] for m in midsv_score_control]
 
 count_match = []
 for i, (sample_cs, control_cs) in enumerate(zip(sample_cssplit, control_cssplit)):
-    
-    
+    pass
+
 from collections import defaultdict
 from copy import deepcopy
 

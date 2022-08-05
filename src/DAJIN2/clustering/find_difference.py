@@ -38,6 +38,3 @@ def screen_different_loci(sample_cssplit: list[dict], control_cssplit: list[dict
             different_loci.append(i)
     return different_loci
 
-
-sample_table[3]
-control_table[3]

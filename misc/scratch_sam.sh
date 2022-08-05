@@ -3,7 +3,7 @@
 suffix=$(date | tr " :" -)
 
 sampath=".tmpDAJIN/sam/barcode31_flox.sam"
-sampath=".tmpDAJIN/sam/barcode42_flox.sam"
+# sampath=".tmpDAJIN/sam/barcode42_flox.sam"
 # extract_readid="7cdb4acdbb1b"
 # extract_readid=ffbcdc27-95dd-4635-94bf-45c38c6771b1
 
