@@ -219,16 +219,6 @@ for classifs in [classif_sample, classif_control]:
 
 # d
 
-# p = Path("tmp_id.txt")
-# p.write_text("^@\n")
-# with p.open("a") as f:
-#     for m in classif_sample:
-#         f.write("^" + m["QNAME"] + "\n")
-
-# for m in midsv_score_control:
-#     if "7cdb4acdbb1b" in m["QNAME"]:
-#         print(m)
-
 ########################################################################
 # Clustering
 ########################################################################
@@ -277,9 +267,8 @@ from collections import defaultdict
 dict_diff_idsvn = defaultdict(list)
 classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
 for (ALLELE, SV), group in classif_sample_groupby:
-    print(f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}')
     diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-    diff_idsvn = [[0, 0, 0, 0, 0] for _ in range(len(diffloci))]
+    diff_idsvn = [[0, 0, 0, 0, 0] for _ in diffloci]
     for record in group:
         cs = record["CSSPLIT"].split(",")
         QNAME = record["QNAME"]
@@ -296,16 +285,40 @@ for (ALLELE, SV), group in classif_sample_groupby:
                 diff_idsvn[i][2] += 1
             elif cs[difflocus].startswith("N"):
                 diff_idsvn[i][4] += 1
-        dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "QNAME": "{QNAME}"}}'] = diff_idsvn
+        dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diff_idsvn
 
-dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "QNAME": "{QNAME}"}}']
-ALLELE = "flox"
-SV = False
 
-for keys, values in dict_diff_idsvn.items():
-    ALLELE, SV, QNAME = eval(keys).values()
-    if QNAME == "af4aab64-d008-4b66-977e-d726d1245363":
-        print(values)
+# locus = 2463
+# locus = 1750
+# ALLELE = "flox"
+# SV = False
+# total = 0
+# counts = [0, 0]
+# qnames = []
+# for c in classif_sample:
+#     if c["ALLELE"] == ALLELE and c["SV"] == SV:
+#         total += 1
+#         cssplit = c["CSSPLIT"].split(",")
+#         if cssplit[locus].startswith("="):
+#             counts[0] += 1
+#         if cssplit[locus].startswith("-"):
+#             counts[1] += 1
+#             qnames.append(c["QNAME"])
+
+# Path(f"tmp_qnames_{locus}_deletion.csv").write_text("^@\n" + "\n".join(qnames) + "\n")
+
+# for c in classif_sample:
+#     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8":
+#         print(c)
+# total
+# counts
+
+# dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+
+# for keys, values in dict_diff_idsvn.items():
+#     ALLELE, SV, QNAME = eval(keys).values()
+#     if QNAME == "af4aab64-d008-4b66-977e-d726d1245363":
+#         print(values)
 
 diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
 diff_idsvn = [[0, 0, 0, 0, 0] for _ in range(len(diffloci))]
