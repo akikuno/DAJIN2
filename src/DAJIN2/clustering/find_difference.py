@@ -1,34 +1,86 @@
 from __future__ import annotations
+import re
+from copy import deepcopy
+from itertools import groupby
+from collections import defaultdict
 import scipy.stats as st
 
 
-def screen_different_loci(sample_cssplit: list[dict], control_cssplit: list[dict]) -> list[int]:
+def score_different_loci(sample_cssplit: list[str], control_cssplit: list[str]) -> list[dict]:
     """_summary_
 
     Args:
-        path_sample_cssplit (Union[Path, str]): Path of sample's jsonl containing CSSPLIT
-        path_control_cssplit (Union[Path, str]): Path of sample's jsonl containing CSSPLIT
+        sample_cssplit (list[str]): List of sample's CSSPLITs
+        control_cssplit (list[str]): List of control's CSSPLITs
 
     Returns:
-        list[int]: _description_
+        list[dict]: Scores at significantly different base loci
     """
     # Create empty templates
     length = len(control_cssplit[0].split(","))
-    sample_table = [[1, 1] for _ in range(length)]
-    control_table = [[1, 1] for _ in range(length)]
+    # MIDSVN table
+    sample_table = [[1, 1, 1, 1, 1, 1] for _ in range(length)]
+    control_table = [[1, 1, 1, 1, 1, 1] for _ in range(length)]
     # Calculate match and mismatch
     for sample_cs, control_cs in zip(sample_cssplit, control_cssplit):
         sample_cs = sample_cs.split(",")
         control_cs = control_cs.split(",")
-        for i, (s, c) in enumerate(zip(sample_cs, control_cs)):
-            if s.startswith("="):
+        for i, cs in enumerate(sample_cs):
+            if re.search(r"[acgtn]", cs):
+                sample_table[i][4] += 1
+            elif cs.startswith("="):
                 sample_table[i][0] += 1
-            else:
-                sample_table[i][1] += 1
-            if c.startswith("="):
+            elif cs.startswith("+"):
+                sample_table[i][1] += cs.count("+")
+            elif cs.startswith("-"):
+                sample_table[i][2] += 1
+            elif cs.startswith("*"):
+                sample_table[i][3] += 1
+            elif cs.startswith("N"):
+                sample_table[i][5] += 1
+        for i, cs in enumerate(control_cs):
+            if re.search(r"[acgtn]", cs):
+                control_table[i][4] += 1
+            elif cs.startswith("="):
                 control_table[i][0] += 1
-            else:
-                control_table[i][1] += 1
+            elif cs.startswith("+"):
+                control_table[i][1] += cs.count("+")
+            elif cs.startswith("-"):
+                control_table[i][2] += 1
+            elif cs.startswith("*"):
+                control_table[i][3] += 1
+            elif cs.startswith("N"):
+                control_table[i][5] += 1
+    # for sample_cs in sample_cssplit:
+    #     sample_cs = sample_cs.split(",")
+    #     for i, cs in enumerate(sample_cs):
+    #         if re.search(r"[acgtn]", cs):
+    #             sample_table[i][4] += 1
+    #         elif cs.startswith("="):
+    #             sample_table[i][0] += 1
+    #         elif cs.startswith("+"):
+    #             sample_table[i][1] += cs.count("+")
+    #         elif cs.startswith("-"):
+    #             sample_table[i][2] += 1
+    #         elif cs.startswith("*"):
+    #             sample_table[i][3] += 1
+    #         elif cs.startswith("N"):
+    #             sample_table[i][5] += 1
+    # for control_cs in control_cssplit:
+    #     control_cs = control_cs.split(",")
+    #     for i, cs in enumerate(control_cs):
+    #         if re.search(r"[acgtn]", cs):
+    #             control_table[i][4] += 1
+    #         elif cs.startswith("="):
+    #             control_table[i][0] += 1
+    #         elif cs.startswith("+"):
+    #             control_table[i][1] += cs.count("+")
+    #         elif cs.startswith("-"):
+    #             control_table[i][2] += 1
+    #         elif cs.startswith("*"):
+    #             control_table[i][3] += 1
+    #         elif cs.startswith("N"):
+    #             control_table[i][5] += 1
     # Calculate match and mismatch
     different_loci = []
     for i, (s, c) in enumerate(zip(sample_table, control_table)):
@@ -36,5 +88,52 @@ def screen_different_loci(sample_cssplit: list[dict], control_cssplit: list[dict
         pval = st.chi2_contingency([s, c])[1]
         if pval < 0.01:  # and odds > 1
             different_loci.append(i)
-    return different_loci
+    n_sample = len(sample_cssplit)
+    n_control = len(control_cssplit)
+    diffloci_scores = defaultdict(list)
+    for i in different_loci:
+        sample_score = [score / n_sample for score in sample_table[i][1:]]
+        control_score = [score / n_control for score in control_table[i][1:]]
+        score = [s - c for s, c in zip(sample_score, control_score)]
+        diffloci_scores[i] = score
+    return diffloci_scores
+
+
+def annotate_scores(classif_sample: list[dict], allele_diffloci: list[dict]) -> list[dict]:
+    """_summary_
+
+    Args:
+        classif_sample (list[dict]): _description_
+
+    Returns:
+        list[dict]: _description_
+    """
+    classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
+    cluster_sample = deepcopy(classif_sample)
+    for c in cluster_sample:
+        del c["CSSPLIT"]
+    classif_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+    cluster_groupby = groupby(cluster_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+
+    for ((ALLELE, SV), classif), (_, cluster) in zip(classif_groupby, cluster_groupby):
+        keyname = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
+        diffloci_scores = allele_diffloci[keyname]
+        for clas, clus in zip(classif, cluster):
+            cs = clas["CSSPLIT"].split(",")
+            cluster_score = []
+            for difflocus, score in diffloci_scores.items():
+                if cs[difflocus].startswith("="):
+                    cluster_score.append(0)
+                elif re.search(r"[acgtn]", cs[difflocus]):
+                    cluster_score.append(score[3])
+                elif cs[difflocus].startswith("+"):
+                    cluster_score.append(score[0])
+                elif cs[difflocus].startswith("-"):
+                    cluster_score.append(score[1])
+                elif cs[difflocus].startswith("*"):
+                    cluster_score.append(score[2])
+                elif cs[difflocus].startswith("N"):
+                    cluster_score.append(score[4])
+            clus["SCORE"] = cluster_score
+    return cluster_sample
 

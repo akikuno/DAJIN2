@@ -1,3 +1,4 @@
+from __future__ import annotations
 from itertools import groupby
 import shutil
 from pathlib import Path
@@ -224,7 +225,7 @@ for classifs in [classif_sample, classif_control]:
 ########################################################################
 
 # -----------------------------------------------------------------------
-# Extract significantly different base loci between Sample and Control
+# Score significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
 
 import midsv
@@ -240,9 +241,9 @@ reload(find_difference)
 classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
 classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
 
-allele_diffloci = defaultdict(list)
+allele_diffloci = defaultdict(list[dict])
+dict_control_cssplit = defaultdict(list[dict])
 for (ALLELE, SV), group in classif_sample_groupby:
-    dict_control_cssplit = defaultdict(list[dict])
     if not dict_control_cssplit[ALLELE]:
         control_path = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
         control_cssplit = [cs["CSSPLIT"] for cs in midsv.read_jsonl(control_path)]
@@ -251,85 +252,100 @@ for (ALLELE, SV), group in classif_sample_groupby:
     sample_cssplit = []
     for record in group:
         sample_cssplit.append(record["CSSPLIT"])
-    diffloci = find_difference.screen_different_loci(sample_cssplit, control_cssplit)
+    diffloci = find_difference.score_different_loci(sample_cssplit, control_cssplit)
     allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
+# ALLELE = "flox"
+# SV = True
+# sample_cssplit = []
+# for c in classif_sample:
+#     if c["ALLELE"] == ALLELE and c["SV"] == SV:
+#         sample_cssplit.append(c["CSSPLIT"])
+
 # allele_diffloci
-
-
-# -----------------------------------------------------------------------
-# Score significantly different base loci between Sample and Control
-# -----------------------------------------------------------------------
-
-import re
-from collections import defaultdict
-
-dict_diff_idsvn = defaultdict(list)
-classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
-for (ALLELE, SV), group in classif_sample_groupby:
-    diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-    diff_idsvn = [[0, 0, 0, 0, 0] for _ in diffloci]
-    for record in group:
-        cs = record["CSSPLIT"].split(",")
-        QNAME = record["QNAME"]
-        for i, difflocus in enumerate(diffloci):
-            if cs[difflocus].startswith("="):
-                continue
-            if re.search(r"[acgtn]", cs[difflocus]):
-                diff_idsvn[i][3] += 1
-            elif cs[difflocus].startswith("+"):
-                diff_idsvn[i][0] += cs[difflocus].count("+")
-            elif cs[difflocus].startswith("-"):
-                diff_idsvn[i][1] += 1
-            elif cs[difflocus].startswith("*"):
-                diff_idsvn[i][2] += 1
-            elif cs[difflocus].startswith("N"):
-                diff_idsvn[i][4] += 1
-        dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diff_idsvn
+for key, value in allele_diffloci.items():
+    print(key, len(value))
 
 # -----------------------------------------------------------------------
 # Annotate scores to sample's reads
 # -----------------------------------------------------------------------
 
-from copy import deepcopy
-from collections import defaultdict
+from src.DAJIN2.clustering import find_difference
 
-cluster_sample = deepcopy(classif_sample)
+reload(find_difference)
 
-for c in cluster_sample:
-    del c["CSSPLIT"]
+cluster_sample = find_difference.annotate_scores(classif_sample, allele_diffloci)
 
-classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
-cluster_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
-classif_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
-cluster_groupby = groupby(cluster_sample, key=lambda x: (x["ALLELE"], x["SV"]))
-
-for ((ALLELE, SV), classif), (_, cluster) in zip(classif_groupby, cluster_groupby):
-    keyname = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
-    diffloci = allele_diffloci[keyname]
-    diffscores = dict_diff_idsvn[keyname]
-    for clas, clus in zip(classif, cluster):
-        cs = clas["CSSPLIT"].split(",")
-        cluster_score = []
-        for difflocus, idsvnscore in zip(diffloci, diffscores):
-            if cs[difflocus].startswith("="):
-                cluster_score.append(0)
-            elif re.search(r"[acgtn]", cs[difflocus]):
-                cluster_score.append(idsvnscore[3])
-            elif cs[difflocus].startswith("+"):
-                cluster_score.append(idsvnscore[0])
-            elif cs[difflocus].startswith("-"):
-                cluster_score.append(idsvnscore[1])
-            elif cs[difflocus].startswith("*"):
-                cluster_score.append(idsvnscore[2])
-            elif cs[difflocus].startswith("N"):
-                cluster_score.append(idsvnscore[4])
-        clus["SCORE"] = cluster_score
-
-# #? read check
+# # #? read check
 # for c in cluster_sample:
 #     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8": # left-loxp
 #         print(c)
+
+
+# -----------------------------------------------------------------------
+# OPTICS clustering
+# -----------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------
+# (OLD) Score significantly different base loci between Sample and Control
+# -----------------------------------------------------------------------
+
+# import re
+# from collections import defaultdict
+
+# dict_diff_idsvn = defaultdict(list)
+# classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+# for (ALLELE, SV), classif_sample_group in classif_sample_groupby:
+#     diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+#     diff_idsvn = [[0, 0, 0, 0, 0] for _ in diffloci]
+#     for record in classif_sample_group:
+#         cssplit_sample = record["CSSPLIT"].split(",")
+#         for i, difflocus in enumerate(diffloci):
+#             if cssplit_sample[difflocus].startswith("="):
+#                 continue
+#             if re.search(r"[acgtn]", cssplit_sample[difflocus]):
+#                 diff_idsvn[i][3] += 1
+#             elif cssplit_sample[difflocus].startswith("+"):
+#                 diff_idsvn[i][0] += cssplit_sample[difflocus].count("+")
+#             elif cssplit_sample[difflocus].startswith("-"):
+#                 diff_idsvn[i][1] += 1
+#             elif cssplit_sample[difflocus].startswith("*"):
+#                 diff_idsvn[i][2] += 1
+#             elif cssplit_sample[difflocus].startswith("N"):
+#                 diff_idsvn[i][4] += 1
+#         dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diff_idsvn
+
+# dict_diff_idsvn_control = defaultdict(list)
+# for ALLELE in dict_control_cssplit.keys():
+#     group = dict_control_cssplit[ALLELE]
+#     for SV in [True, False]:
+#         diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+#         diff_idsvn = [[0, 0, 0, 0, 0] for _ in diffloci]
+#         for cssplit in group:
+#             for i, difflocus in enumerate(diffloci):
+#                 if cssplit[difflocus].startswith("="):
+#                     continue
+#                 if re.search(r"[acgtn]", cssplit[difflocus]):
+#                     diff_idsvn[i][3] += 1
+#                 elif cssplit[difflocus].startswith("+"):
+#                     diff_idsvn[i][0] += cssplit[difflocus].count("+")
+#                 elif cssplit[difflocus].startswith("-"):
+#                     diff_idsvn[i][1] += 1
+#                 elif cssplit[difflocus].startswith("*"):
+#                     diff_idsvn[i][2] += 1
+#                 elif cssplit[difflocus].startswith("N"):
+#                     diff_idsvn[i][4] += 1
+#             dict_diff_idsvn_control[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diff_idsvn
+
+# count = 0
+# for cssplit in group:
+#     if cssplit[16].startswith("-"):
+#         count += 1
+
+# count
+
+# dict_diff_idsvn_control.sort(key=lambda x: (x["ALLELE"], x["SV"]))
 
 
 ########################################################################
