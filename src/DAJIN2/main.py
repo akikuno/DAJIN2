@@ -224,7 +224,7 @@ for classifs in [classif_sample, classif_control]:
 ########################################################################
 
 # -----------------------------------------------------------------------
-# Output significantly different base loci between Sample and Control
+# Extract significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
 
 import midsv
@@ -258,7 +258,7 @@ for (ALLELE, SV), group in classif_sample_groupby:
 
 
 # -----------------------------------------------------------------------
-# 変異部位のスコアリング
+# Score significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
 
 import re
@@ -287,110 +287,50 @@ for (ALLELE, SV), group in classif_sample_groupby:
                 diff_idsvn[i][4] += 1
         dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diff_idsvn
 
+# -----------------------------------------------------------------------
+# Annotate scores to sample's reads
+# -----------------------------------------------------------------------
 
-# locus = 2463
-# locus = 1750
-# ALLELE = "flox"
-# SV = False
-# total = 0
-# counts = [0, 0]
-# qnames = []
-# for c in classif_sample:
-#     if c["ALLELE"] == ALLELE and c["SV"] == SV:
-#         total += 1
-#         cssplit = c["CSSPLIT"].split(",")
-#         if cssplit[locus].startswith("="):
-#             counts[0] += 1
-#         if cssplit[locus].startswith("-"):
-#             counts[1] += 1
-#             qnames.append(c["QNAME"])
-
-# Path(f"tmp_qnames_{locus}_deletion.csv").write_text("^@\n" + "\n".join(qnames) + "\n")
-
-# for c in classif_sample:
-#     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8":
-#         print(c)
-# total
-# counts
-
-# dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-
-# for keys, values in dict_diff_idsvn.items():
-#     ALLELE, SV, QNAME = eval(keys).values()
-#     if QNAME == "af4aab64-d008-4b66-977e-d726d1245363":
-#         print(values)
-
-diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-diff_idsvn = [[0, 0, 0, 0, 0] for _ in range(len(diffloci))]
-classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
-
-"""
-- controlとtargetで分散の違いをFisherの正確検定して、有意差のある塩基位置のみに注目する？
-- Sampleでmatchが99.5%の塩基位置は解析対象から除く
-- その後Kmerなどで計算量を削減する
-
-read1:=C,+T|+G|=T,=A,=G,-C,=T,*GA,=G
-read2:=C,+T|+G|=T,=A,=G,-C,=T,=A,=G
-↓
-# I, D, S, N
-[
-    {"read1": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0]]},
-    {"read2": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]}
-]
-↓
-# persentage
-[
-    {"percentage": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,0]]},
-    {"read2": [[0,1,0,0,0,0,0,0],[0,0,0,0,1,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]}
-]
-"""
-
-sample_cssplit = [m["CSSPLIT"] for m in midsv_score_sample]
-control_cssplit = [m["CSSPLIT"] for m in midsv_score_control]
-
-count_match = []
-for i, (sample_cs, control_cs) in enumerate(zip(sample_cssplit, control_cssplit)):
-    pass
-
-from collections import defaultdict
 from copy import deepcopy
+from collections import defaultdict
 
-allelereads = defaultdict(int)
-midsscore = defaultdict(list)
+cluster_sample = deepcopy(classif_sample)
 
-for m in midsv_score_control:
-    ALLELE = m["ALLELE"]
-    CSSPLIT = m["CSSPLIT"].split(",")
-    allelereads[ALLELE] += 1
-    if not midsscore[ALLELE]:
-        length = len(m["CSSPLIT"].split(","))
-        midsscore[ALLELE] = [0] * length
-    for i, cs in enumerate(CSSPLIT):
-        if cs.startswith("="):
-            midsscore[ALLELE][i] += 1
+for c in cluster_sample:
+    del c["CSSPLIT"]
 
-mids_match = deepcopy(midsscore)
+classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
+cluster_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
+classif_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+cluster_groupby = groupby(cluster_sample, key=lambda x: (x["ALLELE"], x["SV"]))
 
-for (allele, readnum), scores in zip(allelereads.items(), midsscore.values()):
-    for i, score in enumerate(scores):
-        mids_match[allele][i] = score / readnum * 100
+for ((ALLELE, SV), classif), (_, cluster) in zip(classif_groupby, cluster_groupby):
+    keyname = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
+    diffloci = allele_diffloci[keyname]
+    diffscores = dict_diff_idsvn[keyname]
+    for clas, clus in zip(classif, cluster):
+        cs = clas["CSSPLIT"].split(",")
+        cluster_score = []
+        for difflocus, idsvnscore in zip(diffloci, diffscores):
+            if cs[difflocus].startswith("="):
+                cluster_score.append(0)
+            elif re.search(r"[acgtn]", cs[difflocus]):
+                cluster_score.append(idsvnscore[3])
+            elif cs[difflocus].startswith("+"):
+                cluster_score.append(idsvnscore[0])
+            elif cs[difflocus].startswith("-"):
+                cluster_score.append(idsvnscore[1])
+            elif cs[difflocus].startswith("*"):
+                cluster_score.append(idsvnscore[2])
+            elif cs[difflocus].startswith("N"):
+                cluster_score.append(idsvnscore[4])
+        clus["SCORE"] = cluster_score
 
-print(*mids_match["control"][:100], sep="\n")
+# #? read check
+# for c in cluster_sample:
+#     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8": # left-loxp
+#         print(c)
 
-# read_num = len(midscsv)
-# for mids in midscsv:
-#     mids_split = mids.split(",")[1:]
-#     for i, x in enumerate(mids_split):
-#         midsscore[(i, x)] += 1 / read_num
-
-# for (i, mids), v in midsscore.items():
-#     if i == 828:
-#         print(mids, v)
-
-
-########################################################################
-# クラスタリング
-########################################################################
 
 ########################################################################
 # レポート：アレル割合
