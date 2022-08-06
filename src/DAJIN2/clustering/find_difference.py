@@ -7,7 +7,7 @@ import scipy.stats as st
 
 
 def score_different_loci(sample_cssplit: list[str], control_cssplit: list[str]) -> list[dict]:
-    """_summary_
+    """Scoring mutation (insertion, deletion, substitution, inversion, and unknow) at statistically significant loci between sample and control
 
     Args:
         sample_cssplit (list[str]): List of sample's CSSPLITs
@@ -100,13 +100,14 @@ def score_different_loci(sample_cssplit: list[str], control_cssplit: list[str]) 
 
 
 def annotate_scores(classif_sample: list[dict], allele_diffloci: list[dict]) -> list[dict]:
-    """_summary_
+    """Annotate scores to sample reads
 
     Args:
-        classif_sample (list[dict]): _description_
+        classif_sample (list[dict]): 
+        allele_diffloci (list[dict]): 
 
     Returns:
-        list[dict]: _description_
+        list[dict]: Dist contains "SCORE"
     """
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
     cluster_sample = deepcopy(classif_sample)
