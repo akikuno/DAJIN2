@@ -3,18 +3,29 @@
 suffix=$(date | tr " :" -)
 
 # sampath=".tmpDAJIN/sam/barcode31_flox.sam"
-sampath=".tmpDAJIN/sam/barcode42_flox.sam"
-# extract_readid="7cdb4acdbb1b"
-# extract_readid=ffbcdc27-95dd-4635-94bf-45c38c6771b1
+# sampath=".tmpDAJIN/sam/barcode42_flox.sam"
+sampath=".tmpDAJIN/sam/barcode31_control.sam"
+# sampath=".tmpDAJIN/sam/barcode42_control.sam"
 
+extract_readid="6f536ce8-32d6-41d5-8b09-66bef425b9d8"
 cat $sampath |
     grep -e "^@" -e "${extract_readid-:*}" |
     samtools sort >tmp_"$suffix".bam
 samtools index tmp_"$suffix".bam
 
-# filepath="tmp_qnames_1750_deletion.csv"
-# # filepath="tmp_qnames_2463.csv"
+# cat <<EOF >/tmp/tmp_reads.txt
+# ^@
+# *
+# EOF
+
+# filepath=/tmp/tmp_reads.txt
 # cat $sampath |
 #     grep -f "$filepath" |
-#     samtools sort >tmp_"$suffix".bam
-# samtools index tmp_"$suffix".bam
+#     samtools sort >tmp_barcode31_control_"$suffix".bam
+# samtools index tmp_barcode31_control_"$suffix".bam
+
+# filepath="tmp_-1"
+# cat $sampath |
+#     grep -f "$filepath" |
+#     samtools sort >"$filepath"_"$suffix".bam
+# samtools index "$filepath"_"$suffix".bam

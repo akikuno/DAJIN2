@@ -244,27 +244,48 @@ classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["
 allele_diffloci = defaultdict(list[dict])
 dict_control_cssplit = defaultdict(list[dict])
 for (ALLELE, SV), group in classif_sample_groupby:
+    sample_cssplit = [record["CSSPLIT"] for record in group]
     if not dict_control_cssplit[ALLELE]:
         control_path = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
         control_cssplit = [cs["CSSPLIT"] for cs in midsv.read_jsonl(control_path)]
         dict_control_cssplit[ALLELE] = control_cssplit
     control_cssplit = dict_control_cssplit[ALLELE]
-    sample_cssplit = []
-    for record in group:
-        sample_cssplit.append(record["CSSPLIT"])
-    diffloci = find_difference.score_different_loci(sample_cssplit, control_cssplit)
+    sequence = dict_allele[ALLELE]
+    diffloci = find_difference.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha = 0.01, threshold=0.05)
     allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
-# ALLELE = "flox"
-# SV = True
-# sample_cssplit = []
-# for c in classif_sample:
-#     if c["ALLELE"] == ALLELE and c["SV"] == SV:
-#         sample_cssplit.append(c["CSSPLIT"])
+ALLELE = "control"
+SV = False
+sequence = dict_allele[ALLELE]
+sample_cssplit = []
+for c in classif_sample:
+    if c["ALLELE"] == ALLELE and c["SV"] == SV:
+        sample_cssplit.append(c["CSSPLIT"])
+
+for s in sample_cssplit:
+    s.split(",")[1739]
+
+for c in classif_sample:
+    if c["QNAME"] == "880d5333-7a52-4dad-95fb-b778f06c1e5f":
+        cssplit = c["CSSPLIT"].split(",")
+        [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
+
+for c in classif_sample:
+    if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8":
+        print(c)
+        cssplit = c["CSSPLIT"].split(",")
+        [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
 
 # allele_diffloci
 for key, value in allele_diffloci.items():
     print(key, len(value))
+
+# for key, value in allele_diffloci.items():
+#     if key == '{"ALLELE": "flox", "SV": False}':
+#         for locus, score in value.items():
+#             if any(abs(s) > 0.1 for s in score):
+#                 print(locus, score)
+
 
 # -----------------------------------------------------------------------
 # Annotate scores to sample's reads
@@ -275,7 +296,7 @@ from src.DAJIN2.clustering import find_difference
 reload(find_difference)
 
 cluster_sample = find_difference.annotate_scores(classif_sample, allele_diffloci)
-
+cluster_sample[0]
 # # #? read check
 # for c in cluster_sample:
 #     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8": # left-loxp
@@ -286,7 +307,63 @@ cluster_sample = find_difference.annotate_scores(classif_sample, allele_diffloci
 # OPTICS clustering
 # -----------------------------------------------------------------------
 
+scores = []
+qnames = []
+for c in cluster_sample:
+    if c["ALLELE"] == "flox" and c["SV"] == False:
+        scores.append(c["SCORE"])
+        qnames.append(c["QNAME"])
 
+from sklearn.cluster import OPTICS
+from sklearn.cluster import Birch
+
+[round(s, ndigits=2) for s in scores[4]]
+[round(s, ndigits=2) for s in scores[1]]
+[round(s, ndigits=2) for s in scores[14]]
+[round(s, ndigits=2) for s in scores[8]]
+qnames[1]
+scores[14]
+
+thres = 0.05
+len(scores) * thres
+clustering = OPTICS(min_cluster_size=thres).fit(scores)
+arr = clustering.labels_
+
+from collections import defaultdict
+d = defaultdict(int)
+for a in arr:
+    d[a] += 1
+
+sorted(d.items(), key=lambda x: -x[1])
+
+
+qa = []
+for q, a in zip(qnames, arr.tolist()):
+    qa.append({"QNAME": q, "LABEL": a})
+
+qa.sort(key=lambda x: x["LABEL"])
+from itertools import groupby
+for LABEL, group in groupby(qa, key=lambda x: x["LABEL"]):
+    with open(f"tmp_{LABEL}", "a") as f:
+        f.write("^@\n")
+        for g in group:
+            # print(g["QNAME"])
+            qname = g["QNAME"]
+            f.write(f"{qname}\n")
+
+type(arr.tolist()[1]
+type(list(arr)[1])
+type(qa[1])
+# brc = Birch(n_clusters=20)
+# brc.fit(scores)
+
+# arr = brc.predict(scores)
+
+# d = defaultdict(int)
+# for a in arr:
+#     d[a] += 1
+
+# sorted(d.items(), key=lambda x: -x[1])
 # -----------------------------------------------------------------------
 # (OLD) Score significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
