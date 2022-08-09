@@ -2,7 +2,6 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from itertools import groupby
-from collections import defaultdict
 import scipy.stats as st
 
 
@@ -79,6 +78,8 @@ def screen_different_loci(
                     if pval < alpha:
                         different_loci.append(i)
             repeat_start, repeat_end = next(repeat_span)
+            s_repeat = [1, 1]
+            c_repeat = [1, 1]
         else:
             pval = chistatistic(s, c, threshold)
             if pval < alpha:
