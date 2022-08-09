@@ -51,35 +51,52 @@ def screen_different_loci(
     Returns:
         list[dict]: Scores at significantly different base loci
     """
+    different_loci = []
     sample_table, control_table = make_table(sample_cssplit, control_cssplit)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_span = (x.span() for x in re.finditer(repeat_regrex, sequence))
-    repeat_start, repeat_end = next(repeat_span)
+    try:
+        repeat_start, repeat_end = next(repeat_span)
+        repeat_end -= 1
+    except StopIteration:
+        different_loci = []
+        for i, (s, c) in enumerate(zip(sample_table, control_table)):
+            pval = chistatistic(s, c, threshold)
+            if pval < alpha:
+                different_loci.append(i)
+        return different_loci
     # Calculate match and mismatch
-    different_loci = []
-    s_repeat = [1, 1]
-    c_repeat = [1, 1]
+    s_repeat = [0, 0]
+    c_repeat = [0, 0]
     for i, (s, c) in enumerate(zip(sample_table, control_table)):
         if i < repeat_start:
             pval = chistatistic(s, c, threshold)
             if pval < alpha:
                 different_loci.append(i)
-        elif repeat_start <= i <= repeat_end:
+        elif repeat_start <= i < repeat_end:
             s_repeat[0] += s[0]
             s_repeat[1] += s[1]
             c_repeat[0] += c[0]
             c_repeat[1] += c[1]
         elif i == repeat_end:
+            s_repeat[0] += s[0]
+            s_repeat[1] += s[1]
+            c_repeat[0] += c[0]
+            c_repeat[1] += c[1]
             pval = chistatistic(s_repeat, c_repeat, threshold)
             if pval < alpha:
-                for j in range(repeat_start, repeat_end):
+                for j in range(repeat_start, repeat_end + 1):
                     s, c = sample_table[j], control_table[j]
                     pval = chistatistic(s, c, threshold)
                     if pval < alpha:
-                        different_loci.append(i)
-            repeat_start, repeat_end = next(repeat_span)
-            s_repeat = [1, 1]
-            c_repeat = [1, 1]
+                        different_loci.append(j)
+            try:
+                repeat_start, repeat_end = next(repeat_span)
+                repeat_end -= 1
+                s_repeat = [0, 0]
+                c_repeat = [0, 0]
+            except StopIteration:
+                pass
         else:
             pval = chistatistic(s, c, threshold)
             if pval < alpha:
