@@ -1,8 +1,7 @@
-import numpy as np
-from src.DAJIN2.clustering import find_difference
+from src.DAJIN2 import clustering
 from importlib import reload
 
-reload(find_difference)
+reload(clustering)
 
 
 def test_make_table():
@@ -16,7 +15,7 @@ def test_make_table():
         "=A,=A,=A",
         "*AG,=A,=A",
     ]
-    test = find_difference.make_table(sample_cssplit, control_cssplit)
+    test = clustering.make_table(sample_cssplit, control_cssplit)
     answer = [[1, 4], [4, 1], [4, 1]], [[3, 2], [4, 1], [3, 3]]
     assert test == answer
 
@@ -35,7 +34,7 @@ def test_screen_different_loci_repeat():
     sequence = "AAAACCCC"
     alpha = 0.1
     threshold = 0.0
-    test = find_difference.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
+    test = clustering.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
     answer = [0]
     assert test == answer
 
@@ -54,7 +53,7 @@ def test_screen_different_loci_no_repeat():
     sequence = "AAACCC"
     alpha = 0.25
     threshold = 0.0
-    test = find_difference.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
+    test = clustering.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
     answer = [0]
     assert test == answer
 
