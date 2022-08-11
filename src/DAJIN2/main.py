@@ -206,6 +206,8 @@ for classifs in [classif_sample, classif_control]:
         else:
             classif["SV"] = False
 
+classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
+
 # #? read check
 # from collections import defaultdict
 
@@ -225,7 +227,7 @@ for classifs in [classif_sample, classif_control]:
 ########################################################################
 
 # -----------------------------------------------------------------------
-# Score significantly different base loci between Sample and Control
+# Extract significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
 
 import midsv
@@ -233,17 +235,14 @@ from pathlib import Path
 from collections import defaultdict
 from importlib import reload
 from itertools import groupby
-from src.DAJIN2.clustering import find_difference
+from src.DAJIN2 import clustering
 
-reload(find_difference)
-
-
-classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
+reload(clustering)
 
 allele_diffloci = defaultdict(list[dict])
 dict_control_cssplit = defaultdict(list[dict])
-for (ALLELE, SV), group in classif_sample_groupby:
+
+for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     sample_cssplit = [record["CSSPLIT"] for record in group]
     if not dict_control_cssplit[ALLELE]:
         control_path = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
@@ -251,34 +250,35 @@ for (ALLELE, SV), group in classif_sample_groupby:
         dict_control_cssplit[ALLELE] = control_cssplit
     control_cssplit = dict_control_cssplit[ALLELE]
     sequence = dict_allele[ALLELE]
-    diffloci = find_difference.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha = 0.01, threshold=0.05)
+    diffloci = clustering.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha=0.01, threshold=0.05)
     allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
-ALLELE = "control"
-SV = False
-sequence = dict_allele[ALLELE]
-sample_cssplit = []
-for c in classif_sample:
-    if c["ALLELE"] == ALLELE and c["SV"] == SV:
-        sample_cssplit.append(c["CSSPLIT"])
+# #? read check
+# ALLELE = "flox"
+# SV = False
+# sequence = dict_allele[ALLELE]
+# sample_cssplit = []
+# for c in classif_sample:
+#     if c["ALLELE"] == ALLELE and c["SV"] == SV:
+#         sample_cssplit.append(c["CSSPLIT"])
 
-for s in sample_cssplit:
-    s.split(",")[1739]
+# for s in sample_cssplit:
+#     s.split(",")[1739]
 
-for c in classif_sample:
-    if c["QNAME"] == "880d5333-7a52-4dad-95fb-b778f06c1e5f":
-        cssplit = c["CSSPLIT"].split(",")
-        [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
+# for c in classif_sample:
+#     if c["QNAME"] == "880d5333-7a52-4dad-95fb-b778f06c1e5f":
+#         cssplit = c["CSSPLIT"].split(",")
+#         [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
 
-for c in classif_sample:
-    if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8":
-        print(c)
-        cssplit = c["CSSPLIT"].split(",")
-        [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
+# for c in classif_sample:
+#     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8":
+#         print(c)
+#         cssplit = c["CSSPLIT"].split(",")
+#         [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
 
-# allele_diffloci
-for key, value in allele_diffloci.items():
-    print(key, len(value))
+# # allele_diffloci
+# for key, value in allele_diffloci.items():
+#     print(key, len(value))
 
 # for key, value in allele_diffloci.items():
 #     if key == '{"ALLELE": "flox", "SV": False}':
@@ -291,17 +291,32 @@ for key, value in allele_diffloci.items():
 # Annotate scores to sample's reads
 # -----------------------------------------------------------------------
 
-from src.DAJIN2.clustering import find_difference
+from src.DAJIN2 import clustering
+from collections import defaultdict
 
-reload(find_difference)
+reload(clustering)
 
-cluster_sample = find_difference.annotate_scores(classif_sample, allele_diffloci)
-cluster_sample[0]
-# # #? read check
-# for c in cluster_sample:
-#     if c["QNAME"] == "6f536ce8-32d6-41d5-8b09-66bef425b9d8": # left-loxp
-#         print(c)
+sample_scores_by_allele = defaultdict(list[dict])
+for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
+    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
+    sample_cssplit = [g["CSSPLIT"] for g in group]
+    diff_loci = allele_diffloci[key]
+    sample_scores_by_allele[key] = clustering.make_scores(sample_cssplit, diff_loci)
 
+# #? read check
+# ALLELE = "control"
+# SV = False
+# sample_cssplit = []
+# diff_loci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+# for c in classif_sample:
+#     if c["ALLELE"] == ALLELE and c["SV"] == SV:
+#         sample_cssplit.append(c["CSSPLIT"])
+#     if c["QNAME"] == "880d5333-7a52-4dad-95fb-b778f06c1e5f": # left-loxp
+#         idx = len(sample_cssplit)-1
+
+# x = list(clustering.make_scores(sample_cssplit, diff_loci))
+# x[idx]
+# sample_cssplit[idx]
 
 # -----------------------------------------------------------------------
 # OPTICS clustering
