@@ -34,16 +34,16 @@ def score_repeats_insertion(i, cs, scores, inversion=False):
     return i, scores
 
 
-def make_scores(sample_cssplit, diff_locus):
-    length = len(sample_cssplit[0].split(","))
-    diff_locus_cssplit = []
+def make_scores(sample_cssplit, diff_loci):
+    diff_loci_cssplit = []
     for cssplit in sample_cssplit:
         cssplit = cssplit.split(",")
         diff_cs = []
-        for locus in diff_locus:
+        for locus in diff_loci:
             diff_cs.append(cssplit[locus])
-        diff_locus_cssplit.append(diff_cs)
-    for cssplit in diff_locus_cssplit:
+        diff_loci_cssplit.append(diff_cs)
+    length = len(diff_loci)
+    for cssplit in diff_loci_cssplit:
         # IM, ID, IS, IN, D, S, N
         scores = [[0 for _ in range(7)] for _ in range(length)]
         i = 0
