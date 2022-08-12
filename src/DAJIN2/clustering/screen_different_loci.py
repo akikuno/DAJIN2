@@ -5,14 +5,14 @@ from itertools import groupby
 import scipy.stats as st
 
 
-def make_table(sample_cssplit: list[str], control_cssplit: list[str]) -> tuple(list, list):
+def make_table(sample_cssplit: list[str], cssplit_control: list[str]) -> tuple(list, list):
     # Create empty templates
-    length = len(control_cssplit[0].split(","))
+    length = len(cssplit_control[0].split(","))
     # MIDSVN table
     sample_table = [[1, 1] for _ in range(length)]
     control_table = [[1, 1] for _ in range(length)]
     # Calculate match and mismatch
-    for sample_cs, control_cs in zip(sample_cssplit, control_cssplit):
+    for sample_cs, control_cs in zip(sample_cssplit, cssplit_control):
         sample_cs = sample_cs.split(",")
         control_cs = control_cs.split(",")
         for i, cs in enumerate(sample_cs):
@@ -40,19 +40,19 @@ def chistatistic(s_table, c_table, threshold=0.05) -> float:
 
 
 def screen_different_loci(
-    sample_cssplit: list[str], control_cssplit: list[str], sequence: str, alpha: float = 0.01, threshold: float = 0.05
+    sample_cssplit: list[str], cssplit_control: list[str], sequence: str, alpha: float = 0.01, threshold: float = 0.05
 ) -> list[dict]:
     """Scoring mutation (insertion, deletion, substitution, inversion, and unknow) at statistically significant loci between sample and control
 
     Args:
         sample_cssplit (list[str]): List of sample's CSSPLITs
-        control_cssplit (list[str]): List of control's CSSPLITs
+        cssplit_control (list[str]): List of control's CSSPLITs
 
     Returns:
         list[dict]: Scores at significantly different base loci
     """
     different_loci = []
-    sample_table, control_table = make_table(sample_cssplit, control_cssplit)
+    sample_table, control_table = make_table(sample_cssplit, cssplit_control)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_span = (x.span() for x in re.finditer(repeat_regrex, sequence))
     try:
@@ -132,7 +132,7 @@ def screen_different_loci(
 # control_table[17]
 # sample_table[17]
 # # n_sample = len(sample_cssplit)
-# # n_control = len(control_cssplit)
+# # n_control = len(cssplit_control)
 # diffloci_scores = defaultdict(list)
 # for i in different_loci:
 #     sample_score = [score / n_sample for score in sample_table[i][1:]]

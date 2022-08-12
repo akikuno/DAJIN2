@@ -239,30 +239,30 @@ from src.DAJIN2 import clustering
 
 reload(clustering)
 
-allele_diffloci = defaultdict(list[dict])
-dict_control_cssplit = defaultdict(list[dict])
+dict_cssplit_control = defaultdict(list[dict])
+for ALLELE in dict_allele.keys():
+    path_control = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
+    cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
+    dict_cssplit_control[ALLELE] = cssplit_control
 
+diffloci_by_alleles = defaultdict(list[dict])
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-    sample_cssplit = [record["CSSPLIT"] for record in group]
-    if not dict_control_cssplit[ALLELE]:
-        control_path = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
-        control_cssplit = [cs["CSSPLIT"] for cs in midsv.read_jsonl(control_path)]
-        dict_control_cssplit[ALLELE] = control_cssplit
-    control_cssplit = dict_control_cssplit[ALLELE]
+    cssplit_sample = [record["CSSPLIT"] for record in group]
+    cssplit_control = dict_cssplit_control[ALLELE]
     sequence = dict_allele[ALLELE]
-    diffloci = clustering.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha=0.01, threshold=0.05)
-    allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
+    diffloci = clustering.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha=0.01, threshold=0.05)
+    diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
 # #? read check
 # ALLELE = "flox"
 # SV = False
 # sequence = dict_allele[ALLELE]
-# sample_cssplit = []
+# cssplit_sample = []
 # for c in classif_sample:
 #     if c["ALLELE"] == ALLELE and c["SV"] == SV:
-#         sample_cssplit.append(c["CSSPLIT"])
+#         cssplit_sample.append(c["CSSPLIT"])
 
-# for s in sample_cssplit:
+# for s in cssplit_sample:
 #     s.split(",")[1739]
 
 # for c in classif_sample:
@@ -276,11 +276,11 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
 #         cssplit = c["CSSPLIT"].split(",")
 #         [i for i, cs in enumerate(cssplit) if cs.startswith("+A|+A|+C|+A|+T")]
 
-# # allele_diffloci
-# for key, value in allele_diffloci.items():
+# # diffloci_by_alleles
+# for key, value in diffloci_by_alleles.items():
 #     print(key, len(value))
 
-# for key, value in allele_diffloci.items():
+# for key, value in diffloci_by_alleles.items():
 #     if key == '{"ALLELE": "flox", "SV": False}':
 #         for locus, score in value.items():
 #             if any(abs(s) > 0.1 for s in score):
@@ -296,68 +296,123 @@ from collections import defaultdict
 
 reload(clustering)
 
-sample_scores_by_allele = defaultdict(list[dict])
+scores_by_alleles = defaultdict(list[dict])
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
-    sample_cssplit = [g["CSSPLIT"] for g in group]
-    diff_loci = allele_diffloci[key]
-    sample_scores_by_allele[key] = clustering.make_scores(sample_cssplit, diff_loci)
+    cssplit_sample = [g["CSSPLIT"] for g in group]
+    cssplit_control = dict_cssplit_control[ALLELE]
+    diffloci = diffloci_by_alleles[key]
+    scores_by_alleles[key] = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
 
 # #? read check
 # ALLELE = "control"
 # SV = False
-# sample_cssplit = []
-# diff_loci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+# cssplit_sample = []
+# diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
 # for c in classif_sample:
 #     if c["ALLELE"] == ALLELE and c["SV"] == SV:
-#         sample_cssplit.append(c["CSSPLIT"])
+#         cssplit_sample.append(c["CSSPLIT"])
 #     if c["QNAME"] == "880d5333-7a52-4dad-95fb-b778f06c1e5f": # left-loxp
-#         idx = len(sample_cssplit)-1
+#         idx = len(cssplit_sample)-1
 
-# x = list(clustering.make_scores(sample_cssplit, diff_loci))
+# x = list(clustering.make_scores(cssplit_sample, diffloci))
 # x[idx]
-# sample_cssplit[idx]
+# cssplit_sample[idx]
 
 # -----------------------------------------------------------------------
 # OPTICS clustering
 # -----------------------------------------------------------------------
 
-scores = []
+# ? read check
+ALLELE = "control"
+SV = False
+cssplit_sample = []
+cssplit_control = dict_cssplit_control[ALLELE]
 qnames = []
-for c in cluster_sample:
-    if c["ALLELE"] == "flox" and c["SV"] == False:
-        scores.append(c["SCORE"])
+diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+for c in classif_sample:
+    if c["ALLELE"] == ALLELE and c["SV"] == SV:
+        cssplit_sample.append(c["CSSPLIT"])
         qnames.append(c["QNAME"])
 
-from sklearn.cluster import OPTICS
-from sklearn.cluster import Birch
-
-[round(s, ndigits=2) for s in scores[4]]
-[round(s, ndigits=2) for s in scores[1]]
-[round(s, ndigits=2) for s in scores[14]]
-[round(s, ndigits=2) for s in scores[8]]
-qnames[1]
-scores[14]
-
-thres = 0.05
-len(scores) * thres
-clustering = OPTICS(min_cluster_size=thres).fit(scores)
-arr = clustering.labels_
-
-from collections import defaultdict
 d = defaultdict(int)
-for a in arr:
-    d[a] += 1
+for c in classif_sample:
+    ALLELE, SV = c["ALLELE"], c["SV"]
+    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
+    d[key] += 1
 
-sorted(d.items(), key=lambda x: -x[1])
 
+x = list(clustering.make_scores(cssplit_sample, cssplit_control, diffloci))
+
+import numpy as np
+import scipy.stats as st
+from sklearn.cluster import Birch
+from scipy.sparse import csr_matrix
+
+# 3D to 2D
+xarr = np.array(x)
+xflatten = np.reshape(xarr, (len(xarr), -1))
+xflatten = csr_matrix(xflatten)
+
+# Clustering
+
+
+def return_labels(xflatten, n_clusters=1):
+    brc = Birch(n_clusters=n_clusters)
+    brc.fit(xflatten)
+    return brc.predict(xflatten)
+
+
+def make_table(labels, n_clusters=1):
+    count = defaultdict(int)
+    for label in labels:
+        count[label] += 1
+    table = list(count.values())
+    table.sort(reverse=True)
+    if n_clusters == 1:
+        table += [0]
+    elif n_clusters == 2:
+        pass
+    else:
+        table = table[:-1]
+    return table
+
+
+def chistatistic(s_table, c_table, threshold=0.05) -> float:
+    chisq_value, _, ddof, _ = st.chi2_contingency([s_table, c_table])
+    delta = sum(s_table + c_table) * threshold ** 2
+    pval = 1 - st.ncx2.cdf(chisq_value, ddof, delta)
+    return pval
+
+
+prev_labels = return_labels(xflatten, n_clusters=1)
+prev_table = make_table(prev_labels, n_clusters=1)
+
+n_clusters = 2
+while True:
+    current_labels = return_labels(xflatten, n_clusters=n_clusters)
+    current_table = make_table(current_labels, n_clusters=n_clusters)
+    pval = chistatistic(prev_table, current_table, threshold=0.05)
+    if pval > 0.05:
+        labels = prev_labels
+        break
+    prev_table = current_table
+    prev_labels = current_labels
+    n_clusters += 1
+
+# ? check
+
+from collections import Counter
+
+Counter(labels)
 
 qa = []
-for q, a in zip(qnames, arr.tolist()):
+for q, a in zip(qnames, labels.tolist()):
     qa.append({"QNAME": q, "LABEL": a})
 
 qa.sort(key=lambda x: x["LABEL"])
 from itertools import groupby
+
 for LABEL, group in groupby(qa, key=lambda x: x["LABEL"]):
     with open(f"tmp_{LABEL}", "a") as f:
         f.write("^@\n")
@@ -366,19 +421,7 @@ for LABEL, group in groupby(qa, key=lambda x: x["LABEL"]):
             qname = g["QNAME"]
             f.write(f"{qname}\n")
 
-type(arr.tolist()[1]
-type(list(arr)[1])
-type(qa[1])
-# brc = Birch(n_clusters=20)
-# brc.fit(scores)
 
-# arr = brc.predict(scores)
-
-# d = defaultdict(int)
-# for a in arr:
-#     d[a] += 1
-
-# sorted(d.items(), key=lambda x: -x[1])
 # -----------------------------------------------------------------------
 # (OLD) Score significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
@@ -389,7 +432,7 @@ type(qa[1])
 # dict_diff_idsvn = defaultdict(list)
 # classif_sample_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
 # for (ALLELE, SV), classif_sample_group in classif_sample_groupby:
-#     diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+#     diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
 #     diff_idsvn = [[0, 0, 0, 0, 0] for _ in diffloci]
 #     for record in classif_sample_group:
 #         cssplit_sample = record["CSSPLIT"].split(",")
@@ -409,10 +452,10 @@ type(qa[1])
 #         dict_diff_idsvn[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diff_idsvn
 
 # dict_diff_idsvn_control = defaultdict(list)
-# for ALLELE in dict_control_cssplit.keys():
-#     group = dict_control_cssplit[ALLELE]
+# for ALLELE in dict_cssplit_control.keys():
+#     group = dict_cssplit_control[ALLELE]
 #     for SV in [True, False]:
-#         diffloci = allele_diffloci[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+#         diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
 #         diff_idsvn = [[0, 0, 0, 0, 0] for _ in diffloci]
 #         for cssplit in group:
 #             for i, difflocus in enumerate(diffloci):

@@ -4,64 +4,86 @@ from importlib import reload
 reload(clustering)
 
 
+def test_extract_cssplit_at_diffloci():
+    cssplit_sample = ["-A,*AC,=A", "=A,-A,=A", "-A,N,-A"]
+    diffloci = [1]
+    test = clustering.extract_cssplit_at_diffloci(cssplit_sample, diffloci)
+    answer = [["*AC"], ["-A"], ["N"]]
+    assert test == answer
+
+
+def test_summation_scores():
+    cssplit_sample = ["+C|+C|=A,-A,N", "=A,-A,-A", "-A,-A,*AC"]
+    diffloci = [0, 1, 2]
+    cssplit_diffloci = clustering.extract_cssplit_at_diffloci(cssplit_sample, diffloci)
+    test = clustering.summation_scores(cssplit_diffloci)
+    answer = [[1, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 3, 0, 0], [0, 0, 0, 0, 1, 1, 1]]
+    assert test == answer
+
+
 def test_repeat_del():
-    sample_cssplit = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-    diff_loci = [0, 1, 2]
-    test = clustering.make_scores(sample_cssplit, diff_loci)
+    cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
+    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
+    diffloci = [0, 1, 2]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
     test = list(test)
     answer = [
-        [[0, 0, 0, 0, 2, 0, 0], [0, 0, 0, 0, 2, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 3, 0, 0], [0, 0, 0, 0, 3, 0, 0], [0, 0, 0, 0, 3, 0, 0]],
+        [[0, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 6, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 3, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 6, 0, 0], [0, 0, 0, 0, 9, 0, 0], [0, 0, 0, 0, 3, 0, 0]],
     ]
     assert test == answer
 
 
 def test_repeat_substitution():
-    sample_cssplit = ["*AC,*AC,=A", "=A,*AC,=A", "*AC,*AC,*AC"]
-    diff_loci = [0, 1, 2]
-    test = clustering.make_scores(sample_cssplit, diff_loci)
+    cssplit_sample = ["*AC,*AC,=A", "=A,*AC,=A", "*AC,*AC,*AC"]
+    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
+    diffloci = [0, 1, 2]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
     test = list(test)
     answer = [
-        [[0, 0, 0, 0, 0, 2, 0], [0, 0, 0, 0, 0, 2, 0], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 3, 0], [0, 0, 0, 0, 0, 3, 0], [0, 0, 0, 0, 0, 3, 0]],
+        [[0, 0, 0, 0, 0, 4, 0], [0, 0, 0, 0, 0, 6, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 3, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 6, 0], [0, 0, 0, 0, 0, 9, 0], [0, 0, 0, 0, 0, 3, 0]],
     ]
     assert test == answer
 
 
 def test_repeat_N():
-    sample_cssplit = ["N,N,=A", "=A,N,=A", "N,N,N"]
-    diff_loci = [0, 1, 2]
-    test = clustering.make_scores(sample_cssplit, diff_loci)
+    cssplit_sample = ["N,N,=A", "=A,N,=A", "N,N,N"]
+    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
+    diffloci = [0, 1, 2]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
     test = list(test)
     answer = [
-        [[0, 0, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 0, 2], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 0, 3], [0, 0, 0, 0, 0, 0, 3], [0, 0, 0, 0, 0, 0, 3]],
+        [[0, 0, 0, 0, 0, 0, 4], [0, 0, 0, 0, 0, 0, 6], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 3], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 6], [0, 0, 0, 0, 0, 0, 9], [0, 0, 0, 0, 0, 0, 3]],
     ]
     assert test == answer
 
 
 def test_inversion():
-    sample_cssplit = ["-a,*AC,-a", "=A,+c|c|c|=a,=A", "=A,+c|c|c|*ac,=A", "=A,*ac,=A", "=A,*ac,-a"]
-    diff_loci = [0, 1, 2]
-    test = clustering.make_scores(sample_cssplit, diff_loci)
+    cssplit_sample = ["-a,*AC,-a", "=A,+c|c|c|=a,=A", "=A,+c|c|c|*ac,=A", "=A,*ac,=A", "=A,*ac,-a"]
+    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
+    diffloci = [0, 1, 2]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
     test = list(test)
     answer = [
-        [[0, 0, 0, 0, -1, 0, 0], [0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, -1, 0, 0]],
+        [[0, 0, 0, 0, -1, 0, 0], [0, 0, 0, 0, 0, 3, 0], [0, 0, 0, 0, -2, 0, 0]],
         [[0, 0, 0, 0, 0, 0, 0], [-4, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
         [[0, 0, 0, 0, 0, 0, 0], [0, 0, -4, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 0, 0, 0, 0]],
-        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -1, 0], [0, 0, 0, 0, -1, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -3, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, -3, 0], [0, 0, 0, 0, -2, 0, 0]],
     ]
     assert test == answer
 
 
 def test_insertion():
-    sample_cssplit = ["=A,+C|C|C|=A,=A", "=A,+C|C|C|-A,=A", "=A,+C|C|C|*CG,=A", "=A,+C|C|C|N,=A", "=A,+c|c|c|n,=A"]
-    diff_loci = [0, 1, 2]
-    test = clustering.make_scores(sample_cssplit, diff_loci)
+    cssplit_sample = ["=A,+C|C|C|=A,=A", "=A,+C|C|C|-A,=A", "=A,+C|C|C|*CG,=A", "=A,+C|C|C|N,=A", "=A,+c|c|c|n,=A"]
+    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
+    diffloci = [0, 1, 2]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
     test = list(test)
     answer = [
         [[0, 0, 0, 0, 0, 0, 0], [4, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -73,11 +95,36 @@ def test_insertion():
     assert test == answer
 
 
-def test_small_diff_loci():
-    sample_cssplit = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-    diff_loci = [1]
-    test = clustering.make_scores(sample_cssplit, diff_loci)
+def test_small_diffloci():
+    cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
+    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
+    diffloci = [1]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
     test = list(test)
-    answer = [[[0, 0, 0, 0, 1, 0, 0]], [[0, 0, 0, 0, 1, 0, 0]], [[0, 0, 0, 0, 1, 0, 0]]]
+    answer = [[[0, 0, 0, 0, 3, 0, 0]], [[0, 0, 0, 0, 3, 0, 0]], [[0, 0, 0, 0, 3, 0, 0]]]
+    assert test == answer
+
+
+def test_control_subtraction_equals():
+    cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
+    cssplit_control = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
+    diffloci = [0, 1, 2]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = list(test)
+    answer = [
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
+        [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
+    ]
+    assert test == answer
+
+
+def test_control_subtraction_allzero():
+    cssplit_sample = ["-A", "-A", "-A"]
+    cssplit_control = ["-A", "-A", "-A"]
+    diffloci = [0]
+    test = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = list(test)
+    answer = [[[0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0, 0]]]
     assert test == answer
 

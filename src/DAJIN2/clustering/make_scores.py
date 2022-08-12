@@ -1,4 +1,41 @@
 import re
+import numpy as np
+
+
+def extract_cssplit_at_diffloci(cssplit_sample, diffloci):
+    cssplit_diffloci = []
+    for cssplit in cssplit_sample:
+        cssplit = cssplit.split(",")
+        diff_cs = []
+        for locus in diffloci:
+            diff_cs.append(cssplit[locus])
+        cssplit_diffloci.append(diff_cs)
+    return cssplit_diffloci
+
+
+# Summation scores at each loci
+def summation_scores(cssplit_diffloci):
+    length = len(cssplit_diffloci[0])
+    sum_scores = [[0 for _ in range(7)] for _ in range(length)]
+    for i, cssplit in enumerate(zip(*cssplit_diffloci)):
+        for cs in cssplit:
+            if cs.startswith("-"):
+                sum_scores[i][4] += 1
+            elif cs.startswith("*"):
+                sum_scores[i][5] += 1
+            elif cs.startswith("N"):
+                sum_scores[i][6] += 1
+            elif cs.startswith("+"):
+                cs_insertion = cs.split("|")
+                if cs_insertion[-1].startswith("="):
+                    sum_scores[i][0] += 1
+                elif cs_insertion[-1].startswith("-"):
+                    sum_scores[i][1] += 1
+                elif cs_insertion[-1].startswith("*"):
+                    sum_scores[i][2] += 1
+                elif cs_insertion[-1].startswith("N"):
+                    sum_scores[i][3] += 1
+    return sum_scores
 
 
 def score_repeats(i, cssplit, scores, length, operant, inversion=False):
@@ -34,16 +71,15 @@ def score_repeats_insertion(i, cs, scores, inversion=False):
     return i, scores
 
 
-def make_scores(sample_cssplit, diff_loci):
-    diff_loci_cssplit = []
-    for cssplit in sample_cssplit:
-        cssplit = cssplit.split(",")
-        diff_cs = []
-        for locus in diff_loci:
-            diff_cs.append(cssplit[locus])
-        diff_loci_cssplit.append(diff_cs)
-    length = len(diff_loci)
-    for cssplit in diff_loci_cssplit:
+def make_scores(cssplit_sample, cssplit_control, diffloci):
+    cssplit_diffloci = extract_cssplit_at_diffloci(cssplit_sample, diffloci)
+    cssplit_diffloci_control = extract_cssplit_at_diffloci(cssplit_control, diffloci)
+    sum_scores = summation_scores(cssplit_diffloci)
+    sum_scores_control = summation_scores(cssplit_diffloci_control)
+    sum_scores = np.array(sum_scores) - np.array(sum_scores_control)
+    sum_scores = np.where(sum_scores < 0, 1, sum_scores)
+    length = len(diffloci)
+    for cssplit in cssplit_diffloci:
         # IM, ID, IS, IN, D, S, N
         scores = [[0 for _ in range(7)] for _ in range(length)]
         i = 0
@@ -61,5 +97,7 @@ def make_scores(sample_cssplit, diff_loci):
             elif cs.startswith("+"):
                 i, scores = score_repeats_insertion(i, cs, scores, inversion)
             i += 1
+        scores = np.array(scores)
+        scores = (scores * sum_scores).tolist()
         yield scores
 
