@@ -23,7 +23,7 @@ sampath=".tmpDAJIN/sam/barcode31_control.sam"
 #     samtools sort >tmp_barcode31_control_"$suffix".bam
 # samtools index tmp_barcode31_control_"$suffix".bam
 
-filepath="tmp_1"
+filepath="tmp_0"
 cat $sampath |
     grep -f "$filepath" |
     samtools sort >"$filepath"_"$suffix".bam

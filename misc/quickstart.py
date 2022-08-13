@@ -146,6 +146,8 @@ for classifs in [classif_sample, classif_control]:
         else:
             classif["SV"] = False
 
+classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
+
 ########################################################################
 # Clustering
 ########################################################################

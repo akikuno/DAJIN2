@@ -73,11 +73,12 @@ def score_repeats_insertion(i, cs, scores, inversion=False):
 
 def make_scores(cssplit_sample, cssplit_control, diffloci):
     cssplit_diffloci = extract_cssplit_at_diffloci(cssplit_sample, diffloci)
-    cssplit_diffloci_control = extract_cssplit_at_diffloci(cssplit_control, diffloci)
+    # cssplit_diffloci_control = extract_cssplit_at_diffloci(cssplit_control, diffloci)
     sum_scores = summation_scores(cssplit_diffloci)
-    sum_scores_control = summation_scores(cssplit_diffloci_control)
-    sum_scores = np.array(sum_scores) - np.array(sum_scores_control)
-    sum_scores = np.where(sum_scores < 0, 1, sum_scores)
+    sum_scores = np.array(sum_scores)
+    # sum_scores_control = summation_scores(cssplit_diffloci_control)
+    # sum_scores = np.array(sum_scores) - np.array(sum_scores_control)
+    # sum_scores = np.where(sum_scores < 0, 0, sum_scores)
     length = len(diffloci)
     for cssplit in cssplit_diffloci:
         # IM, ID, IS, IN, D, S, N
