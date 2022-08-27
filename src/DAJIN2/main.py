@@ -206,8 +206,6 @@ for classifs in [classif_sample, classif_control]:
         else:
             classif["SV"] = False
 
-classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-
 # #? read check
 # from collections import defaultdict
 
@@ -245,6 +243,7 @@ for ALLELE in dict_allele.keys():
     cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
     dict_cssplit_control[ALLELE] = cssplit_control
 
+classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
 diffloci_by_alleles = defaultdict(list[dict])
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     cssplit_sample = [record["CSSPLIT"] for record in group]
@@ -254,79 +253,58 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
     diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
 # -----------------------------------------------------------------------
-# Annotate scores to sample's reads
+# Clustering
 # -----------------------------------------------------------------------
 
 from src.DAJIN2 import clustering
-from collections import defaultdict
+from copy import deepcopy
 
-scores_by_alleles = defaultdict(list[dict])
+labels = []
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
     cssplit_sample = [g["CSSPLIT"] for g in group]
     cssplit_control = dict_cssplit_control[ALLELE]
     diffloci = diffloci_by_alleles[key]
-    scores_by_alleles[key] = clustering.make_scores(cssplit_sample, cssplit_control, diffloci)
+    scores = list(clustering.make_scores(cssplit_sample, cssplit_control, diffloci))
+    labels += clustering.clustering(scores).tolist()
 
-# -----------------------------------------------------------------------
-# Clustering
-# -----------------------------------------------------------------------
+clust_sample = deepcopy(classif_sample)
+for clust, label in zip(clust_sample, labels):
+    clust["LABEL"] = label
 
-from importlib import reload
+
+########################################################################
+# Consensus call
+########################################################################
+
+from src.DAJIN2 import consensus
+from collections import defaultdict
+
+consensus_by_cluster = defaultdict(str)
+clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+
+for (ALLELE, SV, LABEL), group in groupby(clust_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+    diffloci = diffloci_by_alleles[f'{{ "ALLELE": "{ALLELE}", "SV": {SV}}}']
+    # key = f'{{ "ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL} }}'
+    cssplit_sample = [g["CSSPLIT"] for g in group]
+    cons = consensus.call(cssplit_sample)
+    consensus_by_cluster[key] = cons
+
 from collections import defaultdict
 from pprint import pprint
 
 d = defaultdict(int)
-for c in classif_sample:
-    ALLELE, SV = c["ALLELE"], c["SV"]
-    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
+for c in clust_sample:
+    ALLELE, SV, LABEL = c["ALLELE"], c["SV"], c["LABEL"]
+    diffloci_by_alleles[key]
     d[key] += 1
 
 pprint(d)
-
-# ? read check
-ALLELE = "albino"
-SV = False
-cssplit_sample = []
-cssplit_control = dict_cssplit_control[ALLELE]
-qnames = []
-diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-for c in classif_sample:
-    if c["ALLELE"] == ALLELE and c["SV"] == SV:
-        cssplit_sample.append(c["CSSPLIT"])
-        qnames.append(c["QNAME"])
-
-
-scores = list(clustering.make_scores(cssplit_sample, cssplit_control, diffloci))
-
-labels = clustering.clustering(scores)
-
-# ? check
-
-from collections import Counter
-
-Counter(labels)
-
-scores[10]
-labels[11]
-scores[12]
-
-qa = []
-for i, (q, a) in enumerate(zip(qnames, labels.tolist())):
-    qa.append({"QNAME": q, "LABEL": a})
-    if q == "6f536ce8-32d6-41d5-8b09-66bef425b9d8":
-        print(i)
-
-qa.sort(key=lambda x: x["LABEL"])
-from itertools import groupby
-
-for LABEL, group in groupby(qa, key=lambda x: x["LABEL"]):
-    with open(f"tmp_{LABEL}", "a") as f:
-        f.write("^@\n")
-        for g in group:
-            # print(g["QNAME"])
-            qname = g["QNAME"]
-            f.write(f"{qname}\n")
+ALLELE, SV, LABEL = "albino", False, 0
+ALLELE, SV, LABEL = "control", False, 0
+ALLELE, SV, LABEL = "control", False, 1
+key = f'{{ "ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL} }}'
+consensus_by_cluster[key]
 
 
 ########################################################################

@@ -19,37 +19,37 @@ def replaceN(sample_cs: list[str]) -> list[str]:
     return sample_cs
 
 
-def make_table(sample_cssplit: list[str], cssplit_control: list[str]) -> tuple(list, list):
+def make_table(cssplit_sample: list[str], cssplit_control: list[str]) -> tuple(list, list):
     # Create empty templates
     length = len(cssplit_control[0].split(","))
     # MIDSVN table
-    sample_table = [[1, 1] for _ in range(length)]
-    control_table = [[1, 1] for _ in range(length)]
+    table_sample = [[1, 1] for _ in range(length)]
+    table_control = [[1, 1] for _ in range(length)]
     # Calculate match and mismatch
-    for sample_cs, control_cs in zip(sample_cssplit, cssplit_control):
+    for sample_cs, control_cs in zip(cssplit_sample, cssplit_control):
         sample_cs = sample_cs.split(",")
         sample_cs = replaceN(sample_cs)
         control_cs = control_cs.split(",")
         control_cs = replaceN(control_cs)
         for i, cs in enumerate(sample_cs):
             if cs.startswith("="):
-                sample_table[i][0] += 1
+                table_sample[i][0] += 1
             elif cs == "@":
-                sample_table[i][0] += 1
+                table_sample[i][0] += 1
             elif cs.startswith("+"):
-                sample_table[i][1] += cs.count("+")
+                table_sample[i][1] += cs.count("+")
             else:
-                sample_table[i][1] += 1
+                table_sample[i][1] += 1
         for i, cs in enumerate(control_cs):
             if cs.startswith("="):
-                control_table[i][0] += 1
+                table_control[i][0] += 1
             elif cs == "@":
-                sample_table[i][0] += 1
+                table_sample[i][0] += 1
             elif cs.startswith("+"):
-                control_table[i][1] += cs.count("+")
+                table_control[i][1] += cs.count("+")
             else:
-                control_table[i][1] += 1
-    return sample_table, control_table
+                table_control[i][1] += 1
+    return table_sample, table_control
 
 
 def chistatistic(s_table, c_table, threshold=0.05) -> float:
@@ -60,19 +60,19 @@ def chistatistic(s_table, c_table, threshold=0.05) -> float:
 
 
 def screen_different_loci(
-    sample_cssplit: list[str], cssplit_control: list[str], sequence: str, alpha: float = 0.01, threshold: float = 0.05
+    cssplit_sample: list[str], cssplit_control: list[str], sequence: str, alpha: float = 0.01, threshold: float = 0.05
 ) -> list[dict]:
     """Scoring mutation (insertion, deletion, substitution, inversion, and unknow) at statistically significant loci between sample and control
 
     Args:
-        sample_cssplit (list[str]): List of sample's CSSPLITs
+        cssplit_sample (list[str]): List of sample's CSSPLITs
         cssplit_control (list[str]): List of control's CSSPLITs
 
     Returns:
         list[dict]: Scores at significantly different base loci
     """
     different_loci = []
-    sample_table, control_table = make_table(sample_cssplit, cssplit_control)
+    table_sample, table_control = make_table(cssplit_sample, cssplit_control)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_span = (x.span() for x in re.finditer(repeat_regrex, sequence))
     try:
@@ -80,7 +80,7 @@ def screen_different_loci(
         repeat_end -= 1
     except StopIteration:
         different_loci = []
-        for i, (s, c) in enumerate(zip(sample_table, control_table)):
+        for i, (s, c) in enumerate(zip(table_sample, table_control)):
             pval = chistatistic(s, c, threshold)
             if pval < alpha:
                 different_loci.append(i)
@@ -88,7 +88,7 @@ def screen_different_loci(
     # Calculate match and mismatch
     s_repeat = [0, 0]
     c_repeat = [0, 0]
-    for i, (s, c) in enumerate(zip(sample_table, control_table)):
+    for i, (s, c) in enumerate(zip(table_sample, table_control)):
         if i < repeat_start:
             pval = chistatistic(s, c, threshold)
             if pval < alpha:
@@ -106,7 +106,7 @@ def screen_different_loci(
             pval = chistatistic(s_repeat, c_repeat, threshold)
             if pval < alpha:
                 for j in range(repeat_start, repeat_end + 1):
-                    s, c = sample_table[j], control_table[j]
+                    s, c = table_sample[j], table_control[j]
                     pval = chistatistic(s, c, threshold)
                     if pval < alpha:
                         different_loci.append(j)

@@ -4,8 +4,10 @@ suffix=$(date | tr " :" -)
 
 # sampath=".tmpDAJIN/sam/barcode31_flox.sam"
 # sampath=".tmpDAJIN/sam/barcode42_flox.sam"
-sampath=".tmpDAJIN/sam/barcode31_control.sam"
-
+# sampath=".tmpDAJIN/sam/barcode31_control.sam"
+# sampath=".tmpDAJIN/sam/barcode32_control.sam"
+# samtools sort "$sampath" >tmp_"$suffix".bam
+# samtools index tmp_"$suffix".bam
 # extract_readid="6f536ce8-32d6-41d5-8b09-66bef425b9d8"
 # cat $sampath |
 #     grep -e "^@" -e "${extract_readid-:*}" |
