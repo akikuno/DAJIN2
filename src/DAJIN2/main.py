@@ -2,6 +2,7 @@ from __future__ import annotations
 from itertools import groupby
 import shutil
 from pathlib import Path
+from DAJIN2.consensus.module_consensus import join_list_of_dict
 
 # Custom modules
 from src.DAJIN2.utils import cache_control
@@ -271,6 +272,7 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
 clust_sample = deepcopy(classif_sample)
 for clust, label in zip(clust_sample, labels):
     clust["LABEL"] = label
+    del clust["CSSPLIT"]
 
 
 ########################################################################
@@ -280,32 +282,27 @@ for clust, label in zip(clust_sample, labels):
 from src.DAJIN2 import consensus
 from collections import defaultdict
 
-consensus_by_cluster = defaultdict(str)
-clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
+list_dict2 = midsv.read_jsonl(path)
 
-for (ALLELE, SV, LABEL), group in groupby(clust_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-    diffloci = diffloci_by_alleles[f'{{ "ALLELE": "{ALLELE}", "SV": {SV}}}']
-    # key = f'{{ "ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL} }}'
-    cssplit_sample = [g["CSSPLIT"] for g in group]
-    cons = consensus.call(cssplit_sample)
+clust_merged = consensus.join_listdicts(clust_sample, list_dict2, key="QNAME")
+
+consensus_by_cluster = defaultdict(str)
+clust_merged.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+
+for (ALLELE, SV, LABEL), group in groupby(clust_merged, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+    diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+    cssplits = [g["CSSPLIT"] for g in group]
+    cons = consensus.call(cssplits, diffloci)
+    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
     consensus_by_cluster[key] = cons
 
-from collections import defaultdict
-from pprint import pprint
+# for (ALLELE, SV, LABEL), group in groupby(clust_merged, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+#     if ALLELE == "albino" and SV == False:
+#         diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+#         cssplits = [g["CSSPLIT"] for g in group]
 
-d = defaultdict(int)
-for c in clust_sample:
-    ALLELE, SV, LABEL = c["ALLELE"], c["SV"], c["LABEL"]
-    diffloci_by_alleles[key]
-    d[key] += 1
-
-pprint(d)
-ALLELE, SV, LABEL = "albino", False, 0
-ALLELE, SV, LABEL = "control", False, 0
-ALLELE, SV, LABEL = "control", False, 1
-key = f'{{ "ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL} }}'
-consensus_by_cluster[key]
-
+# len(cssplits)
 
 ########################################################################
 # レポート：アレル割合

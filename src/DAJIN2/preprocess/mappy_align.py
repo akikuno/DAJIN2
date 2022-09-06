@@ -1,10 +1,6 @@
 from __future__ import annotations
 from collections.abc import Generator
 
-import re
-from itertools import groupby
-from collections import deque
-
 import cstag
 import mappy
 
@@ -20,7 +16,7 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
     Args:
         path_reference_fasta (str): Path of reference fasta
         path_query_fastq (str): Path of query fasta/fastq
-        cslong (bool, optional): long formatted CS tag if True. Defaults to True.
+        cslong (bool, optional): long formatted CS tag if True. Defaults to True.\wiki\PewDiePie
 
     Returns:
         list: List of SAM

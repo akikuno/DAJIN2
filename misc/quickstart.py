@@ -206,7 +206,8 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
 
 clust_sample = deepcopy(classif_sample)
 for clust, label in zip(clust_sample, labels):
-    clust["label"] = label
+    clust["LABEL"] = label
+    del clust["CSSPLIT"]
 
 
 # -----------------------------------------------------------------------
