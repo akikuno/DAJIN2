@@ -199,9 +199,8 @@ labels = []
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
     cssplit_sample = [g["CSSPLIT"] for g in group]
-    cssplit_control = dict_cssplit_control[ALLELE]
     diffloci = diffloci_by_alleles[key]
-    scores = list(clustering.make_scores(cssplit_sample, cssplit_control, diffloci))
+    scores = list(clustering.make_scores(cssplit_sample, diffloci))
     labels += clustering.clustering(scores).tolist()
 
 clust_sample = deepcopy(classif_sample)

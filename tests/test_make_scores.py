@@ -23,9 +23,8 @@ def test_summation_scores():
 
 def test_repeat_del():
     cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
     diffloci = [0, 1, 2]
-    test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = module_make_scores.make_scores(cssplit_sample, diffloci)
     test = list(test)
     answer = [
         [[0, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 6, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -37,9 +36,8 @@ def test_repeat_del():
 
 def test_repeat_substitution():
     cssplit_sample = ["*AC,*AC,=A", "=A,*AC,=A", "*AC,*AC,*AC"]
-    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
     diffloci = [0, 1, 2]
-    test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = module_make_scores.make_scores(cssplit_sample, diffloci)
     test = list(test)
     answer = [
         [[0, 0, 0, 0, 0, 4, 0], [0, 0, 0, 0, 0, 6, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -51,9 +49,8 @@ def test_repeat_substitution():
 
 def test_repeat_N():
     cssplit_sample = ["N,N,=A", "=A,N,=A", "N,N,N"]
-    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
     diffloci = [0, 1, 2]
-    test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = module_make_scores.make_scores(cssplit_sample, diffloci)
     test = list(test)
     answer = [
         [[0, 0, 0, 0, 0, 0, 4], [0, 0, 0, 0, 0, 0, 6], [0, 0, 0, 0, 0, 0, 0]],
@@ -65,9 +62,8 @@ def test_repeat_N():
 
 def test_inversion():
     cssplit_sample = ["-a,*AC,-a", "=A,+c|c|c|=a,=A", "=A,+c|c|c|*ac,=A", "=A,*ac,=A", "=A,*ac,-a"]
-    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
     diffloci = [0, 1, 2]
-    test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = module_make_scores.make_scores(cssplit_sample, diffloci)
     test = list(test)
     answer = [
         [[0, 0, 0, 0, -1, 0, 0], [0, 0, 0, 0, 0, 3, 0], [0, 0, 0, 0, -2, 0, 0]],
@@ -81,9 +77,8 @@ def test_inversion():
 
 def test_insertion():
     cssplit_sample = ["=A,+C|C|C|=A,=A", "=A,+C|C|C|-A,=A", "=A,+C|C|C|*CG,=A", "=A,+C|C|C|N,=A", "=A,+c|c|c|n,=A"]
-    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
     diffloci = [0, 1, 2]
-    test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = module_make_scores.make_scores(cssplit_sample, diffloci)
     test = list(test)
     answer = [
         [[0, 0, 0, 0, 0, 0, 0], [4, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -97,34 +92,9 @@ def test_insertion():
 
 def test_small_diffloci():
     cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-    cssplit_control = ["=A,=A,=A", "=A,=A,=A", "=A,=A,=A"]
     diffloci = [1]
-    test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
+    test = module_make_scores.make_scores(cssplit_sample, diffloci)
     test = list(test)
     answer = [[[0, 0, 0, 0, 3, 0, 0]], [[0, 0, 0, 0, 3, 0, 0]], [[0, 0, 0, 0, 3, 0, 0]]]
     assert test == answer
-
-
-# def test_control_subtraction_equals():
-#     cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-#     cssplit_control = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-#     diffloci = [0, 1, 2]
-#     test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
-#     test = list(test)
-#     answer = [
-#         [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
-#         [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
-#         [[0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
-#     ]
-#     assert test == answer
-
-
-# def test_control_subtraction_allzero():
-#     cssplit_sample = ["-A", "-A", "-A"]
-#     cssplit_control = ["-A", "-A", "-A"]
-#     diffloci = [0]
-#     test = module_make_scores.make_scores(cssplit_sample, cssplit_control, diffloci)
-#     test = list(test)
-#     answer = [[[0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0, 0]]]
-#     assert test == answer
 

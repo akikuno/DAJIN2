@@ -264,9 +264,8 @@ labels = []
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
     cssplit_sample = [g["CSSPLIT"] for g in group]
-    cssplit_control = dict_cssplit_control[ALLELE]
     diffloci = diffloci_by_alleles[key]
-    scores = list(clustering.make_scores(cssplit_sample, cssplit_control, diffloci))
+    scores = list(clustering.make_scores(cssplit_sample, diffloci))
     labels += clustering.clustering(scores).tolist()
 
 clust_sample = deepcopy(classif_sample)
@@ -282,10 +281,12 @@ for clust, label in zip(clust_sample, labels):
 from src.DAJIN2 import consensus
 from collections import defaultdict
 
-path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
-list_dict2 = midsv.read_jsonl(path)
+path = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl")
+cssplit_control = midsv.read_jsonl(path)
 
-clust_merged = consensus.join_listdicts(clust_sample, list_dict2, key="QNAME")
+path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
+cssplit_sample = midsv.read_jsonl(path)
+clust_merged = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 
 consensus_by_cluster = defaultdict(str)
 clust_merged.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
