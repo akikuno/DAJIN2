@@ -286,17 +286,24 @@ cssplit_control = midsv.read_jsonl(path)
 
 path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
-clust_merged = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
+cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 
-consensus_by_cluster = defaultdict(str)
-clust_merged.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+cons_percentage = consensus.percentage(cssplit_sample, cssplit_control)
+x = [sorted(cons, key=cons.get, reverse=True)[0] for cons in cons_percentage]
+x[828]
+for i, xx in enumerate(x):
+    if not xx.startswith("="):
+        print(i, xx)
 
-for (ALLELE, SV, LABEL), group in groupby(clust_merged, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-    diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-    cssplits = [g["CSSPLIT"] for g in group]
-    cons = consensus.call(cssplits, diffloci)
-    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
-    consensus_by_cluster[key] = cons
+# consensus_by_cluster = defaultdict(str)
+# cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+
+# for (ALLELE, SV, LABEL), group in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+#     diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
+#     cssplits = [g["CSSPLIT"] for g in group]
+#     cons = consensus.call(cssplits, diffloci)
+#     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
+#     consensus_by_cluster[key] = cons
 
 # for (ALLELE, SV, LABEL), group in groupby(clust_merged, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
 #     if ALLELE == "albino" and SV == False:

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from asyncore import read
 from collections import Counter
 from bisect import bisect_left
 
@@ -23,6 +24,44 @@ def join_listdicts(list_dict1: list[dict], list_dict2: list[dict], key: str) -> 
         d2 = list_dict2[idx]
         dict_merged.append(merge_dict1(d1, d2))
     return dict_merged
+
+
+from collections import Counter
+from collections import defaultdict
+
+
+def transpose(cssplit):
+    cs_transposed = []
+    for cs in cssplit:
+        cs_transposed.append(cs["CSSPLIT"].split(","))
+    return list(zip(*cs_transposed))
+
+
+def percentage(cssplit_sample: list[str], cssplit_control: list[str]) -> list[dict]:
+    cssplit_control_transposed = transpose(cssplit_control)
+    cssplit_sample_transposed = transpose(cssplit_sample)
+    readnum_sample = len(cssplit_sample)
+    readnum_control = len(cssplit_control)
+    con_percentage = []
+    for i in range(len(cssplit_sample_transposed)):
+        d_control = defaultdict(int)
+        for cs in cssplit_control_transposed[i]:
+            d_control[cs] += 1 / readnum_control
+        d_sample = defaultdict(int)
+        for cs in cssplit_sample_transposed[i]:
+            d_sample[cs] += 1 / readnum_sample
+        d_sample_subtracted = defaultdict(int)
+        for key, value in d_sample.items():
+            if key.startswith("="):
+                d_sample_subtracted[key] = value
+                continue
+            value = max(0, value - d_control[key])
+            if value > 0:
+                d_sample_subtracted[key] = value
+        d_sum = sum(d_sample_subtracted.values())
+        d = {key: value * 1 / d_sum for key, value in d_sample_subtracted.items()}
+        con_percentage.append(d)
+    return con_percentage
 
 
 def call(cssplits: list[str], diffloci: list[int]) -> list[str]:
