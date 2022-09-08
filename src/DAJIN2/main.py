@@ -288,12 +288,28 @@ path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
 cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 
-cons_percentage = consensus.percentage(cssplit_sample, cssplit_control)
-x = [sorted(cons, key=cons.get, reverse=True)[0] for cons in cons_percentage]
-x[828]
-for i, xx in enumerate(x):
-    if not xx.startswith("="):
-        print(i, xx)
+cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+cons_percentage = defaultdict(list)
+for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+    cons = consensus.percentage(list(cssplits), cssplit_control)
+    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
+    cons_percentage[key] = cons
+
+for key, value in cons_percentage.items():
+    cons_fasta = consensus.call_fasta(key, value)
+    Path(f"tmp_{key}.fasta").write_text(cons_fasta)
+
+
+# cons_percentage = consensus.percentage(cssplit_sample, cssplit_control)
+# x = [sorted(cons, key=cons.get, reverse=True)[0] for cons in cons_percentage]
+# x[828]
+# for i, xx in enumerate(x):
+#     if not xx.startswith("="):
+#         print(i, xx)
+
+# d = defaultdict(int)
+# for cs in cssplit_sample:
+#     d[f"{cs['ALLELE']}, {cs['SV']}"] += 1
 
 # consensus_by_cluster = defaultdict(str)
 # cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
