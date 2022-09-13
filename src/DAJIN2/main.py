@@ -312,11 +312,12 @@ for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["A
 # Report：アレル割合
 # sample, allele name, #read, %read
 ########################################################################
-from collections import defaultdict
-from src.DAJIN2.report import report_af
 import warnings
 
 warnings.simplefilter("ignore")
+from collections import defaultdict
+from src.DAJIN2.report import report_af
+
 reload(report_af)
 
 # ----------------------------------------------------------
@@ -346,14 +347,19 @@ g.save(filename=".tmpDAJIN/reports/tmp_output.pdf")
 # Report：各種ファイルフォーマットに出力
 ########################################################################
 
-# FASTA
-# for key, value in cons_percentage.items():
-#     cons_fasta = consensus.call_fasta(key, value)
-#     Path(f"tmp_{key}.fasta").write_text(cons_fasta)
+from src.DAJIN2.report import report_files
 
-# VCF
+reload(report_files)
+
+# FASTA
+for heaer, cons_seq in zip(df_allele_frequency["allele name"].to_list(), cons_sequence.values()):
+    cons_fasta = report_files.to_fasta(heaer, cons_seq)
+    Path(f".tmpDAJIN/reports/{heaer}.fasta").write_text(cons_fasta)
 
 # HTML
+
+
+# VCF
 
 
 ########################################################################

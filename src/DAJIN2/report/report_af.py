@@ -31,13 +31,13 @@ def summary_allele(clust_sample: list[dict], sample_name: str, cons_sequence: di
         elif cons_sequence[key] == dict_allele[ALLELE]:
             name = f"{ALLELE}_intact_#{LABEL}"
         else:
-            name = f"{ALLELE}_small-mutation_#{LABEL}"
+            name = f"{ALLELE}_smallmutation_#{LABEL}"
         allele_names[LABEL] = name
     allele_frequency = defaultdict(list)
     allele_frequency["sample"] = [sample_name] * len(num_reads)
     allele_frequency["allele name"] = [x for x in allele_names.values()]
-    allele_frequency["#reads"] = [x for x in num_reads.values()]
-    allele_frequency["%reads"] = [x for x in per_reads.values()]
+    allele_frequency[r"#reads"] = [x for x in num_reads.values()]
+    allele_frequency[r"%reads"] = [x for x in per_reads.values()]
     return pd.DataFrame(allele_frequency)
 
 

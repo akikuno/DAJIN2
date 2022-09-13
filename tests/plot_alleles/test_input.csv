@@ -1,3 +1,4 @@
+sample,allele name,#reads
 barcode01,Intact control,1000
 barcode02,Intact control,500
 barcode02,Abnormal,500

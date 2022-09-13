@@ -267,3 +267,30 @@ clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
 #             # print(g["QNAME"])
 #             qname = g["QNAME"]
 #             f.write(f"{qname}\n")
+
+########################################################################
+# Consensus call
+########################################################################
+
+from src.DAJIN2.consensus import module_consensus as consensus
+from collections import defaultdict
+from importlib import reload
+
+reload(consensus)
+
+path = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl")
+cssplit_control = midsv.read_jsonl(path)
+
+path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
+cssplit_sample = midsv.read_jsonl(path)
+cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
+cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+
+cons_percentage = defaultdict(list)
+cons_sequence = defaultdict(list)
+for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+    cons_per = consensus.call_percentage(list(cssplits), cssplit_control)
+    cons_seq = consensus.call_sequence(cons_per)
+    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
+    cons_percentage[key] = cons_per
+    cons_sequence[key] = cons_seq
