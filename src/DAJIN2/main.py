@@ -2,6 +2,8 @@ from __future__ import annotations
 from itertools import groupby
 import shutil
 from pathlib import Path
+from sys import dllhandle
+from this import d
 from DAJIN2.consensus.module_consensus import join_list_of_dict
 
 # Custom modules
@@ -120,12 +122,14 @@ import shutil
 
 if Path(output).exists():
     shutil.rmtree(output)
+
 Path(output).mkdir(exist_ok=True)
 
 if Path(".tmpDAJIN").exists():
     shutil.rmtree(".tmpDAJIN")
 
-for subdir in ["fasta", "fastq", "sam", "midsv"]:
+subdirectoris = ["fasta", "fastq", "sam", "midsv", "bam", "reports"]
+for subdir in subdirectoris:
     Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
 
 ################################################################################
@@ -261,25 +265,31 @@ from src.DAJIN2 import clustering
 from copy import deepcopy
 
 labels = []
+label_start = 1
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
     cssplit_sample = [g["CSSPLIT"] for g in group]
     diffloci = diffloci_by_alleles[key]
     scores = list(clustering.make_scores(cssplit_sample, diffloci))
-    labels += clustering.clustering(scores).tolist()
+    labels += [label + label_start for label in clustering.clustering(scores).tolist()]
+    label_start = len(set(labels)) + 1
 
 clust_sample = deepcopy(classif_sample)
 for clust, label in zip(clust_sample, labels):
     clust["LABEL"] = label
     del clust["CSSPLIT"]
 
+clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
 
 ########################################################################
 # Consensus call
 ########################################################################
 
-from src.DAJIN2 import consensus
+from src.DAJIN2.consensus import module_consensus as consensus
 from collections import defaultdict
+from importlib import reload
+
+reload(consensus)
 
 path = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl")
 cssplit_control = midsv.read_jsonl(path)
@@ -287,62 +297,95 @@ cssplit_control = midsv.read_jsonl(path)
 path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
 cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
-
 cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+
 cons_percentage = defaultdict(list)
+cons_sequence = defaultdict(list)
 for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-    cons = consensus.percentage(list(cssplits), cssplit_control)
+    cons_per = consensus.call_percentage(list(cssplits), cssplit_control)
+    cons_seq = consensus.call_sequence(cons_per)
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
-    cons_percentage[key] = cons
-
-for key, value in cons_percentage.items():
-    cons_fasta = consensus.call_fasta(key, value)
-    Path(f"tmp_{key}.fasta").write_text(cons_fasta)
-
-
-# cons_percentage = consensus.percentage(cssplit_sample, cssplit_control)
-# x = [sorted(cons, key=cons.get, reverse=True)[0] for cons in cons_percentage]
-# x[828]
-# for i, xx in enumerate(x):
-#     if not xx.startswith("="):
-#         print(i, xx)
-
-# d = defaultdict(int)
-# for cs in cssplit_sample:
-#     d[f"{cs['ALLELE']}, {cs['SV']}"] += 1
-
-# consensus_by_cluster = defaultdict(str)
-# cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
-
-# for (ALLELE, SV, LABEL), group in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-#     diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-#     cssplits = [g["CSSPLIT"] for g in group]
-#     cons = consensus.call(cssplits, diffloci)
-#     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
-#     consensus_by_cluster[key] = cons
-
-# for (ALLELE, SV, LABEL), group in groupby(clust_merged, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-#     if ALLELE == "albino" and SV == False:
-#         diffloci = diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}']
-#         cssplits = [g["CSSPLIT"] for g in group]
-
-# len(cssplits)
+    cons_percentage[key] = cons_per
+    cons_sequence[key] = cons_seq
 
 ########################################################################
-# レポート：アレル割合
+# Report：アレル割合
+# sample, allele name, #read, %read
 ########################################################################
+from collections import defaultdict
+from src.DAJIN2.report import report_af
+import warnings
+
+warnings.simplefilter("ignore")
+reload(report_af)
+
+# ----------------------------------------------------------
+# All data
+# ----------------------------------------------------------
+
+df_clust_sample = report_af.all_allele(clust_sample, sample_name)
+df_clust_sample.to_csv(".tmpDAJIN/reports/read_classification_all.csv", index=False)
+df_clust_sample.to_excel(".tmpDAJIN/reports/read_classification_all.xlsx", index=False)
+
+# ----------------------------------------------------------
+# Summary data
+# ----------------------------------------------------------
+
+df_allele_frequency = report_af.summary_allele(clust_sample, sample_name, cons_sequence, dict_allele)
+df_allele_frequency.to_csv(".tmpDAJIN/reports/read_classification_summary.csv", index=False)
+df_allele_frequency.to_excel(".tmpDAJIN/reports/read_classification_summary.xlsx", index=False)
+
+# ----------------------------------------------------------
+# Visualization
+# ----------------------------------------------------------
+g = report_af.plot(df_allele_frequency)
+g.save(filename=".tmpDAJIN/reports/tmp_output.png", dpi=350)
+g.save(filename=".tmpDAJIN/reports/tmp_output.pdf")
 
 ########################################################################
-# レポート：コンセンサス配列
+# Report：各種ファイルフォーマットに出力
 ########################################################################
 
+# FASTA
+# for key, value in cons_percentage.items():
+#     cons_fasta = consensus.call_fasta(key, value)
+#     Path(f"tmp_{key}.fasta").write_text(cons_fasta)
+
+# VCF
+
+# HTML
+
+
 ########################################################################
-# レポート：BAM
+# Report：BAM
 ########################################################################
+import pysam
 
 # ゲノム情報がなかったらリファレンスのFASTAにマップする
 # ゲノム情報が入力されていたらその情報をもとにSAMの染色体位置情報を上書きする
+if genome:
+    pass
 
+for path_sam in Path(".tmpDAJIN", "sam").glob("*_control.sam"):
+    name = path_sam.stem
+    pysam.sort("-o", f".tmpDAJIN/bam/{name}.bam", str(path_sam))
+    pysam.index(f".tmpDAJIN/bam/{name}.bam")
+
+########################################################################
+# Report：IGV.js
+########################################################################
+
+# IGV.js（10本のリードのみ表示）のために各サンプル50本程度のリードのみを抽出する
+
+for path_sam in Path(".tmpDAJIN", "sam").glob("*_control.sam"):
+    sam = midsv.read_sam(path_sam)
+    pysam.sort("-o", f".tmpDAJIN/bam/{name}.bam", str(path_sam))
+    pysam.index(f".tmpDAJIN/bam/{name}.bam")
+
+
+########################################################################
+# Finish call
+########################################################################
 
 if not debug:
     shutil.rmtree(".tmpDAJIN")

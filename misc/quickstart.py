@@ -193,21 +193,22 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
 from src.DAJIN2 import clustering
 from copy import deepcopy
 
-reload(clustering)
-
 labels = []
+label_start = 1
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
     cssplit_sample = [g["CSSPLIT"] for g in group]
     diffloci = diffloci_by_alleles[key]
     scores = list(clustering.make_scores(cssplit_sample, diffloci))
-    labels += clustering.clustering(scores).tolist()
+    labels += [label + label_start for label in clustering.clustering(scores).tolist()]
+    label_start = len(set(labels)) + 1
 
 clust_sample = deepcopy(classif_sample)
 for clust, label in zip(clust_sample, labels):
     clust["LABEL"] = label
     del clust["CSSPLIT"]
 
+clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
 
 # -----------------------------------------------------------------------
 # Memo: Clustering

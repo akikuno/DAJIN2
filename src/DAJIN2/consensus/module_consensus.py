@@ -1,6 +1,5 @@
 from __future__ import annotations
 import textwrap
-from collections import Counter
 from bisect import bisect_left
 from collections import defaultdict
 
@@ -34,7 +33,7 @@ def transpose(cssplit):
     return list(zip(*cs_transposed))
 
 
-def percentage(cssplit_sample: list[str], cssplit_control: list[str]) -> list[dict]:
+def call_percentage(cssplit_sample: list[str], cssplit_control: list[str]) -> list[dict]:
     cssplit_control_transposed = transpose(cssplit_control)
     cssplit_sample_transposed = transpose(cssplit_sample)
     readnum_sample = len(cssplit_sample)
@@ -62,18 +61,18 @@ def percentage(cssplit_sample: list[str], cssplit_control: list[str]) -> list[di
     return con_percentage
 
 
-def call(cssplits: list[str], diffloci: list[int]) -> list[str]:
-    cs = [cs.split(",") for cs in cssplits]
-    cons = []
-    for difflocus in diffloci:
-        cons_difflocus = []
-        for c in cs:
-            cons_difflocus.append(c[difflocus])
-        cons.append(Counter(cons_difflocus).most_common()[0][0])
-    return cons
+# def call(cssplits: list[str], diffloci: list[int]) -> list[str]:
+#     cs = [cs.split(",") for cs in cssplits]
+#     cons = []
+#     for difflocus in diffloci:
+#         cons_difflocus = []
+#         for c in cs:
+#             cons_difflocus.append(c[difflocus])
+#         cons.append(Counter(cons_difflocus).most_common()[0][0])
+#     return cons
 
 
-def call_fasta_seq(cons_percentage_by_key: list[dict]) -> str:
+def call_sequence(cons_percentage_by_key: list[dict]) -> str:
     consensus_sequence = []
     for cons_per in cons_percentage_by_key:
         cons = max(cons_per, key=cons_per.get)
@@ -99,7 +98,7 @@ def call_fasta_seq(cons_percentage_by_key: list[dict]) -> str:
 
 def call_fasta(key: str, cons_percentage_by_key: list[dict]) -> str:
     header = ">" + key
-    cons_seq = call_fasta_seq(cons_percentage_by_key)
+    cons_seq = call_sequence(cons_percentage_by_key)
     cons_seq_wrap = textwrap.wrap(cons_seq, 80)
     fasta = "\n".join([header, *cons_seq_wrap]) + "\n"
     return fasta

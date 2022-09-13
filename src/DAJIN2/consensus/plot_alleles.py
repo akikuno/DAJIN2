@@ -23,7 +23,7 @@ g = (
     + geom_bar(position="fill", stat="identity", colour="black")
     + theme_bw()
     + theme(axis_title_x=element_blank())
-    + labs(fill="Allele type", y="Percentage of Alleles")
+    + labs(fill="Allele type", y="Percentage of reads")
 )
 
 g.save(filename="tests/plot_alleles/test_output.png", dpi=350)

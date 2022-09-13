@@ -12,65 +12,57 @@ def test_call_fasta():
     assert test == answer
 
 
-def test_call_fasta_seq_match():
+def test_call_sequence_match():
     cons_percentage_by_key = [{"=A": 1.0}, {"=T": 0.9, "-T": 0.1}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AT"
     assert test == answer
 
 
-def test_call_fasta_seq_deletion():
+def test_call_sequence_deletion():
     cons_percentage_by_key = [{"=A": 1.0}, {"-A": 0.9, "=A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AT"
     assert test == answer
 
 
-def test_call_fasta_seq_substitution():
+def test_call_sequence_substitution():
     cons_percentage_by_key = [{"=A": 1.0}, {"*AC": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "ACT"
     assert test == answer
 
 
-def test_call_fasta_seq_inversion():
+def test_call_sequence_inversion():
     cons_percentage_by_key = [{"=A": 1.0}, {"=a": 0.9, "-a": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AaT"
     assert test == answer
 
 
-def test_call_fasta_seq_insertion_match():
+def test_call_sequence_insertion_match():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|=A": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AGGGAT"
     assert test == answer
 
 
-def test_call_fasta_seq_insertion_deletion():
+def test_call_sequence_insertion_deletion():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|-A": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AGGGT"
     assert test == answer
 
 
-def test_call_fasta_seq_insertion_substitution():
+def test_call_sequence_insertion_substitution():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|*AT": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AGGGTT"
     assert test == answer
 
 
-def test_call_fasta_seq_insertion_N():
+def test_call_sequence_insertion_N():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|N": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_fasta_seq(cons_percentage_by_key)
+    test = module_consensus.call_sequence(cons_percentage_by_key)
     answer = "AGGGNT"
     assert test == answer
-
-
-# def test_module_consensus():
-#     cssplits = ["=A,*GA,=C", "=A,*GA,-C", "=A,*GA,-C"]
-#     test = module_consensus.call(cssplits)
-#     answer = "=A,*GA,-C"
-#     assert test == answer
-
