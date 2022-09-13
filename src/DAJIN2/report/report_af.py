@@ -13,13 +13,16 @@ def all_allele(clust_sample: list[dict], sample_name: str) -> pd.DataFrame:
 
 
 def summary_allele(clust_sample: list[dict], sample_name: str, cons_sequence: dict, dict_allele: dict) -> pd.DataFrame:
+    # #reads
     num_reads = defaultdict(int)
     for c in clust_sample:
         num_reads[c["LABEL"]] += 1
+    # %reads
     per_reads = defaultdict(float)
     for LABEL, value in num_reads.items():
         per = value / len(clust_sample) * 100
         per_reads[LABEL] = float(f"{per:.2f}")
+    # allele name
     allele_names = defaultdict(str)
     for c in clust_sample:
         _, ALLELE, SV, LABEL = c.values()

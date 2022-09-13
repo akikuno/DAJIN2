@@ -1,4 +1,0 @@
-@SQ	SN:ramdom100nt	LN:100
-@PG	ID:minimap2	PN:minimap2	VN:2.23-r1111	CL:minimap2 -ax map-ont --cs=long tests/data/mappy/ref.fa tests/data/mappy/query.fq
-control	0	ramdom100nt	1	60	100M	*	0	0	ACTGTGCGGCATACTTAATTATACATTTGAAACGCGCCCAAGTGACGCTAGGCAAGTCAGAGCAGGTTCCCGTGTTAGCTTAAGGGTAAACATACAAGTC	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	NM:i:0	ms:i:200	AS:i:200	nn:i:0	tp:A:P	cm:i:15	s1:i:95	s2:i:0	de:f:0	cs:Z:=ACTGTGCGGCATACTTAATTATACATTTGAAACGCGCCCAAGTGACGCTAGGCAAGTCAGAGCAGGTTCCCGTGTTAGCTTAAGGGTAAACATACAAGTC	rl:i:0
-unmap	4	*	0	0	*	*	0	0	TTTTTTTTTTTTTTTTTTTTTTTTT	!!!!!!!!!!!!!!!!!!!!!!!!!	rl:i:0

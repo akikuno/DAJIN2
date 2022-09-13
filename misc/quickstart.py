@@ -294,3 +294,4 @@ for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["A
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
     cons_percentage[key] = cons_per
     cons_sequence[key] = cons_seq
+

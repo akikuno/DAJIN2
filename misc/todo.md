@@ -26,6 +26,12 @@
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
+## レポート
++ [ ] (test) `report_af.summary_allele`
+
++ [x] (test) `report_af.plot`
++ [x] (test) `report_af.all_allele`
+
 ## 可視化
 + [x] アリル割合のplot_alleles.pyの草稿作成（2022-03-11）-> `read_af`モジュールに移動
 + [x] 8以上のアレル数にも対応

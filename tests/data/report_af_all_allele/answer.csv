@@ -1,0 +1,6 @@
+SAMPLE,QNAME,ALLELE,SV,LABEL
+test,nobita,albino,False,1
+test,shizuka,albino,False,2
+test,suneo,control,False,3
+test,gian,control,True,4
+test,dora,albino,True,5
