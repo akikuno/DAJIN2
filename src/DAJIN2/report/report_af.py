@@ -30,11 +30,11 @@ def summary_allele(clust_sample: list[dict], sample_name: str, cons_sequence: di
             continue
         key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
         if SV:
-            name = f"{ALLELE}_sv_#{LABEL}"
+            name = f"{ALLELE}_sv_{LABEL}"
         elif cons_sequence[key] == dict_allele[ALLELE]:
-            name = f"{ALLELE}_intact_#{LABEL}"
+            name = f"{ALLELE}_intact_{LABEL}"
         else:
-            name = f"{ALLELE}_smallmutation_#{LABEL}"
+            name = f"{ALLELE}_smallmutation_{LABEL}"
         allele_names[LABEL] = name
     allele_frequency = defaultdict(list)
     allele_frequency["sample"] = [sample_name] * len(num_reads)

@@ -352,11 +352,15 @@ from src.DAJIN2.report import report_files
 reload(report_files)
 
 # FASTA
-for heaer, cons_seq in zip(df_allele_frequency["allele name"].to_list(), cons_sequence.values()):
+headers = df_allele_frequency["allele name"].to_list()
+for heaer, cons_seq in zip(headers, cons_sequence.values()):
     cons_fasta = report_files.to_fasta(heaer, cons_seq)
     Path(f".tmpDAJIN/reports/{heaer}.fasta").write_text(cons_fasta)
 
 # HTML
+for heaer, cons_per in zip(headers, cons_percentage.values()):
+    cons_html = report_files.to_html(heaer, cons_per)
+    Path(f".tmpDAJIN/reports/{heaer}.html").write_text(cons_html)
 
 
 # VCF
