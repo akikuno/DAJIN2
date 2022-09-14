@@ -4,6 +4,7 @@ import pandas as pd
 from importlib import reload
 from pathlib import Path
 from collections import defaultdict
+import tempfile
 
 reload(report_af)
 
@@ -70,8 +71,9 @@ def test_summary_allele():
 def test_plot():
     df = pd.read_csv("tests/data/report_af_plot/test_input.csv")
     g_test = report_af.plot(df)
-    g_test.save(filename="tests/data/report_af_plot/test.eps")
-    test = Path("tests/data/report_af_plot/test.eps").read_text().split("\n")
+    filename = tempfile.NamedTemporaryFile().name + ".eps"
+    g_test.save(filename=filename)
+    test = Path(filename).read_text().split("\n")
     test = [t for t in test if not t.startswith(r"%")]
     answer = Path("tests/data/report_af_plot/answer.eps").read_text().split("\n")
     answer = [a for a in answer if not a.startswith(r"%")]
