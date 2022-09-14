@@ -68,13 +68,13 @@ def test_summary_allele():
     assert test.to_json() == answer.to_json()
 
 
-def test_plot():
-    df = pd.read_csv("tests/data/report_af_plot/test_input.csv")
-    g_test = report_af.plot(df)
-    filename = tempfile.NamedTemporaryFile().name + ".eps"
-    g_test.save(filename=filename)
-    test = Path(filename).read_text().split("\n")
-    test = [t for t in test if not t.startswith(r"%")]
-    answer = Path("tests/data/report_af_plot/answer.eps").read_text().split("\n")
-    answer = [a for a in answer if not a.startswith(r"%")]
-    assert test == answer
+# def test_plot():
+#     df = pd.read_csv("tests/data/report_af_plot/test_input.csv")
+#     g_test = report_af.plot(df)
+#     filename = tempfile.NamedTemporaryFile().name + ".eps"
+#     g_test.save(filename=filename)
+#     test = Path(filename).read_text().split("\n")
+#     test = [t for t in test if not t.startswith(r"%")]
+#     answer = Path("tests/data/report_af_plot/answer.eps").read_text().split("\n")
+#     answer = [a for a in answer if not a.startswith(r"%")]
+#     assert test == answer
