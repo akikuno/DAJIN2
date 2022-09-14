@@ -1,6 +1,6 @@
 sample,allele name,#reads,%reads
-barcode31,albino_intact_#1,753,85.08
-barcode31,albino_sv_#2,5,0.56
-barcode31,control_smallmutation_#3,84,9.49
-barcode31,control_smallmutation_#4,41,4.63
-barcode31,control_sv_#5,2,0.23
+barcode31,albino_intact_1,753,85.08
+barcode31,albino_sv_2,5,0.56
+barcode31,control_smallmutation_3,84,9.49
+barcode31,control_smallmutation_4,41,4.63
+barcode31,control_sv_5,2,0.23

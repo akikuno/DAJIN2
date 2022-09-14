@@ -35,35 +35,7 @@ def test_summary_allele():
     dict_allele = Path("tests/data/report_af_summary_allele/dict_allele.txt").read_text()
     dict_allele = eval(dict_allele)
     sample_name = "barcode31"
-    # #reads
-    num_reads = defaultdict(int)
-    for c in clust_sample:
-        num_reads[c["LABEL"]] += 1
-    # %reads
-    per_reads = defaultdict(float)
-    for LABEL, value in num_reads.items():
-        per = value / len(clust_sample) * 100
-        per_reads[LABEL] = float(f"{per:.2f}")
-    # allele name
-    allele_names = defaultdict(str)
-    for c in clust_sample:
-        _, ALLELE, SV, LABEL = c.values()
-        if allele_names[LABEL]:
-            continue
-        key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
-        if SV:
-            name = f"{ALLELE}_sv_#{LABEL}"
-        elif cons_sequence[key] == dict_allele[ALLELE]:
-            name = f"{ALLELE}_intact_#{LABEL}"
-        else:
-            name = f"{ALLELE}_smallmutation_#{LABEL}"
-        allele_names[LABEL] = name
-    allele_frequency = defaultdict(list)
-    allele_frequency["sample"] = [sample_name] * len(num_reads)
-    allele_frequency["allele name"] = [x for x in allele_names.values()]
-    allele_frequency[r"#reads"] = [x for x in num_reads.values()]
-    allele_frequency[r"%reads"] = [x for x in per_reads.values()]
-    test = pd.DataFrame(allele_frequency)
+    test = report_af.summary_allele(clust_sample, sample_name, cons_sequence, dict_allele)
     answer = pd.read_csv("tests/data/report_af_summary_allele/answer.csv")
     assert test.to_json() == answer.to_json()
 
