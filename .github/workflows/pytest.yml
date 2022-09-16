@@ -8,6 +8,7 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+        shell: export PATH="$pythonLocation:$PATH"
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
