@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       # - name: Set up Conda
@@ -27,9 +27,9 @@ jobs:
       #     python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip3 install --upgrade pip
-          python -m pip3 install pytest
-          python -m pip3 install -r requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+          python -m pip install -r requirements.txt
           # conda install mamba --yes
           # mamba install --file requirements.txt --yes
       - name: Test with pytest
