@@ -46,9 +46,9 @@ sample, control, allele, output, genome, debug, threads = (
 
 from pathlib import Path
 from importlib import reload
-from src.DAJIN2.preprocess import format_input
+from DAJIN2.preprocess import format_inputs
 
-reload(format_input)
+reload(format_inputs)
 
 # ------------------------------------------------------------------------------
 # Check input path
@@ -66,20 +66,20 @@ elif not Path(allele).exists():
 # ------------------------------------------------------------------------------
 
 for file_name in sample, control:
-    format_input.check_fastq_extension(file_name)
+    format_inputs.check_fastq_extension(file_name)
 
 for file_name in sample, control:
-    format_input.check_fastq_content(file_name)
+    format_inputs.check_fastq_content(file_name)
 
-format_input.check_fasta_content(allele)
+format_inputs.check_fasta_content(allele)
 
 # ------------------------------------------------------------------------------
 # Formats
 # ------------------------------------------------------------------------------
 
-sample_name = format_input.extract_basename(sample)
-control_name = format_input.extract_basename(control)
-dict_allele = format_input.dictionize_allele(allele)
+sample_name = format_inputs.extract_basename(sample)
+control_name = format_inputs.extract_basename(control)
+dict_allele = format_inputs.dictionize_allele(allele)
 
 flag1 = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl").exists()
 flag2 = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl").exists()

@@ -1,15 +1,22 @@
 from __future__ import annotations
-
-import os
+from pathlib import Path
 import re
 import mappy
+from urllib.request import urlopen
+from urllib.error import URLError
+
+
+def exists(input_file: str):
+    if not Path(input_file).exists():
+        raise FileNotFoundError(f"{input_file} is not found")
+
 
 ########################################################################
 # Check if the sample is in the proper format.
 ########################################################################
 
-# File extention: eithr 'fastq', 'fastq.gz', 'fq' or 'fq.gz'
-def check_fastq_extension(fastq_path: str):
+
+def fastq_extension(fastq_path: str):
     correct_extension = False
     if re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", fastq_path):
         correct_extension = True
@@ -18,19 +25,17 @@ def check_fastq_extension(fastq_path: str):
 
 
 # File content
-def check_fastq_content(fastq_path: str):
+def fastq_content(fastq_path: str):
     name, seq, qual = [], [], []
     for n, s, q in mappy.fastx_read(fastq_path):
         name.append(n)
         seq.append(s)
         qual.append(q)
-    if len(name) == len(seq) == len(qual) > 0:
-        pass
-    else:
+    if not (len(name) == len(seq) == len(qual) > 0):
         raise AttributeError(f"{fastq_path} is not a FASTQ format")
 
 
-def check_fasta_content(fasta_path: str):
+def fasta_content(fasta_path: str):
     name, seq = [], []
     for n, s, _ in mappy.fastx_read(fasta_path):
         name.append(n)
@@ -44,33 +49,29 @@ def check_fasta_content(fasta_path: str):
 
 
 ########################################################################
-# Extract basename
+# Check genome and UCSC server
 ########################################################################
 
 
-def extract_basename(fastq_path: str) -> str:
-    name = os.path.basename(fastq_path)
-    name = re.sub(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", "", name)
-    name = name.lstrip()
-    if not name:
-        raise AttributeError(f"{fastq_path} is an invalid file name")
-    else:
-        return re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
-
-
-########################################################################
-# Convert allele file to dictionary type fasta format
-########################################################################
-
-
-def dictionize_allele(allele_path: str) -> dict:
-    header, sequence = [], []
-    for name, seq, _ in mappy.fastx_read(allele_path):
-        name = name.lstrip()
-        if not name:
-            raise AttributeError(f"{allele_path} contains an invalid header name")
+def available_url(urls: list[str]) -> tuple[str, bool]:
+    flag_fail = False
+    url = ""
+    for url in urls:
+        try:
+            _ = urlopen(url)
+        except URLError:
+            flag_fail = True
         else:
-            name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
-        header.append(name)
-        sequence.append(seq.upper())
-    return {h: s for h, s in zip(header, sequence)}
+            flag_fail = False
+            break
+    return url, flag_fail
+
+
+def available_genome(genome: str, ucsc_url: str):
+    url = f"{ucsc_url}/cgi-bin/das/{genome}/dna?segment=1:1,10"
+    response = urlopen(url)
+    content = response.read()
+    response.close()
+    if not content:
+        raise AttributeError(f"{genome} is not listed in UCSC genome browser")
+

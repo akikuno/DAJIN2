@@ -6,7 +6,8 @@
 
 ## 前処理
 
-+ [x] 大型欠失とInversionは断端のマイクロホモロジーがあるので、Qualityを元にして結合する -> `midsv v0.7.0`で実装
++ [x] 大型欠失とInversionは断端のマイクロホモロジーがあるので、配列とQualityを元にして結合する -> `midsv v0.7.0`で実装
++ [ ] もとのSAMファイルの配列からマイクロホモロジーを取り除く
 
 ## マッピング
 + [x] mappyによるマッピング
@@ -21,14 +22,16 @@
 + [ ] HTMLファイル
   + [ ] CRISPResso2のように割合もわかるとヘテロのときに嬉しい
 + [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
-+ [x] FASTAファイル
 <!-- + [x] difflociのところだけ、コンセンサスコール。 -->
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
 ## レポート
-+ [ ] (test) `report_af.summary_allele`
-
++ [x] FASTAファイル
++ [x] HTMLファイル
++ [ ] VCFファイル
++ [ ] BAMファイル
++ [x] (test) `report_af.summary_allele`
 + [x] (test) `report_af.plot`
 + [x] (test) `report_af.all_allele`
 

@@ -29,3 +29,7 @@ def to_html(header: str, cons_per: list[dict]) -> str:
         prev_cstag = current_cstag
     cons_cstag = "".join(cons_cstag)
     return cstag.to_html(cons_cstag, header)
+
+
+def to_vcf(header: str, cons_per: list[dict]) -> str:
+    pass
