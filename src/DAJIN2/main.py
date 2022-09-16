@@ -2,19 +2,9 @@ from __future__ import annotations
 from itertools import groupby
 import shutil
 from pathlib import Path
-from sys import dllhandle
-from this import d
-from urllib.request import urlopen
-from DAJIN2.consensus.module_consensus import join_list_of_dict
 
 # Custom modules
-from src.DAJIN2.utils import cache_control
-from src.DAJIN2.utils import io
 from src.DAJIN2.utils import argparser
-
-# from src.DAJIN2.classification import classification
-# from src.DAJIN2.clustering import clustering
-# from src.DAJIN2.consensus import consensus
 
 
 #! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -334,6 +324,8 @@ from src.DAJIN2.report import report_af
 
 reload(report_af)
 
+clust_sample = report_af.call_allele_name(clust_sample, cons_sequence, dict_allele)
+
 # ----------------------------------------------------------
 # All data
 # ----------------------------------------------------------
@@ -346,7 +338,7 @@ df_clust_sample.to_excel(".tmpDAJIN/reports/read_classification_all.xlsx", index
 # Summary data
 # ----------------------------------------------------------
 
-df_allele_frequency = report_af.summary_allele(clust_sample, sample_name, cons_sequence, dict_allele)
+df_allele_frequency = report_af.summary_allele(clust_sample, sample_name)
 df_allele_frequency.to_csv(".tmpDAJIN/reports/read_classification_summary.csv", index=False)
 df_allele_frequency.to_excel(".tmpDAJIN/reports/read_classification_summary.xlsx", index=False)
 
@@ -384,6 +376,10 @@ for heaer, cons_per in zip(headers, cons_percentage.values()):
 # Report：BAM
 ########################################################################
 import pysam
+from collections import defaultdict
+from src.DAJIN2.report import report_files
+
+reload(report_files)
 
 # ゲノム情報がなかったらリファレンスのFASTAにマップする
 # ゲノム情報が入力されていたらその情報をもとにSAMの染色体位置情報を上書きする
@@ -391,22 +387,23 @@ if genome:
     pass
 
 path_sam = Path(".tmpDAJIN", "sam", f"{sample_name}_control.sam")
-name = path_sam.stem
+pysam.sort("-o", f".tmpDAJIN/bam/{sample_name}.bam", str(path_sam))
+pysam.index(f".tmpDAJIN/bam/{sample_name}.bam")
 sam = midsv.read_sam(path_sam)
-sam_headers = [s for s in sam if s[0].startswith("@")]
+sam_header = [s for s in sam if s[0].startswith("@")]
 sam_contents = [s for s in sam if not s[0].startswith("@")]
-
-for (ALLELE, SV, LABEL), group in groupby(clust_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "SV": {LABEL}}}'
-    cssplit_sample = [g["CSSPLIT"] for g in group]
-    diffloci = diffloci_by_alleles[key]
-    scores = list(clustering.make_scores(cssplit_sample, diffloci))
-    labels += [label + label_start for label in clustering.clustering(scores).tolist()]
-    label_start = len(set(labels)) + 1
+sam_groups = report_files.group_by_name(sam_contents, clust_sample)
 
 
-pysam.sort("-o", f".tmpDAJIN/bam/{name}.bam", str(path_sam))
-pysam.index(f".tmpDAJIN/bam/{name}.bam")
+for key, sam_content in sam_groups.items():
+    sam = sam_header + sam_content
+    sam = ["\t".join(s) for s in sam]
+    sam = "\n".join(sam)
+    path_sam = f".tmpDAJIN/sam/{key}.sam"
+    Path(path_sam).write_text(sam)
+    pysam.sort("-o", f".tmpDAJIN/bam/{sample_name}_{key}.bam", path_sam)
+    pysam.index(f".tmpDAJIN/bam/{sample_name}_{key}.bam")
+
 
 ########################################################################
 # Report：IGV.js

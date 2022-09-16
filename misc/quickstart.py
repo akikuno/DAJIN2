@@ -40,38 +40,63 @@ sample, control, allele, output, genome, debug, threads = (
 #     14,
 # )
 
+
 ###############################################################################
 # Check and format inputs (sample/control/allele)
 ###############################################################################
 
 from pathlib import Path
 from importlib import reload
-from DAJIN2.preprocess import format_inputs
+from src.DAJIN2.preprocess import check_inputs
+from src.DAJIN2.preprocess import format_inputs
+from urllib.error import URLError
 
+reload(check_inputs)
 reload(format_inputs)
 
 # ------------------------------------------------------------------------------
 # Check input path
 # ------------------------------------------------------------------------------
 
-if not Path(control).exists():
-    raise FileNotFoundError(f"{control} is not found")
-elif not Path(sample).exists():
-    raise FileNotFoundError(f"{sample} is not found")
-elif not Path(allele).exists():
-    raise FileNotFoundError(f"{allele} is not found")
+check_inputs.exists(control)
+check_inputs.exists(sample)
+check_inputs.exists(allele)
 
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
 # ------------------------------------------------------------------------------
 
-for file_name in sample, control:
-    format_inputs.check_fastq_extension(file_name)
+check_inputs.fastq_extension(control)
+check_inputs.fastq_content(control)
+check_inputs.fastq_extension(sample)
+check_inputs.fastq_content(sample)
+check_inputs.fasta_content(allele)
 
-for file_name in sample, control:
-    format_inputs.check_fastq_content(file_name)
+# ------------------------------------------------------------------------------
+# Check genomes if genome is inputted
+# ------------------------------------------------------------------------------
 
-format_inputs.check_fasta_content(allele)
+if genome:
+    # Check UCSC Server
+    ucsc_urls = [
+        "https://genome.ucsc.edu/",
+        "https://genome-asia.ucsc.edu/",
+        "https://genome-euro.ucsc.edu/",
+    ]
+    ucsc_url, flag_fail = check_inputs.available_url(ucsc_urls)
+    if flag_fail:
+        raise URLError("UCSC Servers are currently down")
+    # Check UCSC Download Server
+    goldenpath_urls = [
+        "https://hgdownload.cse.ucsc.edu/goldenPath",
+        "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
+    ]
+    if flag_fail:
+        raise URLError("UCSC Download Servers are currently down")
+    goldenpath_url, flag_fail = check_inputs.available_url(goldenpath_urls)
+    # Check input genome
+    check_inputs.available_genome(genome, ucsc_url)
+
 
 # ------------------------------------------------------------------------------
 # Formats
@@ -80,6 +105,9 @@ format_inputs.check_fasta_content(allele)
 sample_name = format_inputs.extract_basename(sample)
 control_name = format_inputs.extract_basename(control)
 dict_allele = format_inputs.dictionize_allele(allele)
+
+if genome:
+    genome_coodinates = format_inputs.fetch_coodinate(genome, ucsc_url, dict_allele["control"])
 
 flag1 = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl").exists()
 flag2 = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl").exists()
