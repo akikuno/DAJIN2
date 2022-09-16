@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 from sys import dllhandle
 from this import d
+from urllib.request import urlopen
 from DAJIN2.consensus.module_consensus import join_list_of_dict
 
 # Custom modules
@@ -82,6 +83,7 @@ from src.DAJIN2.preprocess import check_inputs
 from src.DAJIN2.preprocess import format_inputs
 from urllib.error import URLError
 
+reload(check_inputs)
 reload(format_inputs)
 
 # ------------------------------------------------------------------------------
@@ -107,6 +109,7 @@ check_inputs.fasta_content(allele)
 # ------------------------------------------------------------------------------
 
 if genome:
+    # Check UCSC Server
     ucsc_urls = [
         "https://genome.ucsc.edu/",
         "https://genome-asia.ucsc.edu/",
@@ -115,6 +118,7 @@ if genome:
     ucsc_url, flag_fail = check_inputs.available_url(ucsc_urls)
     if flag_fail:
         raise URLError("UCSC Servers are currently down")
+    # Check UCSC Download Server
     goldenpath_urls = [
         "https://hgdownload.cse.ucsc.edu/goldenPath",
         "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
@@ -122,6 +126,7 @@ if genome:
     if flag_fail:
         raise URLError("UCSC Download Servers are currently down")
     goldenpath_url, flag_fail = check_inputs.available_url(goldenpath_urls)
+    # Check input genome
     check_inputs.available_genome(genome, ucsc_url)
 
 
@@ -132,6 +137,9 @@ if genome:
 sample_name = format_inputs.extract_basename(sample)
 control_name = format_inputs.extract_basename(control)
 dict_allele = format_inputs.dictionize_allele(allele)
+
+if genome:
+    genome_coodinates = format_inputs.fetch_coodinate(genome, ucsc_url, dict_allele["control"])
 
 ########################################################################
 # Make directories
@@ -230,20 +238,6 @@ for classifs in [classif_sample, classif_control]:
             classif["SV"] = True
         else:
             classif["SV"] = False
-
-# #? read check
-# from collections import defaultdict
-
-# d = defaultdict(int)
-# for m in classif_sample:
-#     d["total"] += 1
-#     if m["SV"]:
-#         d["SV"] += 1
-#         # print(m["QNAME"], m["CSSPLIT"])
-#     else:
-#         d[m["ALLELE"]] += 1
-
-# d
 
 ########################################################################
 # Clustering

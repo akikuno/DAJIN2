@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.request import urlopen
 import re
 import mappy
 
@@ -11,10 +12,10 @@ import mappy
 
 def extract_basename(fastq_path: str) -> str:
     name = Path(fastq_path).name
-    name = re.sub(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", "", name)
+    name = re.sub(r"\..*$", "", name)
     name = name.lstrip()
     if not name:
-        raise AttributeError(f"{fastq_path} is an invalid file name")
+        raise AttributeError(f"{fastq_path} is not valid file name")
     else:
         return re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
 
@@ -23,7 +24,7 @@ def extract_basename(fastq_path: str) -> str:
 # Convert allele file to dictionary type fasta format
 ########################################################################
 
-
+# TODO TEST
 def dictionize_allele(allele_path: str) -> dict:
     header, sequence = [], []
     for name, seq, _ in mappy.fastx_read(allele_path):
@@ -35,3 +36,16 @@ def dictionize_allele(allele_path: str) -> dict:
         header.append(name)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
+
+
+# TODO TEST
+def fetch_coodinate(genome: str, ucsc_url: str, seq: str) -> dict:
+    ucsc_blat = f"{ucsc_url}/cgi-bin/hgBlat?db={genome}&type=BLAT&userSeq={seq}"
+    request = urlopen(ucsc_blat).read().decode("utf8").split("\n")
+    coodinate = [x for x in request if x.count("100.0%")]
+    if not coodinate:
+        raise AttributeError(f"{seq} is not found in {genome}")
+    else:
+        coodinate = coodinate[0].split()
+        return {"chr": coodinate[-5], "start": int(coodinate[-3]), "end": int(coodinate[-2])}
+

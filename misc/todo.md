@@ -6,8 +6,11 @@
 
 ## 前処理
 
-+ [x] 大型欠失とInversionは断端のマイクロホモロジーがあるので、配列とQualityを元にして結合する -> `midsv v0.7.0`で実装
 + [ ] もとのSAMファイルの配列からマイクロホモロジーを取り除く
++ [ ] (test) `format_inputs`
++ [x] `check_inputs`と`format_inputs`を分ける
++ [x] (test) `check_inputs`
++ [x] 大型欠失とInversionは断端のマイクロホモロジーがあるので、配列とQualityを元にして結合する -> `midsv v0.7.0`で実装
 
 ## マッピング
 + [x] mappyによるマッピング
@@ -27,10 +30,10 @@
 + [ ] (test) join_listdicts
 
 ## レポート
-+ [x] FASTAファイル
-+ [x] HTMLファイル
 + [ ] VCFファイル
 + [ ] BAMファイル
++ [x] FASTAファイル
++ [x] HTMLファイル
 + [x] (test) `report_af.summary_allele`
 + [x] (test) `report_af.plot`
 + [x] (test) `report_af.all_allele`
