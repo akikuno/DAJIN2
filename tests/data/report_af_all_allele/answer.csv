@@ -1,6 +1,6 @@
-SAMPLE,QNAME,ALLELE,SV,LABEL
-test,nobita,albino,False,1
-test,shizuka,albino,False,2
-test,suneo,control,False,3
-test,gian,control,True,4
-test,dora,albino,True,5
+SAMPLE,QNAME,ALLELE,SV,LABEL,NAME
+test,nobita,albino,False,1,albino_intact_1
+test,shizuka,albino,False,2,albino_sv_2
+test,suneo,control,False,3,control_variants_3
+test,gian,control,True,4,control_sv_4
+test,dora,albino,True,5,control_sv_5

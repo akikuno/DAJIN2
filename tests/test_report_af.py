@@ -11,11 +11,11 @@ reload(report_af)
 
 def test_all_allele():
     x = [
-        {"QNAME": "nobita", "ALLELE": "albino", "SV": False, "LABEL": 1},
-        {"QNAME": "shizuka", "ALLELE": "albino", "SV": False, "LABEL": 2},
-        {"QNAME": "suneo", "ALLELE": "control", "SV": False, "LABEL": 3},
-        {"QNAME": "gian", "ALLELE": "control", "SV": True, "LABEL": 4},
-        {"QNAME": "dora", "ALLELE": "albino", "SV": True, "LABEL": 5},
+        {"QNAME": "nobita", "ALLELE": "albino", "SV": False, "LABEL": 1, "NAME": "albino_intact_1"},
+        {"QNAME": "shizuka", "ALLELE": "albino", "SV": False, "LABEL": 2, "NAME": "albino_sv_2"},
+        {"QNAME": "suneo", "ALLELE": "control", "SV": False, "LABEL": 3, "NAME": "control_variants_3"},
+        {"QNAME": "gian", "ALLELE": "control", "SV": True, "LABEL": 4, "NAME": "control_sv_4"},
+        {"QNAME": "dora", "ALLELE": "albino", "SV": True, "LABEL": 5, "NAME": "control_sv_5"},
     ]
     df_clust_sample = pd.DataFrame(x)
     df_clust_sample["SAMPLE"] = "test"
@@ -30,12 +30,8 @@ def test_summary_allele():
     # prepare inputs
     clust_sample = Path("tests/data/report_af_summary_allele/clust_sample.txt").read_text()
     clust_sample = eval(clust_sample)
-    cons_sequence = Path("tests/data/report_af_summary_allele/cons_sequence.txt").read_text()
-    cons_sequence = eval(cons_sequence)
-    dict_allele = Path("tests/data/report_af_summary_allele/dict_allele.txt").read_text()
-    dict_allele = eval(dict_allele)
     sample_name = "barcode31"
-    test = report_af.summary_allele(clust_sample, sample_name, cons_sequence, dict_allele)
+    test = report_af.summary_allele(clust_sample, sample_name)
     answer = pd.read_csv("tests/data/report_af_summary_allele/answer.csv")
     assert test.to_json() == answer.to_json()
 

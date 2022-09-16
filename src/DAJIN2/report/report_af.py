@@ -4,6 +4,20 @@ from collections import defaultdict
 from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
 
 
+def call_allelename(clust_sample: list[dict], cons_sequence: dict, dict_allele: dict) -> str:
+    for c in clust_sample:
+        _, ALLELE, SV, LABEL = c.values()
+        key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
+        if SV:
+            name = f"{ALLELE}_sv_{LABEL}"
+        elif cons_sequence[key] == dict_allele[ALLELE]:
+            name = f"{ALLELE}_intact_{LABEL}"
+        else:
+            name = f"{ALLELE}_variants_{LABEL}"
+        c["NAME"] = name
+    return clust_sample
+
+
 def all_allele(clust_sample: list[dict], sample_name: str) -> pd.DataFrame:
     df_clust_sample = pd.DataFrame(clust_sample)
     df_clust_sample["SAMPLE"] = sample_name
@@ -12,7 +26,7 @@ def all_allele(clust_sample: list[dict], sample_name: str) -> pd.DataFrame:
     return df_clust_sample[colum]
 
 
-def summary_allele(clust_sample: list[dict], sample_name: str, cons_sequence: dict, dict_allele: dict) -> pd.DataFrame:
+def summary_allele(clust_sample: list[dict], sample_name: str) -> pd.DataFrame:
     # #reads
     num_reads = defaultdict(int)
     for c in clust_sample:
@@ -25,17 +39,9 @@ def summary_allele(clust_sample: list[dict], sample_name: str, cons_sequence: di
     # allele name
     allele_names = defaultdict(str)
     for c in clust_sample:
-        _, ALLELE, SV, LABEL = c.values()
-        if allele_names[LABEL]:
+        if allele_names[c["LABEL"]]:
             continue
-        key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
-        if SV:
-            name = f"{ALLELE}_sv_{LABEL}"
-        elif cons_sequence[key] == dict_allele[ALLELE]:
-            name = f"{ALLELE}_intact_{LABEL}"
-        else:
-            name = f"{ALLELE}_smallmutation_{LABEL}"
-        allele_names[LABEL] = name
+        allele_names[c["LABEL"]] = c["NAME"]
     allele_frequency = defaultdict(list)
     allele_frequency["sample"] = [sample_name] * len(num_reads)
     allele_frequency["allele name"] = [x for x in allele_names.values()]
