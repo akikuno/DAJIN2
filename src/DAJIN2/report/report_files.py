@@ -36,7 +36,7 @@ def to_vcf(header: str, cons_per: list[dict]) -> str:
     pass
 
 
-def left_join(sam_contents: list[str], clust_sample: list[dict]) -> dict[list]:
+def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[list]:
     sam_contents.sort()
     clust_sample_qname = sorted(clust_sample, key=lambda x: x["QNAME"])
     clust_sample_qname_set = set()
@@ -55,7 +55,7 @@ def left_join(sam_contents: list[str], clust_sample: list[dict]) -> dict[list]:
             idx_left += 1
             continue
         if qname_left == qname_right:
-            key = f'{read_right["ALLELE"]}-{read_right["SV"]}-{read_right["LABEL"]}'
+            key = read_right["NAME"]
             sam_groups[key].append(read_left)
             idx_left += 1
         else:

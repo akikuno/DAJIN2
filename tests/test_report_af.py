@@ -3,8 +3,6 @@ from src.DAJIN2.report import report_af
 import pandas as pd
 from importlib import reload
 from pathlib import Path
-from collections import defaultdict
-import tempfile
 
 reload(report_af)
 

@@ -4,17 +4,18 @@ from collections import defaultdict
 from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
 
 
-def call_allelename(clust_sample: list[dict], cons_sequence: dict, dict_allele: dict) -> str:
+def call_allele_name(clust_sample: list[dict], cons_sequence: dict, dict_allele: dict) -> str:
     for c in clust_sample:
         _, ALLELE, SV, LABEL = c.values()
+        allele_name = f"allele{LABEL}_{ALLELE}"
         key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
         if SV:
-            name = f"{ALLELE}_sv_{LABEL}"
+            allele_name += "_sv"
         elif cons_sequence[key] == dict_allele[ALLELE]:
-            name = f"{ALLELE}_intact_{LABEL}"
+            allele_name += "_intact"
         else:
-            name = f"{ALLELE}_variants_{LABEL}"
-        c["NAME"] = name
+            allele_name += "_mutated"
+        c["NAME"] = allele_name
     return clust_sample
 
 
