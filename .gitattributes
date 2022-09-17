@@ -2,3 +2,5 @@
 *.gz -text
 *.png -text
 *.pdf -text
+*.bam -text
+*.bam.bai -text
