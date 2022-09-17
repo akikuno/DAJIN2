@@ -51,7 +51,7 @@ def fetch_coodinate(genome: str, ucsc_url: str, seq: str) -> dict:
         raise AttributeError(f"{seq} is not found in {genome}")
     else:
         coodinate = coodinate[0].split()
-        return {"chr": coodinate[-5], "start": int(coodinate[-3]), "end": int(coodinate[-2])}
+        return {"chr": coodinate[-5], "start": int(coodinate[-3]), "end": int(coodinate[-2]), "strand": coodinate[-4]}
 
 
 def fetch_chrom_size(chrom: str, genome: str, goldenpath_url: str) -> int:
