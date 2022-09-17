@@ -32,10 +32,13 @@
 ## レポート
 + [ ] VCFファイル
 + [ ] BAMファイル
+  + [x] Tyrでマイナス鎖からプラス鎖に変換
+  + [ ] XXXでプラス鎖の確認
+  + [ ] (test) `report_bam`
 + [x] FASTAファイル
 + [x] HTMLファイル
 + [x] (test) `report_af.summary_allele`
-+ [ ] (test) `report_af.plot`
++ [x] (test) `report_af.plot`
   + [ ] モジュールのimport文を最初に持ってくる
 + [x] (test) `report_af.all_allele`
 

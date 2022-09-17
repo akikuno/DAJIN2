@@ -324,3 +324,16 @@ for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["A
     cons_percentage[key] = cons_per
     cons_sequence[key] = cons_seq
 
+########################################################################
+# Report：アレル割合
+# sample, allele name, #read, %read
+########################################################################
+import warnings
+
+warnings.simplefilter("ignore")
+from collections import defaultdict
+from src.DAJIN2.report import report_af
+
+reload(report_af)
+
+clust_sample = report_af.call_allele_name(clust_sample, cons_sequence, dict_allele)
