@@ -130,6 +130,7 @@ dict_allele = format_inputs.dictionize_allele(allele)
 
 if genome:
     genome_coodinates = format_inputs.fetch_coodinate(genome, ucsc_url, dict_allele["control"])
+    chrom_size = format_inputs.fetch_chrom_size(genome_coodinates["chr"], genome, goldenpath_url)
 
 ########################################################################
 # Make directories

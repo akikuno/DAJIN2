@@ -38,6 +38,10 @@ def dictionize_allele(allele_path: str) -> dict:
     return {h: s for h, s in zip(header, sequence)}
 
 
+########################################################################
+# Fetch genome coodinate and chrom size
+########################################################################
+
 # TODO TEST
 def fetch_coodinate(genome: str, ucsc_url: str, seq: str) -> dict:
     ucsc_blat = f"{ucsc_url}/cgi-bin/hgBlat?db={genome}&type=BLAT&userSeq={seq}"
@@ -49,3 +53,12 @@ def fetch_coodinate(genome: str, ucsc_url: str, seq: str) -> dict:
         coodinate = coodinate[0].split()
         return {"chr": coodinate[-5], "start": int(coodinate[-3]), "end": int(coodinate[-2])}
 
+
+def fetch_chrom_size(chrom: str, genome: str, goldenpath_url: str) -> int:
+    url = f"{goldenpath_url}/{genome}/bigZips/{genome}.chrom.sizes"
+    request = urlopen(url).read().decode("utf8").split("\n")
+    for req in request:
+        req = req.split("\t")
+        if chrom == req[0]:
+            chrom_size = int(req[1])
+    return chrom_size
