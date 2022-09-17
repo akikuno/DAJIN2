@@ -35,7 +35,8 @@
 + [x] FASTAファイル
 + [x] HTMLファイル
 + [x] (test) `report_af.summary_allele`
-+ [x] (test) `report_af.plot`
++ [ ] (test) `report_af.plot`
+  + [ ] モジュールのimport文を最初に持ってくる
 + [x] (test) `report_af.all_allele`
 
 ## 可視化
