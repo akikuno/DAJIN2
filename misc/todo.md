@@ -6,7 +6,6 @@
 
 ## 前処理
 
-+ [ ] もとのSAMファイルの配列からマイクロホモロジーを取り除く
 + [ ] (test) `format_inputs`
 + [x] `check_inputs`と`format_inputs`を分ける
 + [x] (test) `check_inputs`
@@ -34,6 +33,7 @@
 + [ ] BAMファイル
   + [x] Tyrでマイナス鎖からプラス鎖に変換
   + [ ] XXXでプラス鎖の確認
+  + [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`
   + [ ] (test) `report_bam`
 + [x] FASTAファイル
 + [x] HTMLファイル

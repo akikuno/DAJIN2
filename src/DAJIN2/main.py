@@ -385,6 +385,7 @@ reload(report_bam)
 
 path_sam = Path(".tmpDAJIN", "sam", f"{sample_name}_control.sam")
 sam = midsv.read_sam(path_sam)
+sam = report_bam.remove_microhomology(sam)
 sam_header = [s for s in sam if s[0].startswith("@")]
 sam_contents = [s for s in sam if not s[0].startswith("@")]
 
@@ -392,9 +393,14 @@ if genome:
     sam_realign = report_bam.realign(sam_header, sam_contents, genome_coodinates, chrom_size)
     path_sam = f".tmpDAJIN/sam/{sample_name}_sam_realign.sam"
     Path(path_sam).write_text(sam_realign + "\n")
+else:
+    report_bam.write_sam(sam, path_sam)
 
 pysam.sort("-@", f"{threads}", "-o", f".tmpDAJIN/bam/{sample_name}.bam", str(path_sam))
 pysam.index("-@", f"{threads}", f".tmpDAJIN/bam/{sample_name}.bam")
+
+pysam.sort("-o", f"tmp.bam", str(path_sam))
+pysam.index("tmp.bam")
 
 sam_groups = report_bam.group_by_name(sam_contents, clust_sample)
 for key, sam_content in sam_groups.items():

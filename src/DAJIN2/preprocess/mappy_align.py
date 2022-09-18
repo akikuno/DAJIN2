@@ -16,7 +16,7 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
     Args:
         path_reference_fasta (str): Path of reference fasta
         path_query_fastq (str): Path of query fasta/fastq
-        cslong (bool, optional): long formatted CS tag if True. Defaults to True.\wiki\PewDiePie
+        cslong (bool, optional): long formatted CS tag if True. Defaults to True
 
     Returns:
         list: List of SAM
