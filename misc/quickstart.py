@@ -120,7 +120,7 @@ if not flag:
     Path(output).mkdir(exist_ok=True)
     if Path(".tmpDAJIN").exists():
         shutil.rmtree(".tmpDAJIN")
-    for subdir in ["fasta", "fastq", "sam", "midsv"]:
+    for subdir in ["fasta", "fastq", "sam", "midsv", "bam"]:
         Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
     # TODO: use yeild, not export
     for header, sequence in dict_allele.items():

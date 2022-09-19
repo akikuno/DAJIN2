@@ -6,11 +6,9 @@ from collections import defaultdict
 from itertools import groupby
 
 
-def write_sam(sam: list[list[str]], path_sam: Union[str, Path]):
-    path_sam = str(path_sam)
-    sam = ["\t".join(s) for s in sam]
-    sam = "\n".join(sam)
-    Path(path_sam).write_text(sam + "\n")
+def revcomp(sequence: str) -> str:
+    complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
+    return "".join(complement[nt] for nt in sequence[::-1])
 
 
 def split_cigar(CIGAR: str) -> list[str]:
@@ -20,6 +18,53 @@ def split_cigar(CIGAR: str) -> list[str]:
     for i, j in zip(range(0, n, 2), range(1, n, 2)):
         cigar_split.append(cigar[i] + cigar[j])
     return cigar_split
+
+
+def calc_length(CIGAR: str) -> int:
+    cigar = split_cigar(CIGAR)
+    seq_length = 0
+    for c in cigar:
+        if re.search(r"[MD=X]", c[-1]):
+            seq_length += int(c[:-1])
+    return seq_length
+
+
+def write_sam(sam: list[list[str]], path_sam: Union[str, Path]):
+    path_sam = str(path_sam)
+    sam = ["\t".join(s) for s in sam]
+    sam = "\n".join(sam)
+    Path(path_sam).write_text(sam + "\n")
+
+
+def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
+    sam_headers = [s for s in sam if s[0].startswith("@")]
+    sam_contents = [s for s in sam if not s[0].startswith("@") and s[9] != "*"]
+    sam_contents.sort(key=lambda x: [x[0], int(x[3])])
+    sam_trimmed = sam_headers.copy()
+    for _, group in groupby(sam_contents, key=lambda x: x[0]):
+        alignments = list(group)
+        if len(alignments) == 1:
+            sam_trimmed.append(alignments[0])
+            continue
+        idx = 0
+        flag_overlap = False
+        while idx < len(alignments) - 1:
+            prev_alignment = alignments[idx]
+            next_alignment = alignments[idx + 1]
+            prev_start = int(prev_alignment[3])
+            prev_cigar = prev_alignment[5]
+            prev_alignment_len = calc_length(prev_cigar)
+            prev_end = prev_start + prev_alignment_len
+            next_start = int(next_alignment[3])
+            if prev_end >= next_start:
+                flag_overlap = True
+                break
+            idx += 1
+        if flag_overlap:
+            continue
+        else:
+            sam_trimmed += alignments
+    return sam_trimmed
 
 
 def trim_softclip(CIGAR: str, SEQ: str) -> str:
@@ -40,6 +85,7 @@ def remove_microhomology(sam: list[list[str]]) -> list[list[str]]:
         alignments = list(group)
         if len(alignments) == 1:
             sam_trimmed.append(alignments[0])
+            continue
         idx = 0
         while idx < len(alignments) - 1:
             prev_align = alignments[idx]
@@ -94,26 +140,11 @@ def remove_microhomology(sam: list[list[str]]) -> list[list[str]]:
     return sam_trimmed
 
 
-def revcomp(sequence: str) -> str:
-    complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-    return "".join(complement[nt] for nt in sequence[::-1])
-
-
-def calc_length(CIGAR: str) -> int:
-    cigar = split_cigar(CIGAR)
-    seq_length = 0
-    for c in cigar:
-        if re.search(r"[MD=X]", c[-1]):
-            seq_length += int(c[:-1])
-    return seq_length
-
-
-sam_flags = [str(s) for s in [0, 16, 2048, 2064]]
-
-
-def reverse_sam(sam_contents: list[str], genome_end: int) -> list[str]:
+def reverse_sam(sam_contents: list[list[str]], genome_end: int) -> list[str]:
+    sam_flags = [str(s) for s in [0, 16, 2048, 2064]]
     sam_reversed = []
     for sam_content in sam_contents:
+        sam_update = sam_content.copy()
         sam_flag = sam_content[1]
         if sam_flag == sam_flags[0]:
             sam_flag = sam_flags[1]
@@ -123,21 +154,23 @@ def reverse_sam(sam_contents: list[str], genome_end: int) -> list[str]:
             sam_flag = sam_flags[3]
         else:
             sam_flag = sam_flags[2]
-        sam_content[1] = sam_flag
+        sam_update[1] = sam_flag
         sam_cigar = sam_content[5]
         sam_cigar = "".join(split_cigar(sam_cigar)[::-1])
-        sam_content[5] = sam_cigar
+        sam_update[5] = sam_cigar
         sam_start = int(sam_content[3])
         sam_length = calc_length(sam_cigar)
-        sam_content[3] = str(genome_end - (sam_start + sam_length) + 2)
-        sam_content[9] = revcomp(sam_content[9])
-        sam_content[10] = sam_content[10][::-1]
-        sam_reversed.append(sam_content)
+        sam_update[3] = str(genome_end - (sam_start + sam_length) + 2)
+        sam_update[9] = revcomp(sam_content[9])
+        sam_update[10] = sam_content[10][::-1]
+        sam_reversed.append(sam_update)
     return sam_reversed
 
 
-def realign(sam_header: list[str], sam_contents: list[str], genome_coodinates: dict, chrom_size: int) -> list[str]:
-    for s in sam_header:
+def realign(sam: list[list[str]], genome_coodinates: dict, chrom_size: int) -> list[str]:
+    sam_headers = [s for s in sam if s[0].startswith("@")]
+    sam_contents = [s for s in sam if not s[0].startswith("@")]
+    for s in sam_headers:
         if s[0] != "@SQ":
             continue
         s[1] = f'SN:{genome_coodinates["chr"]}'
@@ -148,9 +181,7 @@ def realign(sam_header: list[str], sam_contents: list[str], genome_coodinates: d
         sam_contents = reverse_sam(sam_contents, genome_coodinates["end"])
     else:
         s[3] = str(int(s[3]) + genome_coodinates["start"] - 1)
-    sam_realined = sam_header + sam_contents
-    sam_realined = ["\t".join(s) for s in sam_realined]
-    return "\n".join(sam_realined)
+    return sam_headers + sam_contents
 
 
 def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[list]:

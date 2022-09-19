@@ -20,15 +20,14 @@
 ## コンセンサス
 
 + [ ] コンセンサスの結果、同じクラスタリングの結果になったら統合する
-+ [ ] VCFファイル
-+ [ ] HTMLファイル
-  + [ ] CRISPResso2のように割合もわかるとヘテロのときに嬉しい
 + [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
 <!-- + [x] difflociのところだけ、コンセンサスコール。 -->
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
 ## レポート
++ [x] HTMLファイル
+  + [ ] CRISPResso2のように割合もわかるとヘテロのときに嬉しい
 + [ ] VCFファイル
 + [ ] BAMファイル
   + [x] Tyrでマイナス鎖からプラス鎖に変換
@@ -36,7 +35,6 @@
   + [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`
   + [ ] (test) `report_bam`
 + [x] FASTAファイル
-+ [x] HTMLファイル
 + [x] (test) `report_af.summary_allele`
 + [x] (test) `report_af.plot`
   + [ ] モジュールのimport文を最初に持ってくる

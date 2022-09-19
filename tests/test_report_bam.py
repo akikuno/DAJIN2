@@ -6,6 +6,19 @@ from src.DAJIN2.report import report_bam
 reload(report_bam)
 
 
+def test_remove_overlapped_reads():
+    """
+    # Overlapped reads in .tmpDAJIN/sam/barcode31_control.sam:
+        - 01f0e046-b6dc-46f3-ad5b-96ed91484778
+    # Non-overlapped reads in .tmpDAJIN/sam/barcode31_control.sam
+        - a224e9ca-d634-4490-bf77-abd9d5cbd7bc
+    """
+    sam = midsv.read_sam("tests/data/report_bam/remove_overlap.sam")
+    test = report_bam.remove_overlapped_reads(sam)
+    answer = midsv.read_sam("tests/data/report_bam/answer.sam")
+    assert test == answer
+
+
 def test_remove_microhomology():
     sam = midsv.read_sam("tests/data/report_bam/microhomology-deletion.sam")
     test = report_bam.remove_microhomology(sam)
