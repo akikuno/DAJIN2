@@ -64,7 +64,7 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 #     IS_CACHED = False
 
 ###############################################################################
-# Check and format inputs (sample/control/allele)
+# Check inputs (sample/control/allele/genome)
 ###############################################################################
 
 from pathlib import Path
@@ -113,16 +113,16 @@ if genome:
         "https://hgdownload.cse.ucsc.edu/goldenPath",
         "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
     ]
+    goldenpath_url, flag_fail = check_inputs.available_url(goldenpath_urls)
     if flag_fail:
         raise URLError("UCSC Download Servers are currently down")
-    goldenpath_url, flag_fail = check_inputs.available_url(goldenpath_urls)
     # Check input genome
     check_inputs.available_genome(genome, ucsc_url)
 
 
-# ------------------------------------------------------------------------------
-# Formats
-# ------------------------------------------------------------------------------
+###############################################################################
+# Format inputs (sample/control/allele/genome)
+###############################################################################
 
 sample_name = format_inputs.extract_basename(sample)
 control_name = format_inputs.extract_basename(control)
@@ -225,7 +225,8 @@ reload(classification)
 
 for classifs in [classif_sample, classif_control]:
     for classif in classifs:
-        if classification.detect_sv(classif["CSSPLIT"], threshold=50):
+        is_sv = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+        if is_sv:
             classif["SV"] = True
         else:
             classif["SV"] = False
@@ -241,9 +242,9 @@ for classifs in [classif_sample, classif_control]:
 import midsv
 from pathlib import Path
 from collections import defaultdict
-from importlib import reload
 from itertools import groupby
 from src.DAJIN2 import clustering
+from importlib import reload
 
 reload(clustering)
 
@@ -418,10 +419,10 @@ for key, sam_content in sam_groups.items():
 
 # IGV.js（10本のリードのみ表示）のために各サンプル50本程度のリードのみを抽出する
 
-for path_sam in Path(".tmpDAJIN", "sam").glob("*_control.sam"):
-    sam = midsv.read_sam(path_sam)
-    pysam.sort("-o", f".tmpDAJIN/bam/{name}.bam", str(path_sam))
-    pysam.index(f".tmpDAJIN/bam/{name}.bam")
+# for path_sam in Path(".tmpDAJIN", "sam").glob("*_control.sam"):
+#     sam = midsv.read_sam(path_sam)
+#     pysam.sort("-o", f".tmpDAJIN/bam/{name}.bam", str(path_sam))
+#     pysam.index(f".tmpDAJIN/bam/{name}.bam")
 
 
 ########################################################################
