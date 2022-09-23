@@ -2,11 +2,54 @@
 
 ## 開発一般
 
-+ [x] GitHub Actionsによるテスト自動化
++ [ ] batchモードの搭載
 
 ## 前処理
 
 + [ ] (test) `format_inputs`
+
+## マッピング
+
+## クラスタリング
+
++ [ ] (test) `clustering`
+
+## コンセンサス
+
++ [ ] (test) call_percentage
++ [ ] (test) join_listdicts
+
+## レポート
++ [ ] HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
++ [ ] VCFファイル
++ [ ] BAMファイル
+  + [x] Tyrでマイナス鎖からプラス鎖に変換
+  + [ ] XXXでプラス鎖の確認
+  + [ ] (test) `report_bam`
++ [ ] colorblind-friendly
++ [ ] `igv.js`で各アレルの代表的なリード20本程度を可視化する
+  + [ ] `igv.js`は`npx http-server -a localhost -o . -s`を使うとローカルのBAMファイルを可視化できる → Pythonで完結できそう…
+
+## その他
+
++ [ ] サンプルのみ（コントロールなし）のときにも（可能な限り）アレルを分離できるようにしたい
++ [ ] `CSSPLIT`は名が体を表し切れていないので改名したい
++ [ ] ターゲットアンプリコンではないとき（染色体にマッピングするとき）、MIDSV変換が巨大な文字列となってしまうときの対応
+
+---
+# DONE
+
+## 開発一般
+
++ [x] GitHub Actionsによるテスト自動化
+
+## 前処理
++ [x] 入力ファイルのフォーマット (format_input.py)
+  + [x] sample, controlのテキスト化
+  + [x] alleleでmulti-fastaをsingle fastaにする
+  + [x] alleleでwtかcontrolがない場合にはエラー終了
+  + [x] alleleで重複配列がある場合にはエラー終了
+
 + [x] `check_inputs`と`format_inputs`を分ける
 + [x] (test) `check_inputs`
 + [x] 大型欠失とInversionは断端のマイクロホモロジーがあるので、配列とQualityを元にして結合する -> `midsv v0.7.0`で実装
@@ -14,56 +57,7 @@
 ## マッピング
 + [x] mappyによるマッピング
 
-
-## クラスタリング
-
-## コンセンサス
-
-+ [ ] コンセンサスの結果、同じクラスタリングの結果になったら統合する
-+ [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
-<!-- + [x] difflociのところだけ、コンセンサスコール。 -->
-+ [ ] (test) call_percentage
-+ [ ] (test) join_listdicts
-
-## レポート
-+ [x] HTMLファイル
-  + [ ] CRISPResso2のように割合もわかるとヘテロのときに嬉しい
-+ [ ] VCFファイル
-+ [ ] BAMファイル
-  + [x] Tyrでマイナス鎖からプラス鎖に変換
-  + [ ] XXXでプラス鎖の確認
-  + [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`
-  + [ ] (test) `report_bam`
-+ [x] FASTAファイル
-+ [x] (test) `report_af.summary_allele`
-+ [x] (test) `report_af.plot`
-  + [ ] モジュールのimport文を最初に持ってくる
-+ [x] (test) `report_af.all_allele`
-
-## 可視化
-+ [x] アリル割合のplot_alleles.pyの草稿作成（2022-03-11）-> `read_af`モジュールに移動
-+ [x] 8以上のアレル数にも対応
-+ [ ] colorblind-friendly
-+ [ ] `igv.js`で各アレルの代表的なリード20本程度を可視化する
-  + [ ] `igv.js`は`npx http-server -a localhost -o . -s`を使うとローカルのBAMファイルを可視化できる
-
-## その他
-
-+ [ ] サンプルのみ（コントロールなし）のときにも（可能な限り）アレルを分離できるようにしたい
-+ [ ] `CSSPLIT`は名が体を表し切れていないので改名したい
-+ [ ] ターゲットアンプリコンではないとき（染色体にマッピングするとき）、MIDSV変換が巨大な文字列となってしまうときの対応
-+ [ ] Batchモードの搭載（というかBatchを標準にする）
-
----
-# DONE
-
-+ [x] 入力ファイルのフォーマット (format_input.py)
-  + [x] sample, controlのテキスト化
-  + [x] alleleでmulti-fastaをsingle fastaにする
-  + [x] alleleでwtかcontrolがない場合にはエラー終了
-  + [x] alleleで重複配列がある場合にはエラー終了
-
-### samToMIDS.shをPythonで書き換え中… (midsvパッケージ)
+## midsvパッケージ
 + [x] insertion
 + [x] substitution
 + [x] deletion
@@ -72,3 +66,23 @@
 + [x] Large deletion
 + [x] Large inversion
 + [x] CSSPLITしか使っておらず、無駄にMIDSVとQSCOREの計算時間がかかっている…→MIDSVパッケージの引数で計算するかしないかのオプションを付けたほうが良さそう（midsv=False, cssplit=True, qscore=False, など）
+
+## クラスタリング
+
+## コンセンサス
+
++ [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
+
+## レポート
+
++ [x] HTMLファイルのコンセンサス
++ [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`
++ [x] FASTAファイル
++ [x] (test) `report_af.summary_allele`
++ [x] (test) `report_af.plot`
+  + [x] モジュールのimport文を最初に持ってくる
++ [x] (test) `report_af.all_allele`
++ [x] アリル割合のplot_alleles.pyの草稿作成（2022-03-11）-> `read_af`モジュールに移動
++ [x] 8以上のアレル数にも対応
+
+## その他
