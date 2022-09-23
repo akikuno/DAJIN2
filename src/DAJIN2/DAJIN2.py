@@ -283,7 +283,7 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
     if any(scores):
         labels += [label + label_start for label in clustering.clustering(scores).tolist()]
     else:
-        labels += [(1 + label_start)] * len(cssplit_sample)
+        labels += [label_start] * len(cssplit_sample)
     label_start = len(set(labels)) + 1
 
 clust_sample = deepcopy(classif_sample)
