@@ -173,10 +173,8 @@ reload(classification)
 
 for classifs in [classif_sample, classif_control]:
     for classif in classifs:
-        if classification.detect_sv(classif["CSSPLIT"], threshold=50):
-            classif["SV"] = True
-        else:
-            classif["SV"] = False
+        classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+
 
 classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
 

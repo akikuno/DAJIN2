@@ -1,11 +1,22 @@
 from __future__ import annotations
-from itertools import groupby
+
+import warnings
+
+warnings.simplefilter("ignore")
 import shutil
+from collections import defaultdict
+from copy import deepcopy
+from itertools import groupby
 from pathlib import Path
+from urllib.error import URLError
 
-# Custom modules
-from src.DAJIN2.preprocess import argparser
+import midsv
+import pysam
 
+from src.DAJIN2 import classification, clustering
+from src.DAJIN2.consensus import module_consensus as consensus
+from src.DAJIN2.preprocess import argparser, check_inputs, format_inputs, mappy_align
+from src.DAJIN2.report import report_af, report_bam
 
 #! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # def main():
@@ -15,40 +26,6 @@ from src.DAJIN2.preprocess import argparser
 ########################################################################
 
 sample, control, allele, output, genome, debug, threads = argparser.parse()
-
-# #* Point mutation
-# sample, control, allele, output, genome, debug, threads = (
-#     "examples/pm-tyr/barcode31.fq.gz",
-#     "examples/pm-tyr/barcode32.fq.gz",
-#     "examples/pm-tyr/design_tyr.fa",
-#     "DAJIN_results",
-#     "mm10",
-#     True,
-#     14
-#     )
-
-
-# #* 2-cut deletion
-# sample, control, allele, output, genome, debug, threads = (
-#     "examples/del-stx2/barcode25.fq.gz",
-#     "examples/del-stx2/barcode30.fq.gz",
-#     "examples/del-stx2/design_stx2.fa",
-#     "DAJIN_results",
-#     "mm10",
-#     True,
-#     14,
-# )
-
-# #* flox insertion
-# sample, control, allele, output, genome, debug, threads = (
-#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "DAJIN_results",
-#     "mm10",
-#     True,
-#     14,
-# )
 
 ########################################################################
 # Whether existing cached control
@@ -66,15 +43,6 @@ sample, control, allele, output, genome, debug, threads = argparser.parse()
 ###############################################################################
 # Check inputs (sample/control/allele/genome)
 ###############################################################################
-
-from pathlib import Path
-from importlib import reload
-from src.DAJIN2.preprocess import check_inputs
-from src.DAJIN2.preprocess import format_inputs
-from urllib.error import URLError
-
-reload(check_inputs)
-reload(format_inputs)
 
 # ------------------------------------------------------------------------------
 # Check input path
@@ -120,6 +88,22 @@ if genome:
     check_inputs.available_genome(genome, ucsc_url)
 
 
+########################################################################
+# Make directories
+########################################################################
+
+if Path(output).exists():
+    shutil.rmtree(output)
+
+Path(output).mkdir(exist_ok=True)
+
+if Path(output, ".tempdir").exists():
+    shutil.rmtree(Path(output, ".tempdir"))
+
+subdirectoris = ["fasta", "sam", "midsv", "bam", "reports"]
+for subdir in subdirectoris:
+    Path(output, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
+
 ###############################################################################
 # Format inputs (sample/control/allele/genome)
 ###############################################################################
@@ -132,31 +116,11 @@ if genome:
     genome_coodinates = format_inputs.fetch_coodinate(genome, ucsc_url, dict_allele["control"])
     chrom_size = format_inputs.fetch_chrom_size(genome_coodinates["chr"], genome, goldenpath_url)
 
-########################################################################
-# Make directories
-########################################################################
-
-from pathlib import Path
-import shutil
-
-if Path(output).exists():
-    shutil.rmtree(output)
-
-Path(output).mkdir(exist_ok=True)
-
-if Path(output, ".tempdir").exists():
-    shutil.rmtree(Path(output, ".tempdir"))
-
-subdirectoris = ["fasta", "fastq", "sam", "midsv", "bam", "reports"]
-for subdir in subdirectoris:
-    Path(output, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
-
 ################################################################################
 # Export fasta files as single-FASTA format
 ################################################################################
 
 # TODO: use yeild, not export
-from pathlib import Path
 
 for header, sequence in dict_allele.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
@@ -168,11 +132,6 @@ for header, sequence in dict_allele.items():
 # Mapping with minimap2/mappy
 ###############################################################################
 
-from pathlib import Path
-from src.DAJIN2.preprocess import mappy_align
-from importlib import reload
-
-reload(mappy_align)
 
 for input_fasta in Path(output, ".tempdir", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
@@ -186,30 +145,16 @@ for input_fasta in Path(output, ".tempdir", "fasta").glob("*.fasta"):
 # MIDSV conversion
 ########################################################################
 
-from pathlib import Path
-import midsv
-
 for sampath in Path(output, ".tempdir", "sam").iterdir():
     output_jsonl = Path(output, ".tempdir", "midsv", f"{sampath.stem}.jsonl")
     sam = midsv.read_sam(sampath)
     midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
     midsv.write_jsonl(midsv_jsonl, output_jsonl)
 
-
-########################################################################
-# Phread scoreが0.1以下のリードについて再分配する
-########################################################################
-
-# Under construction...
-
 ########################################################################
 # Classify alleles
 ########################################################################
 
-from src.DAJIN2 import classification
-from importlib import reload
-
-reload(classification)
 
 path_midsv = Path(output, ".tempdir", "midsv").glob(f"{sample_name}*")
 classif_sample = classification.classify_alleles(path_midsv, sample_name)
@@ -221,18 +166,10 @@ classif_control = classification.classify_alleles(path_midsv, control_name)
 # Detect Structural variants
 ########################################################################
 
-from src.DAJIN2 import classification
-from importlib import reload
-
-reload(classification)
 
 for classifs in [classif_sample, classif_control]:
     for classif in classifs:
-        is_sv = classification.detect_sv(classif["CSSPLIT"], threshold=50)
-        if is_sv:
-            classif["SV"] = True
-        else:
-            classif["SV"] = False
+        classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 ########################################################################
 # Clustering
@@ -242,14 +179,6 @@ for classifs in [classif_sample, classif_control]:
 # Extract significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
 
-import midsv
-from pathlib import Path
-from collections import defaultdict
-from itertools import groupby
-from src.DAJIN2 import clustering
-from importlib import reload
-
-reload(clustering)
 
 dict_cssplit_control = defaultdict(list[dict])
 for ALLELE in dict_allele.keys():
@@ -269,9 +198,6 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
 # -----------------------------------------------------------------------
 # Clustering
 # -----------------------------------------------------------------------
-
-from src.DAJIN2 import clustering
-from copy import deepcopy
 
 labels = []
 label_start = 1
@@ -297,11 +223,6 @@ clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
 # Consensus call
 ########################################################################
 
-from src.DAJIN2.consensus import module_consensus as consensus
-from collections import defaultdict
-from importlib import reload
-
-reload(consensus)
 
 path = Path(output, ".tempdir", "midsv", f"{control_name}_control.jsonl")
 cssplit_control = midsv.read_jsonl(path)
@@ -313,42 +234,59 @@ cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
 
 cons_percentage = defaultdict(list)
 cons_sequence = defaultdict(list)
-for (ALLELE, SV, LABEL), cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-    cons_per = consensus.call_percentage(list(cssplits), cssplit_control)
+for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+    cssplits = list(cssplits)
+    cons_per = consensus.call_percentage(cssplits, cssplit_control)
     cons_seq = consensus.call_sequence(cons_per)
-    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}, "LABEL": {LABEL}}}'
-    cons_percentage[key] = cons_per
-    cons_sequence[key] = cons_seq
+    allele_name = consensus.call_allele_name(keys, cons_seq, dict_allele)
+    cons_percentage[allele_name] = cons_per
+    cons_sequence[allele_name] = cons_seq
+    for cs in cssplits:
+        cs["NAME"] = allele_name
+
+for cs in cssplit_sample:
+    del cs["RNAME"]
+    del cs["CSSPLIT"]
+
+
+# ----------------------------------------------------------
+# Conseusns Report：FASTA/HTML/VCF
+# ----------------------------------------------------------
+
+# FASTA
+for header, cons_seq in cons_sequence.items():
+    cons_fasta = consensus.to_fasta(header, cons_seq)
+    Path(f"{output}/.tempdir/reports/{sample_name}_{header}.fasta").write_text(cons_fasta)
+
+# HTML
+for header, cons_per in cons_percentage.items():
+    cons_html = consensus.to_html(header, cons_per)
+    Path(f"{output}/.tempdir/reports/{sample_name}_{header}.html").write_text(cons_html)
+
+
+# VCF
+# working in progress
 
 ########################################################################
 # Report：アレル割合
 # sample, allele name, #read, %read
 ########################################################################
-import warnings
-
-warnings.simplefilter("ignore")
-from collections import defaultdict
-from src.DAJIN2.report import report_af
-
-reload(report_af)
-
-clust_sample = report_af.call_allele_name(clust_sample, cons_sequence, dict_allele)
 
 # ----------------------------------------------------------
 # All data
 # ----------------------------------------------------------
 
 df_clust_sample = report_af.all_allele(clust_sample, sample_name)
-df_clust_sample.to_csv(f"{output}/.tempdir/reports/read_classification_all.csv", index=False)
-df_clust_sample.to_excel(f"{output}/.tempdir/reports/read_classification_all.xlsx", index=False)
+df_clust_sample.to_csv(f"{output}/.tempdir/reports/{sample_name}_read_classification_all.csv", index=False)
+df_clust_sample.to_excel(f"{output}/.tempdir/reports/{sample_name}_read_classification_all.xlsx", index=False)
 
 # ----------------------------------------------------------
 # Summary data
 # ----------------------------------------------------------
 
 df_allele_frequency = report_af.summary_allele(clust_sample, sample_name)
-df_allele_frequency.to_csv(f"{output}/.tempdir/reports/read_classification_summary.csv", index=False)
-df_allele_frequency.to_excel(f"{output}/.tempdir/reports/read_classification_summary.xlsx", index=False)
+df_allele_frequency.to_csv(f"{output}/.tempdir/reports/{sample_name}_read_classification_summary.csv", index=False)
+df_allele_frequency.to_excel(f"{output}/.tempdir/reports/{sample_name}_read_classification_summary.xlsx", index=False)
 
 # ----------------------------------------------------------
 # Visualization
@@ -357,38 +295,11 @@ g = report_af.plot(df_allele_frequency)
 g.save(filename=f"{output}/.tempdir/reports/tmp_output.png", dpi=350)
 g.save(filename=f"{output}/.tempdir/reports/tmp_output.pdf")
 
-########################################################################
-# Report：各種ファイルフォーマットに出力
-########################################################################
-
-from src.DAJIN2.report import report_files
-
-reload(report_files)
-
-# FASTA
-headers = df_allele_frequency["allele name"].to_list()
-for heaer, cons_seq in zip(headers, cons_sequence.values()):
-    cons_fasta = report_files.to_fasta(heaer, cons_seq)
-    Path(f"{output}/.tempdir/reports/{heaer}.fasta").write_text(cons_fasta)
-
-# HTML
-for heaer, cons_per in zip(headers, cons_percentage.values()):
-    cons_html = report_files.to_html(heaer, cons_per)
-    Path(f"{output}/.tempdir/reports/{heaer}.html").write_text(cons_html)
-
-
-# VCF
-
 
 ########################################################################
 # Report：BAM
 ########################################################################
 
-import pysam
-from collections import defaultdict
-from src.DAJIN2.report import report_bam
-
-reload(report_bam)
 
 Path(output, ".tempdir", "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
 
