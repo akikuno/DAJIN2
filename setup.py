@@ -7,5 +7,4 @@ setup(
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
     url="https://github.com/akikuno/DAJIN2",
-    install_requires=["numpy", "pandas", "scikit-learn", "hdbscan", "plotnine", "mappy", "pysam"],
 )
