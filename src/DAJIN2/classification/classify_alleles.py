@@ -12,10 +12,9 @@ def calc_match(CSSPLIT: str) -> float:
     return match_score / len(CSSPLIT.split(","))
 
 
-def classify_alleles(sample_name: str) -> list[dict]:
+def classify_alleles(path_midsv: Path, sample_name: str) -> list[dict]:
     score_of_each_allels = []
-    midsvpaths = Path(".tmpDAJIN", "midsv").glob(f"{sample_name}*")
-    for midsvpath in midsvpaths:
+    for midsvpath in path_midsv:
         ALLELE = midsvpath.stem.replace(f"{sample_name}_", "")
         for midsvcsv in midsv.read_jsonl(midsvpath):
             QNAME = midsvcsv["QNAME"]
