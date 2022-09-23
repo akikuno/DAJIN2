@@ -144,12 +144,12 @@ if Path(output).exists():
 
 Path(output).mkdir(exist_ok=True)
 
-if Path(".tmpDAJIN").exists():
-    shutil.rmtree(".tmpDAJIN")
+if Path(output, ".tempdir").exists():
+    shutil.rmtree(Path(output, ".tempdir"))
 
 subdirectoris = ["fasta", "fastq", "sam", "midsv", "bam", "reports"]
 for subdir in subdirectoris:
-    Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
+    Path(output, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
 
 ################################################################################
 # Export fasta files as single-FASTA format
@@ -160,7 +160,7 @@ from pathlib import Path
 
 for header, sequence in dict_allele.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
-    output_fasta = Path(".tmpDAJIN", "fasta", f"{header}.fasta")
+    output_fasta = Path(output, ".tempdir", "fasta", f"{header}.fasta")
     output_fasta.write_text(contents)
 
 
@@ -174,12 +174,12 @@ from importlib import reload
 
 reload(mappy_align)
 
-for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
+for input_fasta in Path(output, ".tempdir", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
     for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
         # Todo: 並行処理で高速化！！
         SAM = mappy_align.to_sam(str(input_fasta), fastq)
-        output_sam = Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
+        output_sam = Path(output, ".tempdir", "sam", f"{fastq_name}_{fasta_name}.sam")
         output_sam.write_text("\n".join(SAM))
 
 ########################################################################
@@ -189,11 +189,11 @@ for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
 from pathlib import Path
 import midsv
 
-for sampath in Path(".tmpDAJIN", "sam").iterdir():
-    output = Path(".tmpDAJIN", "midsv", f"{sampath.stem}.jsonl")
+for sampath in Path(output, ".tempdir", "sam").iterdir():
+    output_jsonl = Path(output, ".tempdir", "midsv", f"{sampath.stem}.jsonl")
     sam = midsv.read_sam(sampath)
     midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
-    midsv.write_jsonl(midsv_jsonl, output)
+    midsv.write_jsonl(midsv_jsonl, output_jsonl)
 
 
 ########################################################################
@@ -211,8 +211,11 @@ from importlib import reload
 
 reload(classification)
 
-classif_sample = classification.classify_alleles(sample_name)
-classif_control = classification.classify_alleles(control_name)
+path_midsv = Path(output, ".tempdir", "midsv").glob(f"{sample_name}*")
+classif_sample = classification.classify_alleles(path_midsv, sample_name)
+
+path_midsv = Path(output, ".tempdir", "midsv").glob(f"{control_name}*")
+classif_control = classification.classify_alleles(path_midsv, control_name)
 
 ########################################################################
 # Detect Structural variants
@@ -250,7 +253,7 @@ reload(clustering)
 
 dict_cssplit_control = defaultdict(list[dict])
 for ALLELE in dict_allele.keys():
-    path_control = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
+    path_control = Path(output, ".tempdir", "midsv", f"{control_name}_{ALLELE}.jsonl")
     cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
     dict_cssplit_control[ALLELE] = cssplit_control
 
@@ -277,7 +280,10 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
     cssplit_sample = [g["CSSPLIT"] for g in group]
     diffloci = diffloci_by_alleles[key]
     scores = list(clustering.make_scores(cssplit_sample, diffloci))
-    labels += [label + label_start for label in clustering.clustering(scores).tolist()]
+    if any(scores):
+        labels += [label + label_start for label in clustering.clustering(scores).tolist()]
+    else:
+        labels += [(1 + label_start)] * len(cssplit_sample)
     label_start = len(set(labels)) + 1
 
 clust_sample = deepcopy(classif_sample)
@@ -297,10 +303,10 @@ from importlib import reload
 
 reload(consensus)
 
-path = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl")
+path = Path(output, ".tempdir", "midsv", f"{control_name}_control.jsonl")
 cssplit_control = midsv.read_jsonl(path)
 
-path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
+path = Path(output, ".tempdir", "midsv", f"{sample_name}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
 cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
@@ -333,23 +339,23 @@ clust_sample = report_af.call_allele_name(clust_sample, cons_sequence, dict_alle
 # ----------------------------------------------------------
 
 df_clust_sample = report_af.all_allele(clust_sample, sample_name)
-df_clust_sample.to_csv(".tmpDAJIN/reports/read_classification_all.csv", index=False)
-df_clust_sample.to_excel(".tmpDAJIN/reports/read_classification_all.xlsx", index=False)
+df_clust_sample.to_csv(f"{output}/.tempdir/reports/read_classification_all.csv", index=False)
+df_clust_sample.to_excel(f"{output}/.tempdir/reports/read_classification_all.xlsx", index=False)
 
 # ----------------------------------------------------------
 # Summary data
 # ----------------------------------------------------------
 
 df_allele_frequency = report_af.summary_allele(clust_sample, sample_name)
-df_allele_frequency.to_csv(".tmpDAJIN/reports/read_classification_summary.csv", index=False)
-df_allele_frequency.to_excel(".tmpDAJIN/reports/read_classification_summary.xlsx", index=False)
+df_allele_frequency.to_csv(f"{output}/.tempdir/reports/read_classification_summary.csv", index=False)
+df_allele_frequency.to_excel(f"{output}/.tempdir/reports/read_classification_summary.xlsx", index=False)
 
 # ----------------------------------------------------------
 # Visualization
 # ----------------------------------------------------------
 g = report_af.plot(df_allele_frequency)
-g.save(filename=".tmpDAJIN/reports/tmp_output.png", dpi=350)
-g.save(filename=".tmpDAJIN/reports/tmp_output.pdf")
+g.save(filename=f"{output}/.tempdir/reports/tmp_output.png", dpi=350)
+g.save(filename=f"{output}/.tempdir/reports/tmp_output.pdf")
 
 ########################################################################
 # Report：各種ファイルフォーマットに出力
@@ -363,12 +369,12 @@ reload(report_files)
 headers = df_allele_frequency["allele name"].to_list()
 for heaer, cons_seq in zip(headers, cons_sequence.values()):
     cons_fasta = report_files.to_fasta(heaer, cons_seq)
-    Path(f".tmpDAJIN/reports/{heaer}.fasta").write_text(cons_fasta)
+    Path(f"{output}/.tempdir/reports/{heaer}.fasta").write_text(cons_fasta)
 
 # HTML
 for heaer, cons_per in zip(headers, cons_percentage.values()):
     cons_html = report_files.to_html(heaer, cons_per)
-    Path(f".tmpDAJIN/reports/{heaer}.html").write_text(cons_html)
+    Path(f"{output}/.tempdir/reports/{heaer}.html").write_text(cons_html)
 
 
 # VCF
@@ -384,33 +390,33 @@ from src.DAJIN2.report import report_bam
 
 reload(report_bam)
 
-Path(".tmpDAJIN", "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
+Path(output, ".tempdir", "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
 
-path_sam = Path(".tmpDAJIN", "sam", f"{sample_name}_control.sam")
+path_sam = Path(output, ".tempdir", "sam", f"{sample_name}_control.sam")
 sam = midsv.read_sam(path_sam)
 
 sam_update = sam.copy()
 sam_update = report_bam.remove_overlapped_reads(sam_update)
 sam_update = report_bam.remove_microhomology(sam_update)
 
-path_sam = f".tmpDAJIN/bam/tmp_sam/{sample_name}_control_updated.sam"
+path_sam = f"{output}/.tempdir/bam/tmp_sam/{sample_name}_control_updated.sam"
 if genome:
     sam_update = report_bam.realign(sam_update, genome_coodinates, chrom_size)
     report_bam.write_sam(sam_update, path_sam)
 else:
     report_bam.write_sam(sam_update, path_sam)
 
-pysam.sort("-@", f"{threads}", "-o", f".tmpDAJIN/bam/{sample_name}.bam", path_sam)
-pysam.index("-@", f"{threads}", f".tmpDAJIN/bam/{sample_name}.bam")
+pysam.sort("-@", f"{threads}", "-o", f"{output}/.tempdir/bam/{sample_name}.bam", path_sam)
+pysam.index("-@", f"{threads}", f"{output}/.tempdir/bam/{sample_name}.bam")
 
 sam_headers = [s for s in sam_update if s[0].startswith("@")]
 sam_contents = [s for s in sam_update if not s[0].startswith("@")]
 sam_groups = report_bam.group_by_name(sam_contents, clust_sample)
 for key, sam_content in sam_groups.items():
-    path_sam = f".tmpDAJIN/bam/tmp_sam/{key}.sam"
+    path_sam = f"{output}/.tempdir/bam/tmp_sam/{key}.sam"
     report_bam.write_sam(sam_headers + sam_content, path_sam)
-    pysam.sort("-@", f"{threads}", "-o", f".tmpDAJIN/bam/{sample_name}_{key}.bam", path_sam)
-    pysam.index("-@", f"{threads}", f".tmpDAJIN/bam/{sample_name}_{key}.bam")
+    pysam.sort("-@", f"{threads}", "-o", f"{output}/.tempdir/bam/{sample_name}_{key}.bam", path_sam)
+    pysam.index("-@", f"{threads}", f"{output}/.tempdir/bam/{sample_name}_{key}.bam")
 
 
 ########################################################################
@@ -419,10 +425,10 @@ for key, sam_content in sam_groups.items():
 
 # IGV.js（10本のリードのみ表示）のために各サンプル50本程度のリードのみを抽出する
 
-# for path_sam in Path(".tmpDAJIN", "sam").glob("*_control.sam"):
+# for path_sam in Path(output, ".tempdir", "sam").glob("*_control.sam"):
 #     sam = midsv.read_sam(path_sam)
-#     pysam.sort("-o", f".tmpDAJIN/bam/{name}.bam", str(path_sam))
-#     pysam.index(f".tmpDAJIN/bam/{name}.bam")
+#     pysam.sort("-o", f"{output}/.tempdir/bam/{name}.bam", str(path_sam))
+#     pysam.index(f"{output}/.tempdir/bam/{name}.bam")
 
 
 ########################################################################
@@ -430,7 +436,7 @@ for key, sam_content in sam_groups.items():
 ########################################################################
 
 if not debug:
-    shutil.rmtree(".tmpDAJIN")
+    shutil.rmtree(Path(output, ".tempdir"))
 
 # if __name__ == "__main__":
 #     main()

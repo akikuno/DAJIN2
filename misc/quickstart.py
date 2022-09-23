@@ -110,41 +110,41 @@ if genome:
     genome_coodinates = format_inputs.fetch_coodinate(genome, ucsc_url, dict_allele["control"])
     chrom_size = format_inputs.fetch_chrom_size(genome_coodinates["chr"], genome, goldenpath_url)
 
-flag1 = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl").exists()
-flag2 = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl").exists()
+flag1 = Path(output, ".tempdir", "midsv", f"{sample_name}_control.jsonl").exists()
+flag2 = Path(output, ".tempdir", "midsv", f"{control_name}_control.jsonl").exists()
 flag = flag1 and flag2
 
 if not flag:
     if Path(output).exists():
         shutil.rmtree(output)
     Path(output).mkdir(exist_ok=True)
-    if Path(".tmpDAJIN").exists():
-        shutil.rmtree(".tmpDAJIN")
-    for subdir in ["fasta", "fastq", "sam", "midsv", "bam"]:
-        Path(".tmpDAJIN", subdir).mkdir(parents=True, exist_ok=True)
+    if Path(output, ".tempdir").exists():
+        shutil.rmtree(Path(output, ".tempdir"))
+    for subdir in ["fasta", "fastq", "sam", "midsv", "bam", "reports"]:
+        Path(output, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
     # TODO: use yeild, not export
     for header, sequence in dict_allele.items():
         contents = "\n".join([">" + header, sequence]) + "\n"
-        output_fasta = Path(".tmpDAJIN", "fasta", f"{header}.fasta")
+        output_fasta = Path(output, ".tempdir", "fasta", f"{header}.fasta")
         output_fasta.write_text(contents)
     ###############################################################################
     # Mapping with minimap2/mappy
     ###############################################################################
-    for input_fasta in Path(".tmpDAJIN", "fasta").glob("*.fasta"):
+    for input_fasta in Path(output, ".tempdir", "fasta").glob("*.fasta"):
         fasta_name = input_fasta.name.replace(".fasta", "")
         for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
             # Todo: 並行処理で高速化！！
             SAM = mappy_align.to_sam(str(input_fasta), fastq)
-            output_sam = Path(".tmpDAJIN", "sam", f"{fastq_name}_{fasta_name}.sam")
+            output_sam = Path(output, ".tempdir", "sam", f"{fastq_name}_{fasta_name}.sam")
             output_sam.write_text("\n".join(SAM))
     ########################################################################
     # MIDSV conversion
     ########################################################################
-    for sampath in Path(".tmpDAJIN", "sam").iterdir():
-        output = Path(".tmpDAJIN", "midsv", f"{sampath.stem}.jsonl")
+    for sampath in Path(output, ".tempdir", "sam").iterdir():
+        output_jsonl = Path(output, ".tempdir", "midsv", f"{sampath.stem}.jsonl")
         sam = midsv.read_sam(sampath)
         midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
-        midsv.write_jsonl(midsv_jsonl, output)
+        midsv.write_jsonl(midsv_jsonl, output_jsonl)
 
 
 ########################################################################
@@ -156,8 +156,11 @@ from importlib import reload
 
 reload(classification)
 
-classif_sample = classification.classify_alleles(sample_name)
-classif_control = classification.classify_alleles(control_name)
+path_midsv = Path(output, ".tempdir", "midsv").glob(f"{sample_name}*")
+classif_sample = classification.classify_alleles(path_midsv, sample_name)
+
+path_midsv = Path(output, ".tempdir", "midsv").glob(f"{control_name}*")
+classif_control = classification.classify_alleles(path_midsv, control_name)
 
 ########################################################################
 # Detect Structural variants
@@ -196,7 +199,7 @@ reload(clustering)
 
 dict_cssplit_control = defaultdict(list[dict])
 for ALLELE in dict_allele.keys():
-    path_control = Path(".tmpDAJIN", "midsv", f"{control_name}_{ALLELE}.jsonl")
+    path_control = Path(output, ".tempdir", "midsv", f"{control_name}_{ALLELE}.jsonl")
     cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
     dict_cssplit_control[ALLELE] = cssplit_control
 
@@ -307,10 +310,10 @@ from importlib import reload
 
 reload(consensus)
 
-path = Path(".tmpDAJIN", "midsv", f"{control_name}_control.jsonl")
+path = Path(output, ".tempdir", "midsv", f"{control_name}_control.jsonl")
 cssplit_control = midsv.read_jsonl(path)
 
-path = Path(".tmpDAJIN", "midsv", f"{sample_name}_control.jsonl")
+path = Path(output, ".tempdir", "midsv", f"{sample_name}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
 cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
