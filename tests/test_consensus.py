@@ -4,10 +4,10 @@ from importlib import reload
 reload(module_consensus)
 
 
-def test_call_fasta():
+def test_to_fasta():
     header = "test_sequence"
-    cons_percentage_by_key = [{"=A": 1.0} for _ in range(81)]
-    test = module_consensus.call_fasta(header, cons_percentage_by_key)
+    cons_seq = "A" * 81
+    test = module_consensus.to_fasta(header, cons_seq)
     answer = ">test_sequence\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nA\n"
     assert test == answer
 

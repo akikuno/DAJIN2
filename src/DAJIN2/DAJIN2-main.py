@@ -25,96 +25,96 @@ from src.DAJIN2.report import report_af, report_bam
 # Argument parse
 ########################################################################
 
-sample, control, allele, output, genome, debug, threads = argparser.parse()
+SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = argparser.parse()
 
 ########################################################################
-# Whether existing cached control
+# Whether existing cached CONTROL
 ########################################################################
 
 # CACHEDIR = os.path.join(tempfile.gettempdir(), "DAJIN")
 # os.makedirs(CACHEDIR, exist_ok=True)
 
-# if cache_control.exists(control, CACHEDIR):
+# if cache_CONTROL.exists(CONTROL, CACHEDIR):
 #     IS_CACHED = True
 # else:
-#     cache_control.save_header(control, CACHEDIR)
+#     cache_CONTROL.save_header(CONTROL, CACHEDIR)
 #     IS_CACHED = False
 
 ###############################################################################
-# Check inputs (sample/control/allele/genome)
+# Check inputs (SAMPLE/CONTROL/ALLELE/GENOME)
 ###############################################################################
 
 # ------------------------------------------------------------------------------
 # Check input path
 # ------------------------------------------------------------------------------
 
-check_inputs.exists(control)
-check_inputs.exists(sample)
-check_inputs.exists(allele)
+check_inputs.exists(CONTROL)
+check_inputs.exists(SAMPLE)
+check_inputs.exists(ALLELE)
 
 # ------------------------------------------------------------------------------
 # Check formats (extensions and contents)
 # ------------------------------------------------------------------------------
 
-check_inputs.fastq_extension(control)
-check_inputs.fastq_content(control)
-check_inputs.fastq_extension(sample)
-check_inputs.fastq_content(sample)
-check_inputs.fasta_content(allele)
+check_inputs.fastq_extension(CONTROL)
+check_inputs.fastq_content(CONTROL)
+check_inputs.fastq_extension(SAMPLE)
+check_inputs.fastq_content(SAMPLE)
+check_inputs.fasta_content(ALLELE)
 
 # ------------------------------------------------------------------------------
-# Check genomes if genome is inputted
+# Check GENOMEs if GENOME is inputted
 # ------------------------------------------------------------------------------
 
-if genome:
+if GENOME:
     # Check UCSC Server
-    ucsc_urls = [
+    UCSC_URLS = [
         "https://genome.ucsc.edu/",
         "https://genome-asia.ucsc.edu/",
         "https://genome-euro.ucsc.edu/",
     ]
-    ucsc_url, flag_fail = check_inputs.available_url(ucsc_urls)
+    UCSC_URL, flag_fail = check_inputs.available_url(UCSC_URLS)
     if flag_fail:
         raise URLError("UCSC Servers are currently down")
     # Check UCSC Download Server
-    goldenpath_urls = [
+    GOLDENPATH_URLS = [
         "https://hgdownload.cse.ucsc.edu/goldenPath",
         "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
     ]
-    goldenpath_url, flag_fail = check_inputs.available_url(goldenpath_urls)
+    GOLDENPATH_URL, flag_fail = check_inputs.available_url(GOLDENPATH_URLS)
     if flag_fail:
         raise URLError("UCSC Download Servers are currently down")
     # Check input genome
-    check_inputs.available_genome(genome, ucsc_url)
+    check_inputs.available_genome(GENOME, UCSC_URL)
 
 
 ########################################################################
 # Make directories
 ########################################################################
 
-if Path(output).exists():
-    shutil.rmtree(output)
+if Path(OUTPUT).exists():
+    shutil.rmtree(OUTPUT)
 
-Path(output).mkdir(exist_ok=True)
+Path(OUTPUT).mkdir(exist_ok=True)
 
-if Path(output, ".tempdir").exists():
-    shutil.rmtree(Path(output, ".tempdir"))
+if Path(OUTPUT, ".tempdir").exists():
+    shutil.rmtree(Path(OUTPUT, ".tempdir"))
 
 subdirectoris = ["fasta", "sam", "midsv", "bam", "reports"]
 for subdir in subdirectoris:
-    Path(output, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
+    Path(OUTPUT, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
 
 ###############################################################################
-# Format inputs (sample/control/allele/genome)
+# Format inputs (SAMPLE/CONTROL/ALLELE/GENOME)
 ###############################################################################
 
-sample_name = format_inputs.extract_basename(sample)
-control_name = format_inputs.extract_basename(control)
-dict_allele = format_inputs.dictionize_allele(allele)
+SAMPLE_NAME = format_inputs.extract_basename(SAMPLE)
+CONTROL_NAME = format_inputs.extract_basename(CONTROL)
+DICT_ALLELE = format_inputs.dictionize_allele(ALLELE)
 
-if genome:
-    genome_coodinates = format_inputs.fetch_coodinate(genome, ucsc_url, dict_allele["control"])
-    chrom_size = format_inputs.fetch_chrom_size(genome_coodinates["chr"], genome, goldenpath_url)
+if GENOME:
+    GENOME_COODINATES = format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
+    CHROME_SIZE = format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
 
 ################################################################################
 # Export fasta files as single-FASTA format
@@ -122,9 +122,9 @@ if genome:
 
 # TODO: use yeild, not export
 
-for header, sequence in dict_allele.items():
+for header, sequence in DICT_ALLELE.items():
     contents = "\n".join([">" + header, sequence]) + "\n"
-    output_fasta = Path(output, ".tempdir", "fasta", f"{header}.fasta")
+    output_fasta = Path(OUTPUT, ".tempdir", "fasta", f"{header}.fasta")
     output_fasta.write_text(contents)
 
 
@@ -133,20 +133,20 @@ for header, sequence in dict_allele.items():
 ###############################################################################
 
 
-for input_fasta in Path(output, ".tempdir", "fasta").glob("*.fasta"):
+for input_fasta in Path(OUTPUT, ".tempdir", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
-    for fastq, fastq_name in zip([control, sample], [control_name, sample_name]):
+    for fastq, fastq_name in zip([CONTROL, SAMPLE], [CONTROL_NAME, SAMPLE_NAME]):
         # Todo: 並行処理で高速化！！
-        SAM = mappy_align.to_sam(str(input_fasta), fastq)
-        output_sam = Path(output, ".tempdir", "sam", f"{fastq_name}_{fasta_name}.sam")
-        output_sam.write_text("\n".join(SAM))
+        sam = mappy_align.to_sam(str(input_fasta), fastq)
+        output_sam = Path(OUTPUT, ".tempdir", "sam", f"{fastq_name}_{fasta_name}.sam")
+        output_sam.write_text("\n".join(sam))
 
 ########################################################################
 # MIDSV conversion
 ########################################################################
 
-for sampath in Path(output, ".tempdir", "sam").iterdir():
-    output_jsonl = Path(output, ".tempdir", "midsv", f"{sampath.stem}.jsonl")
+for sampath in Path(OUTPUT, ".tempdir", "sam").iterdir():
+    output_jsonl = Path(OUTPUT, ".tempdir", "midsv", f"{sampath.stem}.jsonl")
     sam = midsv.read_sam(sampath)
     midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
     midsv.write_jsonl(midsv_jsonl, output_jsonl)
@@ -156,16 +156,15 @@ for sampath in Path(output, ".tempdir", "sam").iterdir():
 ########################################################################
 
 
-path_midsv = Path(output, ".tempdir", "midsv").glob(f"{sample_name}*")
-classif_sample = classification.classify_alleles(path_midsv, sample_name)
+path_midsv = Path(OUTPUT, ".tempdir", "midsv").glob(f"{SAMPLE_NAME}*")
+classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
-path_midsv = Path(output, ".tempdir", "midsv").glob(f"{control_name}*")
-classif_control = classification.classify_alleles(path_midsv, control_name)
+path_midsv = Path(OUTPUT, ".tempdir", "midsv").glob(f"{CONTROL_NAME}*")
+classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
 
 ########################################################################
 # Detect Structural variants
 ########################################################################
-
 
 for classifs in [classif_sample, classif_control]:
     for classif in classifs:
@@ -181,8 +180,8 @@ for classifs in [classif_sample, classif_control]:
 
 
 dict_cssplit_control = defaultdict(list[dict])
-for ALLELE in dict_allele.keys():
-    path_control = Path(output, ".tempdir", "midsv", f"{control_name}_{ALLELE}.jsonl")
+for ALLELE in DICT_ALLELE.keys():
+    path_control = Path(OUTPUT, ".tempdir", "midsv", f"{CONTROL_NAME}_{ALLELE}.jsonl")
     cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
     dict_cssplit_control[ALLELE] = cssplit_control
 
@@ -191,7 +190,7 @@ diffloci_by_alleles = defaultdict(list[dict])
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
     cssplit_sample = [record["CSSPLIT"] for record in group]
     cssplit_control = dict_cssplit_control[ALLELE]
-    sequence = dict_allele[ALLELE]
+    sequence = DICT_ALLELE[ALLELE]
     diffloci = clustering.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha=0.01, threshold=0.05)
     diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
@@ -223,11 +222,10 @@ clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
 # Consensus call
 ########################################################################
 
-
-path = Path(output, ".tempdir", "midsv", f"{control_name}_control.jsonl")
+path = Path(OUTPUT, ".tempdir", "midsv", f"{CONTROL_NAME}_control.jsonl")
 cssplit_control = midsv.read_jsonl(path)
 
-path = Path(output, ".tempdir", "midsv", f"{sample_name}_control.jsonl")
+path = Path(OUTPUT, ".tempdir", "midsv", f"{SAMPLE_NAME}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
 cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
@@ -238,15 +236,16 @@ for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"
     cssplits = list(cssplits)
     cons_per = consensus.call_percentage(cssplits, cssplit_control)
     cons_seq = consensus.call_sequence(cons_per)
-    allele_name = consensus.call_allele_name(keys, cons_seq, dict_allele)
+    allele_name = consensus.call_allele_name(keys, cons_seq, DICT_ALLELE)
     cons_percentage[allele_name] = cons_per
     cons_sequence[allele_name] = cons_seq
     for cs in cssplits:
         cs["NAME"] = allele_name
 
-for cs in cssplit_sample:
-    del cs["RNAME"]
-    del cs["CSSPLIT"]
+result_sample = deepcopy(cssplit_sample)
+for res in result_sample:
+    del res["RNAME"]
+    del res["CSSPLIT"]
 
 
 # ----------------------------------------------------------
@@ -256,12 +255,12 @@ for cs in cssplit_sample:
 # FASTA
 for header, cons_seq in cons_sequence.items():
     cons_fasta = consensus.to_fasta(header, cons_seq)
-    Path(f"{output}/.tempdir/reports/{sample_name}_{header}.fasta").write_text(cons_fasta)
+    Path(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
 # HTML
 for header, cons_per in cons_percentage.items():
     cons_html = consensus.to_html(header, cons_per)
-    Path(f"{output}/.tempdir/reports/{sample_name}_{header}.html").write_text(cons_html)
+    Path(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
 
 # VCF
@@ -276,24 +275,24 @@ for header, cons_per in cons_percentage.items():
 # All data
 # ----------------------------------------------------------
 
-df_clust_sample = report_af.all_allele(clust_sample, sample_name)
-df_clust_sample.to_csv(f"{output}/.tempdir/reports/{sample_name}_read_classification_all.csv", index=False)
-df_clust_sample.to_excel(f"{output}/.tempdir/reports/{sample_name}_read_classification_all.xlsx", index=False)
+df_clust_sample = report_af.all_allele(clust_sample, SAMPLE_NAME)
+df_clust_sample.to_csv(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_all.csv", index=False)
+df_clust_sample.to_excel(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_all.xlsx", index=False)
 
 # ----------------------------------------------------------
 # Summary data
 # ----------------------------------------------------------
 
-df_allele_frequency = report_af.summary_allele(clust_sample, sample_name)
-df_allele_frequency.to_csv(f"{output}/.tempdir/reports/{sample_name}_read_classification_summary.csv", index=False)
-df_allele_frequency.to_excel(f"{output}/.tempdir/reports/{sample_name}_read_classification_summary.xlsx", index=False)
+df_allele_frequency = report_af.summary_allele(clust_sample, SAMPLE_NAME)
+df_allele_frequency.to_csv(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_summary.csv", index=False)
+df_allele_frequency.to_excel(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_summary.xlsx", index=False)
 
 # ----------------------------------------------------------
 # Visualization
 # ----------------------------------------------------------
 g = report_af.plot(df_allele_frequency)
-g.save(filename=f"{output}/.tempdir/reports/tmp_output.png", dpi=350)
-g.save(filename=f"{output}/.tempdir/reports/tmp_output.pdf")
+g.save(filename=f"{OUTPUT}/.tempdir/reports/tmp_output.png", dpi=350)
+g.save(filename=f"{OUTPUT}/.tempdir/reports/tmp_output.pdf")
 
 
 ########################################################################
@@ -301,33 +300,33 @@ g.save(filename=f"{output}/.tempdir/reports/tmp_output.pdf")
 ########################################################################
 
 
-Path(output, ".tempdir", "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
+Path(OUTPUT, ".tempdir", "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
 
-path_sam = Path(output, ".tempdir", "sam", f"{sample_name}_control.sam")
+path_sam = Path(OUTPUT, ".tempdir", "sam", f"{SAMPLE_NAME}_control.sam")
 sam = midsv.read_sam(path_sam)
 
 sam_update = sam.copy()
 sam_update = report_bam.remove_overlapped_reads(sam_update)
 sam_update = report_bam.remove_microhomology(sam_update)
 
-path_sam = f"{output}/.tempdir/bam/tmp_sam/{sample_name}_control_updated.sam"
-if genome:
-    sam_update = report_bam.realign(sam_update, genome_coodinates, chrom_size)
+path_sam = f"{OUTPUT}/.tempdir/bam/tmp_sam/{SAMPLE_NAME}_control_updated.sam"
+if GENOME:
+    sam_update = report_bam.realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
     report_bam.write_sam(sam_update, path_sam)
 else:
     report_bam.write_sam(sam_update, path_sam)
 
-pysam.sort("-@", f"{threads}", "-o", f"{output}/.tempdir/bam/{sample_name}.bam", path_sam)
-pysam.index("-@", f"{threads}", f"{output}/.tempdir/bam/{sample_name}.bam")
+pysam.sort("-@", f"{THREADS}", "-o", f"{OUTPUT}/.tempdir/bam/{SAMPLE_NAME}.bam", path_sam)
+pysam.index("-@", f"{THREADS}", f"{OUTPUT}/.tempdir/bam/{SAMPLE_NAME}.bam")
 
 sam_headers = [s for s in sam_update if s[0].startswith("@")]
 sam_contents = [s for s in sam_update if not s[0].startswith("@")]
 sam_groups = report_bam.group_by_name(sam_contents, clust_sample)
 for key, sam_content in sam_groups.items():
-    path_sam = f"{output}/.tempdir/bam/tmp_sam/{key}.sam"
+    path_sam = f"{OUTPUT}/.tempdir/bam/tmp_sam/{key}.sam"
     report_bam.write_sam(sam_headers + sam_content, path_sam)
-    pysam.sort("-@", f"{threads}", "-o", f"{output}/.tempdir/bam/{sample_name}_{key}.bam", path_sam)
-    pysam.index("-@", f"{threads}", f"{output}/.tempdir/bam/{sample_name}_{key}.bam")
+    pysam.sort("-@", f"{THREADS}", "-o", f"{OUTPUT}/.tempdir/bam/{SAMPLE_NAME}_{key}.bam", path_sam)
+    pysam.index("-@", f"{THREADS}", f"{OUTPUT}/.tempdir/bam/{SAMPLE_NAME}_{key}.bam")
 
 
 ########################################################################
@@ -336,18 +335,18 @@ for key, sam_content in sam_groups.items():
 
 # IGV.js（10本のリードのみ表示）のために各サンプル50本程度のリードのみを抽出する
 
-# for path_sam in Path(output, ".tempdir", "sam").glob("*_control.sam"):
+# for path_sam in Path(OUTPUT, ".tempdir", "sam").glob("*_control.sam"):
 #     sam = midsv.read_sam(path_sam)
-#     pysam.sort("-o", f"{output}/.tempdir/bam/{name}.bam", str(path_sam))
-#     pysam.index(f"{output}/.tempdir/bam/{name}.bam")
+#     pysam.sort("-o", f"{OUTPUT}/.tempdir/bam/{name}.bam", str(path_sam))
+#     pysam.index(f"{OUTPUT}/.tempdir/bam/{name}.bam")
 
 
 ########################################################################
 # Finish call
 ########################################################################
 
-if not debug:
-    shutil.rmtree(Path(output, ".tempdir"))
+if not DEBUG:
+    shutil.rmtree(Path(OUTPUT, ".tempdir"))
 
 # if __name__ == "__main__":
 #     main()
