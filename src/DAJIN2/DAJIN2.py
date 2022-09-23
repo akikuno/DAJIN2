@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 # Custom modules
-from src.DAJIN2.utils import argparser
+from src.DAJIN2.preprocess import argparser
 
 
 #! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
