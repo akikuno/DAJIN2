@@ -1,0 +1,7 @@
+sample,control,allele,output,genome,debug,threads
+examples/flox-cables2/AyabeTask1/barcode31.fq.gz,examples/flox-cables2/AyabeTask1/barcode42.fq.gz,examples/flox-cables2/AyabeTask1/design_cables2.fa,DAJIN_results,mm10,True,10
+examples/flox-cables2/AyabeTask1/barcode32.fq.gz,examples/flox-cables2/AyabeTask1/barcode42.fq.gz,examples/flox-cables2/AyabeTask1/design_cables2.fa,DAJIN_results,mm10,True,10
+examples/flox-cables2/AyabeTask1/barcode33.fq.gz,examples/flox-cables2/AyabeTask1/barcode42.fq.gz,examples/flox-cables2/AyabeTask1/design_cables2.fa,DAJIN_results,mm10,True,10
+examples/flox-cables2/AyabeTask1/barcode34.fq.gz,examples/flox-cables2/AyabeTask1/barcode42.fq.gz,examples/flox-cables2/AyabeTask1/design_cables2.fa,DAJIN_results,mm10,True,10
+examples/flox-cables2/AyabeTask1/barcode35.fq.gz,examples/flox-cables2/AyabeTask1/barcode42.fq.gz,examples/flox-cables2/AyabeTask1/design_cables2.fa,DAJIN_results,mm10,True,10
+examples/flox-cables2/AyabeTask1/barcode36.fq.gz,examples/flox-cables2/AyabeTask1/barcode42.fq.gz,examples/flox-cables2/AyabeTask1/design_cables2.fa,DAJIN_results,mm10,True,10
