@@ -1,6 +1,7 @@
 from __future__ import annotations
 import pandas as pd
 from collections import defaultdict
+from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
 
 
 def call_allele_name(clust_sample: list[dict], cons_sequence: dict, dict_allele: dict) -> str:
@@ -51,15 +52,6 @@ def summary_allele(clust_sample: list[dict], sample_name: str) -> pd.DataFrame:
 
 
 def plot(df_allele_frequency: pd.DataFrame):
-    from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
-
-    # TODO: move importing module to the top of file
-    """
-    Currently (2022-09-17), the imporing plotnine was failed during Github Actions because of "No module named 'matplotlib._contour'".
-    This error may occur by the plotnine installed by pip.
-    When the `cstag` is updated to v0.3.1 in BioConda, I will use conda as the test environment .
-    """
-
     g = (
         ggplot(df_allele_frequency, aes(x="sample", y="#reads", fill="allele name"))
         + geom_bar(position="fill", stat="identity", colour="black")
