@@ -43,4 +43,3 @@ def test_remove_microhomology_real_all_500_reads():
     test = report_bam.remove_microhomology(sam)
     answer = midsv.read_sam("tests/data/report_bam/barcode54_allele2_after.sam")
     assert test == answer
-

@@ -7,8 +7,9 @@ I aim to release DAJIN2 by 2022-03:crossed_fingers:
 - [ ] support nCATs
 - [ ] support PacBio
 - [ ] output VCF
-- [ ] visualize by igv.js
+- [ ] visualization by igv.js
 - [ ] multi-allele phasing
+- [ ] support GUI
 - [x] support samples without a reference genome
 - [x] support macOS
 - [x] minimize dependencies

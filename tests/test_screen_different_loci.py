@@ -70,4 +70,3 @@ def test_screen_different_loci_no_repeat():
     test = module_screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
     answer = [0]
     assert test == answer
-
