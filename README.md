@@ -1,6 +1,6 @@
 # DAJIN2 is now under development👷
 
-I aim to release DAJIN2 by 2022-03:crossed_fingers:
+I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 ## New planned features
 
 - [ ] release to PyPI and BioConda
