@@ -6,6 +6,18 @@ import re
 import mappy
 
 ########################################################################
+# Make directories
+########################################################################
+
+
+def make_directories(OUTPUT):
+    Path(OUTPUT).mkdir(exist_ok=True)
+    subdirectoris = ["cache", "fasta", "sam", "midsv", "bam", "reports"]
+    for subdir in subdirectoris:
+        Path(OUTPUT, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
+
+
+########################################################################
 # Extract basename
 ########################################################################
 
@@ -41,6 +53,7 @@ def dictionize_allele(allele_path: str) -> dict:
 ########################################################################
 # Fetch genome coodinate and chrom size
 ########################################################################
+
 
 # TODO TEST
 def fetch_coodinate(genome: str, ucsc_url: str, seq: str) -> dict:
