@@ -1,41 +1,50 @@
+from __future__ import annotations
+
+import warnings
+
+warnings.simplefilter("ignore")
 from itertools import groupby
 from pathlib import Path
-
-file_input = "examples/flox-cables2/AyabeTask1/batch.csv"
-
-inputs = Path("examples/flox-cables2/AyabeTask1/batch.csv").read_text().strip().split("\n")
+from src.DAJIN2.CORE import main
 
 ###############################################################################
-# Check and format inputs (batch.csv)
+# Parse arguments (batch.csv)
 ###############################################################################
 
-headers = inputs[0].split(",")
+input_file = "examples/flox-cables2/AyabeTask1/batch.csv"
 
-headers_argments = set(["sample", "control", "allele", "output", "genome", "debug", "threads"])
-for header in headers:
-    if header not in headers_argments:
-        raise ValueError("Column names must be 'sample', 'control', 'allele', 'output', 'genome', and 'threads'")
+inputs = Path(input_file).read_text().strip().split("\n")
 
-index_control = [i for i, header in enumerate(headers) if header == "control"][0]
+keys = inputs[0].split(",")
+
+keys_set = set(keys)
+keys_required = set(["sample", "control", "allele"])
+keys_all = set(["sample", "control", "allele", "output", "genome", "threads", "debug"])
+
+if not keys_required.issubset(keys_set):
+    raise ValueError(f"Column names of {input_file} must contain 'sample', 'control', and 'allele'")
+
+if not keys_set.issubset(keys_all):
+    raise ValueError(
+        f"Accepted column names of {input_file} are 'sample', 'control', 'allele', 'output', 'genome', and 'threads'."
+    )
+
+index_control = [i for i, header in enumerate(keys) if header == "control"][0]
 contents = [i.split(",") for i in inputs[1:]]
 contents.sort(key=lambda x: x[index_control])
 for _, groups in groupby(contents, key=lambda x: x[index_control]):
     for group in groups:
-        arguments = {h: g for h, g in zip(headers, group)}
-        sample = arguments["sample"]
-        control = arguments["control"]
-        allele = arguments["allele"]
-        output = arguments["output"]
-        try:
-            genome = arguments["genome"]
-        except KeyError:
-            genome = ""
-        try:
-            debug = arguments["debug"]
-        except KeyError:
-            debug = False
-        try:
-            threads = arguments["threads"]
-        except KeyError:
-            threads = 1
+        arguments = {h: g for h, g in zip(keys, group)}
+        # results_main = main(arguments)
+        # main(arguments)
 
+
+results_main = main(arguments)
+
+from collections import defaultdict
+
+d = defaultdict(int)
+for res in results_main:
+    d[res["NAME"]] += 1
+
+d

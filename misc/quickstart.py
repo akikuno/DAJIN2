@@ -18,16 +18,16 @@ from src.DAJIN2.consensus import module_consensus as consensus
 from src.DAJIN2.preprocess import argparser, check_inputs, format_inputs, mappy_align
 from src.DAJIN2.report import report_af, report_bam
 
-# * Point mutation
-SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
-    "examples/pm-tyr/barcode31.fq.gz",
-    "examples/pm-tyr/barcode32.fq.gz",
-    "examples/pm-tyr/design_tyr.fa",
-    "DAJIN_results",
-    "mm10",
-    True,
-    14,
-)
+# # * Point mutation
+# SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
+#     "examples/pm-tyr/barcode31.fq.gz",
+#     "examples/pm-tyr/barcode32.fq.gz",
+#     "examples/pm-tyr/design_tyr.fa",
+#     "DAJIN_results",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 
 # # * 2-cut deletion
@@ -41,16 +41,16 @@ SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
-# # * flox insertion
-# SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
-#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "DAJIN_results",
-#     "mm10",
-#     True,
-#     14,
-# )
+# * flox insertion
+SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
+    "examples/flox-cables2/AyabeTask1/barcode36.fq.gz",
+    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+    "DAJIN_results",
+    "mm10",
+    True,
+    14,
+)
 
 
 ###############################################################################
@@ -170,16 +170,12 @@ if not flag:
 path_midsv = Path(OUTPUT, ".tempdir", "midsv").glob(f"{SAMPLE_NAME}*")
 classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
-path_midsv = Path(OUTPUT, ".tempdir", "midsv").glob(f"{CONTROL_NAME}*")
-classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
-
 ########################################################################
 # Detect Structural variants
 ########################################################################
 
-for classifs in [classif_sample, classif_control]:
-    for classif in classifs:
-        classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+for classif in classif_sample:
+    classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 ########################################################################
 # Clustering

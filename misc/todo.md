@@ -4,6 +4,15 @@
 
 + [ ] batchモードの搭載
 
++ [ ] 引数チェック関数 → メイン関数 → レポート関数の3部構成とする
+  + メイン関数はbatchでも使えるようにする
+  + 引数チェックとレポートはbatchとsingleで異なる（可能性がある）
+
++ [ ] `is_control`の実装
+  + batchモードの時にcontrolが計算済みであれば処理を省略する
+  + controlのファイルサイズが同じで、midsvのjsonlがあればコントロールは処理済みとする
+  + メイン関数内のcontrolとsampleの処理を分ける
+
 ## 前処理
 
 + [ ] (test) `format_inputs`

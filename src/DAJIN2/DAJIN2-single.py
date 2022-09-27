@@ -28,67 +28,6 @@ from src.DAJIN2.report import report_af, report_bam
 SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = argparser.parse()
 
 ########################################################################
-# Whether existing cached CONTROL
-########################################################################
-
-# CACHEDIR = os.path.join(tempfile.gettempdir(), "DAJIN")
-# os.makedirs(CACHEDIR, exist_ok=True)
-
-# if cache_CONTROL.exists(CONTROL, CACHEDIR):
-#     IS_CACHED = True
-# else:
-#     cache_CONTROL.save_header(CONTROL, CACHEDIR)
-#     IS_CACHED = False
-
-###############################################################################
-# Check inputs (SAMPLE/CONTROL/ALLELE/GENOME)
-###############################################################################
-
-# ------------------------------------------------------------------------------
-# Check input path
-# ------------------------------------------------------------------------------
-
-check_inputs.exists(CONTROL)
-check_inputs.exists(SAMPLE)
-check_inputs.exists(ALLELE)
-
-# ------------------------------------------------------------------------------
-# Check formats (extensions and contents)
-# ------------------------------------------------------------------------------
-
-check_inputs.fastq_extension(CONTROL)
-check_inputs.fastq_content(CONTROL)
-check_inputs.fastq_extension(SAMPLE)
-check_inputs.fastq_content(SAMPLE)
-check_inputs.fasta_content(ALLELE)
-
-# ------------------------------------------------------------------------------
-# Check GENOMEs if GENOME is inputted
-# ------------------------------------------------------------------------------
-
-if GENOME:
-    # Check UCSC Server
-    UCSC_URLS = [
-        "https://genome.ucsc.edu/",
-        "https://genome-asia.ucsc.edu/",
-        "https://genome-euro.ucsc.edu/",
-    ]
-    UCSC_URL, flag_fail = check_inputs.available_url(UCSC_URLS)
-    if flag_fail:
-        raise URLError("UCSC Servers are currently down")
-    # Check UCSC Download Server
-    GOLDENPATH_URLS = [
-        "https://hgdownload.cse.ucsc.edu/goldenPath",
-        "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
-    ]
-    GOLDENPATH_URL, flag_fail = check_inputs.available_url(GOLDENPATH_URLS)
-    if flag_fail:
-        raise URLError("UCSC Download Servers are currently down")
-    # Check input genome
-    check_inputs.available_genome(GENOME, UCSC_URL)
-
-
-########################################################################
 # Make directories
 ########################################################################
 
@@ -132,11 +71,10 @@ for header, sequence in DICT_ALLELE.items():
 # Mapping with minimap2/mappy
 ###############################################################################
 
-
 for input_fasta in Path(OUTPUT, ".tempdir", "fasta").glob("*.fasta"):
     fasta_name = input_fasta.name.replace(".fasta", "")
     for fastq, fastq_name in zip([CONTROL, SAMPLE], [CONTROL_NAME, SAMPLE_NAME]):
-        # Todo: 並行処理で高速化！！
+        # Todo: Speed up by parallele processing
         sam = mappy_align.to_sam(str(input_fasta), fastq)
         output_sam = Path(OUTPUT, ".tempdir", "sam", f"{fastq_name}_{fasta_name}.sam")
         output_sam.write_text("\n".join(sam))
@@ -154,7 +92,6 @@ for sampath in Path(OUTPUT, ".tempdir", "sam").iterdir():
 ########################################################################
 # Classify alleles
 ########################################################################
-
 
 path_midsv = Path(OUTPUT, ".tempdir", "midsv").glob(f"{SAMPLE_NAME}*")
 classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
@@ -242,8 +179,8 @@ for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"
     for cs in cssplits:
         cs["NAME"] = allele_name
 
-result_sample = deepcopy(cssplit_sample)
-for res in result_sample:
+RESULT_SAMPLE = deepcopy(cssplit_sample)
+for res in RESULT_SAMPLE:
     del res["RNAME"]
     del res["CSSPLIT"]
 
@@ -275,7 +212,7 @@ for header, cons_per in cons_percentage.items():
 # All data
 # ----------------------------------------------------------
 
-df_clust_sample = report_af.all_allele(clust_sample, SAMPLE_NAME)
+df_clust_sample = report_af.all_allele(RESULT_SAMPLE, SAMPLE_NAME)
 df_clust_sample.to_csv(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_all.csv", index=False)
 df_clust_sample.to_excel(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_all.xlsx", index=False)
 
@@ -283,7 +220,7 @@ df_clust_sample.to_excel(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classifi
 # Summary data
 # ----------------------------------------------------------
 
-df_allele_frequency = report_af.summary_allele(clust_sample, SAMPLE_NAME)
+df_allele_frequency = report_af.summary_allele(RESULT_SAMPLE, SAMPLE_NAME)
 df_allele_frequency.to_csv(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_summary.csv", index=False)
 df_allele_frequency.to_excel(f"{OUTPUT}/.tempdir/reports/{SAMPLE_NAME}_read_classification_summary.xlsx", index=False)
 
