@@ -1,6 +1,6 @@
 from importlib import reload
 from pathlib import Path
-from src.DAJIN2.preprocess import mappy_align
+from src.DAJIN2.core.preprocess import mappy_align
 
 reload(mappy_align)
 

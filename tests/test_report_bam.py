@@ -1,7 +1,7 @@
 import midsv
 from pathlib import Path
 from importlib import reload
-from src.DAJIN2.report import report_bam
+from src.DAJIN2.core.report import report_bam
 
 reload(report_bam)
 

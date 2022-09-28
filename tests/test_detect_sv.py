@@ -1,6 +1,5 @@
 from importlib import reload
-import pytest
-from src.DAJIN2 import classification
+from src.DAJIN2.core import classification
 
 reload(classification)
 
@@ -38,4 +37,3 @@ def test_detect_sv_substitution():
     test = classification.detect_sv(test, threshold=2)
     answer = True
     assert test == answer
-

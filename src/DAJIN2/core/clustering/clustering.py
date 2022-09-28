@@ -48,4 +48,3 @@ def clustering(scores):
             break
         n_clusters += 1
     return labels
-

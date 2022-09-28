@@ -69,4 +69,3 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
             SAM.append("\t".join(alignment))
     for record in SAM:
         yield record
-

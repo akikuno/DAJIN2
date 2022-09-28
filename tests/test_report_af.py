@@ -1,5 +1,5 @@
 from __future__ import annotations
-from src.DAJIN2.report import report_af
+from src.DAJIN2.core.report import report_af
 import pandas as pd
 from importlib import reload
 from pathlib import Path

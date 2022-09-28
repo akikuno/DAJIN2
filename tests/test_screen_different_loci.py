@@ -1,19 +1,19 @@
-from src.DAJIN2.clustering import module_screen_diffloci
+from src.DAJIN2.core.clustering import screen_diffloci
 from importlib import reload
 
-reload(module_screen_diffloci)
+reload(screen_diffloci)
 
 
 def test_replaceN_left():
     sample_cs = ["N", "N", "=A"]
-    test = module_screen_diffloci.replaceN(sample_cs)
+    test = screen_diffloci.replaceN(sample_cs)
     answer = ["@", "@", "=A"]
     assert test == answer
 
 
 def test_replaceN_right():
     sample_cs = ["=A", "N", "N"]
-    test = module_screen_diffloci.replaceN(sample_cs)
+    test = screen_diffloci.replaceN(sample_cs)
     answer = ["=A", "@", "@"]
     assert test == answer
 
@@ -29,7 +29,7 @@ def test_make_table():
         "=A,=A,=A",
         "*AG,=A,=A",
     ]
-    test = module_screen_diffloci.make_table(sample_cssplit, control_cssplit)
+    test = screen_diffloci.make_table(sample_cssplit, control_cssplit)
     answer = [[1, 4], [4, 1], [4, 1]], [[3, 2], [4, 1], [3, 3]]
     assert test == answer
 
@@ -48,7 +48,7 @@ def test_screen_different_loci_repeat():
     sequence = "AAAACCCC"
     alpha = 0.1
     threshold = 0.0
-    test = module_screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
+    test = screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
     answer = [0]
     assert test == answer
 
@@ -67,6 +67,6 @@ def test_screen_different_loci_no_repeat():
     sequence = "AAACCC"
     alpha = 0.25
     threshold = 0.0
-    test = module_screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
+    test = screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
     answer = [0]
     assert test == answer

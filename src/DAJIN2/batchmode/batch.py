@@ -1,14 +1,12 @@
 from __future__ import annotations
-
 import warnings
-
-warnings.simplefilter("ignore")
 from itertools import groupby
 from pathlib import Path
-from src.DAJIN2 import DAJIN2main
+from DAJIN2.core import main
 from importlib import reload
 
-reload(DAJIN2main)
+warnings.simplefilter("ignore")
+reload(main)
 
 ###############################################################################
 # Parse arguments (batch.csv)
@@ -42,5 +40,5 @@ for _, groups in groupby(contents, key=lambda x: x[index_control]):
         # main(arguments)
 
 
-results_main = DAJIN2main.main(arguments)
+results_main = main.main(arguments)
 

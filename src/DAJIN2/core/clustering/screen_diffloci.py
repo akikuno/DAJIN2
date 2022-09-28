@@ -62,7 +62,8 @@ def chistatistic(s_table, c_table, threshold=0.05) -> float:
 def screen_different_loci(
     cssplit_sample: list[str], cssplit_control: list[str], sequence: str, alpha: float = 0.01, threshold: float = 0.05
 ) -> list[dict]:
-    """Scoring mutation (insertion, deletion, substitution, inversion, and unknow) at statistically significant loci between sample and control
+    """Scoring mutation (insertion, deletion, substitution, inversion, and unknow)
+    at significant loci between sample and control
 
     Args:
         cssplit_sample (list[str]): List of sample's CSSPLITs
@@ -122,46 +123,3 @@ def screen_different_loci(
             if pval < alpha:
                 different_loci.append(i)
     return different_loci
-
-
-# def annotate_scores(classif_sample: list[dict], allele_diffloci: list[dict]) -> list[dict]:
-#     """Annotate scores to sample reads
-
-#     Args:
-#         classif_sample (list[dict]):
-#         allele_diffloci (list[dict]):
-
-#     Returns:
-#         list[dict]: Dist contains "SCORE"
-#     """
-#     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["QNAME"]))
-#     cluster_sample = deepcopy(classif_sample)
-#     for c in cluster_sample:
-#         del c["CSSPLIT"]
-#     classif_groupby = groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"]))
-#     cluster_groupby = groupby(cluster_sample, key=lambda x: (x["ALLELE"], x["SV"]))
-#     for ((ALLELE, SV), classif), (_, cluster) in zip(classif_groupby, cluster_groupby):
-#         keyname = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
-#         diffloci_scores = allele_diffloci[keyname]
-#         for clas, clus in zip(classif, cluster):
-#             cs = clas["CSSPLIT"].split(",")
-#             cluster_cssplit = []
-#             cluster_score = []
-#             for difflocus, score in diffloci_scores.items():
-#                 cluster_cssplit.append(cs[difflocus])
-#                 if cs[difflocus].startswith("="):
-#                     cluster_score.append(0)
-#                 elif re.search(r"[acgtn]", cs[difflocus]):
-#                     cluster_score.append(score[3])
-#                 elif cs[difflocus].startswith("+"):
-#                     cluster_score.append(score[0])
-#                 elif cs[difflocus].startswith("-"):
-#                     cluster_score.append(score[1])
-#                 elif cs[difflocus].startswith("*"):
-#                     cluster_score.append(score[2])
-#                 elif cs[difflocus].startswith("N"):
-#                     cluster_score.append(score[4])
-#             clus["CSSPLIT"] = cluster_cssplit
-#             clus["SCORE"] = cluster_score
-#     return cluster_sample
-

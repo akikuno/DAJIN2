@@ -1,68 +1,73 @@
-from src.DAJIN2.consensus import module_consensus
+from src.DAJIN2.core import consensus
 from importlib import reload
 
-reload(module_consensus)
-
-
-def test_to_fasta():
-    header = "test_sequence"
-    cons_seq = "A" * 81
-    test = module_consensus.to_fasta(header, cons_seq)
-    answer = ">test_sequence\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nA\n"
-    assert test == answer
+reload(consensus)
 
 
 def test_call_sequence_match():
     cons_percentage_by_key = [{"=A": 1.0}, {"=T": 0.9, "-T": 0.1}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AT"
     assert test == answer
 
 
 def test_call_sequence_deletion():
     cons_percentage_by_key = [{"=A": 1.0}, {"-A": 0.9, "=A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AT"
     assert test == answer
 
 
 def test_call_sequence_substitution():
     cons_percentage_by_key = [{"=A": 1.0}, {"*AC": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "ACT"
     assert test == answer
 
 
 def test_call_sequence_inversion():
     cons_percentage_by_key = [{"=A": 1.0}, {"=a": 0.9, "-a": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AaT"
     assert test == answer
 
 
 def test_call_sequence_insertion_match():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|=A": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AGGGAT"
     assert test == answer
 
 
 def test_call_sequence_insertion_deletion():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|-A": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AGGGT"
     assert test == answer
 
 
 def test_call_sequence_insertion_substitution():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|*AT": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AGGGTT"
     assert test == answer
 
 
 def test_call_sequence_insertion_N():
     cons_percentage_by_key = [{"=A": 1.0}, {"+G|+G|+G|N": 0.9, "-A": 0.1}, {"=T": 1.0}]
-    test = module_consensus.call_sequence(cons_percentage_by_key)
+    test = consensus.call.call_sequence(cons_percentage_by_key)
     answer = "AGGGNT"
+    assert test == answer
+
+
+########################################################################
+# Convert to files
+########################################################################
+
+
+def test_to_fasta():
+    header = "test_sequence"
+    cons_seq = "A" * 81
+    test = consensus.convert.to_fasta(header, cons_seq)
+    answer = ">test_sequence\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nA\n"
     assert test == answer

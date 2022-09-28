@@ -1,19 +1,18 @@
 from __future__ import annotations
-
 import warnings
-
-warnings.simplefilter("ignore")
 import hashlib
 from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
-
 import midsv
+from src.DAJIN2.core import preprocess
+from src.DAJIN2.core import classification
+from src.DAJIN2.core import clustering
+from src.DAJIN2.core import consensus
+from src.DAJIN2.core import report
 
-from src.DAJIN2 import classification, clustering
-from src.DAJIN2.consensus import module_consensus as consensus
-from src.DAJIN2.preprocess import check_inputs, format_inputs, mappy_align
+warnings.simplefilter("ignore")
 
 
 def assignment(arguments: dict, key: str, value: str):
@@ -33,17 +32,17 @@ def main(arguments: dict) -> None:
     ##########################################################
     # Check inputs
     ##########################################################
-    check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
-    IS_CACHE_CONTROL = check_inputs.is_cache_control(CONTROL, OUTPUT)
-    IS_CACHE_GENOME = check_inputs.is_cache_genome(GENOME, OUTPUT, IS_CACHE_CONTROL)
+    preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+    IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, OUTPUT)
+    IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, OUTPUT, IS_CACHE_CONTROL)
     if GENOME and not IS_CACHE_GENOME:
-        UCSC_URL, GOLDENPATH_URL = check_inputs.check_and_fetch_genome(GENOME)
+        UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
     ##########################################################
     # Format inputs
     ##########################################################
-    SAMPLE_NAME = format_inputs.extract_basename(SAMPLE)
-    CONTROL_NAME = format_inputs.extract_basename(CONTROL)
-    DICT_ALLELE = format_inputs.dictionize_allele(ALLELE)
+    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
+    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
+    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
 
     if GENOME:
         path_genome_coodinates = Path(OUTPUT, ".tempdir", "cache", "genome_coodinates.jsonl")
@@ -52,14 +51,14 @@ def main(arguments: dict) -> None:
             GENOME_COODINATES = midsv.read_jsonl(path_genome_coodinates)[0]
             CHROME_SIZE = int(path_chrome_size.read_text())
         else:
-            GENOME_COODINATES = format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
-            CHROME_SIZE = format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
+            GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
+            CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
             # Save info to the cache directory
             Path(OUTPUT, ".tempdir", "cache", "genome_symbol.txt").write_text(GENOME)
             midsv.write_jsonl([GENOME_COODINATES], path_genome_coodinates)
             path_chrome_size.write_text(str(CHROME_SIZE))
 
-    format_inputs.make_directories(OUTPUT)
+    preprocess.format_inputs.make_directories(OUTPUT)
 
     ################################################################################
     # Export fasta files as single-FASTA format
@@ -79,11 +78,11 @@ def main(arguments: dict) -> None:
             continue
         if not IS_CACHE_CONTROL:
             fastq, fastq_name = CONTROL, CONTROL_NAME
-            sam = mappy_align.to_sam(str(input_fasta), fastq)
+            sam = preprocess.mappy_align.to_sam(str(input_fasta), fastq)
             output_sam = Path(OUTPUT, ".tempdir", "sam", f"{fastq_name}_{identifier}.sam")
             output_sam.write_text("\n".join(sam))
         fastq, fastq_name = SAMPLE, SAMPLE_NAME
-        sam = mappy_align.to_sam(str(input_fasta), fastq)
+        sam = preprocess.mappy_align.to_sam(str(input_fasta), fastq)
         output_sam = Path(OUTPUT, ".tempdir", "sam", f"{fastq_name}_{identifier}.sam")
         output_sam.write_text("\n".join(sam))
 

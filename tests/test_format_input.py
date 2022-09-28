@@ -1,5 +1,5 @@
 import pytest
-from src.DAJIN2.preprocess import format_inputs
+from src.DAJIN2.core.preprocess import format_inputs
 from importlib import reload
 
 reload(format_inputs)

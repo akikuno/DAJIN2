@@ -97,4 +97,3 @@ def make_scores(cssplit_sample, diffloci):
         scores = np.array(scores)
         scores = (scores * sum_scores).tolist()
         yield scores
-
