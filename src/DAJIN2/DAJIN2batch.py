@@ -5,7 +5,10 @@ import warnings
 warnings.simplefilter("ignore")
 from itertools import groupby
 from pathlib import Path
-from src.DAJIN2.CORE import main
+from src.DAJIN2 import DAJIN2main
+from importlib import reload
+
+reload(DAJIN2main)
 
 ###############################################################################
 # Parse arguments (batch.csv)
@@ -39,12 +42,5 @@ for _, groups in groupby(contents, key=lambda x: x[index_control]):
         # main(arguments)
 
 
-results_main = main(arguments)
+results_main = DAJIN2main.main(arguments)
 
-from collections import defaultdict
-
-d = defaultdict(int)
-for res in results_main:
-    d[res["NAME"]] += 1
-
-d

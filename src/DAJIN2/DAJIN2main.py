@@ -3,11 +3,11 @@ from __future__ import annotations
 import warnings
 
 warnings.simplefilter("ignore")
+import hashlib
 from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
-import hashlib
 
 import midsv
 
@@ -177,7 +177,25 @@ def main(arguments: dict) -> None:
         clust["LABEL"] = label
         del clust["CSSPLIT"]
 
-    clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+    n_sample = len(clust_sample)
+    d = defaultdict(int)
+    for cs in clust_sample:
+        d[cs["LABEL"]] += 1 / n_sample
+
+    d_per = {key: round(val * 100, 1) for key, val in d.items()}
+
+    for cs in clust_sample:
+        cs["PERCENT"] = d_per[cs["LABEL"]]
+
+    # Allocate new labels by PERCENT
+    clust_sample.sort(key=lambda x: (-x["PERCENT"], x["LABEL"]))
+    new_label = 1
+    prev_label = clust_sample[0]["LABEL"]
+    for cs in clust_sample:
+        if prev_label != cs["LABEL"]:
+            new_label += 1
+        prev_label = cs["LABEL"]
+        cs["LABEL"] = new_label
 
     ########################################################################
     # Consensus call
