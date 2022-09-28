@@ -2,7 +2,7 @@ from __future__ import annotations
 import warnings
 from itertools import groupby
 from pathlib import Path
-from DAJIN2.core import main
+from src.DAJIN2.core import main
 from importlib import reload
 
 warnings.simplefilter("ignore")
