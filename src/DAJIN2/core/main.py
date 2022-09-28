@@ -237,4 +237,6 @@ def main(arguments: dict) -> None:
     for res in RESULT_SAMPLE:
         del res["RNAME"]
         del res["CSSPLIT"]
+
+    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
     return RESULT_SAMPLE
