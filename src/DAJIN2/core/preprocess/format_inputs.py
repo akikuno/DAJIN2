@@ -10,11 +10,10 @@ import mappy
 ########################################################################
 
 
-def make_directories(OUTPUT):
-    Path(OUTPUT).mkdir(exist_ok=True)
+def make_directories(TEMPDIR: Path):
     subdirectoris = ["cache", "fasta", "sam", "midsv", "bam", "reports"]
     for subdir in subdirectoris:
-        Path(OUTPUT, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
+        Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
 
 
 ########################################################################
