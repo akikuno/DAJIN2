@@ -4,7 +4,7 @@ tmp/*
 tmp*
 .tmp*
 DAJIN_results/*
-
+DAJINResults/*
 # Nanosim
 *aligned_reads*
 *error_profile*
