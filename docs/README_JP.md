@@ -8,6 +8,12 @@
 DAJIN2 [-s FASTQ] [-c FASTQ] [-a FASTA] [-o OUTPUT] [-g GENOME] [-t THREADS]
 ```
 
+### Batchモード
+
+```bash
+DAJIN2 batch [-f <batch.csv>] [-t THREADS]
+```
+
 ### 引数
 
 ```
