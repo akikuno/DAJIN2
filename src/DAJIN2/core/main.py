@@ -21,6 +21,7 @@ def main(arguments: dict) -> None:
     NAME = arguments["name"]
     GENOME = arguments["genome"]
     THREADS = arguments["threads"]
+
     ##########################################################
     # Check inputs
     ##########################################################
@@ -28,8 +29,10 @@ def main(arguments: dict) -> None:
     TEMPDIR = Path("DAJINResults", f".tempdir_{NAME}")
     IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, TEMPDIR)
     IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+    UCSC_URL, GOLDENPATH_URL = None, None
     if GENOME and not IS_CACHE_GENOME:
         UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
+
     ##########################################################
     # Format inputs
     ##########################################################
@@ -40,18 +43,9 @@ def main(arguments: dict) -> None:
     preprocess.format_inputs.make_directories(TEMPDIR)
 
     if GENOME:
-        path_genome_coodinates = Path(TEMPDIR, "cache", "genome_coodinates.jsonl")
-        path_chrome_size = Path(TEMPDIR, "cache", "chrome_size.txt")
-        if IS_CACHE_GENOME:
-            GENOME_COODINATES = midsv.read_jsonl(path_genome_coodinates)[0]
-            CHROME_SIZE = int(path_chrome_size.read_text())
-        else:
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
-            CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
-            # Save info to the cache directory
-            Path(TEMPDIR, "cache", "genome_symbol.txt").write_text(GENOME)
-            midsv.write_jsonl([GENOME_COODINATES], path_genome_coodinates)
-            path_chrome_size.write_text(str(CHROME_SIZE))
+        GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
+            TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME
+        )
 
     ################################################################################
     # Export fasta files as single-FASTA format
@@ -65,41 +59,23 @@ def main(arguments: dict) -> None:
     ###############################################################################
     # Mapping with minimap2/mappy
     ###############################################################################
-    for input_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
-        identifier = input_fasta.stem
-        if identifier not in set(DICT_ALLELE.keys()):
+    for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
+        name_fasta = path_fasta.stem
+        if name_fasta not in set(DICT_ALLELE.keys()):
             continue
         if not IS_CACHE_CONTROL:
-            fastq, fastq_name = CONTROL, CONTROL_NAME
-            sam = preprocess.mappy_align.to_sam(str(input_fasta), fastq)
-            output_sam = Path(TEMPDIR, "sam", f"{fastq_name}_{identifier}.sam")
-            output_sam.write_text("\n".join(sam))
-        fastq, fastq_name = SAMPLE, SAMPLE_NAME
-        sam = preprocess.mappy_align.to_sam(str(input_fasta), fastq)
-        output_sam = Path(TEMPDIR, "sam", f"{fastq_name}_{identifier}.sam")
-        output_sam.write_text("\n".join(sam))
+            preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
 
     ########################################################################
     # MIDSV conversion
     ########################################################################
     if not IS_CACHE_CONTROL:
-        for sampath in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
-            identifier = sampath.stem.split("_")[1]
-            if identifier not in set(DICT_ALLELE.keys()):
-                continue
-            sam = midsv.read_sam(sampath)
-            midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
-            output_jsonl = Path(TEMPDIR, "midsv", f"{sampath.stem}.jsonl")
-            midsv.write_jsonl(midsv_jsonl, output_jsonl)
+        for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
+            preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
 
-    for sampath in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
-        identifier = sampath.stem.split("_")[1]
-        if identifier not in set(DICT_ALLELE.keys()):
-            continue
-        sam = midsv.read_sam(sampath)
-        midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
-        output_jsonl = Path(TEMPDIR, "midsv", f"{sampath.stem}.jsonl")
-        midsv.write_jsonl(midsv_jsonl, output_jsonl)
+    for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
 
     ###############################################################################
     # Cashe inputs (control)
@@ -116,14 +92,12 @@ def main(arguments: dict) -> None:
     ########################################################################
     path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
     classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
-    path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
-    classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
+
     ########################################################################
     # Detect Structural variants
     ########################################################################
-    for classifs in [classif_sample, classif_control]:
-        for classif in classifs:
-            classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+    for classif in classif_sample:
+        classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
     ########################################################################
     # Clustering
