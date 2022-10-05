@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.request import urlopen
 import re
 import mappy
+import midsv
 
 ########################################################################
 # Make directories
@@ -11,9 +12,10 @@ import mappy
 
 
 def make_directories(TEMPDIR: Path):
-    subdirectoris = ["cache", "fasta", "sam", "midsv", "bam", "reports"]
+    subdirectoris = ["cache", "fasta", "sam", "midsv", "bam", "report"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
+    Path(TEMPDIR, "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
 
 
 ########################################################################
@@ -74,3 +76,21 @@ def fetch_chrom_size(chrom: str, genome: str, goldenpath_url: str) -> int:
         if chrom == req[0]:
             chrom_size = int(req[1])
     return chrom_size
+
+
+def get_coodinates_and_chromsize(
+    TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME: bool
+) -> tuple:
+    path_genome_coodinates = Path(TEMPDIR, "cache", "genome_coodinates.jsonl")
+    path_chrome_size = Path(TEMPDIR, "cache", "chrome_size.txt")
+    if IS_CACHE_GENOME:
+        GENOME_COODINATES = midsv.read_jsonl(path_genome_coodinates)[0]
+        CHROME_SIZE = int(path_chrome_size.read_text())
+    else:
+        GENOME_COODINATES = fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
+        CHROME_SIZE = fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
+        # Save info to the cache directory
+        Path(TEMPDIR, "cache", "genome_symbol.txt").write_text(GENOME)
+        midsv.write_jsonl([GENOME_COODINATES], path_genome_coodinates)
+        path_chrome_size.write_text(str(CHROME_SIZE))
+    return GENOME_COODINATES, CHROME_SIZE
