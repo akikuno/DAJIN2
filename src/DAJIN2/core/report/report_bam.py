@@ -4,6 +4,8 @@ from typing import Union
 import re
 from collections import defaultdict
 from itertools import groupby
+import pysam
+import midsv
 
 
 def revcomp(sequence: str) -> str:
@@ -210,3 +212,36 @@ def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[lis
             idx_right += 1
     return sam_groups
 
+
+###############################################################################
+# Output
+###############################################################################
+
+
+def output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
+    path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_control.sam")
+    sam = midsv.read_sam(path_sam)
+
+    sam_update = sam.copy()
+    sam_update = remove_overlapped_reads(sam_update)
+    sam_update = remove_microhomology(sam_update)
+
+    path_sam_update = Path(TEMPDIR, "bam", "tmp_sam", f"{SAMPLE_NAME}_control_update.sam")
+    if GENOME:
+        sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
+        write_sam(sam_update, path_sam_update)
+    else:
+        write_sam(sam_update, path_sam_update)
+
+    pysam.sort("-@", f"{THREADS}", "-o", f"{TEMPDIR}/bam/{SAMPLE_NAME}.bam", str(path_sam_update))
+    pysam.index("-@", f"{THREADS}", f"{TEMPDIR}/bam/{SAMPLE_NAME}.bam")
+
+    sam_headers = [s for s in sam_update if s[0].startswith("@")]
+    sam_contents = [s for s in sam_update if not s[0].startswith("@")]
+    sam_groups = group_by_name(sam_contents, RESULT_SAMPLE)
+
+    for key, sam_content in sam_groups.items():
+        path_sam = f"{TEMPDIR}/bam/tmp_sam/{key}.sam"
+        write_sam(sam_headers + sam_content, path_sam)
+        pysam.sort("-@", f"{THREADS}", "-o", f"{TEMPDIR}/bam/{SAMPLE_NAME}_{key}.bam", path_sam)
+        pysam.index("-@", f"{THREADS}", f"{TEMPDIR}/bam/{SAMPLE_NAME}_{key}.bam")
