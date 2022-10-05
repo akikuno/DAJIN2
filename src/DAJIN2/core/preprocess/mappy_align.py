@@ -1,6 +1,6 @@
 from __future__ import annotations
 from collections.abc import Generator
-
+from pathlib import Path
 import cstag
 import mappy
 
@@ -69,3 +69,9 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
             SAM.append("\t".join(alignment))
     for record in SAM:
         yield record
+
+
+def output_sam(TEMPDIR, path_fasta, name_fasta, path_fastq, name_fastq):
+    sam = to_sam(str(path_fasta), path_fastq)
+    output_sam = Path(TEMPDIR, "sam", f"{name_fastq}_{name_fasta}.sam")
+    output_sam.write_text("\n".join(sam))
