@@ -3,20 +3,22 @@ from __future__ import annotations
 import warnings
 
 warnings.simplefilter("ignore")
-import shutil
+import hashlib
 from collections import defaultdict
 from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
-from urllib.error import URLError
-
+from importlib import reload
 import midsv
 import pysam
 
-from src.DAJIN2 import classification, clustering
-from src.DAJIN2.consensus import module_consensus as consensus
-from src.DAJIN2.preprocess import argparser, check_inputs, format_inputs, mappy_align
-from src.DAJIN2.report import report_af, report_bam
+from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
+
+reload(preprocess)
+reload(classification)
+reload(clustering)
+reload(consensus)
+reload(report)
 
 # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
@@ -42,153 +44,103 @@ from src.DAJIN2.report import report_af, report_bam
 # )
 
 # * flox insertion
-SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
     "examples/flox-cables2/AyabeTask1/barcode36.fq.gz",
     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-    "DAJIN_results",
+    "Ayabe-Task1",
     "mm10",
     True,
     14,
 )
 
+##########################################################
+# Check inputs
+##########################################################
+preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+TEMPDIR = Path("DAJINResults", f".tempdir_{NAME}")
+IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, TEMPDIR)
+IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+UCSC_URL, GOLDENPATH_URL = None, None
+if GENOME and not IS_CACHE_GENOME:
+    UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
 
-###############################################################################
-# Check and format inputs (sample/control/allele)
-###############################################################################
+##########################################################
+# Format inputs
+##########################################################
+SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
+CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
+DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
 
-from pathlib import Path
-from importlib import reload
-from src.DAJIN2.preprocess import check_inputs
-from src.DAJIN2.preprocess import format_inputs
-from urllib.error import URLError
-
-reload(check_inputs)
-reload(format_inputs)
-
-###############################################################################
-# Check inputs (SAMPLE/CONTROL/ALLELE/GENOME)
-###############################################################################
-
-# ------------------------------------------------------------------------------
-# Check input path
-# ------------------------------------------------------------------------------
-
-check_inputs.exists(CONTROL)
-check_inputs.exists(SAMPLE)
-check_inputs.exists(ALLELE)
-
-# ------------------------------------------------------------------------------
-# Check formats (extensions and contents)
-# ------------------------------------------------------------------------------
-
-check_inputs.fastq_extension(CONTROL)
-check_inputs.fastq_content(CONTROL)
-check_inputs.fastq_extension(SAMPLE)
-check_inputs.fastq_content(SAMPLE)
-check_inputs.fasta_content(ALLELE)
-
-# ------------------------------------------------------------------------------
-# Check GENOMEs if GENOME is inputted
-# ------------------------------------------------------------------------------
+preprocess.format_inputs.make_directories(TEMPDIR)
 
 if GENOME:
-    # Check UCSC Server
-    UCSC_URLS = [
-        "https://genome.ucsc.edu/",
-        "https://genome-asia.ucsc.edu/",
-        "https://genome-euro.ucsc.edu/",
-    ]
-    UCSC_URL, flag_fail = check_inputs.available_url(UCSC_URLS)
-    if flag_fail:
-        raise URLError("UCSC Servers are currently down")
-    # Check UCSC Download Server
-    GOLDENPATH_URLS = [
-        "https://hgdownload.cse.ucsc.edu/goldenPath",
-        "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
-    ]
-    GOLDENPATH_URL, flag_fail = check_inputs.available_url(GOLDENPATH_URLS)
-    if flag_fail:
-        raise URLError("UCSC Download Servers are currently down")
-    # Check input genome
-    check_inputs.available_genome(GENOME, UCSC_URL)
+    GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
+        TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME
+    )
 
 
-###############################################################################
-# Format inputs (SAMPLE/CONTROL/ALLELE/GENOME)
-###############################################################################
-
-SAMPLE_NAME = format_inputs.extract_basename(SAMPLE)
-CONTROL_NAME = format_inputs.extract_basename(CONTROL)
-DICT_ALLELE = format_inputs.dictionize_allele(ALLELE)
-
-if GENOME:
-    GENOME_COODINATES = format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
-    CHROME_SIZE = format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
-
-flag1 = Path(OUTPUT, ".tempdir", "midsv", f"{SAMPLE_NAME}_control.jsonl").exists()
-flag2 = Path(OUTPUT, ".tempdir", "midsv", f"{CONTROL_NAME}_control.jsonl").exists()
+flag1 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl").exists()
+flag2 = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl").exists()
 flag = flag1 and flag2
 
 if not flag:
-    if Path(OUTPUT).exists():
-        shutil.rmtree(OUTPUT)
-    Path(OUTPUT).mkdir(exist_ok=True)
-    if Path(OUTPUT, ".tempdir").exists():
-        shutil.rmtree(Path(OUTPUT, ".tempdir"))
-    for subdir in ["fasta", "fastq", "sam", "midsv", "bam", "reports"]:
-        Path(OUTPUT, ".tempdir", subdir).mkdir(parents=True, exist_ok=True)
+    ################################################################################
+    # Export fasta files as single-FASTA format
+    ################################################################################
     # TODO: use yeild, not export
-    for header, sequence in DICT_ALLELE.items():
-        contents = "\n".join([">" + header, sequence]) + "\n"
-        output_fasta = Path(OUTPUT, ".tempdir", "fasta", f"{header}.fasta")
+    for identifier, sequence in DICT_ALLELE.items():
+        contents = "\n".join([">" + identifier, sequence]) + "\n"
+        output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
     ###############################################################################
     # Mapping with minimap2/mappy
     ###############################################################################
-    for input_fasta in Path(OUTPUT, ".tempdir", "fasta").glob("*.fasta"):
-        fasta_name = input_fasta.name.replace(".fasta", "")
-        for fastq, fastq_name in zip([CONTROL, SAMPLE], [CONTROL_NAME, SAMPLE_NAME]):
-            # Todo: 並行処理で高速化！！
-            sam = mappy_align.to_sam(str(input_fasta), fastq)
-            output_sam = Path(OUTPUT, ".tempdir", "sam", f"{fastq_name}_{fasta_name}.sam")
-            output_sam.write_text("\n".join(sam))
+    for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
+        name_fasta = path_fasta.stem
+        if name_fasta not in set(DICT_ALLELE.keys()):
+            continue
+        if not IS_CACHE_CONTROL:
+            preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
     ########################################################################
     # MIDSV conversion
     ########################################################################
-    for sampath in Path(OUTPUT, ".tempdir", "sam").iterdir():
-        output_jsonl = Path(OUTPUT, ".tempdir", "midsv", f"{sampath.stem}.jsonl")
-        sam = midsv.read_sam(sampath)
-        midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
-        midsv.write_jsonl(midsv_jsonl, output_jsonl)
+    if not IS_CACHE_CONTROL:
+        for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
+            preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+    for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+    ###############################################################################
+    # Cashe inputs (control)
+    ###############################################################################
+    if not IS_CACHE_CONTROL:
+        control_hash = Path(CONTROL).read_bytes()
+        control_hash = hashlib.sha256(control_hash).hexdigest()
+        PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
+        PATH_CACHE_HASH.write_text(str(control_hash))
 
 ########################################################################
 # Classify alleles
 ########################################################################
-
-
-path_midsv = Path(OUTPUT, ".tempdir", "midsv").glob(f"{SAMPLE_NAME}*")
+path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
 classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
 ########################################################################
 # Detect Structural variants
 ########################################################################
-
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 ########################################################################
 # Clustering
 ########################################################################
-
 # -----------------------------------------------------------------------
 # Extract significantly different base loci between Sample and Control
 # -----------------------------------------------------------------------
-
-
 dict_cssplit_control = defaultdict(list[dict])
 for ALLELE in DICT_ALLELE.keys():
-    path_control = Path(OUTPUT, ".tempdir", "midsv", f"{CONTROL_NAME}_{ALLELE}.jsonl")
+    path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{ALLELE}.jsonl")
     cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
     dict_cssplit_control[ALLELE] = cssplit_control
 
@@ -201,10 +153,21 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
     diffloci = clustering.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha=0.01, threshold=0.05)
     diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
 
+
+# ALLELE = "control"
+# SV = False
+# cssplit_sample = []
+# for group in classif_sample:
+#     if group["ALLELE"] == ALLELE and group["SV"] == SV:
+#         cssplit_sample.append(group["CSSPLIT"])
+
+# table_sample, table_control = make_table(cssplit_sample, cssplit_control)
+# s = table_sample[88]
+# c = table_control[88]
+# s, c
 # -----------------------------------------------------------------------
 # Clustering
 # -----------------------------------------------------------------------
-
 labels = []
 label_start = 1
 for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
@@ -223,20 +186,35 @@ for clust, label in zip(clust_sample, labels):
     clust["LABEL"] = label
     del clust["CSSPLIT"]
 
-clust_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+n_sample = len(clust_sample)
+d = defaultdict(int)
+for cs in clust_sample:
+    d[cs["LABEL"]] += 1 / n_sample
+
+d_per = {key: round(val * 100, 1) for key, val in d.items()}
+
+for cs in clust_sample:
+    cs["PERCENT"] = d_per[cs["LABEL"]]
+
+# Allocate new labels by PERCENT
+clust_sample.sort(key=lambda x: (-x["PERCENT"], x["LABEL"]))
+new_label = 1
+prev_label = clust_sample[0]["LABEL"]
+for cs in clust_sample:
+    if prev_label != cs["LABEL"]:
+        new_label += 1
+    prev_label = cs["LABEL"]
+    cs["LABEL"] = new_label
 
 ########################################################################
 # Consensus call
 ########################################################################
-
-path = Path(OUTPUT, ".tempdir", "midsv", f"{CONTROL_NAME}_control.jsonl")
+path = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl")
 cssplit_control = midsv.read_jsonl(path)
-
-path = Path(OUTPUT, ".tempdir", "midsv", f"{SAMPLE_NAME}_control.jsonl")
+path = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl")
 cssplit_sample = midsv.read_jsonl(path)
 cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
 cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
-
 cons_percentage = defaultdict(list)
 cons_sequence = defaultdict(list)
 for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
@@ -249,8 +227,49 @@ for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"
     for cs in cssplits:
         cs["NAME"] = allele_name
 
-result_sample = deepcopy(cssplit_sample)
-for res in result_sample:
+RESULT_SAMPLE = deepcopy(cssplit_sample)
+for res in RESULT_SAMPLE:
     del res["RNAME"]
     del res["CSSPLIT"]
+
+# ----------------------------------------------------------
+# Conseusns Report：FASTA/HTML/VCF
+# ----------------------------------------------------------
+# FASTA
+for header, cons_seq in cons_sequence.items():
+    cons_fasta = report.report_files.to_fasta(header, cons_seq)
+    Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+
+# HTML
+for header, cons_per in cons_percentage.items():
+    cons_html = report.report_files.to_html(header, cons_per)
+    Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+
+# BAM
+report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+
+# VCF
+# working in progress
+
+
+########################################################################
+# Output Results
+########################################################################
+RESULT_SAMPLE = deepcopy(cssplit_sample)
+for res in RESULT_SAMPLE:
+    del res["RNAME"]
+    del res["CSSPLIT"]
+
+RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+
+d = defaultdict(int)
+for res in RESULT_SAMPLE:
+    d[res["NAME"]] += 1
+
+d
+
+for c in cons_percentage["allele6_flox_mutated"]:
+    key = list(c.keys())[0]
+    if "+" in key:
+        print(list(c.items())[0])
 

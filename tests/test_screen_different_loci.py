@@ -4,69 +4,61 @@ from importlib import reload
 reload(screen_diffloci)
 
 
-def test_replaceN_left():
+def test_replaceNtoMatch_left():
     sample_cs = ["N", "N", "=A"]
-    test = screen_diffloci.replaceN(sample_cs)
-    answer = ["@", "@", "=A"]
+    test = screen_diffloci.replaceNtoMatch(sample_cs)
+    answer = ["=", "=", "=A"]
     assert test == answer
 
 
-def test_replaceN_right():
+def test_replaceNtoMatch_right():
     sample_cs = ["=A", "N", "N"]
-    test = screen_diffloci.replaceN(sample_cs)
-    answer = ["=A", "@", "@"]
+    test = screen_diffloci.replaceNtoMatch(sample_cs)
+    answer = ["=A", "=", "="]
     assert test == answer
 
 
 def test_make_table():
-    sample_cssplit = [
+    cssplit_sample = [
         "*AG,=A,=A",
         "-A,=A,=A",
         "*AG,=A,=A",
     ]
-    control_cssplit = [
+    cssplit_control = [
         "=A,=A,+A|+C|=A",
         "=A,=A,=A",
         "*AG,=A,=A",
     ]
-    test = screen_diffloci.make_table(sample_cssplit, control_cssplit)
-    answer = [[1, 4], [4, 1], [4, 1]], [[3, 2], [4, 1], [3, 3]]
+    test = screen_diffloci.make_table(cssplit_sample, cssplit_control)
+    answer = [[2, 3], [1, 1], [1, 1]], [[1, 2], [1, 1], [1, 3]]
     assert test == answer
 
 
-def test_screen_different_loci_repeat():
-    sample_cssplit = [
+def test_screen_different_loci_repeat_insertion():
+    cssplit_sample = [
         "+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C",
         "+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C",
         "+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C",
     ]
-    control_cssplit = [
+    cssplit_control = [
         "=A,=A,=A,=A,=C,=C,=C,=C",
         "=A,=A,=A,=A,=C,=C,=C,=C",
         "=A,=A,=A,=A,=C,=C,=C,=C",
     ]
     sequence = "AAAACCCC"
-    alpha = 0.1
+    alpha = 0.5
     threshold = 0.0
-    test = screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
+    test = screen_diffloci.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha, threshold)
     answer = [0]
     assert test == answer
 
 
 def test_screen_different_loci_no_repeat():
-    sample_cssplit = [
-        "*AG,=A,=A,=C,=C,=C",
-        "-A,=A,=A,=C,=C,=C",
-        "*AG,=A,=A,=C,=C,=C",
-    ]
-    control_cssplit = [
-        "=A,=A,=A,=C,=C,=C",
-        "=A,=A,=A,=C,=C,=C",
-        "=A,=A,=A,=C,=C,=C",
-    ]
+    cssplit_sample = ["*AG,=A,=A,=C,=C,=C"] * 100
+    cssplit_control = ["=A,=A,=A,=C,=C,=C"] * 100
     sequence = "AAACCC"
-    alpha = 0.25
+    alpha = 0.5
     threshold = 0.0
-    test = screen_diffloci.screen_different_loci(sample_cssplit, control_cssplit, sequence, alpha, threshold)
+    test = screen_diffloci.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha, threshold)
     answer = [0]
     assert test == answer

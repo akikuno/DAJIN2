@@ -8,10 +8,6 @@
   + メイン関数はbatchでも使えるようにする
   + 引数チェックとレポートはbatchとsingleで異なる（可能性がある）
 
-+ [ ] `is_control`の実装
-  + batchモードの時にcontrolが計算済みであれば処理を省略する
-  + controlのファイルサイズが同じで、midsvのjsonlがあればコントロールは処理済みとする
-  + メイン関数内のcontrolとsampleの処理を分ける
 
 ## 前処理
 
@@ -21,10 +17,13 @@
 
 ## クラスタリング
 
++ [ ] `screen_diffloci`：連続する塩基において、**deletionのみ**有意差を厳しくする。またはdeletionを無視する。
 + [ ] (test) `clustering`
 
 ## コンセンサス
 
++ [ ] コンセンサスのアレルにfloxやalbinoを含める
+  + AyabeTask1のようにInsertionのなかにSubがある場合、controlアレルにマッピングしているとSubの検出ができないため
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
@@ -67,6 +66,11 @@
 ## 開発一般
 
 + [x] GitHub Actionsによるテスト自動化
+
++ [x] `is_control`の実装
+  + batchモードの時にcontrolが計算済みであれば処理を省略する
+  + controlのファイルサイズが同じで、midsvのjsonlがあればコントロールは処理済みとする
+  + メイン関数内のcontrolとsampleの処理を分ける
 
 ## 前処理
 + [x] 入力ファイルのフォーマット (format_input.py)
