@@ -59,15 +59,3 @@ def test_call_sequence_insertion_N():
     answer = "AGGGNT"
     assert test == answer
 
-
-########################################################################
-# Convert to files
-########################################################################
-
-
-def test_to_fasta():
-    header = "test_sequence"
-    cons_seq = "A" * 81
-    test = consensus.convert.to_fasta(header, cons_seq)
-    answer = ">test_sequence\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nA\n"
-    assert test == answer
