@@ -2,11 +2,11 @@
 
 ## 開発一般
 
-+ [ ] batchモードの搭載
 
 + [ ] 引数チェック関数 → メイン関数 → レポート関数の3部構成とする
   + メイン関数はbatchでも使えるようにする
   + 引数チェックとレポートはbatchとsingleで異なる（可能性がある）
+  + -> (2022-10-07) batch.py, single.pyのなかに引数チェック関数とレポート関数を入れる方式にする
 
 
 ## 前処理
@@ -28,12 +28,12 @@
 
 ## レポート
 + [ ] HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
+  + [ ] colorblind-friendly
 + [ ] VCFファイル
 + [ ] BAMファイル
   + [x] Tyrでマイナス鎖からプラス鎖に変換
   + [ ] XXXでプラス鎖の確認
   + [ ] (test) `report_bam`
-+ [ ] colorblind-friendly
 + [ ] `igv.js`で各アレルの代表的なリード20本程度を可視化する
   + [ ] `igv.js`は`npx http-server -a localhost -o . -s`を使うとローカルのBAMファイルを可視化できる → Pythonで完結できそう…
 
@@ -64,6 +64,8 @@
 
 ## 開発一般
 
++ [x] (2022-10-07) `.tempdir-{name}`ではなく`.tempdir/{name}`とする (2022-10-08)
++ [x] batchモードの搭載
 + [x] GitHub Actionsによるテスト自動化
 
 + [x] `is_control`の実装

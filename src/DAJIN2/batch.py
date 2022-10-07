@@ -58,7 +58,7 @@ def batch(arguments: dict[str]):
     contents.sort(key=lambda x: x[index_name])
 
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
-        output_dir = Path("DAJINResults", f".tempdir_{name}", "batch")
+        output_dir = Path("DAJINResults", ".tempdir", name, "batch")
         output_dir.mkdir(exist_ok=True, parents=True)
         for group in groups:
             args = {h: g for h, g in zip(keys, group)}
@@ -66,7 +66,9 @@ def batch(arguments: dict[str]):
             SAMPLE_NAME, RESULT = main.main(args)
             # output the result
             midsv.write_jsonl(RESULT, Path(output_dir, f"{SAMPLE_NAME}.jsonl"))
-            print(f"{SAMPLE_NAME}.jsonl is completed")  #!---------------------------------------------
+            print(
+                f"batch.py: {SAMPLE_NAME}.jsonl is completed"
+            )  #!----------------------------------------------------------------------------------------------
 
 
 # ##############################################################################

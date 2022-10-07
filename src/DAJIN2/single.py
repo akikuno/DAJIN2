@@ -1,0 +1,2 @@
+def single():
+    print("hello")

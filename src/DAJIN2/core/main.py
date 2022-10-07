@@ -27,7 +27,7 @@ def main(arguments: dict) -> None:
     # Check inputs
     ##########################################################
     preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
-    TEMPDIR = Path("DAJINResults", f".tempdir_{NAME}")
+    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
     IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, TEMPDIR)
     IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
     UCSC_URL, GOLDENPATH_URL = None, None
@@ -191,12 +191,12 @@ def main(arguments: dict) -> None:
     # FASTA
     for header, cons_seq in cons_sequence.items():
         cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
     # HTML
     for header, cons_per in cons_percentage.items():
         cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
     # VCF
     # working in progress
