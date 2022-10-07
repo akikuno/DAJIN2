@@ -1,8 +1,17 @@
 import os
 import argparse
 
-# from .singlemode import single
+from . import single
 from . import batch
+from . import gui
+
+
+def update_threads(threads):
+    os_cpus = int(os.cpu_count())
+    new_threads = max(1, threads)
+    if threads > os_cpus:
+        new_threads = os_cpus - 1
+    return new_threads
 
 
 def main():
@@ -27,27 +36,41 @@ def main():
     # Batch mode
     ###############################################################################
 
+    def batchmode(args):
+        threads = update_threads(args.threads)
+        arguments = dict()
+        arguments["file"] = args.file
+        arguments["threads"] = threads
+        arguments["debug"] = args.debug
+        batch.batch(arguments)
+
     subparser = parser.add_subparsers()
     parser_batch = subparser.add_parser("batch", help="DAIJN2 batch mode")
     parser_batch.add_argument("-f", "--file", required=True, type=str, help="batch.csv")
     parser_batch.add_argument("-t", "--threads", default=1, type=int, help="Number of threads [default: 1]")
     parser_batch.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
+    parser_batch.set_defaults(handler=batchmode)
 
-    args = parser.parse_args()
+    ###############################################################################
+    # GUI mode
+    ###############################################################################
+
+    def guimode(args):
+        gui.execute()
+
+    parser_gui = subparser.add_parser("gui", help="DAIJN2 GUI mode")
+    parser_gui.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
+    parser_gui.set_defaults(handler=guimode)
 
     ###############################################################################
     # Parse arguments
     ###############################################################################
 
-    # Update threads
-    os_cpus = int(os.cpu_count())
-    threads = max(1, args.threads)
-    if args.threads > os_cpus:
-        threads = max(1, os_cpus - 1)
+    args = parser.parse_args()
 
-    try:
-        _ = args.file
-    except AttributeError:
+    if hasattr(args, "handler"):
+        args.handler(args)
+    else:
         if args.sample is None:
             raise AttributeError("-s/--sample is required")
         if args.control is None:
@@ -56,6 +79,7 @@ def main():
             raise AttributeError("-a/--allele is required")
         if args.name is None:
             raise AttributeError("-n/--name is required")
+        threads = update_threads(args.threads)
         arguments = dict()
         arguments["sample"] = args.sample
         arguments["control"] = args.control
@@ -65,12 +89,6 @@ def main():
         arguments["threads"] = threads
         arguments["debug"] = args.debug
         single.single(arguments)
-    else:
-        arguments = dict()
-        arguments["file"] = args.file
-        arguments["threads"] = threads
-        arguments["debug"] = args.debug
-        batch.batch(arguments)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from threading import Timer
 from waitress import serve
 from pathlib import Path
 import pandas as pd
+from . import batch
 
 
 def open_browser():
@@ -66,6 +67,12 @@ def submit():
         df["genome"] = genome
     df.to_csv(Path("DAJINResults", ".tempdir", name, "upload", "batch.csv"), index=False)
 
+    arguments = dict()
+    arguments["file"] = str(Path("DAJINResults", ".tempdir", name, "upload", "batch.csv"))
+    arguments["threads"] = threads
+    arguments["debug"] = False
+    #    batch.batch(arguments)
+
     return f"""
     name={name}
     sample={PATH_SAMPLE}
@@ -73,12 +80,12 @@ def submit():
     allele={PATH_ALLELE}
     genome={genome}
     threads={threads}
+    arguments={arguments["file"]}
     """
 
 
-if __name__ == "__main__":
+def execute():
     print("Assess 'http://127.0.0.1:2000/' if browser does not automatically open.")
     Timer(1, open_browser).start()
     serve(app, host="0.0.0.0", port=2000)
-    # app.run(port=2000)
 
