@@ -40,7 +40,7 @@ def summation_scores(cssplit_diffloci):
 
 def score_repeats(i, cssplit, scores, length, operant, inversion=False):
     j = i
-    while j < length and cssplit[j].startswith(f"{operant}"):
+    while j < length and cssplit[j].startswith(operant):
         j += 1
     score_repeat = j - i
     if inversion:
@@ -76,6 +76,7 @@ def make_scores(cssplit_sample, diffloci):
     sum_scores = summation_scores(cssplit_diffloci)
     sum_scores = np.array(sum_scores)
     length = len(diffloci)
+    scores_all = []
     for cssplit in cssplit_diffloci:
         # IM, ID, IS, IN, D, S, N
         scores = [[0 for _ in range(7)] for _ in range(length)]
@@ -96,4 +97,5 @@ def make_scores(cssplit_sample, diffloci):
             i += 1
         scores = np.array(scores)
         scores = (scores * sum_scores).tolist()
-        yield scores
+        scores_all.append(scores)
+    return scores_all

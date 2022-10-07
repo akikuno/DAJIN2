@@ -17,7 +17,6 @@
 
 ## クラスタリング
 
-+ [ ] `screen_diffloci`：連続する塩基において、**deletionのみ**有意差を厳しくする。またはdeletionを無視する。
 + [ ] (test) `clustering`
 
 ## コンセンサス
@@ -86,17 +85,9 @@
 ## マッピング
 + [x] mappyによるマッピング
 
-## midsvパッケージ
-+ [x] insertion
-+ [x] substitution
-+ [x] deletion
-+ [x] padding
-+ [x] mix condition
-+ [x] Large deletion
-+ [x] Large inversion
-+ [x] CSSPLITしか使っておらず、無駄にMIDSVとQSCOREの計算時間がかかっている…→MIDSVパッケージの引数で計算するかしないかのオプションを付けたほうが良さそう（midsv=False, cssplit=True, qscore=False, など）
-
 ## クラスタリング
+
++ [x] `screen_diffloci`：連続する塩基において、**deletionのみ**有意差を厳しくする。
 
 ## コンセンサス
 

@@ -174,7 +174,10 @@ for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x
     key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
     cssplit_sample = [g["CSSPLIT"] for g in group]
     diffloci = diffloci_by_alleles[key]
-    scores = list(clustering.make_scores(cssplit_sample, diffloci))
+    if diffloci is None:
+        scores = []
+    else:
+        scores = clustering.make_scores(cssplit_sample, diffloci)
     if any(scores):
         labels += [label + label_start for label in clustering.clustering(scores).tolist()]
     else:
