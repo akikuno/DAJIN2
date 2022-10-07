@@ -33,7 +33,7 @@ def clustering(scores):
     xflatten = np.reshape(xarr, (len(xarr), -1))
     xflatten = csr_matrix(xflatten)
     n_clusters = 1
-    while True:
+    while True or n_clusters < 1000:
         prev_labels = return_labels(xflatten, n_clusters=n_clusters)
         prev_table = make_table(prev_labels)
         current_labels = return_labels(xflatten, n_clusters=n_clusters + 1)
