@@ -6,10 +6,11 @@ from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
 import midsv
-from ..core import preprocess
-from ..core import classification
-from ..core import clustering
-from ..core import consensus
+from . import preprocess
+from . import classification
+from . import clustering
+from . import consensus
+from . import report
 
 warnings.simplefilter("ignore")
 
@@ -189,12 +190,12 @@ def main(arguments: dict) -> None:
     # ----------------------------------------------------------
     # FASTA
     for header, cons_seq in cons_sequence.items():
-        cons_fasta = consensus.to_fasta(header, cons_seq)
+        cons_fasta = report.report_files.to_fasta(header, cons_seq)
         Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
     # HTML
     for header, cons_per in cons_percentage.items():
-        cons_html = consensus.to_html(header, cons_per)
+        cons_html = report.report_files.to_html(header, cons_per)
         Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
     # VCF

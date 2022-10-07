@@ -1,8 +1,8 @@
 import os
 import argparse
 
-from .singlemode import single
-from .batchmode import batch
+# from .singlemode import single
+from . import batch
 
 
 def main():

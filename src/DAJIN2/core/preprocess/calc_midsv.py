@@ -10,4 +10,3 @@ def output_midsv(TEMPDIR, path_sam, DICT_ALLELE):
     midsv_jsonl = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
     output_jsonl = Path(TEMPDIR, "midsv", f"{path_sam.stem}.jsonl")
     midsv.write_jsonl(midsv_jsonl, output_jsonl)
-    print(output_jsonl)

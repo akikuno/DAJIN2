@@ -1,0 +1,46 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DAJIN</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+</head>
+
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+        crossorigin="anonymous"></script>
+
+    <form action="/submit" method="POST" enctype="multipart/form-data">
+        <h1>DAJIN2</h1>
+
+        <h2> Name </h2>
+        <input class="form-control" type="text" name="name" required />
+
+        <h2> Sample FASTQs </h2>
+        <input class="form-control" type="file" name="sample" accept=".fastq, .fq, .fastq.gz, .fq.gz" multiple
+            required />
+
+        <h2> Control FASTQ </h2>
+        <input class="form-control" type="file" name="control" accept=".fastq, .fq, .fastq.gz, .fq.gz" required />
+
+        <h2> Allele FASTA </h2>
+        <input class="form-control" type="file" name="allele" accept=".fasta, .fa" multiple required />
+
+        <h2> Genome (optional) </h2>
+        <input class="form-control" type="text" name="genome" placeholder="(e.g. mm19)" />
+
+        <h2> Threads (optional) </h2>
+        <input class="form-control" type="number" name="threads" min="1" />
+
+        <br>
+
+        <input class="btn btn-primary" type="submit" name="submit" value="Run DAJIN" />
+
+    </form>
+</body>
+
+</html>

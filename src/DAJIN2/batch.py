@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from itertools import groupby
-from ..core import main
+from .core import main
 import wslPath
 import midsv
 import pandas as pd
@@ -66,18 +66,19 @@ def batch(arguments: dict[str]):
             SAMPLE_NAME, RESULT = main.main(args)
             # output the result
             midsv.write_jsonl(RESULT, Path(output_dir, f"{SAMPLE_NAME}.jsonl"))
+            print(f"{SAMPLE_NAME}.jsonl is completed")  #!---------------------------------------------
 
 
-##############################################################################
-# Reports
-##############################################################################
-name = "Ayabe-Task1"
-output_dir = Path("DAJINResults", f".tempdir_{name}", "batch")
-df_results = pd.DataFrame()
-for path_result in output_dir.iterdir():
-    SAMPLE_NAME = path_result.stem
-    result = midsv.read_jsonl(path_result)
-    df_result = pd.DataFrame(result)
-    df_result["SAMPLE"] = SAMPLE_NAME
-    df_results = pd.concat([df_results, df_result])
+# ##############################################################################
+# # Reports
+# ##############################################################################
+# name = "Ayabe-Task1"
+# output_dir = Path("DAJINResults", f".tempdir_{name}", "batch")
+# df_results = pd.DataFrame()
+# for path_result in output_dir.iterdir():
+#     SAMPLE_NAME = path_result.stem
+#     result = midsv.read_jsonl(path_result)
+#     df_result = pd.DataFrame(result)
+#     df_result["SAMPLE"] = SAMPLE_NAME
+#     df_results = pd.concat([df_results, df_result])
 
