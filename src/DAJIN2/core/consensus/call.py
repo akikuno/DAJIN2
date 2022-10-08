@@ -87,37 +87,65 @@ def call_sequence(cons_percentage_by_key: list[dict]) -> str:
     return "".join(consensus_sequence)
 
 
-def call_allele_name(keys: tuple, cons_seq: str, dict_allele: dict) -> str:
-    ALLELE, SV, LABEL = keys
+def call_allele_name(keys: tuple, cons_seq: str, DICT_ALLELE: dict) -> str:
+    ALLELE, SV, LABEL, PERCENT = keys
     allele_name = f"allele{LABEL}_{ALLELE}"
     if SV:
         allele_name += "_sv"
-    elif cons_seq == dict_allele[ALLELE]:
+    elif cons_seq == DICT_ALLELE[ALLELE]:
         allele_name += "_intact"
     else:
         allele_name += "_mutated"
+    allele_name += f"_{PERCENT}%"
     return allele_name
 
 
 def call(TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME):
-    cssplit_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl"))
-    cssplit_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl"))
-    cssplit_sample = join_listdicts(clust_sample, cssplit_sample, key="QNAME")
-    cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+    result_sample = []
     cons_percentage = defaultdict(list)
     cons_sequence = defaultdict(list)
-    for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-        cssplits = list(cssplits)
-        cons_per = call_percentage(cssplits, cssplit_control)
+    clust_sample.sort(key=lambda x: x["LABEL"])
+    for _, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
+        clust = list(group)
+        keys = (clust[0]["ALLELE"], clust[0]["SV"], clust[0]["LABEL"], clust[0]["PERCENT"])
+        allele = keys[0]
+        cssplit_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl"))
+        cssplit_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))
+        cssplit_sample = join_listdicts(clust, cssplit_sample, key="QNAME")
+        cons_per = call_percentage(cssplit_sample, cssplit_control)
         cons_seq = call_sequence(cons_per)
         allele_name = call_allele_name(keys, cons_seq, DICT_ALLELE)
         cons_percentage[allele_name] = cons_per
         cons_sequence[allele_name] = cons_seq
-        for cs in cssplits:
+        for cs in cssplit_sample:
             cs["NAME"] = allele_name
-    for res in cssplit_sample:
-        del res["RNAME"]
-        del res["CSSPLIT"]
-    cssplit_sample.sort(key=lambda x: x["LABEL"])
-    return cssplit_sample, cons_percentage, cons_sequence
+            del cs["RNAME"]
+            del cs["CSSPLIT"]
+        result_sample.extend(cssplit_sample)
+    result_sample.sort(key=lambda x: x["LABEL"])
+    return result_sample, cons_percentage, cons_sequence
+
+
+# def call(TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME):
+#     cssplit_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl"))
+#     cssplit_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl"))
+#     cssplit_sample = join_listdicts(clust_sample, cssplit_sample, key="QNAME")
+#     cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+#     cons_percentage = defaultdict(list)
+#     cons_sequence = defaultdict(list)
+#     for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+#         cssplits = list(cssplits)
+#         cons_per = call_percentage(cssplits, cssplit_control)
+#         cons_seq = call_sequence(cons_per)
+#         allele_name = call_allele_name(keys, cons_seq, DICT_ALLELE)
+#         cons_percentage[allele_name] = cons_per
+#         cons_sequence[allele_name] = cons_seq
+#         for cs in cssplits:
+#             cs["NAME"] = allele_name
+#     result_sample = sorted(cssplit_sample, key=lambda x: x["LABEL"])
+#     for res in result_sample:
+#         del res["RNAME"]
+#         del res["CSSPLIT"]
+#     result_sample.sort(key=lambda x: x["LABEL"])
+#     return result_sample, cons_percentage, cons_sequence
 

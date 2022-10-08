@@ -11,6 +11,7 @@
 
 ## 前処理
 
++ [ ] `DICT_ALLELE`は80文字改行のFASTAに対応しているのか確認する
 + [ ] (test) `format_inputs`
 
 ## マッピング
@@ -21,12 +22,11 @@
 
 ## コンセンサス
 
-+ [ ] **コンセンサスのアレルにfloxやalbinoを含める**
-  + AyabeTask1のようにInsertionのなかにSubがある場合、controlアレルにマッピングしているとSubの検出ができないため
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
 ## レポート
+
 + [ ] HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
   + [ ] colorblind-friendly
 + [ ] VCFファイル
@@ -93,6 +93,8 @@
 
 ## コンセンサス
 
++ [x] **コンセンサスのアレルにfloxやalbinoを含める** (DONE: 2022-10-09)
+  + AyabeTask1のようにInsertionのなかにSubがある場合、controlアレルにマッピングしているとSubの検出ができないため
 + [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
 
 ## レポート

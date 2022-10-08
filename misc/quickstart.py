@@ -58,7 +58,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 # Check inputs
 ##########################################################
 preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
-TEMPDIR = Path("DAJINResults", f".tempdir_{NAME}")
+TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
 IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, TEMPDIR)
 IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
 UCSC_URL, GOLDENPATH_URL = None, None
@@ -224,12 +224,12 @@ RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
 # FASTA
 for header, cons_seq in cons_sequence.items():
     cons_fasta = report.report_files.to_fasta(header, cons_seq)
-    Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+    Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
 # HTML
 for header, cons_per in cons_percentage.items():
     cons_html = report.report_files.to_html(header, cons_per)
-    Path(TEMPDIR, "reports", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+    Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
 # BAM
 report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
@@ -241,15 +241,9 @@ report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME
 ########################################################################
 # Output Results
 ########################################################################
-midsv.write_jsonl(RESULT_SAMPLE, "tmp_RESULT.jsonl")
+
 d = defaultdict(int)
 for res in RESULT_SAMPLE:
     d[res["NAME"]] += 1
 
 d
-
-for c in cons_percentage["allele6_flox_mutated"]:
-    key = list(c.keys())[0]
-    if "+" in key:
-        print(list(c.items())[0])
-
