@@ -212,28 +212,11 @@ for cs in clust_sample:
 ########################################################################
 # Consensus call
 ########################################################################
-path = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl")
-cssplit_control = midsv.read_jsonl(path)
-path = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl")
-cssplit_sample = midsv.read_jsonl(path)
-cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
-cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
-cons_percentage = defaultdict(list)
-cons_sequence = defaultdict(list)
-for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-    cssplits = list(cssplits)
-    cons_per = consensus.call_percentage(cssplits, cssplit_control)
-    cons_seq = consensus.call_sequence(cons_per)
-    allele_name = consensus.call_allele_name(keys, cons_seq, DICT_ALLELE)
-    cons_percentage[allele_name] = cons_per
-    cons_sequence[allele_name] = cons_seq
-    for cs in cssplits:
-        cs["NAME"] = allele_name
 
-RESULT_SAMPLE = deepcopy(cssplit_sample)
-for res in RESULT_SAMPLE:
-    del res["RNAME"]
-    del res["CSSPLIT"]
+RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
+    TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME
+)
+
 
 # ----------------------------------------------------------
 # Conseusns Report：FASTA/HTML/VCF
@@ -258,13 +241,7 @@ report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME
 ########################################################################
 # Output Results
 ########################################################################
-RESULT_SAMPLE = deepcopy(cssplit_sample)
-for res in RESULT_SAMPLE:
-    del res["RNAME"]
-    del res["CSSPLIT"]
-
-RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
-
+midsv.write_jsonl(RESULT_SAMPLE, "tmp_RESULT.jsonl")
 d = defaultdict(int)
 for res in RESULT_SAMPLE:
     d[res["NAME"]] += 1

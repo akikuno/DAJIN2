@@ -1,6 +1,9 @@
 from __future__ import annotations
 from bisect import bisect_left
 from collections import defaultdict
+import midsv
+from pathlib import Path
+from itertools import groupby
 
 
 def merge_dict1(d1, d2):
@@ -94,3 +97,27 @@ def call_allele_name(keys: tuple, cons_seq: str, dict_allele: dict) -> str:
     else:
         allele_name += "_mutated"
     return allele_name
+
+
+def call(TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME):
+    cssplit_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl"))
+    cssplit_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl"))
+    cssplit_sample = join_listdicts(clust_sample, cssplit_sample, key="QNAME")
+    cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
+    cons_percentage = defaultdict(list)
+    cons_sequence = defaultdict(list)
+    for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
+        cssplits = list(cssplits)
+        cons_per = call_percentage(cssplits, cssplit_control)
+        cons_seq = call_sequence(cons_per)
+        allele_name = call_allele_name(keys, cons_seq, DICT_ALLELE)
+        cons_percentage[allele_name] = cons_per
+        cons_sequence[allele_name] = cons_seq
+        for cs in cssplits:
+            cs["NAME"] = allele_name
+    for res in cssplit_sample:
+        del res["RNAME"]
+        del res["CSSPLIT"]
+    cssplit_sample.sort(key=lambda x: x["LABEL"])
+    return cssplit_sample, cons_percentage, cons_sequence
+

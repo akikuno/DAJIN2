@@ -185,22 +185,6 @@ def main(arguments: dict) -> None:
         for cs in cssplits:
             cs["NAME"] = allele_name
 
-    # ----------------------------------------------------------
-    # Conseusns Report：FASTA/HTML/VCF
-    # ----------------------------------------------------------
-    # FASTA
-    for header, cons_seq in cons_sequence.items():
-        cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
-
-    # HTML
-    for header, cons_per in cons_percentage.items():
-        cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
-
-    # VCF
-    # working in progress
-
     ########################################################################
     # Output Results
     ########################################################################
@@ -210,4 +194,22 @@ def main(arguments: dict) -> None:
         del res["CSSPLIT"]
 
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+
+    ########################################################################
+    # Output Report：FASTA/HTML/BAM/VCF
+    ########################################################################
+    # FASTA
+    for header, cons_seq in cons_sequence.items():
+        cons_fasta = report.report_files.to_fasta(header, cons_seq)
+        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+
+    # HTML
+    for header, cons_per in cons_percentage.items():
+        cons_html = report.report_files.to_html(header, cons_per)
+        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+    # BAM
+    report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    # VCF
+    # working in progress
+
     return SAMPLE_NAME, RESULT_SAMPLE

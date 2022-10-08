@@ -21,7 +21,7 @@
 
 ## コンセンサス
 
-+ [ ] コンセンサスのアレルにfloxやalbinoを含める
++ [ ] **コンセンサスのアレルにfloxやalbinoを含める**
   + AyabeTask1のようにInsertionのなかにSubがある場合、controlアレルにマッピングしているとSubの検出ができないため
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
