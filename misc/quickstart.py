@@ -5,12 +5,10 @@ import warnings
 warnings.simplefilter("ignore")
 import hashlib
 from collections import defaultdict
-from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
 from importlib import reload
 import midsv
-import pysam
 
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
 
@@ -135,79 +133,14 @@ for classif in classif_sample:
 ########################################################################
 # Clustering
 ########################################################################
-# -----------------------------------------------------------------------
-# Extract significantly different base loci between Sample and Control
-# -----------------------------------------------------------------------
-dict_cssplit_control = defaultdict(list[dict])
-for ALLELE in DICT_ALLELE.keys():
-    path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{ALLELE}.jsonl")
-    cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
-    dict_cssplit_control[ALLELE] = cssplit_control
 
-classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-diffloci_by_alleles = defaultdict(list[dict])
-for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-    cssplit_sample = [record["CSSPLIT"] for record in group]
-    cssplit_control = dict_cssplit_control[ALLELE]
-    sequence = DICT_ALLELE[ALLELE]
-    diffloci = clustering.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha=0.01, threshold=0.05)
-    diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
+diff_loci = clustering.extract_different_loci(TEMPDIR, classif_sample, DICT_ALLELE, CONTROL_NAME)
 
+clust_sample = clustering.add_labels(classif_sample, diff_loci)
 
-# ALLELE = "control"
-# SV = False
-# cssplit_sample = []
-# for group in classif_sample:
-#     if group["ALLELE"] == ALLELE and group["SV"] == SV:
-#         cssplit_sample.append(group["CSSPLIT"])
+clust_sample = clustering.add_percent(clust_sample)
 
-# table_sample, table_control = make_table(cssplit_sample, cssplit_control)
-# s = table_sample[88]
-# c = table_control[88]
-# s, c
-# -----------------------------------------------------------------------
-# Clustering
-# -----------------------------------------------------------------------
-labels = []
-label_start = 1
-for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-    key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
-    cssplit_sample = [g["CSSPLIT"] for g in group]
-    diffloci = diffloci_by_alleles[key]
-    if diffloci is None:
-        scores = []
-    else:
-        scores = clustering.make_scores(cssplit_sample, diffloci)
-    if any(scores):
-        labels += [label + label_start for label in clustering.clustering(scores).tolist()]
-    else:
-        labels += [label_start] * len(cssplit_sample)
-    label_start = len(set(labels)) + 1
-
-clust_sample = deepcopy(classif_sample)
-for clust, label in zip(clust_sample, labels):
-    clust["LABEL"] = label
-    del clust["CSSPLIT"]
-
-n_sample = len(clust_sample)
-d = defaultdict(int)
-for cs in clust_sample:
-    d[cs["LABEL"]] += 1 / n_sample
-
-d_per = {key: round(val * 100, 1) for key, val in d.items()}
-
-for cs in clust_sample:
-    cs["PERCENT"] = d_per[cs["LABEL"]]
-
-# Allocate new labels by PERCENT
-clust_sample.sort(key=lambda x: (-x["PERCENT"], x["LABEL"]))
-new_label = 1
-prev_label = clust_sample[0]["LABEL"]
-for cs in clust_sample:
-    if prev_label != cs["LABEL"]:
-        new_label += 1
-    prev_label = cs["LABEL"]
-    cs["LABEL"] = new_label
+clust_sample = clustering.update_labels(clust_sample)
 
 ########################################################################
 # Consensus call
@@ -239,7 +172,7 @@ report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME
 
 
 ########################################################################
-# Output Results
+# MEMO
 ########################################################################
 
 d = defaultdict(int)
@@ -247,3 +180,11 @@ for res in RESULT_SAMPLE:
     d[res["NAME"]] += 1
 
 d
+
+# ALLELE = "control"
+# SV = False
+# cssplit_sample = []
+# for group in classif_sample:
+#     if group["ALLELE"] == ALLELE and group["SV"] == SV:
+#         cssplit_sample.append(group["CSSPLIT"])
+

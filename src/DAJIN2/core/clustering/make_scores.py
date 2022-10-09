@@ -14,28 +14,28 @@ def extract_cssplit_at_diffloci(cssplit_sample, diffloci):
 
 
 # Summation scores at each loci
-def summation_scores(cssplit_diffloci):
+def sum_scores(cssplit_diffloci):
     length = len(cssplit_diffloci[0])
-    sum_scores = [[0 for _ in range(7)] for _ in range(length)]
+    scores = [[0 for _ in range(7)] for _ in range(length)]
     for i, cssplit in enumerate(zip(*cssplit_diffloci)):
         for cs in cssplit:
             if cs.startswith("-"):
-                sum_scores[i][4] += 1
+                scores[i][4] += 1
             elif cs.startswith("*"):
-                sum_scores[i][5] += 1
+                scores[i][5] += 1
             elif cs.startswith("N"):
-                sum_scores[i][6] += 1
+                scores[i][6] += 1
             elif cs.startswith("+"):
                 cs_insertion = cs.split("|")
                 if cs_insertion[-1].startswith("="):
-                    sum_scores[i][0] += 1
+                    scores[i][0] += 1
                 elif cs_insertion[-1].startswith("-"):
-                    sum_scores[i][1] += 1
+                    scores[i][1] += 1
                 elif cs_insertion[-1].startswith("*"):
-                    sum_scores[i][2] += 1
+                    scores[i][2] += 1
                 elif cs_insertion[-1].startswith("N"):
-                    sum_scores[i][3] += 1
-    return sum_scores
+                    scores[i][3] += 1
+    return scores
 
 
 def score_repeats(i, cssplit, scores, length, operant, inversion=False):
@@ -73,8 +73,8 @@ def score_repeats_insertion(i, cs, scores, inversion=False):
 
 def make_scores(cssplit_sample, diffloci):
     cssplit_diffloci = extract_cssplit_at_diffloci(cssplit_sample, diffloci)
-    sum_scores = summation_scores(cssplit_diffloci)
-    sum_scores = np.array(sum_scores)
+    scores_summed = sum_scores(cssplit_diffloci)
+    scores_summed = np.array(scores_summed)
     length = len(diffloci)
     scores_all = []
     for cssplit in cssplit_diffloci:
@@ -96,6 +96,6 @@ def make_scores(cssplit_sample, diffloci):
                 i, scores = score_repeats_insertion(i, cs, scores, inversion)
             i += 1
         scores = np.array(scores)
-        scores = (scores * sum_scores).tolist()
+        scores = (scores * scores_summed).tolist()
         scores_all.append(scores)
     return scores_all

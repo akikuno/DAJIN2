@@ -1,9 +1,6 @@
 from __future__ import annotations
 import warnings
 import hashlib
-from collections import defaultdict
-from copy import deepcopy
-from itertools import groupby
 from pathlib import Path
 import midsv
 from . import preprocess
@@ -91,109 +88,33 @@ def main(arguments: dict) -> None:
     ########################################################################
     # Classify alleles
     ########################################################################
+
     path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
     classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
     ########################################################################
     # Detect Structural variants
     ########################################################################
+
     for classif in classif_sample:
         classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
     ########################################################################
     # Clustering
     ########################################################################
-    # -----------------------------------------------------------------------
-    # Extract significantly different base loci between Sample and Control
-    # -----------------------------------------------------------------------
-    dict_cssplit_control = defaultdict(list[dict])
-    for ALLELE in DICT_ALLELE.keys():
-        path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{ALLELE}.jsonl")
-        cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
-        dict_cssplit_control[ALLELE] = cssplit_control
 
-    classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-    diffloci_by_alleles = defaultdict(list[dict])
-    for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        cssplit_sample = [record["CSSPLIT"] for record in group]
-        cssplit_control = dict_cssplit_control[ALLELE]
-        sequence = DICT_ALLELE[ALLELE]
-        diffloci = clustering.screen_different_loci(
-            cssplit_sample, cssplit_control, sequence, alpha=0.01, threshold=0.05
-        )
-        diffloci_by_alleles[f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'] = diffloci
-
-    # -----------------------------------------------------------------------
-    # Clustering
-    # -----------------------------------------------------------------------
-    labels = []
-    label_start = 1
-    for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        key = f'{{"ALLELE": "{ALLELE}", "SV": {SV}}}'
-        cssplit_sample = [g["CSSPLIT"] for g in group]
-        diffloci = diffloci_by_alleles[key]
-        scores = list(clustering.make_scores(cssplit_sample, diffloci))
-        if any(scores):
-            labels += [label + label_start for label in clustering.clustering(scores).tolist()]
-        else:
-            labels += [label_start] * len(cssplit_sample)
-        label_start = len(set(labels)) + 1
-
-    clust_sample = deepcopy(classif_sample)
-    for clust, label in zip(clust_sample, labels):
-        clust["LABEL"] = label
-        del clust["CSSPLIT"]
-
-    n_sample = len(clust_sample)
-    d = defaultdict(int)
-    for cs in clust_sample:
-        d[cs["LABEL"]] += 1 / n_sample
-
-    d_per = {key: round(val * 100, 1) for key, val in d.items()}
-
-    for cs in clust_sample:
-        cs["PERCENT"] = d_per[cs["LABEL"]]
-
-    # Allocate new labels by PERCENT
-    clust_sample.sort(key=lambda x: (-x["PERCENT"], x["LABEL"]))
-    new_label = 1
-    prev_label = clust_sample[0]["LABEL"]
-    for cs in clust_sample:
-        if prev_label != cs["LABEL"]:
-            new_label += 1
-        prev_label = cs["LABEL"]
-        cs["LABEL"] = new_label
+    diff_loci = clustering.extract_different_loci(TEMPDIR, classif_sample, DICT_ALLELE, CONTROL_NAME)
+    clust_sample = clustering.add_labels(classif_sample, diff_loci)
+    clust_sample = clustering.add_percent(clust_sample)
+    clust_sample = clustering.update_labels(clust_sample)
 
     ########################################################################
     # Consensus call
     ########################################################################
-    path = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl")
-    cssplit_control = midsv.read_jsonl(path)
-    path = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl")
-    cssplit_sample = midsv.read_jsonl(path)
-    cssplit_sample = consensus.join_listdicts(clust_sample, cssplit_sample, key="QNAME")
-    cssplit_sample.sort(key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"]))
-    cons_percentage = defaultdict(list)
-    cons_sequence = defaultdict(list)
-    for keys, cssplits in groupby(cssplit_sample, key=lambda x: (x["ALLELE"], x["SV"], x["LABEL"])):
-        cssplits = list(cssplits)
-        cons_per = consensus.call_percentage(cssplits, cssplit_control)
-        cons_seq = consensus.call_sequence(cons_per)
-        allele_name = consensus.call_allele_name(keys, cons_seq, DICT_ALLELE)
-        cons_percentage[allele_name] = cons_per
-        cons_sequence[allele_name] = cons_seq
-        for cs in cssplits:
-            cs["NAME"] = allele_name
 
-    ########################################################################
-    # Output Results
-    ########################################################################
-    RESULT_SAMPLE = deepcopy(cssplit_sample)
-    for res in RESULT_SAMPLE:
-        del res["RNAME"]
-        del res["CSSPLIT"]
-
-    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+    RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
+        TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME
+    )
 
     ########################################################################
     # Output Report：FASTA/HTML/BAM/VCF

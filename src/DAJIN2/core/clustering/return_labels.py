@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from collections import defaultdict
 
 
-def return_labels(xflatten, n_clusters=1):
+def predict_labels(xflatten, n_clusters=1):
     brc = Birch(n_clusters=n_clusters)
     brc.fit(xflatten)
     return brc.predict(xflatten)
@@ -27,16 +27,16 @@ def chistatistic(prev_table, current_table, threshold=0.05) -> float:
     return pval
 
 
-def clustering(scores):
+def return_labels(scores):
     # flatten from 3d to 2d
     xarr = np.array(scores)
     xflatten = np.reshape(xarr, (len(xarr), -1))
     xflatten = csr_matrix(xflatten)
     n_clusters = 1
     while True or n_clusters < 1000:
-        prev_labels = return_labels(xflatten, n_clusters=n_clusters)
+        prev_labels = predict_labels(xflatten, n_clusters=n_clusters)
         prev_table = make_table(prev_labels)
-        current_labels = return_labels(xflatten, n_clusters=n_clusters + 1)
+        current_labels = predict_labels(xflatten, n_clusters=n_clusters + 1)
         current_table = make_table(current_labels)
         if n_clusters == 1:
             prev_table += [0]
@@ -48,3 +48,4 @@ def clustering(scores):
             break
         n_clusters += 1
     return labels
+

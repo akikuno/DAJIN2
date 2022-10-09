@@ -22,6 +22,7 @@
 
 ## コンセンサス
 
++ [ ] consensusが同じクラスタにおいて、小さいクラスタを一番大きなクラスタのほうにマージする
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
