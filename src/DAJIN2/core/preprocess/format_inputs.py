@@ -37,15 +37,14 @@ def extract_basename(fastq_path: str) -> str:
 # Convert allele file to dictionary type fasta format
 ########################################################################
 
-# TODO TEST
-def dictionize_allele(allele_path: str) -> dict:
+
+def dictionize_allele(path_fasta: str) -> dict:
     header, sequence = [], []
-    for name, seq, _ in mappy.fastx_read(allele_path):
+    for name, seq, _ in mappy.fastx_read(path_fasta):
         name = name.lstrip()
         if not name:
-            raise AttributeError(f"{allele_path} contains an invalid header name")
-        else:
-            name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
+            raise AttributeError(f"{path_fasta} contains an empty header")
+        name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
         header.append(name)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
