@@ -2,7 +2,6 @@ from __future__ import annotations
 import warnings
 import hashlib
 from pathlib import Path
-import midsv
 from . import preprocess
 from . import classification
 from . import clustering

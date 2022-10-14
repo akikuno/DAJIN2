@@ -6,7 +6,6 @@ from itertools import groupby
 
 def calc_match(CSSPLIT: str) -> float:
     match_score = CSSPLIT.count("=")
-    match_score -= CSSPLIT.count("N")  # unknown
     match_score -= CSSPLIT.count("+")  # insertion
     match_score -= sum(cs.islower() for cs in CSSPLIT)  # inversion
     return match_score / len(CSSPLIT.split(","))

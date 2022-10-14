@@ -5,10 +5,8 @@ import warnings
 warnings.simplefilter("ignore")
 import hashlib
 from collections import defaultdict
-from itertools import groupby
 from pathlib import Path
 from importlib import reload
-import midsv
 
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
 
