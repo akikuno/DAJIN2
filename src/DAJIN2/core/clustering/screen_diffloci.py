@@ -52,6 +52,13 @@ def make_table(cssplit_sample: list[str], cssplit_control: list[str]) -> tuple(l
     return table_sample, table_control
 
 
+def mask_table_control(table_control, masks_control):
+    for i, is_mask in enumerate(masks_control):
+        if is_mask:
+            table_control[i] = [1, 1]
+    return table_control
+
+
 def chistatistic(s_table, c_table, threshold=0.05) -> float:
     chisq_value, _, ddof, _ = st.chi2_contingency([s_table, c_table])
     delta = sum(s_table + c_table) * threshold ** 2
@@ -60,7 +67,12 @@ def chistatistic(s_table, c_table, threshold=0.05) -> float:
 
 
 def screen_different_loci(
-    cssplit_sample: list[str], cssplit_control: list[str], sequence: str, alpha: float = 0.01, threshold: float = 0.05
+    cssplit_sample: list[str],
+    cssplit_control: list[str],
+    sequence: str,
+    masks_control: list[bool],
+    alpha: float = 0.01,
+    threshold: float = 0.05,
 ) -> list[dict]:
     """Scoring mutation (insertion, deletion, substitution, inversion, and unknow)
     at significant loci between sample and control
@@ -75,6 +87,7 @@ def screen_different_loci(
     different_loci = []
     coverage = min(len(cssplit_sample), len(cssplit_control))
     table_sample, table_control = make_table(cssplit_sample, cssplit_control)
+    table_control = mask_table_control(table_control, masks_control)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_span = (x.span() for x in re.finditer(repeat_regrex, sequence))
     try:

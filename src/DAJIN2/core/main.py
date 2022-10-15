@@ -107,8 +107,12 @@ def main(arguments: dict) -> None:
     # Clustering
     ########################################################################
 
-    diff_loci = clustering.extract_different_loci(TEMPDIR, classif_sample, DICT_ALLELE, CONTROL_NAME)
-    clust_sample = clustering.add_labels(classif_sample, diff_loci)
+    MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+
+    diffloci_by_alleles = clustering.extract_different_loci(
+        TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
+    )
+    clust_sample = clustering.add_labels(classif_sample, diffloci_by_alleles)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
@@ -117,9 +121,7 @@ def main(arguments: dict) -> None:
     # Consensus call
     ########################################################################
 
-    RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
-        TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME
-    )
+    RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, diffloci_by_alleles, DICT_ALLELE)
 
     ########################################################################
     # Output Report：FASTA/HTML/BAM/VCF

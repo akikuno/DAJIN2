@@ -41,7 +41,7 @@ reload(report)
 
 # * flox insertion
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/flox-cables2/AyabeTask1/barcode36.fq.gz",
+    "examples/flox-cables2/AyabeTask1/barcode33.fq.gz",
     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
     "Ayabe-Task1",
@@ -119,12 +119,14 @@ if not flag:
 ########################################################################
 # Classify alleles
 ########################################################################
+
 path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
 classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
 ########################################################################
 # Detect Structural variants
 ########################################################################
+
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
@@ -132,9 +134,16 @@ for classif in classif_sample:
 # Clustering
 ########################################################################
 
-diff_loci = clustering.extract_different_loci(TEMPDIR, classif_sample, DICT_ALLELE, CONTROL_NAME)
+MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 
-clust_sample = clustering.add_labels(classif_sample, diff_loci)
+diffloci_by_alleles = clustering.extract_different_loci(
+    TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
+)
+# ALLELE = "flox"
+# SV = False
+# cssplit_sample = [cs["CSSPLIT"] for cs in classif_sample if cs["ALLELE"] == ALLELE and cs["SV"] == SV]
+
+clust_sample = clustering.add_labels(classif_sample, diffloci_by_alleles)
 
 clust_sample = clustering.add_readnum(clust_sample)
 
@@ -146,9 +155,7 @@ clust_sample = clustering.update_labels(clust_sample)
 # Consensus call
 ########################################################################
 
-RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
-    TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME
-)
+RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, diffloci_by_alleles, DICT_ALLELE)
 
 
 # ----------------------------------------------------------
