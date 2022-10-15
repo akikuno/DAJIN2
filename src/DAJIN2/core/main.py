@@ -129,12 +129,12 @@ def main(arguments: dict) -> None:
     # FASTA
     for header, cons_seq in cons_sequence.items():
         cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+        Path(TEMPDIR, "report", "FASTA", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
     # HTML
     for header, cons_per in cons_percentage.items():
         cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+        Path(TEMPDIR, "report", "HTML", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
     # BAM
     report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)

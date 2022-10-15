@@ -12,10 +12,12 @@ import midsv
 
 
 def make_directories(TEMPDIR: Path):
-    subdirectoris = ["cache", "fasta", "sam", "midsv", "bam", "report"]
+    subdirectoris = ["cache", "fasta", "sam", "midsv", "report"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
-    Path(TEMPDIR, "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
+    reportdirectories = ["HTML", "FASTA", "VCF", "BAM"]
+    for reportdir in reportdirectories:
+        Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
 
 
 ########################################################################

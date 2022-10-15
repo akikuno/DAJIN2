@@ -1,7 +1,8 @@
 from __future__ import annotations
+import re
+import random
 from pathlib import Path
 from typing import Union
-import re
 from collections import defaultdict
 from itertools import groupby
 import pysam
@@ -219,6 +220,7 @@ def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[lis
 
 
 def output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
+    randomnum = random.randint(100_000, 999_999)
     path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_control.sam")
     sam = midsv.read_sam(path_sam)
 
@@ -226,22 +228,28 @@ def output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, C
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
 
-    path_sam_update = Path(TEMPDIR, "bam", "tmp_sam", f"{SAMPLE_NAME}_control_update.sam")
+    path_sam_update = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
         write_sam(sam_update, path_sam_update)
     else:
         write_sam(sam_update, path_sam_update)
 
-    pysam.sort("-@", f"{THREADS}", "-o", f"{TEMPDIR}/bam/{SAMPLE_NAME}.bam", str(path_sam_update))
-    pysam.index("-@", f"{THREADS}", f"{TEMPDIR}/bam/{SAMPLE_NAME}.bam")
+    path_bam = Path(TEMPDIR, "report", "bam", f"{SAMPLE_NAME}.bam")
+    pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam_update))
+    pysam.index("-@", f"{THREADS}", str(path_bam))
 
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
     sam_groups = group_by_name(sam_contents, RESULT_SAMPLE)
 
     for key, sam_content in sam_groups.items():
-        path_sam = f"{TEMPDIR}/bam/tmp_sam/{key}.sam"
+        path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{key}.sam")
+        path_bam = Path(TEMPDIR, "report", "bam", f"{SAMPLE_NAME}_{key}.bam")
         write_sam(sam_headers + sam_content, path_sam)
-        pysam.sort("-@", f"{THREADS}", "-o", f"{TEMPDIR}/bam/{SAMPLE_NAME}_{key}.bam", path_sam)
-        pysam.index("-@", f"{THREADS}", f"{TEMPDIR}/bam/{SAMPLE_NAME}_{key}.bam")
+        pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
+        pysam.index("-@", f"{THREADS}", str(path_bam))
+
+    # Remove temporary files
+    sam_temp = Path(TEMPDIR, "report", "bam").glob(f"tmp{randomnum}*.sam")
+    [s.unlink() for s in sam_temp]
