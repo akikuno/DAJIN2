@@ -136,6 +136,8 @@ diff_loci = clustering.extract_different_loci(TEMPDIR, classif_sample, DICT_ALLE
 
 clust_sample = clustering.add_labels(classif_sample, diff_loci)
 
+clust_sample = clustering.add_readnum(clust_sample)
+
 clust_sample = clustering.add_percent(clust_sample)
 
 clust_sample = clustering.update_labels(clust_sample)

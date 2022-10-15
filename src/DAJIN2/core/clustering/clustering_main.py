@@ -50,12 +50,21 @@ def add_labels(classif_sample, diffloci_by_alleles):
     return clust_sample
 
 
+def add_readnum(clust_sample):
+    readnum = defaultdict(int)
+    for cs in clust_sample:
+        readnum[cs["LABEL"]] += 1
+    for cs in clust_sample:
+        cs["READNUM"] = readnum[cs["LABEL"]]
+    return clust_sample
+
+
 def add_percent(clust_sample):
     n_sample = len(clust_sample)
     percent = defaultdict(int)
     for cs in clust_sample:
         percent[cs["LABEL"]] += 1 / n_sample
-    percent = {key: round(val * 100, 1) for key, val in percent.items()}
+    percent = {key: round(val * 100, 3) for key, val in percent.items()}
     for cs in clust_sample:
         cs["PERCENT"] = percent[cs["LABEL"]]
     return clust_sample
