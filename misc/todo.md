@@ -11,8 +11,6 @@
 
 ## 前処理
 
-+ [ ] `DICT_ALLELE`は80文字改行のFASTAに対応しているのか確認する
-+ [ ] (test) `format_inputs`
 
 ## マッピング
 
@@ -22,21 +20,29 @@
 
 ## コンセンサス
 
-+ [ ] consensusが同じクラスタにおいて、小さいクラスタを一番大きなクラスタのほうにマージする
 + [ ] (test) call_percentage
 + [ ] (test) join_listdicts
 
 ## レポート
 
++ [ ] batchでアレル頻度の作図関数を作る
+  + アレル割合が多い順に積み重ねたい
+  + https://stackoverflow.com/questions/63920999/plotly-sorting-the-y-axis-bars-of-a-stacked-bar-chart-by-value
+
 + [ ] HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
   + [ ] colorblind-friendly
+
 + [ ] VCFファイル
+
 + [ ] BAMファイル
   + [x] Tyrでマイナス鎖からプラス鎖に変換
   + [ ] XXXでプラス鎖の確認
   + [ ] (test) `report_bam`
+
 + [ ] `igv.js`で各アレルの代表的なリード20本程度を可視化する
-  + [ ] `igv.js`は`npx http-server -a localhost -o . -s`を使うとローカルのBAMファイルを可視化できる → Pythonで完結できそう…
+  + [x] (core/main.py) `igv.js`用に各アレルから20本のリードを抽出し、`report/.igvjs`に保存
+  + [ ] (batchmode/report.py) `index.html`を`DAJINResults/{name}/BAM/igvjs/`に保存して、`DAJINResults/{name}/BAM/.igvjs/`内にあるBAMとFASTA(reference用)を可視化する
+  + [ ] `DAJIN2 view -n/--name`で起動
 
 ## その他
 
@@ -54,9 +60,11 @@
 
 ## AyabeTask1
 
-+ left-loxpは`control, SV false`にある。例: 880d5333-7a52-4dad-95fb-b778f06c1e5f
++ barcode33の1塩基欠失は`1748`番目の塩基
+
++ キメラDNAのleft-loxpは`control, SV false`にある。例: 880d5333-7a52-4dad-95fb-b778f06c1e5f
   + left-loxpがInsertion (at 1735) として扱われている。 left-loxpは46塩基長（<50）のためSVではない。
-+ right-loxpは`flox, SV false`にある。例：6f536ce8-32d6-41d5-8b09-66bef425b9d8
++ キメラDNAのright-loxpは`flox, SV false`にある。例：6f536ce8-32d6-41d5-8b09-66bef425b9d8
   + left-loxpがDeletionとして扱われる。 left-loxpは46塩基長（<50）のためSVではない。
 
 
@@ -75,6 +83,11 @@
   + メイン関数内のcontrolとsampleの処理を分ける
 
 ## 前処理
+
++ [x] `DICT_ALLELE`は80文字改行のFASTAに対応しているのか確認する -> `mappy.fastx_read`で必ず1つにまとまることを確認した
++ [x] (test) `format_inputs`
+
+
 + [x] 入力ファイルのフォーマット (format_input.py)
   + [x] sample, controlのテキスト化
   + [x] alleleでmulti-fastaをsingle fastaにする
@@ -94,11 +107,18 @@
 
 ## コンセンサス
 
++ [ ] ~~consensusが同じクラスタにおいて、小さいクラスタを一番大きなクラスタのほうにマージする~~
 + [x] **コンセンサスのアレルにfloxやalbinoを含める** (DONE: 2022-10-09)
   + AyabeTask1のようにInsertionのなかにSubがある場合、controlアレルにマッピングしているとSubの検出ができないため
 + [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
 
 ## レポート
+
++ [x] レポートのディレクトリ構造を作る
+  + report/HTML
+  + report/FASTA
+  + report/BAM
+  + report/VCF
 
 + [x] HTMLファイルのコンセンサス
 + [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`
