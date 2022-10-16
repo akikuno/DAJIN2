@@ -215,6 +215,26 @@ def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[lis
 
 
 ###############################################################################
+# igvjs
+###############################################################################
+
+
+def subset_qnames(RESULT_SAMPLE, readnum: int = 20) -> dict[set[str]]:
+    qnames_by_name = defaultdict(set)
+    for name, group in groupby(RESULT_SAMPLE, key=lambda x: x["NAME"]):
+        group = list(group)
+        qnames = [res["QNAME"] for res in group[:readnum]]
+        qnames_by_name[name] = set(qnames)
+    return qnames_by_name
+
+
+def subset_reads(name, sam_content, qnames_by_name):
+    qnames = qnames_by_name[name]
+    sam_subset = [sam for sam in sam_content if sam[0] in qnames]
+    return sam_subset
+
+
+###############################################################################
 # Output
 ###############################################################################
 
@@ -242,11 +262,20 @@ def output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, C
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
     sam_groups = group_by_name(sam_contents, RESULT_SAMPLE)
+    qnames_by_name = subset_qnames(RESULT_SAMPLE, 20)
 
-    for key, sam_content in sam_groups.items():
-        path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{key}.sam")
-        path_bam = Path(TEMPDIR, "report", "bam", f"{SAMPLE_NAME}_{key}.bam")
+    for name, sam_content in sam_groups.items():
+        # BAM
+        path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
+        path_bam = Path(TEMPDIR, "report", "bam", f"{SAMPLE_NAME}_{name}.bam")
         write_sam(sam_headers + sam_content, path_sam)
+        pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
+        pysam.index("-@", f"{THREADS}", str(path_bam))
+        # igvjs
+        sam_subset = subset_reads(name, sam_content, qnames_by_name)
+        path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
+        path_bam = Path(TEMPDIR, "report", ".igvjs", f"{SAMPLE_NAME}_{name}.bam")
+        write_sam(sam_headers + sam_subset, path_sam)
         pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
         pysam.index("-@", f"{THREADS}", str(path_bam))
 

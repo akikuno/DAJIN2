@@ -15,7 +15,7 @@ def make_directories(TEMPDIR: Path):
     subdirectoris = ["cache", "fasta", "sam", "midsv", "report"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
-    reportdirectories = ["HTML", "FASTA", "VCF", "BAM"]
+    reportdirectories = ["HTML", "FASTA", "VCF", "BAM", ".igvjs"]
     for reportdir in reportdirectories:
         Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
 
