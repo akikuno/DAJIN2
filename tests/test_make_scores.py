@@ -1,7 +1,6 @@
 from src.DAJIN2.core.clustering.make_scores import extract_cssplit_at_diffloci
 from src.DAJIN2.core.clustering.make_scores import sum_scores
 from src.DAJIN2.core.clustering.make_scores import make_scores
-from importlib import reload
 
 
 def test_extract_cssplit_at_diffloci():

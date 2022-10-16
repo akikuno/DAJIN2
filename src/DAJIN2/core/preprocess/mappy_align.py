@@ -1,6 +1,7 @@
 from __future__ import annotations
 from collections.abc import Generator
 from pathlib import Path
+from typing import Union
 import cstag
 import mappy
 
@@ -75,3 +76,20 @@ def output_sam(TEMPDIR, path_fasta, name_fasta, path_fastq, name_fastq):
     sam = to_sam(str(path_fasta), path_fastq)
     output_sam = Path(TEMPDIR, "sam", f"{name_fastq}_{name_fasta}.sam")
     output_sam.write_text("\n".join(sam))
+
+
+########################################################################
+# Create faidx
+########################################################################
+
+
+def make_faidx(path_fasta: Union[Path, str]) -> str:
+    fasta = Path(path_fasta).read_text().split()
+    name = fasta[0].strip(">")
+    length = len("".join(fasta[1:]))
+    offset = len(fasta[0]) + 1
+    linebase = len(fasta[1])
+    linewidth = len(fasta[1]) + 1
+    faidx = list(map(str, [name, length, offset, linebase, linewidth]))
+    faidx = "\t".join(faidx) + "\n"
+    return faidx

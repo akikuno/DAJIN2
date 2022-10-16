@@ -46,9 +46,12 @@ def test_screen_different_loci_repeat_insertion():
         "=A,=A,=A,=A,=C,=C,=C,=C",
     ]
     sequence = "AAAACCCC"
+    masks_control = [False] * len(sequence)
     alpha = 0.5
     threshold = 0.0
-    test = screen_diffloci.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha, threshold)
+    test = screen_diffloci.screen_different_loci(
+        cssplit_sample, cssplit_control, sequence, masks_control, alpha, threshold
+    )
     answer = [0]
     assert test == answer
 
@@ -57,8 +60,11 @@ def test_screen_different_loci_no_repeat():
     cssplit_sample = ["*AG,=A,=A,=C,=C,=C"] * 100
     cssplit_control = ["=A,=A,=A,=C,=C,=C"] * 100
     sequence = "AAACCC"
+    masks_control = [False] * len(sequence)
     alpha = 0.5
     threshold = 0.0
-    test = screen_diffloci.screen_different_loci(cssplit_sample, cssplit_control, sequence, alpha, threshold)
+    test = screen_diffloci.screen_different_loci(
+        cssplit_sample, cssplit_control, sequence, masks_control, alpha, threshold
+    )
     answer = [0]
     assert test == answer

@@ -2,7 +2,6 @@ from __future__ import annotations
 import warnings
 import hashlib
 from pathlib import Path
-import midsv
 from . import preprocess
 from . import classification
 from . import clustering
@@ -65,6 +64,11 @@ def main(arguments: dict) -> None:
             preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
 
+    if not GENOME:
+        path_control = Path(TEMPDIR, "fasta", "control.fasta")
+        faidx_control = preprocess.mappy_align.make_faidx(path_control)
+        Path(TEMPDIR, "fasta", "control.fasta.fai").write_text(faidx_control)
+
     ########################################################################
     # MIDSV conversion
     ########################################################################
@@ -103,8 +107,13 @@ def main(arguments: dict) -> None:
     # Clustering
     ########################################################################
 
-    diff_loci = clustering.extract_different_loci(TEMPDIR, classif_sample, DICT_ALLELE, CONTROL_NAME)
-    clust_sample = clustering.add_labels(classif_sample, diff_loci)
+    MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+
+    diffloci_by_alleles = clustering.extract_different_loci(
+        TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
+    )
+    clust_sample = clustering.add_labels(classif_sample, diffloci_by_alleles)
+    clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
 
@@ -112,9 +121,7 @@ def main(arguments: dict) -> None:
     # Consensus call
     ########################################################################
 
-    RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
-        TEMPDIR, clust_sample, DICT_ALLELE, SAMPLE_NAME, CONTROL_NAME
-    )
+    RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, diffloci_by_alleles, DICT_ALLELE)
 
     ########################################################################
     # Output Report：FASTA/HTML/BAM/VCF
@@ -122,14 +129,16 @@ def main(arguments: dict) -> None:
     # FASTA
     for header, cons_seq in cons_sequence.items():
         cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+        Path(TEMPDIR, "report", "FASTA", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
     # HTML
     for header, cons_per in cons_percentage.items():
         cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "report", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+        Path(TEMPDIR, "report", "HTML", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+
     # BAM
     report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+
     # VCF
     # working in progress
 

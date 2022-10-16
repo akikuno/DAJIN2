@@ -12,10 +12,12 @@ import midsv
 
 
 def make_directories(TEMPDIR: Path):
-    subdirectoris = ["cache", "fasta", "sam", "midsv", "bam", "report"]
+    subdirectoris = ["cache", "fasta", "sam", "midsv", "report"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
-    Path(TEMPDIR, "bam", "tmp_sam").mkdir(parents=True, exist_ok=True)
+    reportdirectories = ["HTML", "FASTA", "VCF", "BAM"]
+    for reportdir in reportdirectories:
+        Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
 
 
 ########################################################################
@@ -37,15 +39,14 @@ def extract_basename(fastq_path: str) -> str:
 # Convert allele file to dictionary type fasta format
 ########################################################################
 
-# TODO TEST
-def dictionize_allele(allele_path: str) -> dict:
+
+def dictionize_allele(path_fasta: str) -> dict:
     header, sequence = [], []
-    for name, seq, _ in mappy.fastx_read(allele_path):
+    for name, seq, _ in mappy.fastx_read(path_fasta):
         name = name.lstrip()
         if not name:
-            raise AttributeError(f"{allele_path} contains an invalid header name")
-        else:
-            name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
+            raise AttributeError(f"{path_fasta} contains an empty header")
+        name = re.sub(r'[\\|/|:|?|.|,|\'|"|<|>|\| |]', "-", name)
         header.append(name)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
