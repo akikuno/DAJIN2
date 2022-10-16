@@ -58,8 +58,7 @@ def submit():
     if threads is None:
         threads = 1
 
-    df = {"sample": PATH_SAMPLE}
-    df = pd.DataFrame(df)
+    df = pd.DataFrame({"sample": PATH_SAMPLE})
     df["name"] = name
     df["control"] = PATH_CONTROL[0]
     df["allele"] = PATH_ALLELE[0]
@@ -71,7 +70,7 @@ def submit():
     arguments["file"] = str(Path("DAJINResults", ".tempdir", name, "upload", "batch.csv"))
     arguments["threads"] = threads
     arguments["debug"] = False
-    #    batch.batch(arguments)
+    # batch.batch(arguments)
 
     return f"""
     name={name}
