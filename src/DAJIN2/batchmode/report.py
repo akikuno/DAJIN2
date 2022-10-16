@@ -1,7 +1,8 @@
 from __future__ import annotations
 import pandas as pd
 import plotly.express as px
-from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
+
+# from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
 import midsv
 from pathlib import Path
 
