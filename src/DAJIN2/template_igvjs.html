@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+
+<head>
+    <title>DAJIN View</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="shortcut icon" href="https://igv.org/web/img/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/igv@2.13.1/dist/igv.min.js"></script>
+</head>
+
+<body>
+    <div id="igvDiv" style="padding-top: 10px ;padding-bottom: 10px; border:1px solid lightgray"></div>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function () {
+            const options =
+                {
+                    {% if genome.exist %}
+                        genome: {{ genome.genome }},
+                        locus: {{ genome.locus }},
+                    {% else %}
+                        reference: {fastaURL: {{ reference.urlfa }}}
+                    {% endif %}
+
+                tracks: [
+                {% for track in tracks %}
+                    {
+                    name: {{ track.samplename }},
+                    url: {{ track.urlbam }},
+                    indexurl: {{ track.urlbai }},
+                    type: 'alignment',
+                    format: 'bam',
+                    autoHeight: "true",
+                    viewAsPairs: "true",
+                    samplingDepth: "10",
+                    showInsertionText: "true",
+                    showDeletionText: "true",
+                    },
+                {% endfor %}
+                ],
+        };
+        const igvDiv = document.getElementById("igvDiv");
+        igv.createBrowser(igvDiv, options).then(function (browser) { console.log("Created IGV browser"); })
+        })
+    </script>
+</body>
+
+</html>
