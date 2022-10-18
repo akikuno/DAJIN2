@@ -219,7 +219,7 @@ def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[lis
 ###############################################################################
 
 
-def subset_qnames(RESULT_SAMPLE, readnum: int = 20) -> dict[set[str]]:
+def subset_qnames(RESULT_SAMPLE, readnum: int = 100) -> dict[set[str]]:
     qnames_by_name = defaultdict(set)
     for name, group in groupby(RESULT_SAMPLE, key=lambda x: x["NAME"]):
         group = list(group)
@@ -262,7 +262,7 @@ def output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, C
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
     sam_groups = group_by_name(sam_contents, RESULT_SAMPLE)
-    qnames_by_name = subset_qnames(RESULT_SAMPLE, 20)
+    qnames_by_name = subset_qnames(RESULT_SAMPLE)
 
     for name, sam_content in sam_groups.items():
         # BAM
