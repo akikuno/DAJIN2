@@ -8,12 +8,12 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 
 - [ ] support nCATs
 - [ ] support PacBio
-- [x] support samples without a reference genome
 
 ### Functions
 
 - [ ] output VCF
 - [ ] multi-allele phasing
+- [x] trim microhomology in BAM
 
 ### Usability
 
@@ -21,10 +21,11 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
   - [ ] PyPI
   - [ ] BioConda
   - [ ] docker image
-- [ ] support visualization using `igv.js`
-- [ ] support graphical user interface using `flask`
 - [ ] support low-/middle-spec laptop
 - [x] support macOS
+- [x] support samples without a reference genome
+- [x] support visualization using `igv.js` via `DAJIN2 view` command
+- [x] support graphical user interface using `flask` via `DAJIN2 gui` command
 
 ### Maintainability
 

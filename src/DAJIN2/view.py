@@ -25,14 +25,13 @@ def execute(name: str):
     params_genome = {"genome": {"exist": False}}
     params_reference = dict()
     path_genome = Path(DIR_IGVJS, "genome_symbol.txt")
-    if path_genome.exists:
+    if path_genome.exists():
         path_coodinates = Path(DIR_IGVJS, "genome_coodinates.jsonl")
         GENOME = path_genome.read_text().strip()
         CHROME, START, END, _ = eval(path_coodinates.read_text().strip()).values()
         params_genome = {"genome": {"exist": True, "genome": GENOME, "locus": f"{CHROME}:{START}-{END}"}}
     else:
-        path_fasta = Path(DIR_IGVJS, "control.fasta")
-        params_reference = {"reference": {"urlfa": str(path_fasta), "urlfai": str(path_fasta) + ".fai"}}
+        params_reference = {"reference": {"urlfa": "control.fasta", "urlfai": "control.fasta" + ".fai"}}
 
     bamnames = []
     bamurls = []
@@ -65,6 +64,7 @@ def execute(name: str):
     os.chdir(Path("DAJINResults", name, ".igvjs"))
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print(f"serving at port: http://127.0.0.1:{PORT}")
+        print(f"DEVELOPEMT: view.py {os.getcwd()}")
         httpd.serve_forever()
         webbrowser.open(f"http://127.0.0.1:{PORT}", new=2, autoraise=True)
     os.chdir("../../../")

@@ -14,8 +14,13 @@ def main(arguments: dict) -> None:
     CONTROL = arguments["control"]
     ALLELE = arguments["allele"]
     NAME = arguments["name"]
-    GENOME = arguments["genome"]
     THREADS = arguments["threads"]
+    try:
+        GENOME = arguments["genome"]
+    except KeyError:
+        GENOME = False
+        GENOME_COODINATES = None
+        CHROME_SIZE = None
 
     ##########################################################
     # Check inputs

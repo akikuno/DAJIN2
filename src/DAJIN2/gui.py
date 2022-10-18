@@ -70,7 +70,7 @@ def submit():
     arguments["file"] = str(Path("DAJINResults", ".tempdir", name, "upload", "batch.csv"))
     arguments["threads"] = threads
     arguments["debug"] = False
-    # batch.batch(arguments)
+    batch.execute(arguments)
 
     return f"""
     name={name}

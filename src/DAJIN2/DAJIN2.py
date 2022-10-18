@@ -72,6 +72,7 @@ def main():
     parser_view = subparser.add_parser("view", help="DAIJN2 View mode to launch igvjs")
     parser_view.add_argument("-n", "--name", required=True, type=str, help="Output name of the report")
     parser_view.set_defaults(handler=viewmode)
+
     ###############################################################################
     # Parse arguments
     ###############################################################################
