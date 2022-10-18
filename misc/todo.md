@@ -41,6 +41,12 @@
   + [ ] XXXでプラス鎖の確認
   + [ ] (test) `report_bam`
 
++ [ ] 名前をどうするか…
+  + 2022-10-19時点では`barcode31_allele1_flox_intact_52.979%`のような感じになっている。
+    + 視認性が悪い。
+    + とくに`flox_intact`や`control_mutated`などのところ
+    + `controlアレルに類似していて、かつcontrolアレルにはない変異が入っている`という意味をいかにして伝えるか
+  + サンプル名をフォルダ名にする？
 
 ## DAJIN singlemode
 
@@ -55,9 +61,9 @@
     + [x] GENOMEがある場合
     + [x] GENOMEがない場合
   + [x] `DAJIN2 view -n/--name`で起動
++ [x] 20本ではなくて100本くらいにする？
++ [ ] 各サンプルごとにviewを分けたほうが見やすいかも？
 + [ ] (test) `view.execute()`
-  + 20本ではなくて100本くらいにする？
-  + 各サンプルごとにviewを分けたほうが見やすいかも？
 
 ## `DAJIN gui`
 

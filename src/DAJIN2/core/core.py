@@ -9,7 +9,7 @@ from . import consensus
 from . import report
 
 
-def main(arguments: dict) -> None:
+def execute(arguments: dict) -> None:
     SAMPLE = arguments["sample"]
     CONTROL = arguments["control"]
     ALLELE = arguments["allele"]

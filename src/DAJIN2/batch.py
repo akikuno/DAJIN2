@@ -3,7 +3,7 @@ from pathlib import Path
 from itertools import groupby
 import shutil
 import pandas as pd
-from .core import main
+from .core import core
 import wslPath
 import midsv
 from src.DAJIN2.batchmode import report  #! convert to relative PATH ==========
@@ -68,7 +68,7 @@ def execute(arguments: dict[str]):
             args = {h: g for h, g in zip(keys, group)}
             args["threads"] = threads
             # perform DAJIN
-            SAMPLE_NAME, RESULT = main.main(args)
+            SAMPLE_NAME, RESULT = core.execute(args)
             # output the result
             midsv.write_jsonl(RESULT, Path(batch_directory, f"{SAMPLE_NAME}.jsonl"))
             # ? DEVELOPMENT------------------------------------------------------------------
