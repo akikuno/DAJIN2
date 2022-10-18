@@ -41,8 +41,12 @@
 
 + [ ] `igv.js`で各アレルの代表的なリード20本程度を可視化する
   + [x] (core/main.py) `igv.js`用に各アレルから20本のリードを抽出し、`report/.igvjs`に保存
-  + [ ] (batchmode/report.py) `index.html`を`DAJINResults/{name}/BAM/igvjs/`に保存して、`DAJINResults/{name}/BAM/.igvjs/`内にあるBAMとFASTA(reference用)を可視化する
+  + [x] (batchmode/report.py) `index.html`を`DAJINResults/{name}/BAM/igvjs/`に保存して、`DAJINResults/{name}/BAM/.igvjs/`内にあるBAMとFASTA(reference用)を可視化する
+    + [x] GENOMEがある場合
+    + [ ] GENOMEがない場合
   + [ ] `DAJIN2 view -n/--name`で起動
+  + 20本ではなくて100本くらいにする？
+  + 各サンプルごとにviewを分けたほうが見やすいかも？
 
 ## その他
 

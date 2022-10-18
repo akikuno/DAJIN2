@@ -16,18 +16,21 @@
             const options =
                 {
                     {% if genome.exist %}
-                        genome: {{ genome.genome }},
-                        locus: {{ genome.locus }},
+                        genome: "{{ genome.genome }}",
+                        locus: "{{ genome.locus }}",
                     {% else %}
-                        reference: {fastaURL: {{ reference.urlfa }}}
+                        reference: {
+                            fastaURL: "{{ reference.urlfa }}",
+                            indexURL: "{{ reference.urlfai }}",
+                        }
                     {% endif %}
 
                 tracks: [
                 {% for track in tracks %}
                     {
-                    name: {{ track.samplename }},
-                    url: {{ track.urlbam }},
-                    indexurl: {{ track.urlbai }},
+                    name: "{{ track.samplename }}",
+                    url: "{{ track.urlbam }}",
+                    indexurl: "{{ track.urlbai }}",
                     type: 'alignment',
                     format: 'bam',
                     autoHeight: "true",

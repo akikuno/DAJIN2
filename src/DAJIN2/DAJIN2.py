@@ -4,6 +4,7 @@ import argparse
 from . import single
 from . import batch
 from . import gui
+from . import view
 
 
 def update_threads(threads):
@@ -42,11 +43,11 @@ def main():
         arguments["file"] = args.file
         arguments["threads"] = threads
         arguments["debug"] = args.debug
-        batch.batch(arguments)
+        batch.execute(arguments)
 
     subparser = parser.add_subparsers()
     parser_batch = subparser.add_parser("batch", help="DAIJN2 batch mode")
-    parser_batch.add_argument("-f", "--file", required=True, type=str, help="batch.csv")
+    parser_batch.add_argument("-f", "--file", required=True, type=str, help="The comma-separated batch file.")
     parser_batch.add_argument("-t", "--threads", default=1, type=int, help="Number of threads [default: 1]")
     parser_batch.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
     parser_batch.set_defaults(handler=batchmode)
@@ -59,9 +60,18 @@ def main():
         gui.execute()
 
     parser_gui = subparser.add_parser("gui", help="DAIJN2 GUI mode")
-    parser_gui.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
     parser_gui.set_defaults(handler=guimode)
 
+    ###############################################################################
+    # View mode
+    ###############################################################################
+
+    def viewmode(args):
+        view.execute(args.name)
+
+    parser_view = subparser.add_parser("view", help="DAIJN2 View mode to launch igvjs")
+    parser_view.add_argument("-n", "--name", required=True, type=str, help="Output name of the report")
+    parser_view.set_defaults(handler=viewmode)
     ###############################################################################
     # Parse arguments
     ###############################################################################

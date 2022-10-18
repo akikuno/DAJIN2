@@ -6,14 +6,13 @@ import pandas as pd
 from .core import main
 import wslPath
 import midsv
-from src.DAJIN2.batchmode import report
-from jinja2 import Template, Environment, FileSystemLoader
+from src.DAJIN2.batchmode import report  #! convert to relative PATH ==========
 
 
-def batch(arguments: dict[str]):
+def execute(arguments: dict[str]):
     path_batchfile = arguments["file"]
     threads = arguments["threads"]
-    debug = arguments["debug"]
+    # debug = arguments["debug"]
 
     ###############################################################################
     # Check arguments
@@ -83,45 +82,3 @@ def batch(arguments: dict[str]):
         df_summary = report.summary_info(df_all)
         df_summary.to_csv(Path(report_directory, "read_summary.csv"), index=False)
         report.output_plot(df_summary, report_directory)
-
-
-##############################################################################
-# Reports
-##############################################################################
-
-# IGV.js
-
-# df_summary = df_results.drop(columns=["QNAME", "LABEL", "ALLELE", "SV"]).drop_duplicates()
-# env = Environment(loader=FileSystemLoader("./", encoding="utf8"))
-# template = env.get_template("src/DAJIN2/template_igvjs.html")  #!? DEVELOPMENT ==================================
-# # template = env.get_template("template_igvjs.html")
-# params_genome = dict()
-# params_reference = dict()
-# params_tracks = dict()
-# params_genome = {"genome": {"exist": False}}
-# if GENOME:
-#     chrom, start, end, _ = GENOME_COODINATES.values()
-#     params_genome = {"genome": {"exist": True, "genome": GENOME, "locus": f"{chrom}:{start}-{end}"}}
-# else:
-#     params_reference = {"reference": {"urlfa": f""}}
-
-# params_reference = {"reference": {"urlfa": "@@@@@@@@@@@@@@@@@@@"}}
-
-# params_tracks = """{
-#     "tracks":
-#         {{ contents }},
-# }"""
-# params_tracks = Template(params_tracks)
-
-# SAMPLENAMES = ["hoge", "fuga"]
-# URLBAM = ["DAJINResults/.tempdir/Ayabe-Task1/bam/barcode36_allele1_flox_mutated_50.3%.bam", "fuga2"]
-# URLBAI = ["foooo", "foooo2"]
-# contents = [{"samplename": s, "urlbam": b, "urlbai": i} for s, b, i in zip(SAMPLENAMES, URLBAM, URLBAI)]
-
-# params_tracks = eval(params_tracks.render(contents=contents))
-
-# params_genome.update(**params_reference, **params_tracks)
-# params = params_genome.copy()
-
-# result = template.render(params)
-# print(result)

@@ -1,14 +1,12 @@
 from __future__ import annotations
-import warnings
 import hashlib
+import shutil
 from pathlib import Path
 from . import preprocess
 from . import classification
 from . import clustering
 from . import consensus
 from . import report
-
-warnings.simplefilter("ignore")
 
 
 def main(arguments: dict) -> None:
@@ -43,6 +41,8 @@ def main(arguments: dict) -> None:
         GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
             TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME
         )
+        if not IS_CACHE_GENOME:
+            preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
     ################################################################################
     # Export fasta files as single-FASTA format
@@ -67,7 +67,8 @@ def main(arguments: dict) -> None:
     if not GENOME:
         path_control = Path(TEMPDIR, "fasta", "control.fasta")
         faidx_control = preprocess.mappy_align.make_faidx(path_control)
-        Path(TEMPDIR, "fasta", "control.fasta.fai").write_text(faidx_control)
+        shutil.copy(path_control, Path(TEMPDIR, "report", ".igvjs"))
+        Path(TEMPDIR, "report", ".igvjs", "control.fasta.fai").write_text(faidx_control)
 
     ########################################################################
     # MIDSV conversion
