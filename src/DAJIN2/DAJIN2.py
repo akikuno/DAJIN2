@@ -83,13 +83,13 @@ def main():
         args.handler(args)
     else:
         if args.sample is None:
-            raise AttributeError("-s/--sample is required")
+            raise AttributeError("the following arguments are required: -s/--sample")
         if args.control is None:
-            raise AttributeError("-c/--control is required")
+            raise AttributeError("the following arguments are required: -c/--control")
         if args.allele is None:
-            raise AttributeError("-a/--allele is required")
+            raise AttributeError("the following arguments are required: -a/--allele")
         if args.name is None:
-            raise AttributeError("-n/--name is required")
+            raise AttributeError("the following arguments are required: -n/--name")
         threads = update_threads(args.threads)
         arguments = dict()
         arguments["sample"] = args.sample

@@ -64,7 +64,6 @@ def execute(name: str):
     os.chdir(Path("DAJINResults", name, ".igvjs"))
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print(f"serving at port: http://127.0.0.1:{PORT}")
-        print(f"DEVELOPEMT: view.py {os.getcwd()}")
         httpd.serve_forever()
-        webbrowser.open(f"http://127.0.0.1:{PORT}", new=2, autoraise=True)
+        webbrowser.open(f"http://127.0.0.1:{PORT}", autoraise=True)
     os.chdir("../../../")
