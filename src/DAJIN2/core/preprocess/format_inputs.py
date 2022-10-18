@@ -90,8 +90,14 @@ def get_coodinates_and_chromsize(
     else:
         GENOME_COODINATES = fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
         CHROME_SIZE = fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
-        # Save info to the cache directory
-        Path(TEMPDIR, "cache", "genome_symbol.txt").write_text(GENOME)
-        midsv.write_jsonl([GENOME_COODINATES], path_genome_coodinates)
-        path_chrome_size.write_text(str(CHROME_SIZE))
     return GENOME_COODINATES, CHROME_SIZE
+
+
+def cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE):
+    # Save info to the cache directory
+    Path(TEMPDIR, "cache", "genome_symbol.txt").write_text(GENOME + "\n")
+    midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
+    Path(TEMPDIR, "cache", "chrome_size.txt").write_text(str(CHROME_SIZE))
+    # Save info to the .igvjs directory
+    Path(TEMPDIR, "report", ".igvjs", "genome_symbol.txt").write_text(GENOME + "\n")
+    midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "report", ".igvjs", "genome_coodinates.jsonl"))
