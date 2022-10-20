@@ -1,6 +1,7 @@
 from __future__ import annotations
 import hashlib
 import shutil
+import midsv
 from pathlib import Path
 from . import preprocess
 from . import classification
@@ -130,8 +131,11 @@ def execute(arguments: dict) -> None:
     RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, diffloci_by_alleles, DICT_ALLELE)
 
     ########################################################################
-    # Output Report：FASTA/HTML/BAM/VCF
+    # Output Report：RESULT/FASTA/HTML/BAM/VCF
     ########################################################################
+    # RESULT
+    midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
+
     # FASTA
     for header, cons_seq in cons_sequence.items():
         cons_fasta = report.report_files.to_fasta(header, cons_seq)
@@ -148,4 +152,3 @@ def execute(arguments: dict) -> None:
     # VCF
     # working in progress
 
-    return SAMPLE_NAME, RESULT_SAMPLE

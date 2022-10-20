@@ -1,12 +1,10 @@
 from __future__ import annotations
 from pathlib import Path
 from itertools import groupby
-import shutil
 import pandas as pd
-from .core import core
 import wslPath
-import midsv
-from src.DAJIN2.batchmode import report  #! convert to relative PATH ==========
+from .core import core
+from .postprocess import report
 
 
 def execute(arguments: dict[str]):
@@ -60,25 +58,8 @@ def execute(arguments: dict[str]):
     contents.sort(key=lambda x: x[index_name])
 
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
-        report_directory = Path("DAJINResults", name)
-        report_directory.mkdir(exist_ok=True, parents=True)
-        batch_directory = Path("DAJINResults", ".tempdir", name, "batch")
-        batch_directory.mkdir(exist_ok=True, parents=True)
         for group in groups:
             args = {h: g for h, g in zip(keys, group)}
             args["threads"] = threads
-            # perform DAJIN
-            SAMPLE_NAME, RESULT = core.execute(args)
-            # output the result
-            midsv.write_jsonl(RESULT, Path(batch_directory, f"{SAMPLE_NAME}.jsonl"))
-            # ? DEVELOPMENT------------------------------------------------------------------
-            print(f"DEVELOPLENT: batch.py: {SAMPLE_NAME}.jsonl is completed")
-            # ? DEVELOPMENT------------------------------------------------------------------
-        # Reports -----------------------------------------
-        for dir in Path("DAJINResults", ".tempdir", name, "report").iterdir():
-            shutil.copytree(dir, Path(report_directory, dir.stem), dirs_exist_ok=True)
-        df_all = report.all_info(batch_directory)
-        df_all.to_csv(Path(report_directory, "read_all.csv"), index=False)
-        df_summary = report.summary_info(df_all)
-        df_summary.to_csv(Path(report_directory, "read_summary.csv"), index=False)
-        report.output_plot(df_summary, report_directory)
+            core.execute(args)
+        report.report(name)

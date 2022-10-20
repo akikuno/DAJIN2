@@ -1,10 +1,9 @@
 from __future__ import annotations
 import pandas as pd
-import plotly.express as px
-
-# from plotnine import ggplot, aes, geom_bar, theme, theme_bw, element_blank, labs, scale_y_continuous
-import midsv
+import shutil
 from pathlib import Path
+import midsv
+import plotly.express as px
 
 
 def all_info(batch_directory: Path) -> pd.DataFrame:
@@ -49,24 +48,13 @@ def output_plot(df_summary: pd.DataFrame, report_directory: Path):
         pass
 
 
-# def plot(df_summary: pd.DataFrame):
-#     df_plot = df_summary.copy()
-#     name = df_plot.NAME.tolist()
-#     names = [n.split("_") for n in name]
-#     alleletype = [n[1] + " " + n[2] for n in names]
-#     df_plot["ALLELETYPE"] = alleletype
-#     g = (
-#         ggplot(df_plot, aes(x="SAMPLE", y="READNUM", fill="ALLELETYPE"))
-#         + geom_bar(position="fill", stat="identity", colour="black")
-#         + scale_y_continuous(labels=lambda l: ["%d%%" % (v * 100) for v in l])
-#         + theme_bw()
-#         + theme(axis_title_x=element_blank())
-#         + labs(fill="Allele type", y="Percentage of reads")
-#     )
-#     return g
-
-
-###############################################################################
-# igvjs
-###############################################################################
-
+def report(name: str):
+    report_directory = Path("DAJINResults", name)
+    report_directory.mkdir(exist_ok=True, parents=True)
+    for dir in Path("DAJINResults", ".tempdir", name, "report").iterdir():
+        shutil.copytree(dir, Path(report_directory, dir.stem), dirs_exist_ok=True)
+    df_all = all_info(Path("DAJINResults", ".tempdir", name, "result"))
+    df_all.to_csv(Path(report_directory, "read_all.csv"), index=False)
+    df_summary = summary_info(df_all)
+    df_summary.to_csv(Path(report_directory, "read_summary.csv"), index=False)
+    output_plot(df_summary, report_directory)
