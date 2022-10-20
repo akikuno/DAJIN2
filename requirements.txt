@@ -12,5 +12,4 @@ Flask >= 2.2.0
 waitress >= 2.1.0
 Jinja2 >= 3.1.0
 plotly >= 5.0.0
-#plotnine >= 0.8.0
-#matplotlib==3.5.3 # keep the old version due to the issue of plotnine https://github.com/has2k1/plotnine/issues/619
+kaleido >= 0.2.0
