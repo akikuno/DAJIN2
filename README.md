@@ -18,8 +18,8 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 ### Usability
 
 - [ ] easy installation
-  - [ ] PyPI
-  - [ ] BioConda
+  - [x] pypi
+  - [ ] bioconda
   - [ ] docker image
 - [ ] support low-/middle-spec laptop
 - [x] support macOS

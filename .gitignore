@@ -10,6 +10,8 @@ DAJINResults/*
 *error_profile*
 training_*
 
+# PyPI
+.pypirc
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -4,6 +4,14 @@
 
 + [ ] debugを入れる
 + [ ] 低スペックPCでメモリがオーバーしないか確認する
++ [ ] README.md, READMD_jp.mdの執筆
+  + DAJIN2について
+    + DAJIN2 is a 
+  + Installation
+  + Usage
+  + License
+    + MIT License (see `LICENSE` file).
+  + Reference
 
 ## DAJIN2/core/main.py
 
