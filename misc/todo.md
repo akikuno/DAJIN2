@@ -2,17 +2,14 @@
 
 ## 開発一般
 
++ [ ] debugを入れる
++ [ ] 低スペックPCでメモリがオーバーしないか確認する
 
-+ [ ] 引数チェック関数 → メイン関数 → レポート関数の3部構成とする
-  + メイン関数はbatchでも使えるようにする
-  + 引数チェックとレポートはbatchとsingleで異なる（可能性がある）
-  + -> (2022-10-07) batch.py, single.pyのなかに引数チェック関数とレポート関数を入れる方式にする
-
-
-## `DAJIN2/core/main.py`
+## DAJIN2/core/main.py
 
 ###  前処理
 
++ [ ] `wslPath`をcore.mainのなかに入れる
 
 ### マッピング
 
@@ -48,24 +45,13 @@
     + `controlアレルに類似していて、かつcontrolアレルにはない変異が入っている`という意味をいかにして伝えるか
   + サンプル名をフォルダ名にする？
 
-## DAJIN singlemode
 
-+ [ ] 実装
+## DAJIN view
 
-
-## `DAJIN view`
-
-+ [x] `igv.js`で各アレルの代表的なリード20本程度を可視化する
-  + [x] (core/main.py) `igv.js`用に各アレルから20本のリードを抽出し、`report/.igvjs`に保存
-  + [x] (batchmode/report.py) `index.html`を`DAJINResults/{name}/BAM/igvjs/`に保存して、`DAJINResults/{name}/BAM/.igvjs/`内にあるBAMとFASTA(reference用)を可視化する
-    + [x] GENOMEがある場合
-    + [x] GENOMEがない場合
-  + [x] `DAJIN2 view -n/--name`で起動
-+ [x] 20本ではなくて100本くらいにする？
 + [ ] 各サンプルごとにviewを分けたほうが見やすいかも？
 + [ ] (test) `view.execute()`
 
-## `DAJIN gui`
+## DAJIN gui
 
 + [ ] ローディングページ
 + [ ] 終了時のインストラクションページ
@@ -101,6 +87,11 @@
 
 ## 開発一般
 
++ [x] 引数チェック関数 → メイン関数 → レポート関数の3部構成とする
+  + メイン関数はbatchでも使えるようにする
+  + 引数チェックとレポートはbatchとsingleで異なる（可能性がある）
+  + -> (2022-10-07) batch.py, single.pyのなかに引数チェック関数とレポート関数を入れる方式にする
+
 + [x] (2022-10-07) `.tempdir-{name}`ではなく`.tempdir/{name}`とする (2022-10-08)
 + [x] batchモードの搭載
 + [x] GitHub Actionsによるテスト自動化
@@ -135,7 +126,7 @@
 
 ## コンセンサス
 
-+ [ ] ~~consensusが同じクラスタにおいて、小さいクラスタを一番大きなクラスタのほうにマージする~~
++ [x] ~~consensusが同じクラスタにおいて、小さいクラスタを一番大きなクラスタのほうにマージする~~
 + [x] **コンセンサスのアレルにfloxやalbinoを含める** (DONE: 2022-10-09)
   + AyabeTask1のようにInsertionのなかにSubがある場合、controlアレルにマッピングしているとSubの検出ができないため
 + [x] コントロールにマッピングしたCSSPLITと、クラスタリングの結果を統合
@@ -157,5 +148,19 @@
 + [x] (test) `report_af.all_allele`
 + [x] アリル割合のplot_alleles.pyの草稿作成（2022-03-11）-> `read_af`モジュールに移動
 + [x] 8以上のアレル数にも対応
+
+## DAJIN singlemode
+
++ [x] 実装
+
+## DAJIN view
+
++ [x] `igv.js`で各アレルの代表的なリード20本程度を可視化する
+  + [x] (core/main.py) `igv.js`用に各アレルから20本のリードを抽出し、`report/.igvjs`に保存
+  + [x] (batchmode/report.py) `index.html`を`DAJINResults/{name}/BAM/igvjs/`に保存して、`DAJINResults/{name}/BAM/.igvjs/`内にあるBAMとFASTA(reference用)を可視化する
+    + [x] GENOMEがある場合
+    + [x] GENOMEがない場合
+  + [x] `DAJIN2 view -n/--name`で起動
++ [x] 20本ではなくて100本くらいにする？
 
 ## その他

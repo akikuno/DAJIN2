@@ -96,10 +96,11 @@ def main():
         arguments["control"] = args.control
         arguments["allele"] = args.allele
         arguments["name"] = args.name
-        arguments["genome"] = args.genome
+        if args.genome:
+            arguments["genome"] = args.genome
         arguments["threads"] = threads
         arguments["debug"] = args.debug
-        single.single(arguments)
+        single.execute(arguments)
 
 
 if __name__ == "__main__":
