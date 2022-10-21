@@ -27,6 +27,13 @@ def test_remove_microhomology():
     assert test == answer
 
 
+def test_remove_microhomology_overlapped_softclip():
+    sam = midsv.read_sam("tests/data/report_bam/barcode34_overlapped_softclip.sam")
+    test = report_bam.remove_microhomology(sam)
+    answer = [["@SQ", "SN:control", "LN:2724"]]
+    assert test == answer
+
+
 def test_remove_microhomology_real_singe_read():
     seq_id = "0ef147016ef0"
     sam = midsv.read_sam("tests/data/report_bam/barcode54_allele2_before.sam")

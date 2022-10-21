@@ -5,7 +5,7 @@ pip uninstall DAJIN2 -y && pip install -e .
 rm -rf DAJINResults/test-single DAJINResults/.tempdir/test-single
 pip install -e . && DAJIN2 \
     --name test-single \
-    --sample examples/flox-cables2/AyabeTask1/barcode31.fq.gz \
+    --sample examples/flox-cables2/AyabeTask1/barcode32.fq.gz \
     --control examples/flox-cables2/AyabeTask1/barcode42.fq.gz \
     --allele examples/flox-cables2/AyabeTask1/design_cables2.fa
 

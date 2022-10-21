@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 from collections import defaultdict
 from itertools import groupby
+from copy import deepcopy
 import pysam
 import midsv
 
@@ -129,6 +130,10 @@ def remove_microhomology(sam: list[list[str]]) -> list[list[str]]:
             # cigar
             next_cigar_split = [c for c in split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
             next_cigar_split[0] = str(int(next_cigar_split[0][:-1]) - len_microhomology) + next_cigar_split[0][-1]
+            # remove reads with overlapped at softclip region
+            if "-" in next_cigar_split[0]:
+                idx += 1
+                continue
             next_align[5] = "".join(next_cigar_split)
             # sequence
             next_align[9] = next_seq_trimmed[len_microhomology:]
@@ -244,7 +249,7 @@ def output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, C
     path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_control.sam")
     sam = midsv.read_sam(path_sam)
 
-    sam_update = sam.copy()
+    sam_update = deepcopy(sam)
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
 
