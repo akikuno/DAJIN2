@@ -4,15 +4,16 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 ## New planned features
 
 
-### Wet experiments
+### Experiments
 
 - [ ] support nCATs
 - [ ] support PacBio
+- [ ] multi-allele phasing
 
 ### Functions
 
 - [ ] output VCF
-- [ ] multi-allele phasing
+- [ ] support multi-processing
 - [x] trim microhomology in BAM
 
 ### Usability
