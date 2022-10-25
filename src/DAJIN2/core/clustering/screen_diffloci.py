@@ -89,54 +89,59 @@ def screen_different_loci(
     table_sample, table_control = make_table(cssplit_sample, cssplit_control)
     table_control = mask_table_control(table_control, masks_control)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
-    repeat_span = (x.span() for x in re.finditer(repeat_regrex, sequence))
-    try:
-        repeat_start, repeat_end = next(repeat_span)
-        repeat_end -= 1
-    except StopIteration:
+    repeat_span = list(x.span() for x in re.finditer(repeat_regrex, sequence))
+    repeat_idx = 0
+    if len(repeat_span) == 0:
         # Compare each nucleotide locus when sequence does not have a repeat
         for i, (s, c) in enumerate(zip(table_sample, table_control)):
             pval = chistatistic([coverage, sum(s)], [coverage, sum(c)], threshold)
             if pval < alpha:
                 different_loci.append(i)
         return different_loci
+    repeat_start, repeat_end = repeat_span[repeat_idx]
+    repeat_end -= 1
+    repeat_idx += 1
     # Sum of deletion and other mismatchs
-    repeat_del = [1, 1]
-    repeat_other = [1, 1]
+    repeat_sample_del = 1
+    repeat_control_del = 1
+    repeat_sample_others = 1
+    repeat_control_others = 1
     for i, (s, c) in enumerate(zip(table_sample, table_control)):
         if repeat_start <= i < repeat_end:
-            repeat_del[0] += s[0]
-            repeat_del[1] += c[0]
-            repeat_other[0] += s[1]
-            repeat_other[1] += c[1]
+            repeat_sample_del += s[0]
+            repeat_control_del += c[0]
+            repeat_sample_others += s[1]
+            repeat_control_others += c[1]
         elif i == repeat_end:
-            repeat_del[0] += s[0]
-            repeat_del[1] += c[0]
-            repeat_other[0] += s[1]
-            repeat_other[1] += c[1]
+            repeat_sample_del += s[0]
+            repeat_control_del += c[0]
+            repeat_sample_others += s[1]
+            repeat_control_others += c[1]
             # statistics to deletion
-            pval = chistatistic([coverage, repeat_del[0]], [coverage, repeat_del[1]], threshold)
+            pval = chistatistic([coverage, repeat_sample_del], [coverage, repeat_control_del], threshold)
             if pval < pow(alpha, 3):
                 for j in range(repeat_start, repeat_end + 1):
-                    s, c = table_sample[j], table_control[j]
-                    pval = chistatistic([coverage, s[0]], [coverage, c[0]], threshold)
+                    sample_del, control_del = table_sample[j][0], table_control[j][0]
+                    pval = chistatistic([coverage, sample_del], [coverage, control_del], threshold)
                     if pval < pow(alpha, 3):
                         different_loci.append(j)
             # statistics to others
-            pval = chistatistic([coverage, repeat_other[0]], [coverage, repeat_other[1]], threshold)
+            pval = chistatistic([coverage, repeat_sample_others], [coverage, repeat_control_others], threshold)
             if pval < alpha:
                 for j in range(repeat_start, repeat_end + 1):
-                    s, c = table_sample[j], table_control[j]
-                    pval = chistatistic([coverage, s[1]], [coverage, c[1]], threshold)
+                    sample_others, control_others = table_sample[j][1], table_control[j][1]
+                    pval = chistatistic([coverage, sample_others], [coverage, control_others], threshold)
                     if pval < alpha and j not in different_loci:
                         different_loci.append(j)
-            repeat_del = [1, 1]
-            repeat_other = [1, 1]
-            try:
-                repeat_start, repeat_end = next(repeat_span)
+            # reflesh
+            repeat_sample_del = 1
+            repeat_control_del = 1
+            repeat_sample_others = 1
+            repeat_control_others = 1
+            if repeat_idx < len(repeat_span):
+                repeat_start, repeat_end = repeat_span[repeat_idx]
                 repeat_end -= 1
-            except StopIteration:
-                pass
+                repeat_idx += 1
         else:
             pval = chistatistic([coverage, sum(s)], [coverage, sum(c)], threshold)
             if pval < alpha:

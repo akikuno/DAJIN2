@@ -20,15 +20,15 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
         dict_cssplit_control[allele] = cssplit_control
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
     diffloci_by_alleles = defaultdict(list[dict])
-    for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
+    for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
         cssplit_sample = [record["CSSPLIT"] for record in group]
-        cssplit_control = dict_cssplit_control[ALLELE]
-        sequence = DICT_ALLELE[ALLELE]
-        masks_control = MASKS_CONTROL[ALLELE]
+        cssplit_control = dict_cssplit_control[allele]
+        sequence = DICT_ALLELE[allele]
+        masks_control = MASKS_CONTROL[allele]
         diffloci = screen_different_loci(
             cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.05
         )
-        diffloci_by_alleles[f"{ALLELE}-{SV}"] = diffloci
+        diffloci_by_alleles[f"{allele}-{sv}"] = diffloci
     return diffloci_by_alleles
 
 
@@ -36,8 +36,8 @@ def add_labels(classif_sample, diffloci_by_alleles):
     labels = []
     label_start = 1
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-    for (ALLELE, SV), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        key = f"{ALLELE}-{SV}"
+    for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
+        key = f"{allele}-{sv}"
         cssplit_sample = [g["CSSPLIT"] for g in group]
         diffloci = diffloci_by_alleles[key]
         scores = []

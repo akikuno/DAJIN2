@@ -26,26 +26,26 @@ reload(report)
 
 
 # * 2-cut deletion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/del-stx2/barcode25.fq.gz",
-    "examples/del-stx2/barcode30.fq.gz",
-    "examples/del-stx2/design_stx2.fa",
-    "stx2-deletion",
-    "mm10",
-    True,
-    14,
-)
-
-# * flox insertion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/flox-cables2/AyabeTask1/barcode33.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "Ayabe-Task1",
+#     "examples/del-stx2/barcode25.fq.gz",
+#     "examples/del-stx2/barcode30.fq.gz",
+#     "examples/del-stx2/design_stx2.fa",
+#     "stx2-deletion",
 #     "mm10",
 #     True,
 #     14,
 # )
+
+# * flox insertion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+    "Ayabe-Task1",
+    "mm10",
+    True,
+    14,
+)
 
 ##########################################################
 # Check inputs
@@ -136,9 +136,9 @@ MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 diffloci_by_alleles = clustering.extract_different_loci(
     TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
 )
-# ALLELE = "flox"
-# SV = False
-# cssplit_sample = [cs["CSSPLIT"] for cs in classif_sample if cs["ALLELE"] == ALLELE and cs["SV"] == SV]
+# allele = "flox"
+# sv = False
+# cssplit_sample = [cs["CSSPLIT"] for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
 
 clust_sample = clustering.add_labels(classif_sample, diffloci_by_alleles)
 

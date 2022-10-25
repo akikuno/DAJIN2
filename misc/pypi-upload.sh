@@ -2,7 +2,7 @@
 
 pip uninstall DAJIN2 --yes
 rm -rf dist build src/DAJIN2.egg-info
-python3 -m pip install --upgrade setuptools wheel twine build
+python3 -m pip install --upgrade pip setuptools wheel twine build
 python3 setup.py sdist bdist_wheel
 
 cat <<TESTPYPI
