@@ -33,57 +33,34 @@ def transpose(cssplit: list[str]) -> list[tuple[str]]:
     return list(zip(*cs_transposed))
 
 
-def call_percentage(cssplit_sample: list[str], diffloci: list[int]) -> list[dict]:
+def call_percentage(cssplit_sample: list[str], diffloci: list[int], repetitive_del_loci: list[int]) -> list[dict]:
     """
     Call position weight matrix in defferent loci.
     Non defferent loci are annotated to "Match" or "Unknown(N)"
     """
     cssplit_sample_transposed = transpose(cssplit_sample)
-    readnum_sample = len(cssplit_sample)
-    con_percentage = []
+    coverage = len(cssplit_sample)
+    cons_percentage = []
     for idx, cs_transposed in enumerate(cssplit_sample_transposed):
         if idx in diffloci:
             count_cs = defaultdict(int)
             for cs in cs_transposed:
-                count_cs[cs] += 1 / readnum_sample
+                if cs.startswith("-") and idx in repetitive_del_loci:
+                    continue
+                count_cs[cs] += 1 / coverage
+            if not count_cs:
+                count_cs["N"] = 1.0
             count_cs_sorted = dict(sorted(count_cs.items(), key=lambda x: x[1], reverse=True))
-            con_percentage.append(count_cs_sorted)
+            cons_percentage.append(count_cs_sorted)
         else:
-            cons_cs = {"N": 1.0}
+            # return Match when one match found.
+            count_cs = {"N": 1.0}
             for cs in cs_transposed:
                 if cs.startswith("="):
-                    cons_cs = {cs: 1.0}
+                    count_cs = {cs: 1.0}
                     break
-            con_percentage.append(cons_cs)
-    return con_percentage
-
-
-# def call_percentage(cssplit_sample: list[str], cssplit_control: list[str]) -> list[dict]:
-#     cssplit_control_transposed = transpose(cssplit_control)
-#     cssplit_sample_transposed = transpose(cssplit_sample)
-#     readnum_sample = len(cssplit_sample)
-#     readnum_control = len(cssplit_control)
-#     con_percentage = []
-#     for i in range(len(cssplit_sample_transposed)):
-#         d_control = defaultdict(int)
-#         for cs in cssplit_control_transposed[i]:
-#             d_control[cs] += 1 / readnum_control
-#         d_sample = defaultdict(int)
-#         for cs in cssplit_sample_transposed[i]:
-#             d_sample[cs] += 1 / readnum_sample
-#         d_sample_subtracted = defaultdict(int)
-#         for key, value in d_sample.items():
-#             if key.startswith("="):
-#                 d_sample_subtracted[key] = value
-#                 continue
-#             value = max(0, value - d_control[key])
-#             if value > 0:
-#                 d_sample_subtracted[key] = value
-#         d_sum = sum(d_sample_subtracted.values())
-#         d = {key: value * 1 / d_sum for key, value in d_sample_subtracted.items()}
-#         d = dict(sorted(d.items(), key=lambda x: x[1], reverse=True))
-#         con_percentage.append(d)
-#     return con_percentage
+            cons_percentage.append(count_cs)
+    return cons_percentage
 
 
 def call_sequence(cons_percentage_by_key: list[dict]) -> str:
@@ -123,7 +100,9 @@ def call_allele_name(keys: tuple, cons_seq: str, DICT_ALLELE: dict) -> str:
     return allele_name
 
 
-def call(clust_sample: list[dict], diffloci_by_alleles: defaultdict[int], DICT_ALLELE: dict):
+def call(
+    clust_sample: list[dict], DIFFLOCI_ALLELES: defaultdict[int], REPETITIVE_DELLOCI: list(tuple), DICT_ALLELE: dict
+):
     result_sample = []
     cons_percentage = defaultdict(list)
     cons_sequence = defaultdict(list)
@@ -136,8 +115,9 @@ def call(clust_sample: list[dict], diffloci_by_alleles: defaultdict[int], DICT_A
             cssplit_sample[0]["LABEL"],
             cssplit_sample[0]["PERCENT"],
         )
-        diffloci = diffloci_by_alleles[f"{keys[0]}-{keys[1]}"]
-        cons_per = call_percentage(cssplit_sample, diffloci)
+        diffloci = DIFFLOCI_ALLELES[f"{keys[0]}-{keys[1]}"]
+        repetitive_del_loci = REPETITIVE_DELLOCI[f"{keys[0]}-{keys[1]}"]
+        cons_per = call_percentage(cssplit_sample, diffloci, repetitive_del_loci)
         cons_seq = call_sequence(cons_per)
         allele_name = call_allele_name(keys, cons_seq, DICT_ALLELE)
         cons_percentage[allele_name] = cons_per

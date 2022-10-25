@@ -49,7 +49,7 @@ def test_screen_different_loci_repeat_insertion():
     masks_control = [False] * len(sequence)
     alpha = 0.5
     threshold = 0.0
-    test = screen_diffloci.screen_different_loci(
+    test, _ = screen_diffloci.screen_different_loci(
         cssplit_sample, cssplit_control, sequence, masks_control, alpha, threshold
     )
     answer = [0]
@@ -63,7 +63,7 @@ def test_screen_different_loci_no_repeat():
     masks_control = [False] * len(sequence)
     alpha = 0.5
     threshold = 0.0
-    test = screen_diffloci.screen_different_loci(
+    test, _ = screen_diffloci.screen_different_loci(
         cssplit_sample, cssplit_control, sequence, masks_control, alpha, threshold
     )
     answer = [0]

@@ -70,6 +70,8 @@ def chistatistic(s_table, c_table, threshold=0.05) -> float:
 def pearson_corr(x, y):
     x_diff = x - np.mean(x)
     y_diff = y - np.mean(y)
+    if (np.sqrt(sum(x_diff ** 2)) * np.sqrt(sum(y_diff ** 2))) == 0:
+        return 0
     return np.dot(x_diff, y_diff) / (np.sqrt(sum(x_diff ** 2)) * np.sqrt(sum(y_diff ** 2)))
 
 
@@ -92,19 +94,20 @@ def screen_different_loci(
         list[dict]: Scores at significantly different base loci
     """
     different_loci = []
+    repetive_deletion_loci = []
     coverage = min(len(cssplit_sample), len(cssplit_control))
     table_sample, table_control = make_table(cssplit_sample, cssplit_control)
     table_control = mask_table_control(table_control, masks_control)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_span = list(x.span() for x in re.finditer(repeat_regrex, sequence))
-    repeat_idx = 0
     if len(repeat_span) == 0:
         # Compare each nucleotide locus when sequence does not have a repeat
         for i, (s, c) in enumerate(zip(table_sample, table_control)):
             pval = chistatistic([coverage, sum(s)], [coverage, sum(c)], threshold)
             if pval < alpha:
                 different_loci.append(i)
-        return different_loci
+        return different_loci, repetive_deletion_loci
+    repeat_idx = 0
     repeat_start, repeat_end = repeat_span[repeat_idx]
     repeat_end -= 1
     repeat_idx += 1
@@ -126,7 +129,9 @@ def screen_different_loci(
             repeat_control_others.append(c[1])
             # statistics to deletion
             corr_deletion = pearson_corr(repeat_sample_del, repeat_control_del)
-            if corr_deletion < 0.9:
+            if corr_deletion > 0.9:
+                repetive_deletion_loci += list(range(repeat_start, repeat_end + 1))
+            else:
                 pval = chistatistic([coverage, sum(repeat_sample_del)], [coverage, sum(repeat_control_del)], threshold)
                 if pval < pow(alpha, 3):
                     for j in range(repeat_start, repeat_end + 1):
@@ -157,4 +162,4 @@ def screen_different_loci(
             pval = chistatistic([coverage, sum(s)], [coverage, sum(c)], threshold)
             if pval < alpha:
                 different_loci.append(i)
-    return different_loci
+    return different_loci, repetive_deletion_loci

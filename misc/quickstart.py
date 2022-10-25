@@ -36,16 +36,16 @@ reload(report)
 #     14,
 # )
 
-# * flox insertion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-    "Ayabe-Task1",
-    "mm10",
-    True,
-    14,
-)
+# # * flox insertion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+#     "Ayabe-Task1",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 ##########################################################
 # Check inputs
@@ -131,16 +131,17 @@ for classif in classif_sample:
 # Clustering
 ########################################################################
 
-MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
-
-diffloci_by_alleles = clustering.extract_different_loci(
-    TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
-)
 # allele = "flox"
 # sv = False
 # cssplit_sample = [cs["CSSPLIT"] for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
 
-clust_sample = clustering.add_labels(classif_sample, diffloci_by_alleles)
+MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+
+DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
+    TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
+)
+
+clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
 
 clust_sample = clustering.add_readnum(clust_sample)
 
@@ -152,7 +153,14 @@ clust_sample = clustering.update_labels(clust_sample)
 # Consensus call
 ########################################################################
 
-RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, diffloci_by_alleles, DICT_ALLELE)
+RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
+    clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, DICT_ALLELE
+)
+# cons_percentage["allele1_flox_mutated_52.968%"][461]
+# keys = []
+# keys.append("flox")
+# keys.append(False)
+# cssplit_sample = [cs for cs in clust_sample if cs["ALLELE"] == keys[0] and cs["SV"] == keys[1]]
 
 # readid = "3f7aff2243b8"  # strand +
 # readid = "28e12f325a68"  # strand -

@@ -19,17 +19,20 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
         cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
         dict_cssplit_control[allele] = cssplit_control
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-    diffloci_by_alleles = defaultdict(list[dict])
+    DIFFLOCI = defaultdict(list[dict])
+    REPETITIVE_DELLOCI = defaultdict(list[dict])
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
+        print(f"DEBUG-clustering_main.py: {allele}-{sv}")  # ! ============================================
         cssplit_sample = [record["CSSPLIT"] for record in group]
         cssplit_control = dict_cssplit_control[allele]
         sequence = DICT_ALLELE[allele]
         masks_control = MASKS_CONTROL[allele]
-        diffloci = screen_different_loci(
+        diffloci, repetitive_delloci = screen_different_loci(
             cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.05
         )
-        diffloci_by_alleles[f"{allele}-{sv}"] = diffloci
-    return diffloci_by_alleles
+        DIFFLOCI[f"{allele}-{sv}"] = diffloci
+        REPETITIVE_DELLOCI[f"{allele}-{sv}"] = repetitive_delloci
+    return DIFFLOCI, REPETITIVE_DELLOCI
 
 
 def add_labels(classif_sample, diffloci_by_alleles):
