@@ -86,16 +86,6 @@ def execute(arguments: dict) -> None:
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
 
-    ###############################################################################
-    # Cashe inputs (control)
-    ###############################################################################
-
-    if not EXISTS_CACHED_CONTROL:
-        control_hash = Path(CONTROL).read_bytes()
-        control_hash = hashlib.sha256(control_hash).hexdigest()
-        PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
-        PATH_CACHE_HASH.write_text(str(control_hash))
-
     ########################################################################
     # Classify alleles
     ########################################################################
@@ -148,8 +138,23 @@ def execute(arguments: dict) -> None:
         Path(TEMPDIR, "report", "HTML", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
     # BAM
-    report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    if not EXISTS_CACHED_CONTROL:
+        report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+
+    report.report_bam.output_bam_sample(
+        TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
+    )
 
     # VCF
     # working in progress
+
+    ###############################################################################
+    # Cashe inputs (control)
+    ###############################################################################
+
+    if not EXISTS_CACHED_CONTROL:
+        control_hash = Path(CONTROL).read_bytes()
+        control_hash = hashlib.sha256(control_hash).hexdigest()
+        PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
+        PATH_CACHE_HASH.write_text(str(control_hash))
 
