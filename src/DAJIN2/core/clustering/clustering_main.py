@@ -22,7 +22,6 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
     DIFFLOCI = defaultdict(list[dict])
     REPETITIVE_DELLOCI = defaultdict(list[dict])
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        print(f"DEBUG-clustering_main.py: {allele}-{sv}")  # ! ============================================
         cssplit_sample = [record["CSSPLIT"] for record in group]
         cssplit_control = dict_cssplit_control[allele]
         sequence = DICT_ALLELE[allele]
