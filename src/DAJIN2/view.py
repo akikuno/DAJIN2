@@ -20,8 +20,9 @@ def execute(name: str):
     DIR_IGVJS = Path("DAJINResults", name, ".igvjs")
     if not DIR_IGVJS.exists():
         raise FileNotFoundError("BAM files for DAJIN view is not found. Execute DAJIN first.")
-    env = Environment(loader=FileSystemLoader("./", encoding="utf8"))
-    template = env.get_template("src/DAJIN2/template_igvjs.html")
+    path_view = Path(__file__).parent
+    env = Environment(loader=FileSystemLoader(path_view, encoding="utf8"))
+    template = env.get_template("template_igvjs.html")
     params_genome = {"genome": {"exist": False}}
     params_reference = dict()
     path_genome = Path(DIR_IGVJS, "genome_symbol.txt")
