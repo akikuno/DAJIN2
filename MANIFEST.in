@@ -1,2 +1,3 @@
+include src/DAJIN2/template_igvjs.html
 graft src/DAJIN2/templates
 graft src/DAJIN2/static
