@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import warnings
-
-warnings.simplefilter("ignore")
 import hashlib
 from collections import defaultdict
 from pathlib import Path
@@ -17,46 +14,46 @@ reload(consensus)
 reload(report)
 
 # # * Point mutation
-# SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/pm-tyr/barcode31.fq.gz",
 #     "examples/pm-tyr/barcode32.fq.gz",
 #     "examples/pm-tyr/design_tyr.fa",
-#     "DAJIN_results",
+#     "tyr-pm",
 #     "mm10",
 #     True,
 #     14,
 # )
 
 
-# # * 2-cut deletion
-# SAMPLE, CONTROL, ALLELE, OUTPUT, GENOME, DEBUG, THREADS = (
-#     "examples/del-stx2/barcode25.fq.gz",
-#     "examples/del-stx2/barcode30.fq.gz",
-#     "examples/del-stx2/design_stx2.fa",
-#     "DAJIN_results",
-#     "mm10",
-#     True,
-#     14,
-# )
-
-# * flox insertion
+# * 2-cut deletion
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/flox-cables2/AyabeTask1/barcode33.fq.gz",
-    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-    "Ayabe-Task1",
+    "examples/del-stx2/barcode25.fq.gz",
+    "examples/del-stx2/barcode30.fq.gz",
+    "examples/del-stx2/design_stx2.fa",
+    "stx2-deletion",
     "mm10",
     True,
     14,
 )
+
+# * flox insertion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/flox-cables2/AyabeTask1/barcode33.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+#     "Ayabe-Task1",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 ##########################################################
 # Check inputs
 ##########################################################
 preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, TEMPDIR)
-IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+IS_CACHE_CONTROL = preprocess.check_inputs.exists_cached_control(CONTROL, TEMPDIR)
+IS_CACHE_GENOME = preprocess.check_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
 UCSC_URL, GOLDENPATH_URL = None, None
 if GENOME and not IS_CACHE_GENOME:
     UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
@@ -157,6 +154,11 @@ clust_sample = clustering.update_labels(clust_sample)
 
 RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, diffloci_by_alleles, DICT_ALLELE)
 
+# readid = "3f7aff2243b8"  # strand +
+# readid = "28e12f325a68"  # strand -
+# for res in RESULT_SAMPLE:
+#     if readid in res["QNAME"]:
+#         print(res)
 
 # ----------------------------------------------------------
 # Conseusns Report：FASTA/HTML/VCF

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pip uninstall DAJIN2 -y && pip install -e .
+pip uninstall DAJIN2 -y
 
 rm -rf DAJINResults/test-single DAJINResults/.tempdir/test-single
 pip install -e . && DAJIN2 \

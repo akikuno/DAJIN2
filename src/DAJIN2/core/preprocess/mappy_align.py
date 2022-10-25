@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections.abc import Generator
+from copy import deepcopy
 from pathlib import Path
 from typing import Union
 import cstag
@@ -27,9 +28,11 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
     # Mappy
     ref = mappy.Aligner(path_reference_fasta)
     if not ref:
-        raise AttributeError(f"Failed to load f{path_reference_fasta}")
-    for query_name, query_sequence, query_quality in mappy.fastx_read(path_query_fastq):
-        for hit in ref.map(query_sequence, cs=True):
+        raise AttributeError(f"Failed to load {path_reference_fasta}")
+    for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastq):
+        for hit in ref.map(MAPPY_SEQ, cs=True):
+            query_seq = deepcopy(MAPPY_SEQ)
+            query_qual = deepcopy(MAPPY_QUAL)
             # flag
             if hit.is_primary:
                 flag = 0 if hit.strand == 1 else 16
@@ -40,20 +43,21 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
             if hit.q_st > 0:
                 softclip = str(hit.q_st) + "S"
                 cigar = softclip + cigar if hit.strand == 1 else cigar + softclip
-            if len(query_sequence) - hit.q_en > 0:
-                softclip = str(len(query_sequence) - hit.q_en) + "S"
+            if len(MAPPY_SEQ) - hit.q_en > 0:
+                softclip = str(len(MAPPY_SEQ) - hit.q_en) + "S"
                 cigar = cigar + softclip if hit.strand == 1 else softclip + cigar
             # Revcomp
-            if not hit.strand == 1:
-                query_sequence = revcomp(query_sequence)
-            query_sequence = query_sequence.upper()
+            if hit.strand == -1:
+                query_seq = revcomp(query_seq)
+                query_qual = query_qual[::-1]
+            query_seq = query_seq.upper()
             # cslong
             cs = "cs:Z:" + hit.cs
             if cslong:
-                cs = cstag.lengthen(hit.cs, cigar, query_sequence)
+                cs = cstag.lengthen(hit.cs, cigar, query_seq)
             # summarize
             alignment = [
-                query_name,
+                MAPPY_NAME,
                 flag,
                 hit.ctg,
                 hit.r_st + 1,
@@ -62,8 +66,8 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
                 "*",
                 0,
                 0,
-                query_sequence,
-                query_quality,
+                query_seq,
+                query_qual,
                 cs,
             ]
             alignment = [str(a) for a in alignment]

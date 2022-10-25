@@ -17,12 +17,16 @@
 
 ###  前処理
 
-+ [ ] `wslPath`をcore.mainのなかに入れる
++ [ ] single.pyとbatch.pyにある`wslPath`をcore.mainのなかに入れる
++ [ ] 並列処理を組み入れたい。
+  + [ ] Controlは先に処理する。そのために`main`関数を`check_inputs`、`execute_control`、`execute_sample`の３つに分ける
 
 ### マッピング
 
 ### クラスタリング
 
++ [ ] Ayabe-Task1のbarcode31.fq(intact flow/wt)において、連続するCの部位に欠失（`C`CCCCC）がありmutatedとなっていた。
+  + シークエンスエラーに起因するものと考えられるため、補正する。
 + [ ] (test) `clustering`
 
 ### コンセンサス

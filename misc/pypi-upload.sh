@@ -13,5 +13,5 @@ python3 -m twine upload dist/*
 
 # https://pypi.org/project/DAJIN2/
 cat <<PIPINSTALL
-pip install DAJIN2==0.1.6
+pip install DAJIN2==0.1.7
 PIPINSTALL
