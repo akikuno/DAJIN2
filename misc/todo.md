@@ -48,11 +48,12 @@
 + [ ] BAMファイル
   + [x] Tyrでマイナス鎖からプラス鎖に変換
   + [ ] XXXでプラス鎖の確認
+  + [ ] controlも含める
   + [ ] (test) `report_bam`
 
 + [ ] 名前をどうするか…
   + 2022-10-19時点では`barcode31_allele1_flox_intact_52.979%`のような感じになっている。
-    + 視認性が悪い。
+    + 視認性が良くない。
     + とくに`flox_intact`や`control_mutated`などのところ
     + `controlアレルに類似していて、かつcontrolアレルにはない変異が入っている`という意味をいかにして伝えるか
   + サンプル名をフォルダ名にする？
@@ -61,6 +62,7 @@
 ## DAJIN view
 
 + [ ] 各サンプルごとにviewを分けたほうが見やすいかも？
++ [ ] controlも含める
 + [ ] (test) `view.execute()`
 
 ## DAJIN gui

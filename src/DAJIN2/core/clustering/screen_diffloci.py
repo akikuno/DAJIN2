@@ -1,5 +1,6 @@
 from __future__ import annotations
 import re
+import numpy as np
 import scipy.stats as st
 
 
@@ -66,6 +67,12 @@ def chistatistic(s_table, c_table, threshold=0.05) -> float:
     return pval
 
 
+def pearson_corr(x, y):
+    x_diff = x - np.mean(x)
+    y_diff = y - np.mean(y)
+    return np.dot(x_diff, y_diff) / (np.sqrt(sum(x_diff ** 2)) * np.sqrt(sum(y_diff ** 2)))
+
+
 def screen_different_loci(
     cssplit_sample: list[str],
     cssplit_control: list[str],
@@ -102,31 +109,35 @@ def screen_different_loci(
     repeat_end -= 1
     repeat_idx += 1
     # Sum of deletion and other mismatchs
-    repeat_sample_del = 1
-    repeat_control_del = 1
-    repeat_sample_others = 1
-    repeat_control_others = 1
+    repeat_sample_del = []
+    repeat_control_del = []
+    repeat_sample_others = []
+    repeat_control_others = []
     for i, (s, c) in enumerate(zip(table_sample, table_control)):
         if repeat_start <= i < repeat_end:
-            repeat_sample_del += s[0]
-            repeat_control_del += c[0]
-            repeat_sample_others += s[1]
-            repeat_control_others += c[1]
+            repeat_sample_del.append(s[0])
+            repeat_control_del.append(c[0])
+            repeat_sample_others.append(s[1])
+            repeat_control_others.append(c[1])
         elif i == repeat_end:
-            repeat_sample_del += s[0]
-            repeat_control_del += c[0]
-            repeat_sample_others += s[1]
-            repeat_control_others += c[1]
+            repeat_sample_del.append(s[0])
+            repeat_control_del.append(c[0])
+            repeat_sample_others.append(s[1])
+            repeat_control_others.append(c[1])
             # statistics to deletion
-            pval = chistatistic([coverage, repeat_sample_del], [coverage, repeat_control_del], threshold)
-            if pval < pow(alpha, 3):
-                for j in range(repeat_start, repeat_end + 1):
-                    sample_del, control_del = table_sample[j][0], table_control[j][0]
-                    pval = chistatistic([coverage, sample_del], [coverage, control_del], threshold)
-                    if pval < pow(alpha, 3):
-                        different_loci.append(j)
+            corr_deletion = pearson_corr(repeat_sample_del, repeat_control_del)
+            if corr_deletion < 0.9:
+                pval = chistatistic([coverage, sum(repeat_sample_del)], [coverage, sum(repeat_control_del)], threshold)
+                if pval < pow(alpha, 3):
+                    for j in range(repeat_start, repeat_end + 1):
+                        sample_del, control_del = table_sample[j][0], table_control[j][0]
+                        pval = chistatistic([coverage, sample_del], [coverage, control_del], threshold)
+                        if pval < pow(alpha, 3):
+                            different_loci.append(j)
             # statistics to others
-            pval = chistatistic([coverage, repeat_sample_others], [coverage, repeat_control_others], threshold)
+            pval = chistatistic(
+                [coverage, sum(repeat_sample_others)], [coverage, sum(repeat_control_others)], threshold
+            )
             if pval < alpha:
                 for j in range(repeat_start, repeat_end + 1):
                     sample_others, control_others = table_sample[j][1], table_control[j][1]
@@ -134,10 +145,10 @@ def screen_different_loci(
                     if pval < alpha and j not in different_loci:
                         different_loci.append(j)
             # reflesh
-            repeat_sample_del = 1
-            repeat_control_del = 1
-            repeat_sample_others = 1
-            repeat_control_others = 1
+            repeat_sample_del = []
+            repeat_control_del = []
+            repeat_sample_others = []
+            repeat_control_others = []
             if repeat_idx < len(repeat_span):
                 repeat_start, repeat_end = repeat_span[repeat_idx]
                 repeat_end -= 1
