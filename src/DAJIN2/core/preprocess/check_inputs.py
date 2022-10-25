@@ -64,25 +64,25 @@ def check_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 ########################################################################
 
 
-def is_cache_control(CONTROL: str, TEMPDIR: Path) -> bool:
+def exists_cached_control(CONTROL: str, TEMPDIR: Path) -> bool:
     PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
-    IS_CACHE_CONTROL = False
+    EXISTS_CACHE_CONTROL = False
     if PATH_CACHE_HASH.exists():
         current_hash = hashlib.sha256(Path(CONTROL).read_bytes()).hexdigest()
         cashed_hash = PATH_CACHE_HASH.read_text()
         if current_hash == cashed_hash:
-            IS_CACHE_CONTROL = True
-    return IS_CACHE_CONTROL
+            EXISTS_CACHE_CONTROL = True
+    return EXISTS_CACHE_CONTROL
 
 
-def is_cache_genome(GENOME: str, TEMPDIR: Path, IS_CACHE_CONTROL: bool) -> bool:
+def exists_cached_genome(GENOME: str, TEMPDIR: Path, EXISTS_CACHE_CONTROL: bool) -> bool:
     PATH_CACHE_GENOME = Path(TEMPDIR, "cache", "genome_symbol.txt")
-    IS_CACHE_GENOME = False
-    if GENOME and IS_CACHE_CONTROL and PATH_CACHE_GENOME.exists():
+    EXISTS_CACHE_GENOME = False
+    if GENOME and EXISTS_CACHE_CONTROL and PATH_CACHE_GENOME.exists():
         cashed_genome = PATH_CACHE_GENOME.read_text()
         if GENOME == cashed_genome:
-            IS_CACHE_GENOME = True
-    return IS_CACHE_GENOME
+            EXISTS_CACHE_GENOME = True
+    return EXISTS_CACHE_GENOME
 
 
 ########################################################################

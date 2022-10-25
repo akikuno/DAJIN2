@@ -28,10 +28,10 @@ def execute(arguments: dict) -> None:
     ##########################################################
     preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    IS_CACHE_CONTROL = preprocess.check_inputs.is_cache_control(CONTROL, TEMPDIR)
-    IS_CACHE_GENOME = preprocess.check_inputs.is_cache_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+    EXISTS_CACHED_CONTROL = preprocess.check_inputs.exists_cached_control(CONTROL, TEMPDIR)
+    EXISTS_CACHED_GENOME = preprocess.check_inputs.exists_cached_genome(GENOME, TEMPDIR, EXISTS_CACHED_CONTROL)
     UCSC_URL, GOLDENPATH_URL = None, None
-    if GENOME and not IS_CACHE_GENOME:
+    if GENOME and not EXISTS_CACHED_GENOME:
         UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
 
     ##########################################################
@@ -45,9 +45,9 @@ def execute(arguments: dict) -> None:
 
     if GENOME:
         GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
-            TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME
+            TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, EXISTS_CACHED_GENOME
         )
-        if not IS_CACHE_GENOME:
+        if not EXISTS_CACHED_GENOME:
             preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
     ################################################################################
@@ -66,7 +66,7 @@ def execute(arguments: dict) -> None:
         name_fasta = path_fasta.stem
         if name_fasta not in set(DICT_ALLELE.keys()):
             continue
-        if not IS_CACHE_CONTROL:
+        if not EXISTS_CACHED_CONTROL:
             preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
 
@@ -79,7 +79,7 @@ def execute(arguments: dict) -> None:
     ########################################################################
     # MIDSV conversion
     ########################################################################
-    if not IS_CACHE_CONTROL:
+    if not EXISTS_CACHED_CONTROL:
         for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
             preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
 
@@ -90,7 +90,7 @@ def execute(arguments: dict) -> None:
     # Cashe inputs (control)
     ###############################################################################
 
-    if not IS_CACHE_CONTROL:
+    if not EXISTS_CACHED_CONTROL:
         control_hash = Path(CONTROL).read_bytes()
         control_hash = hashlib.sha256(control_hash).hexdigest()
         PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
