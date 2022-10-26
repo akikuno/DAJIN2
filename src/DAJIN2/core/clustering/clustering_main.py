@@ -34,14 +34,14 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
     return DIFFLOCI, REPETITIVE_DELLOCI
 
 
-def add_labels(classif_sample, diffloci_by_alleles):
+def add_labels(classif_sample, DIFFLOCI):
     labels = []
     label_start = 1
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
         key = f"{allele}-{sv}"
         cssplit_sample = [g["CSSPLIT"] for g in group]
-        diffloci = diffloci_by_alleles[key]
+        diffloci = DIFFLOCI[key]
         scores = []
         if diffloci is not None:
             scores = make_scores(cssplit_sample, diffloci)
