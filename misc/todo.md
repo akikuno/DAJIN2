@@ -1,32 +1,27 @@
 # ToDO
 
++ 🔴: Better to focus on.
++ 🟡: One day experiments.
++ 🟢: Need a time to complete.
+
 ## 開発一般
 
-+ [ ] debugを入れる
-+ [ ] 低スペックPCでメモリがオーバーしないか確認する
-+ [ ] README.md, READMD_jp.mdの執筆
-  + DAJIN2について
-    + DAJIN2 is a 
-  + Installation
-  + Usage
-  + License
-    + MIT License (see `LICENSE` file).
-  + Reference
++ [ ] 🟡debugを入れる
++ [ ] 🟡低スペックPCでメモリがオーバーしないか確認する
++ [ ] 🟢README.md, READMD_jp.mdの執筆
 
 ## DAJIN2/core/main.py
 
 ###  前処理
 
-+ [ ] single.pyとbatch.pyにある`wslPath`をcore.mainのなかに入れる
-+ [ ] 並列処理を組み入れたい。
++ [ ] 🟡`wslPath`をcore.mainのなかに入れる
++ [ ] 🟢並列処理を組み入れたい。
   + [ ] Controlは先に処理する。そのために`main`関数を`check_inputs`、`execute_control`、`execute_sample`の３つに分ける
 
 ### マッピング
 
 ### クラスタリング
 
-+ [ ] Ayabe-Task1のbarcode31.fq(intact flow/wt)において、連続するCの部位に欠失（`C`CCCCC）がありmutatedとなっていた。
-  + シークエンスエラーに起因するものと考えられるため、補正する。
 + [ ] (test) `clustering`
 
 ### コンセンサス
@@ -36,14 +31,15 @@
 
 ### レポート
 
++ [ ] 🔴report/{sample_name}のようにsample_nameごとに出力ディレクトリを分けたほうがわかりやすい
+
 + [ ] batchでアレル頻度の作図関数を作る
   + アレル割合が多い順に積み重ねたい
   + https://stackoverflow.com/questions/63920999/plotly-sorting-the-y-axis-bars-of-a-stacked-bar-chart-by-value
 
-+ [ ] HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
-  + [ ] colorblind-friendly
++ [ ] 🟢HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
 
-+ [ ] VCFファイル
++ [ ] 🔴VCFファイル
 
 + [ ] BAMファイル
   + [ ] XXXでプラス鎖の確認
@@ -51,7 +47,7 @@
   + [x] controlも含める
   + [x] Tyrでマイナス鎖からプラス鎖に変換
 
-+ [ ] 名前をどうするか…
++ [ ] 🟢名前をどうするか…
   + 2022-10-19時点では`barcode31_allele1_flox_intact_52.979%`のような感じになっている。
     + 視認性が良くない。
     + とくに`flox_intact`や`control_mutated`などのところ
@@ -61,22 +57,22 @@
 
 ## DAJIN view
 
-+ [ ] 各サンプルごとにviewを分けたほうが見やすいかも？
-+ [ ] controlも含める
++ [ ] 🔴各サンプルごとにviewを分けたほうが見やすいかも？
++ [ ] 🔴controlも含める
 + [ ] (test) `view.execute()`
 
 ## DAJIN gui
 
-+ [ ] ローディングページ
-+ [ ] 終了時のインストラクションページ
-+ [ ] デザインおよびレイアウト
++ [ ] 🔴ローディングページ
++ [ ] 🔴終了時のインストラクションページ
++ [ ] 🟢デザインおよびレイアウト
 
 
 ## その他
 
-+ [ ] サンプルのみ（コントロールなし）のときにも（可能な限り）アレルを分離できるようにしたい
-+ [ ] `CSSPLIT`は名が体を表し切れていないので改名したい
-+ [ ] ターゲットアンプリコンではないとき（染色体にマッピングするとき）、MIDSV変換が巨大な文字列となってしまうときの対応
++ [ ] 🟢サンプルのみ（コントロールなし）のときにも（可能な限り）アレルを分離できるようにしたい
++ [ ] 🟢`CSSPLIT`は名が体を表し切れていないので改名したい
++ [ ] 🟢ターゲットアンプリコンではないとき（染色体にマッピングするとき）、MIDSV変換が巨大な文字列となってしまうときの対応
 
 ---
 
@@ -136,6 +132,8 @@
 
 ## クラスタリング
 
++ [x] Ayabe-Task1のbarcode31.fq(intact flow/wt)において、連続するCの部位に欠失（`C`CCCCC）がありmutatedとなっていた。
+  + シークエンスエラーに起因するものと考えられるため、補正する。
 + [x] `screen_diffloci`：連続する塩基において、**deletionのみ**有意差を厳しくする。
 
 ## コンセンサス
