@@ -29,7 +29,7 @@ def execute(arguments: dict[str]):
     try:
         df_batchfile = pd.read_excel(path_batchfile)
         inputs = []
-        inputs = df_batchfile.columns.to_list()
+        inputs.append(df_batchfile.columns.to_list())
         inputs += df_batchfile.values.tolist()
     except ValueError:
         inputs = [s.split(",") for s in Path(path_batchfile).read_text().strip().split("\n")]

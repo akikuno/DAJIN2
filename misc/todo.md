@@ -33,7 +33,7 @@
 
 + [ ] 🔴report/{sample_name}のようにsample_nameごとに出力ディレクトリを分けたほうがわかりやすい
 
-+ [ ] batchでアレル頻度の作図関数を作る
++ [ ] 🟡batchでアレル頻度の作図関数を作る
   + アレル割合が多い順に積み重ねたい
   + https://stackoverflow.com/questions/63920999/plotly-sorting-the-y-axis-bars-of-a-stacked-bar-chart-by-value
 
@@ -59,12 +59,14 @@
 
 + [ ] 🔴各サンプルごとにviewを分けたほうが見やすいかも？
 + [ ] 🔴controlも含める
++ [ ] 🟡ブラウザが自動で起動するようにする
 + [ ] (test) `view.execute()`
 
 ## DAJIN gui
 
 + [ ] 🔴ローディングページ
 + [ ] 🔴終了時のインストラクションページ
++ [ ] 🟡ポート番号が毎回変わるようにする
 + [ ] 🟢デザインおよびレイアウト
 
 
