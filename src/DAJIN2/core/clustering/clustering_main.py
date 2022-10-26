@@ -27,7 +27,7 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
         sequence = DICT_ALLELE[allele]
         masks_control = MASKS_CONTROL[allele]
         diffloci, repetitive_delloci = screen_different_loci(
-            cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.05
+            cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.1
         )
         DIFFLOCI[f"{allele}-{sv}"] = diffloci
         REPETITIVE_DELLOCI[f"{allele}-{sv}"] = repetitive_delloci

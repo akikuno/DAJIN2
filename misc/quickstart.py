@@ -131,7 +131,7 @@ for classif in classif_sample:
 # Clustering
 ########################################################################
 
-# allele = "flox"
+# allele = "control"
 # sv = False
 # cssplit_sample = [cs["CSSPLIT"] for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
 
