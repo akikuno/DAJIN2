@@ -1,15 +1,22 @@
-from flask import Flask, render_template, request
-from werkzeug.utils import secure_filename
+import socket
 import webbrowser
-from threading import Timer
-from waitress import serve
+from contextlib import closing
 from pathlib import Path
+from threading import Timer
+
 import pandas as pd
+from flask import Flask, render_template, request
+from waitress import serve
+from werkzeug.utils import secure_filename
+
 from . import batch
 
 
-def open_browser():
-    webbrowser.open_new("http://127.0.0.1:2000/")
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 def upload_files(files):
@@ -83,8 +90,12 @@ def submit():
     """
 
 
-def execute():
-    print("Assess 'http://127.0.0.1:2000/' if browser does not automatically open.")
-    Timer(1, open_browser).start()
-    serve(app, host="0.0.0.0", port=2000)
+def open_browser(PORT):
+    webbrowser.open_new(f"http://127.0.0.1:{PORT}/")
 
+
+def execute():
+    PORT = find_free_port()
+    print(f"Assess 'http://127.0.0.1:{PORT}/' if a browser does not automatically open.")
+    Timer(1, open_browser, [PORT]).start()
+    serve(app, host="0.0.0.0", port=PORT)
