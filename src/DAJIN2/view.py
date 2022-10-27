@@ -1,12 +1,14 @@
+import http.server
 import os
 import re
-from pathlib import Path
-import http.server
+import socket
 import socketserver
 import webbrowser
-import socket
 from contextlib import closing
-from jinja2 import Template, Environment, FileSystemLoader
+from pathlib import Path
+from threading import Timer
+
+from jinja2 import Environment, FileSystemLoader, Template
 
 
 def find_free_port():
@@ -14,6 +16,10 @@ def find_free_port():
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def open_browser(PORT):
+    webbrowser.open_new(f"http://127.0.0.1:{PORT}/")
 
 
 def execute(name: str):
@@ -62,9 +68,9 @@ def execute(name: str):
     Path(DIR_IGVJS, "index.html").write_text(HTML_IGVJS)
     PORT = find_free_port()
     Handler = http.server.SimpleHTTPRequestHandler
+
     os.chdir(Path("DAJINResults", name, ".igvjs"))
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print(f"serving at port: http://127.0.0.1:{PORT}")
+        print(f"Assess 'http://127.0.0.1:{PORT}/' if a browser does not automatically open.")
+        Timer(1, open_browser, [PORT]).start()
         httpd.serve_forever()
-        webbrowser.open(f"http://127.0.0.1:{PORT}", autoraise=True)
-    os.chdir("../../../")
