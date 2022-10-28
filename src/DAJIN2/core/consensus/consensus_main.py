@@ -115,7 +115,7 @@ def call(
             cssplit_sample[0]["LABEL"],
             cssplit_sample[0]["PERCENT"],
         )
-        diffloci = DIFFLOCI_ALLELES[f"{keys[0]}-{keys[1]}"]
+        diffloci = [loci for loci, _ in DIFFLOCI_ALLELES[f"{keys[0]}-{keys[1]}"]]
         repetitive_del_loci = REPETITIVE_DELLOCI[f"{keys[0]}-{keys[1]}"]
         cons_per = call_percentage(cssplit_sample, diffloci, repetitive_del_loci)
         cons_seq = call_sequence(cons_per)
