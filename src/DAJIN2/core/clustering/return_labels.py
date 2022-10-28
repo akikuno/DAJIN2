@@ -29,16 +29,18 @@ def chistatistic(prev_table, current_table, threshold=0.05) -> float:
 
 def return_labels(scores):
     # flatten from 3d to 2d
-    xarr = np.array(scores)
-    xflatten = np.reshape(xarr, (len(xarr), -1))
-    xflatten = csr_matrix(xflatten)
+    scores_flatten = np.reshape(scores, (len(scores), -1))
+    scores_csr = csr_matrix(scores_flatten)
     n_clusters = 1
     while True or n_clusters < 1000:
-        prev_labels = predict_labels(xflatten, n_clusters=n_clusters)
+        prev_labels = predict_labels(scores_csr, n_clusters=n_clusters)
         prev_table = make_table(prev_labels)
-        current_labels = predict_labels(xflatten, n_clusters=n_clusters + 1)
+        current_labels = predict_labels(scores_csr, n_clusters=n_clusters + 1)
         current_table = make_table(current_labels)
-        if n_clusters == 1:
+        if len(prev_table) == len(current_table):  # For ConvergenceWarning in BIRCH
+            labels = prev_labels
+            break
+        elif n_clusters == 1:
             prev_table += [0]
         else:
             current_table = current_table[:-1]
