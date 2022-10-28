@@ -27,21 +27,21 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
         sequence = DICT_ALLELE[allele]
         masks_control = MASKS_CONTROL[allele]
         diffloci, repetitive_delloci = screen_different_loci(
-            cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.1
+            cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.01
         )
         DIFFLOCI[f"{allele}-{sv}"] = diffloci
         REPETITIVE_DELLOCI[f"{allele}-{sv}"] = repetitive_delloci
     return DIFFLOCI, REPETITIVE_DELLOCI
 
 
-def add_labels(classif_sample, DIFFLOCI):
+def add_labels(classif_sample, DIFFLOCI_ALLELES):
     labels = []
     label_start = 1
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
         key = f"{allele}-{sv}"
         cssplit_sample = [g["CSSPLIT"] for g in group]
-        diffloci = DIFFLOCI[key]
+        diffloci = DIFFLOCI_ALLELES[key]
         scores = []
         if diffloci is not None:
             scores = make_scores(cssplit_sample, diffloci)
