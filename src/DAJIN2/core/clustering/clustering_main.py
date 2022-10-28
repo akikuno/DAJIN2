@@ -43,7 +43,7 @@ def add_labels(classif_sample, DIFFLOCI_ALLELES):
         key = f"{allele}-{sv}"
         diffloci = DIFFLOCI_ALLELES[key]
         scores = []
-        if diffloci is not None:
+        if diffloci:
             scores = make_scores(cssplit_sample, diffloci)
         if any(scores):
             labels += [label + label_start for label in return_labels(scores)]
