@@ -39,14 +39,14 @@ def add_labels(classif_sample, DIFFLOCI_ALLELES):
     label_start = 1
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        key = f"{allele}-{sv}"
         cssplit_sample = [g["CSSPLIT"] for g in group]
+        key = f"{allele}-{sv}"
         diffloci = DIFFLOCI_ALLELES[key]
         scores = []
         if diffloci is not None:
             scores = make_scores(cssplit_sample, diffloci)
         if any(scores):
-            labels += [label + label_start for label in return_labels(scores).tolist()]
+            labels += [label + label_start for label in return_labels(scores)]
         else:
             labels += [label_start] * len(cssplit_sample)
         label_start = len(set(labels)) + 1
