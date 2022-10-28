@@ -6,6 +6,7 @@
 
 ## 開発一般
 
++ [ ] 🟡点変異のヘテロ（ポジコン）と10%, 5%, 1%のサンプルを用意する（in vivoゲノム編集を想定）
 + [ ] 🟡debugを入れる
 + [ ] 🟡低スペックPCでメモリがオーバーしないか確認する
 + [ ] 🟢README.md, READMD_jp.mdの執筆
@@ -40,7 +41,9 @@
   + アレル割合が多い順に積み重ねたい
   + https://stackoverflow.com/questions/63920999/plotly-sorting-the-y-axis-bars-of-a-stacked-bar-chart-by-value
 
-+ [ ] 🟢HTMLファイルで、CRISPResso2のように割合もわかるとヘテロのときに嬉しい
++ [ ] HTMLファイル
+  + [ ] 🟢CRISPResso2のように割合もわかるとヘテロのときに嬉しい
+  + [ ] 🟢NとDが重なった時にNが青色になるので、Nを優先させる
 
 + [ ] 🔴VCFファイル
 
@@ -61,15 +64,12 @@
 ## DAJIN view
 
 + [ ] 🔴各サンプルごとにviewを分けたほうが見やすいかも？
-+ [ ] 🔴controlも含める
-+ [ ] 🟡ブラウザが自動で起動するようにする
 + [ ] (test) `view.execute()`
 
 ## DAJIN gui
 
 + [ ] 🔴ローディングページ
 + [ ] 🔴終了時のインストラクションページ
-+ [ ] 🟡ポート番号が毎回変わるようにする
 + [ ] 🟢デザインおよびレイアウト
 
 
@@ -172,6 +172,9 @@
 
 ## DAJIN view
 
++ [x] 🟡ブラウザが自動で起動するようにする
++ [x] 🟡controlを含める
+
 + [x] `igv.js`で各アレルの代表的なリード20本程度を可視化する
   + [x] (core/main.py) `igv.js`用に各アレルから20本のリードを抽出し、`report/.igvjs`に保存
   + [x] (batchmode/report.py) `index.html`を`DAJINResults/{name}/BAM/igvjs/`に保存して、`DAJINResults/{name}/BAM/.igvjs/`内にあるBAMとFASTA(reference用)を可視化する
@@ -179,5 +182,8 @@
     + [x] GENOMEがない場合
   + [x] `DAJIN2 view -n/--name`で起動
 + [x] 20本ではなくて100本くらいにする？
+
+## DAJIN gui
++ [x] 🟡ポート番号が毎回変わるようにする
 
 ## その他

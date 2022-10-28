@@ -13,6 +13,17 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
+# * Point mutation
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "misc/data/tyr_albino_10%.fq.gz",
+    "misc/data/tyr_control.fq.gz",
+    "misc/data/tyr_control.fasta",
+    "tyr-albino_10%",
+    "mm10",
+    True,
+    14,
+)
+
 # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/pm-tyr/barcode31.fq.gz",
@@ -182,7 +193,12 @@ for header, cons_per in cons_percentage.items():
     Path(TEMPDIR, "report", "HTML", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
 # BAM and igvjs
-report.report_bam.output_bam(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+report.report_bam.output_bam_control(
+    TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
+)
+report.report_bam.output_bam_sample(
+    TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
+)
 
 # VCF
 # working in progress
