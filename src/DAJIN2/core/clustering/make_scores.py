@@ -1,3 +1,4 @@
+from __future__ import annotations
 import re
 import numpy as np
 
@@ -71,11 +72,20 @@ def score_repeats_insertion(i, cs, scores, inversion=False):
     return i, scores
 
 
+def add_weight(scores: list[list[int]], pvals: list[float]) -> list[list[float]]:
+    scores = np.array(scores)
+    pvals = np.array(pvals)
+    scores_weighted = scores * pvals.reshape((pvals.size, -1))
+    return scores_weighted.tolist()
+
+
 def make_scores(cssplit_sample, diffloci):
-    cssplit_diffloci = extract_cssplit_at_diffloci(cssplit_sample, diffloci)
+    loci = [locus for locus, _ in diffloci]
+    pvals = [pval for _, pval in diffloci]
+    cssplit_diffloci = extract_cssplit_at_diffloci(cssplit_sample, loci)
     scores_summed = sum_scores(cssplit_diffloci)
     scores_summed = np.array(scores_summed)
-    length = len(diffloci)
+    length = len(loci)
     scores_all = []
     for cssplit in cssplit_diffloci:
         # IM, ID, IS, IN, D, S, N
@@ -96,6 +106,7 @@ def make_scores(cssplit_sample, diffloci):
                 i, scores = score_repeats_insertion(i, cs, scores, inversion)
             i += 1
         scores = np.array(scores)
-        scores = (scores * scores_summed).tolist()
-        scores_all.append(scores)
-    return scores_all
+        scores = scores * scores_summed
+        scores_all.append(scores.tolist())
+    scores_weighted = add_weight(scores_all, pvals)
+    return scores_weighted
