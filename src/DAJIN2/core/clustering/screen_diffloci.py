@@ -2,6 +2,7 @@ from __future__ import annotations
 import re
 import numpy as np
 import scipy.stats as st
+from itertools import groupby
 
 
 def replaceNtoMatch(sample_cs: list[str]) -> list[str]:
@@ -37,8 +38,6 @@ def make_table(cssplit_sample: list[str], cssplit_control: list[str]) -> tuple(l
                 continue
             if cs.startswith("-"):
                 table_sample[i][0] += 1
-            elif cs.startswith("+"):
-                table_sample[i][1] += cs.count("+")
             else:
                 table_sample[i][1] += 1
         for i, cs in enumerate(control_cs):
@@ -46,8 +45,6 @@ def make_table(cssplit_sample: list[str], cssplit_control: list[str]) -> tuple(l
                 continue
             if cs.startswith("-"):
                 table_control[i][0] += 1
-            elif cs.startswith("+"):
-                table_control[i][1] += cs.count("+")
             else:
                 table_control[i][1] += 1
     return table_sample, table_control
@@ -73,6 +70,14 @@ def pearson_corr(x, y):
     if (np.sqrt(sum(x_diff ** 2)) * np.sqrt(sum(y_diff ** 2))) == 0:
         return 0
     return np.dot(x_diff, y_diff) / (np.sqrt(sum(x_diff ** 2)) * np.sqrt(sum(y_diff ** 2)))
+
+
+def distinct_by_lowest_pval(different_loci: list[list[int, float]]):
+    different_loci.sort(key=lambda x: x[0])
+    different_loci_selected = []
+    for _, group in groupby(different_loci, key=lambda x: x[0]):
+        different_loci_selected.append(sorted(list(group), key=lambda x: -x[1])[0])
+    return different_loci_selected
 
 
 def screen_different_loci(
@@ -105,7 +110,7 @@ def screen_different_loci(
         for i, (s, c) in enumerate(zip(table_sample, table_control)):
             pval = chistatistic([coverage, sum(s)], [coverage, sum(c)], threshold)
             if pval < alpha:
-                different_loci.append(i)
+                different_loci.append([i, -np.log10(pval)])
         return different_loci, repetive_deletion_loci
     repeat_idx = 0
     repeat_start, repeat_end = repeat_span[repeat_idx]
@@ -138,7 +143,7 @@ def screen_different_loci(
                         sample_del, control_del = table_sample[j][0], table_control[j][0]
                         pval = chistatistic([coverage, sample_del], [coverage, control_del], threshold)
                         if pval < pow(alpha, 3):
-                            different_loci.append(j)
+                            different_loci.append([j, -np.log10(pval)])
             # statistics to others
             pval = chistatistic(
                 [coverage, sum(repeat_sample_others)], [coverage, sum(repeat_control_others)], threshold
@@ -148,7 +153,7 @@ def screen_different_loci(
                     sample_others, control_others = table_sample[j][1], table_control[j][1]
                     pval = chistatistic([coverage, sample_others], [coverage, control_others], threshold)
                     if pval < alpha and j not in different_loci:
-                        different_loci.append(j)
+                        different_loci.append([j, -np.log10(pval)])
             # reflesh
             repeat_sample_del = []
             repeat_control_del = []
@@ -161,5 +166,6 @@ def screen_different_loci(
         else:
             pval = chistatistic([coverage, sum(s)], [coverage, sum(c)], threshold)
             if pval < alpha:
-                different_loci.append(i)
+                different_loci.append([i, -np.log10(pval)])
+    different_loci = distinct_by_lowest_pval(different_loci)
     return different_loci, repetive_deletion_loci
