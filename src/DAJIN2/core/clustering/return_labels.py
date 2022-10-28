@@ -5,6 +5,7 @@ from sklearn.cluster import OPTICS
 from sklearn.cluster import Birch
 from collections import defaultdict
 
+np.seterr(divide="ignore")  # to suppress "RuntimeWarning: divide by zero encountered in true_divide"
 # from scipy.sparse import csr_matrix
 
 
