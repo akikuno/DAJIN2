@@ -30,21 +30,13 @@ def test_make_table():
         "*AG,=A,=A",
     ]
     test = screen_diffloci.make_table(cssplit_sample, cssplit_control)
-    answer = [[2, 3], [1, 1], [1, 1]], [[1, 2], [1, 1], [1, 3]]
+    answer = [[2, 3], [1, 1], [1, 1]], [[1, 2], [1, 1], [1, 2]]
     assert test == answer
 
 
 def test_screen_different_loci_repeat_insertion():
-    cssplit_sample = [
-        "+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C",
-        "+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C",
-        "+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C",
-    ]
-    cssplit_control = [
-        "=A,=A,=A,=A,=C,=C,=C,=C",
-        "=A,=A,=A,=A,=C,=C,=C,=C",
-        "=A,=A,=A,=A,=C,=C,=C,=C",
-    ]
+    cssplit_sample = ["+C|+C|+C|+C|+C|=A,=A,=A,=A,=C,=C,=C,=C"] * 50
+    cssplit_control = ["=A,=A,=A,=A,=C,=C,=C,=C"] * 50
     sequence = "AAAACCCC"
     masks_control = [False] * len(sequence)
     alpha = 0.5
@@ -52,7 +44,7 @@ def test_screen_different_loci_repeat_insertion():
     test, _ = screen_diffloci.screen_different_loci(
         cssplit_sample, cssplit_control, sequence, masks_control, alpha, threshold
     )
-    answer = [0]
+    answer = [[0, 8.112229822253404]]
     assert test == answer
 
 
@@ -66,5 +58,5 @@ def test_screen_different_loci_no_repeat():
     test, _ = screen_diffloci.screen_different_loci(
         cssplit_sample, cssplit_control, sequence, masks_control, alpha, threshold
     )
-    answer = [0]
+    answer = [[0, 15.954589770191003]]
     assert test == answer

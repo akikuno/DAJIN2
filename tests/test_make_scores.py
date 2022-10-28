@@ -30,7 +30,7 @@ def test_sum_scores():
 
 def test_repeat_del():
     cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-    diffloci = [0, 1, 2]
+    diffloci = [[0, 1], [1, 1], [2, 1]]
     test = make_scores(cssplit_sample, diffloci)
     answer = [
         [[0, 0, 0, 0, 4, 0, 0], [0, 0, 0, 0, 6, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -42,7 +42,7 @@ def test_repeat_del():
 
 def test_repeat_substitution():
     cssplit_sample = ["*AC,*AC,=A", "=A,*AC,=A", "*AC,*AC,*AC"]
-    diffloci = [0, 1, 2]
+    diffloci = [[0, 1], [1, 1], [2, 1]]
     test = make_scores(cssplit_sample, diffloci)
     answer = [
         [[0, 0, 0, 0, 0, 4, 0], [0, 0, 0, 0, 0, 6, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -54,7 +54,7 @@ def test_repeat_substitution():
 
 def test_repeat_N():
     cssplit_sample = ["N,N,=A", "=A,N,=A", "N,N,N"]
-    diffloci = [0, 1, 2]
+    diffloci = [[0, 1], [1, 1], [2, 1]]
     test = make_scores(cssplit_sample, diffloci)
     answer = [
         [[0, 0, 0, 0, 0, 0, 4], [0, 0, 0, 0, 0, 0, 6], [0, 0, 0, 0, 0, 0, 0]],
@@ -66,7 +66,7 @@ def test_repeat_N():
 
 def test_inversion():
     cssplit_sample = ["-a,*AC,-a", "=A,+c|c|c|=a,=A", "=A,+c|c|c|*ac,=A", "=A,*ac,=A", "=A,*ac,-a"]
-    diffloci = [0, 1, 2]
+    diffloci = [[0, 1], [1, 1], [2, 1]]
     test = make_scores(cssplit_sample, diffloci)
     answer = [
         [[0, 0, 0, 0, -1, 0, 0], [0, 0, 0, 0, 0, 3, 0], [0, 0, 0, 0, -2, 0, 0]],
@@ -80,7 +80,7 @@ def test_inversion():
 
 def test_insertion():
     cssplit_sample = ["=A,+C|C|C|=A,=A", "=A,+C|C|C|-A,=A", "=A,+C|C|C|*CG,=A", "=A,+C|C|C|N,=A", "=A,+c|c|c|n,=A"]
-    diffloci = [0, 1, 2]
+    diffloci = [[0, 1], [1, 1], [2, 1]]
     test = make_scores(cssplit_sample, diffloci)
     answer = [
         [[0, 0, 0, 0, 0, 0, 0], [4, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0]],
@@ -94,7 +94,7 @@ def test_insertion():
 
 def test_small_diffloci():
     cssplit_sample = ["-A,-A,=A", "=A,-A,=A", "-A,-A,-A"]
-    diffloci = [1]
+    diffloci = [[1, 1]]
     test = make_scores(cssplit_sample, diffloci)
     answer = [[[0, 0, 0, 0, 3, 0, 0]], [[0, 0, 0, 0, 3, 0, 0]], [[0, 0, 0, 0, 3, 0, 0]]]
     assert test == answer
