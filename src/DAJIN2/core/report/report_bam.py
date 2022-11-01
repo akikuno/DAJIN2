@@ -175,20 +175,21 @@ def reverse_sam(sam_contents: list[list[str]], genome_end: int) -> list[str]:
     return sam_reversed
 
 
-def realign(sam: list[list[str]], genome_coodinates: dict, chrom_size: int) -> list[str]:
+def realign(sam: list[list[str]], GENOME_COODINATES: dict, CHROME_SIZE: int) -> list[str]:
     sam_headers = [s for s in sam if s[0].startswith("@")]
     sam_contents = [s for s in sam if not s[0].startswith("@")]
     for s in sam_headers:
         if s[0] != "@SQ":
             continue
-        s[1] = f'SN:{genome_coodinates["chr"]}'
-        s[2] = f"LN:{chrom_size}"
+        s[1] = f'SN:{GENOME_COODINATES["chr"]}'
+        s[2] = f"LN:{CHROME_SIZE}"
     for s in sam_contents:
-        s[2] = genome_coodinates["chr"]
-    if genome_coodinates["strand"] == "-":
-        sam_contents = reverse_sam(sam_contents, genome_coodinates["end"])
+        s[2] = GENOME_COODINATES["chr"]
+    if GENOME_COODINATES["strand"] == "-":
+        sam_contents = reverse_sam(sam_contents, GENOME_COODINATES["end"])
     else:
-        s[3] = str(int(s[3]) + genome_coodinates["start"] - 1)
+        for s in sam_contents:
+            s[3] = str(int(s[3]) + GENOME_COODINATES["start"] - 1)
     return sam_headers + sam_contents
 
 
