@@ -1,13 +1,12 @@
 from __future__ import annotations
+
 import hashlib
 import shutil
-import midsv
 from pathlib import Path
-from . import preprocess
-from . import classification
-from . import clustering
-from . import consensus
-from . import report
+
+import midsv
+
+from . import classification, clustering, consensus, preprocess, report
 
 
 def execute(arguments: dict) -> None:

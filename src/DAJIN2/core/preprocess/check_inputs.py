@@ -1,10 +1,12 @@
 from __future__ import annotations
-from pathlib import Path
-import re
-import mappy
+
 import hashlib
-from urllib.request import urlopen
+import re
+from pathlib import Path
 from urllib.error import URLError
+from urllib.request import urlopen
+
+import mappy
 
 
 def exists(input_file: str):

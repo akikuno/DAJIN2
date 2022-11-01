@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
 from typing import Union
+
 import cstag
 import mappy
 

@@ -1,5 +1,6 @@
-import midsv
 from pathlib import Path
+
+import midsv
 
 
 def output_midsv(TEMPDIR, path_sam, DICT_ALLELE):

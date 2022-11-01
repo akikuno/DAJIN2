@@ -1,6 +1,7 @@
-import midsv
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
+
+import midsv
 
 
 def mask_control(TEMPDIR: Path, DICT_ALLELE: dict, CONTROL_NAME: str):

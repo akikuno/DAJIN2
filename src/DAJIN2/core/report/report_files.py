@@ -1,6 +1,8 @@
 from __future__ import annotations
-import cstag
+
 import textwrap
+
+import cstag
 
 
 def to_fasta(header: str, cons_seq: str) -> str:

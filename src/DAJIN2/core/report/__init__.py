@@ -1,2 +1,1 @@
-from . import report_files
-from . import report_bam
+from . import report_bam, report_files

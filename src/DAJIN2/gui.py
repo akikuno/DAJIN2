@@ -1,9 +1,9 @@
+import os
 import socket
 import webbrowser
 from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
-import os
 
 import pandas as pd
 from flask import Flask, render_template, request

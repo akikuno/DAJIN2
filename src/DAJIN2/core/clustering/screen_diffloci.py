@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import re
+from itertools import groupby
+
 import numpy as np
 import scipy.stats as st
-from itertools import groupby
 
 
 def replaceNtoMatch(sample_cs: list[str]) -> list[str]:

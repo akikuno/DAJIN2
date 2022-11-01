@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+from collections import defaultdict
+
 import numpy as np
 import scipy.stats as st
-from sklearn.cluster import OPTICS
-from sklearn.cluster import Birch
-from collections import defaultdict
+from sklearn.cluster import OPTICS, Birch
 
 np.seterr(divide="ignore")  # to suppress "RuntimeWarning: divide by zero encountered in true_divide"
 # from scipy.sparse import csr_matrix

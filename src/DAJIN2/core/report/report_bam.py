@@ -1,13 +1,15 @@
 from __future__ import annotations
-import re
+
 import random
+import re
+from collections import defaultdict
+from copy import deepcopy
+from itertools import groupby
 from pathlib import Path
 from typing import Union
-from collections import defaultdict
-from itertools import groupby
-from copy import deepcopy
-import pysam
+
 import midsv
+import pysam
 
 
 def revcomp(sequence: str) -> str:

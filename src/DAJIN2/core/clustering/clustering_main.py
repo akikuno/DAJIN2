@@ -1,9 +1,12 @@
 from __future__ import annotations
-import midsv
-from pathlib import Path
-from copy import deepcopy
+
 from collections import defaultdict
+from copy import deepcopy
 from itertools import groupby
+from pathlib import Path
+
+import midsv
+
 from .make_scores import make_scores
 from .return_labels import return_labels
 from .screen_diffloci import screen_different_loci

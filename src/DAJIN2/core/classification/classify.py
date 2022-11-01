@@ -1,7 +1,9 @@
 from __future__ import annotations
-import midsv
-from pathlib import Path
+
 from itertools import groupby
+from pathlib import Path
+
+import midsv
 
 
 def calc_match(CSSPLIT: str) -> float:

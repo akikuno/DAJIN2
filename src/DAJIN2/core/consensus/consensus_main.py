@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from bisect import bisect_left
 from collections import defaultdict
 from itertools import groupby

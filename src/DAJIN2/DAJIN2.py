@@ -1,10 +1,7 @@
-import os
 import argparse
+import os
 
-from . import single
-from . import batch
-from . import gui
-from . import view
+from . import batch, gui, single, view
 
 
 def update_threads(threads):

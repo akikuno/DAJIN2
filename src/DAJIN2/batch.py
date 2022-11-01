@@ -1,8 +1,11 @@
 from __future__ import annotations
-from pathlib import Path
+
 from itertools import groupby
+from pathlib import Path
+
 import pandas as pd
 import wslPath
+
 from .core import core
 from .postprocess import report
 

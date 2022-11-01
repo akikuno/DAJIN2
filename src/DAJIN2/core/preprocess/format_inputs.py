@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from urllib.request import urlopen
-import re
+
 import mappy
 import midsv
 
