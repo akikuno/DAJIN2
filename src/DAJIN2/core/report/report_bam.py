@@ -247,7 +247,7 @@ def subset_reads(name, sam_content, qnames_by_name):
 ###############################################################################
 
 
-def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
+def output_bam_control(TEMPDIR, CONTROL_NAME, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
 
     path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_control.sam")
@@ -260,10 +260,10 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
 
-    path_sam_update = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
+    path_sam_update = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
     write_sam(sam_update, path_sam_update)
 
-    path_bam = Path(TEMPDIR, "report", "bam", f"{CONTROL_NAME}.bam")
+    path_bam = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
     pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam_update))
     pysam.index("-@", f"{THREADS}", str(path_bam))
 
@@ -273,8 +273,8 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
     qnames = [s[0] for s in sam_contents[:10000]]
     qnames = set(list(set(qnames))[:100])
     sam_subset = [s for s in sam_update if s[0] in qnames]
-    path_bam = Path(TEMPDIR, "report", ".igvjs", f"{CONTROL_NAME}.bam")
     write_sam(sam_headers + sam_subset, path_sam)
+    path_bam = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{CONTROL_NAME}_control.bam")
     pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
     pysam.index("-@", f"{THREADS}", str(path_bam))
 
@@ -295,10 +295,10 @@ def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODIN
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
 
-    path_sam_update = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
+    path_sam_update = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
     write_sam(sam_update, path_sam_update)
 
-    path_bam = Path(TEMPDIR, "report", "bam", f"{SAMPLE_NAME}.bam")
+    path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")
     pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam_update))
     pysam.index("-@", f"{THREADS}", str(path_bam))
 
@@ -310,15 +310,15 @@ def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODIN
     for name, sam_content in sam_groups.items():
         # BAM
         path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
-        path_bam = Path(TEMPDIR, "report", "bam", f"{SAMPLE_NAME}_{name}.bam")
+        path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}_{name}.bam")
         write_sam(sam_headers + sam_content, path_sam)
         pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
         pysam.index("-@", f"{THREADS}", str(path_bam))
         # igvjs
         sam_subset = subset_reads(name, sam_content, qnames_by_name)
         path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
-        path_bam = Path(TEMPDIR, "report", ".igvjs", f"{SAMPLE_NAME}_{name}.bam")
         write_sam(sam_headers + sam_subset, path_sam)
+        path_bam = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{name}.bam")
         pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
         pysam.index("-@", f"{THREADS}", str(path_bam))
 

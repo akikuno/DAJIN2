@@ -40,7 +40,7 @@ def execute(arguments: dict) -> None:
     CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
     DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
 
-    preprocess.format_inputs.make_directories(TEMPDIR)
+    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
     if GENOME:
         GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
@@ -129,16 +129,25 @@ def execute(arguments: dict) -> None:
     # FASTA
     for header, cons_seq in cons_sequence.items():
         cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "report", "FASTA", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+        Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
     # HTML
     for header, cons_per in cons_percentage.items():
         cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "report", "HTML", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+        Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
     # BAM
     if not EXISTS_CACHED_CONTROL:
-        report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+        report.report_bam.output_bam_control(
+            TEMPDIR, CONTROL_NAME, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
+        )
+        # save cashe for igvjs
+        for path_bam_igvjs in Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME).glob(f"{CONTROL_NAME}_control.bam*"):
+            shutil.copy(path_bam_igvjs, Path(TEMPDIR, "cache", ".igvjs"))
+    else:
+        # load cashe for igvjs
+        for path_bam_igvjs in Path(TEMPDIR, "cache", ".igvjs").glob(f"{CONTROL_NAME}_control.bam*"):
+            shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
 
     report.report_bam.output_bam_sample(
         TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS

@@ -12,13 +12,15 @@ import midsv
 ########################################################################
 
 
-def make_directories(TEMPDIR: Path):
+def make_directories(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str):
     subdirectoris = ["cache", "fasta", "sam", "midsv", "report", "result"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
     reportdirectories = ["HTML", "FASTA", "VCF", "BAM", ".igvjs"]
     for reportdir in reportdirectories:
-        Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
+        Path(TEMPDIR, "report", reportdir, SAMPLE_NAME).mkdir(parents=True, exist_ok=True)
+    Path(TEMPDIR, "report", "BAM", CONTROL_NAME).mkdir(parents=True, exist_ok=True)
+    Path(TEMPDIR, "cache", ".igvjs").mkdir(parents=True, exist_ok=True)
 
 
 ########################################################################
