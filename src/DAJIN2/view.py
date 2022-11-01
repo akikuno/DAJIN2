@@ -4,7 +4,7 @@ import re
 import socket
 import socketserver
 import webbrowser
-from contextlib import closing
+from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
 
@@ -73,4 +73,5 @@ def execute(name: str):
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print(f"Assess 'http://127.0.0.1:{PORT}/' if a browser does not automatically open.")
         Timer(1, open_browser, [PORT]).start()
-        httpd.serve_forever()
+        with redirect_stderr(open(os.devnull, "w")):
+            httpd.serve_forever()

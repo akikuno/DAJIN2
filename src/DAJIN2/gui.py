@@ -1,8 +1,9 @@
 import socket
 import webbrowser
-from contextlib import closing
+from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
+import os
 
 import pandas as pd
 from flask import Flask, render_template, request
@@ -98,4 +99,5 @@ def execute():
     PORT = find_free_port()
     print(f"Assess 'http://127.0.0.1:{PORT}/' if a browser does not automatically open.")
     Timer(1, open_browser, [PORT]).start()
-    serve(app, host="0.0.0.0", port=PORT)
+    with redirect_stderr(open(os.devnull, "w")):
+        serve(app, host="0.0.0.0", port=PORT)
