@@ -13,5 +13,5 @@ python3 -m twine upload dist/*
 
 # https://pypi.org/project/DAJIN2/
 cat <<PIPINSTALL
-pip uninstall DAJIN2 --yes && pip install DAJIN2
+pip install -U DAJIN2
 PIPINSTALL
