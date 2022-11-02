@@ -11,11 +11,13 @@ pip install -e . && DAJIN2 \
 DAJIN2 view -n test-single
 
 rm -rf DAJINResults/test-single DAJINResults/.tempdir/test-single
-pip install -e . && DAJIN2 \
-    --name test-single \
-    --sample examples/flox-cables2/AyabeTask1/barcode32.fq.gz \
-    --control examples/flox-cables2/AyabeTask1/barcode42.fq.gz \
-    --allele examples/flox-cables2/AyabeTask1/design_cables2.fa
+pip install -e . &&
+    DAJIN2 \
+        --name test-single \
+        --sample examples/flox-cables2/AyabeTask1/barcode31.fq.gz \
+        --control examples/flox-cables2/AyabeTask1/barcode42.fq.gz \
+        --allele examples/flox-cables2/AyabeTask1/design_cables2.fa &&
+    (cd DAJINResults/test-single && explorer.exe .)
 
 rm -rf DAJINResults/tyr-DAJIN2 DAJINResults/.tempdir/tyr-DAJIN2
 pip install -e . && DAJIN2 batch -f misc/data/design-dajin2.csv

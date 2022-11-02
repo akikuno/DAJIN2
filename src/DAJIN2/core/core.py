@@ -9,7 +9,7 @@ import midsv
 from . import classification, clustering, consensus, preprocess, report
 
 
-def execute(arguments: dict) -> None:
+def parse_args(arguments: dict):
     SAMPLE = arguments["sample"]
     CONTROL = arguments["control"]
     ALLELE = arguments["allele"]
@@ -18,9 +18,12 @@ def execute(arguments: dict) -> None:
     try:
         GENOME = arguments["genome"]
     except KeyError:
-        GENOME = False
-        GENOME_COODINATES = None
-        CHROME_SIZE = None
+        GENOME = None
+    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME
+
+
+def execute(arguments: dict) -> None:
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
 
     ##########################################################
     # Check inputs
@@ -48,6 +51,9 @@ def execute(arguments: dict) -> None:
         )
         if not EXISTS_CACHED_GENOME:
             preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
+    else:
+        GENOME_COODINATES = None
+        CHROME_SIZE = None
 
     ################################################################################
     # Export fasta files as single-FASTA format
