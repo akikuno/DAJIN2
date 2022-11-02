@@ -22,6 +22,23 @@ def parse_args(arguments: dict):
     return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME
 
 
+def format_inputs(SAMPLE, CONTROL, ALLELE, NAME, GENOME):
+    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
+    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
+    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
+
+    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
+    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
+
+    if GENOME:
+        GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
+        CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
+    else:
+        GENOME_COODINATES = None
+        CHROME_SIZE = None
+    return SAMPLE_NAME, CONTROL_NAME, DICT_ALLELE, TEMPDIR, GENOME_COODINATES, CHROME_SIZE
+
+
 def execute_preprocess(arguments: dict):
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
 
@@ -43,7 +60,6 @@ def execute_preprocess(arguments: dict):
         preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
     # Export fasta files as single-FASTA format
-    # TODO: use yeild, not export
     for identifier, sequence in DICT_ALLELE.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
@@ -56,22 +72,11 @@ def execute_preprocess(arguments: dict):
 def execute_control(arguments: dict):
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
 
-    # Check inputs -----------------------------
     preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 
-    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
-    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
-    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
-
-    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
-
-    if GENOME:
-        GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
-        CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
-    else:
-        GENOME_COODINATES = None
-        CHROME_SIZE = None
+    _, CONTROL_NAME, DICT_ALLELE, TEMPDIR, GENOME_COODINATES, CHROME_SIZE = format_inputs(
+        SAMPLE, CONTROL, ALLELE, NAME, GENOME
+    )
 
     ##########################################################
     # Mapping with minimap2/mappy
@@ -134,27 +139,16 @@ def execute_control(arguments: dict):
 def execute_sample(arguments: dict):
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
 
-    # Check inputs -----------------------------
     preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 
-    # Format inputs -----------------------------
-    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
-    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
-    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
-
-    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
-
-    if GENOME:
-        GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
-        CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
-    else:
-        GENOME_COODINATES = None
-        CHROME_SIZE = None
+    SAMPLE_NAME, CONTROL_NAME, DICT_ALLELE, TEMPDIR, GENOME_COODINATES, CHROME_SIZE = format_inputs(
+        SAMPLE, CONTROL, ALLELE, NAME, GENOME
+    )
 
     ###############################################################################
     # Mapping with minimap2/mappy
     ###############################################################################
+
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
