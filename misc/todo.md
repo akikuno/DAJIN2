@@ -6,10 +6,6 @@
 
 ## 開発一般
 
-+ [ ] 🟡Controlを先に処理する。
-  + `main`関数を`check_inputs`、`execute_control`、`execute_sample`の３つに分ける
-  + `NAME`が同じで`CONTROL`が違うという場合も考慮する
-
 + [ ] 🟡debugを入れる
 + [ ] 🟡低スペックPCでメモリがオーバーしないか確認する
 + [ ] 🟢README.md, READMD_jp.mdの執筆
@@ -30,6 +26,7 @@
   + CRISPRESSO2のように細かく分かれていても見やすいような図示にする？
     + Plotlyに良さそうな関数がありました：https://plotly.com/python/alignment-chart/
   + 一度細かくクラスタリングしたあと、コントロールとの引き算を行う？
+    + **DIFFLOCIのところだけのコンセンサス配列を作りる＋コントロール以外のアレルはNでマスクする**
   + 共通領域を取り出してマージする？
 + [ ] (test) `clustering`
 
@@ -102,6 +99,10 @@
 # DONE
 
 ## 開発一般
+
++ [x] (2022-11-02) Controlを先に処理する。
+  + `main`関数を`check_inputs`、`execute_control`、`execute_sample`の３つに分ける
+  + `NAME`が同じで`CONTROL`が違うという場合も考慮する
 
 + [x] (2022-10-29) 点変異のヘテロ（ポジコン）と10%, 5%, 1%のサンプルを用意する（in vivoゲノム編集を想定）
 

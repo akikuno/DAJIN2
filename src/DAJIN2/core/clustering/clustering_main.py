@@ -48,7 +48,7 @@ def add_labels(classif_sample, DIFFLOCI_ALLELES):
         scores = []
         if diffloci:
             scores = make_scores(cssplit_sample, diffloci)
-        if any(scores):
+        if any(scores) and len(scores) > 1:
             labels += [label + label_start for label in return_labels(scores)]
         else:
             labels += [label_start] * len(cssplit_sample)

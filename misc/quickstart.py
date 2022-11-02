@@ -13,16 +13,16 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
-# * Point mutation
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "misc/data/tyr_albino_10%.fq.gz",
-    "misc/data/tyr_control.fq.gz",
-    "misc/data/tyr_control.fasta",
-    "tyr-albino_10%",
-    "mm10",
-    True,
-    14,
-)
+# # * Point mutation
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "misc/data/tyr_albino_10%.fq.gz",
+#     "misc/data/tyr_control.fq.gz",
+#     "misc/data/tyr_control.fasta",
+#     "tyr-albino_10%",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -47,16 +47,16 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
-# # * flox insertion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "Ayabe-Task1",
-#     "mm10",
-#     True,
-#     14,
-# )
+# * flox insertion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+    "Ayabe-Task1",
+    "mm10",
+    True,
+    14,
+)
 
 ##########################################################
 # Check inputs
