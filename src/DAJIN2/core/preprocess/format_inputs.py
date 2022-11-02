@@ -82,21 +82,10 @@ def fetch_chrom_size(chrom: str, genome: str, goldenpath_url: str) -> int:
     return chrom_size
 
 
-def get_coodinates_and_chromsize(
-    TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME: bool
-) -> tuple:
-    path_genome_coodinates = Path(TEMPDIR, "cache", "genome_coodinates.jsonl")
-    path_chrome_size = Path(TEMPDIR, "cache", "chrome_size.txt")
-    if IS_CACHE_GENOME:
-        GENOME_COODINATES = midsv.read_jsonl(path_genome_coodinates)[0]
-        CHROME_SIZE = int(path_chrome_size.read_text())
-    else:
-        GENOME_COODINATES = fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
-        CHROME_SIZE = fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
-    return GENOME_COODINATES, CHROME_SIZE
-
-
 def cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE):
+    """
+    Save (1) genome_symbol.txt, (2) genome_coodinates.jsonl, (3) chrome_size.txt
+    """
     # Save info to the cache directory
     Path(TEMPDIR, "cache", "genome_symbol.txt").write_text(GENOME + "\n")
     midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))

@@ -5,6 +5,8 @@ from .postprocess import report
 
 
 def execute(arguments: dict[str]):
-    core.execute(arguments)
+    core.execute_preprocess(arguments)
+    core.execute_control(arguments)
+    core.execute_sample(arguments)
     name = arguments["name"]
     report.report(name)

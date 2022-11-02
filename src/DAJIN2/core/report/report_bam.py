@@ -247,7 +247,7 @@ def subset_reads(name, sam_content, qnames_by_name):
 ###############################################################################
 
 
-def output_bam_control(TEMPDIR, CONTROL_NAME, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
+def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
 
     path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_control.sam")
@@ -274,12 +274,12 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, SAMPLE_NAME, GENOME, GENOME_COODIN
     qnames = set(list(set(qnames))[:100])
     sam_subset = [s for s in sam_update if s[0] in qnames]
     write_sam(sam_headers + sam_subset, path_sam)
-    path_bam = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{CONTROL_NAME}_control.bam")
+    path_bam = Path(TEMPDIR, "cache", ".igvjs", f"{CONTROL_NAME}_control.bam")
     pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
     pysam.index("-@", f"{THREADS}", str(path_bam))
 
     # Remove temporary files
-    sam_temp = Path(TEMPDIR, "report", "bam").glob(f"tmp{randomnum}*.sam")
+    sam_temp = Path(TEMPDIR, "report", "BAM").glob(f"tmp{randomnum}*.sam")
     [s.unlink() for s in sam_temp]
 
 

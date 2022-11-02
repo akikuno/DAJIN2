@@ -56,13 +56,17 @@ def execute(arguments: dict[str]):
     ##############################################################################
     # Perform DAJIN
     ##############################################################################
-    index_name = [i for i, key in enumerate(keys) if key == "name"][0]
+    index_name = keys.index("name")
+
     contents = inputs[1:]
     contents.sort(key=lambda x: x[index_name])
 
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
-        for group in groups:
+        for i, group in enumerate(groups):
             args = {h: g for h, g in zip(keys, group)}
             args["threads"] = threads
-            core.execute(args)
+            if i == 0:
+                core.execute_preprocess(args)
+                core.execute_control(args)
+            core.execute_sample(args)
         report.report(name)

@@ -50,11 +50,7 @@
 
 + [ ] 🔴VCFファイル
 
-+ [ ] 🟡BAMファイル
-  + [ ] Hrでプラス鎖の確認
-  + [ ] (test) `report_bam`
-  + [x] controlも含める
-  + [x] Tyrでマイナス鎖からプラス鎖に変換
++ [ ] (test) `report_bam`
 
 + [ ] 🟢名前をどうするか…
   + 2022-10-19時点では`barcode31_allele1_flox_intact_52.979%`のような感じになっている。
@@ -169,6 +165,11 @@
   + report/FASTA
   + report/BAM
   + report/VCF
+
++ [x] BAMファイル
+  + [x] controlも含める
+  + [x] (2022-11-01) Hrでプラス鎖の確認
+  + [x] Tyrでマイナス鎖からプラス鎖に変換
 
 + [x] HTMLファイルのコンセンサス
 + [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`

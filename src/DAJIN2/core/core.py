@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import shutil
 from pathlib import Path
-
+import json
 import midsv
 
 from . import classification, clustering, consensus, preprocess, report
@@ -22,58 +22,64 @@ def parse_args(arguments: dict):
     return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME
 
 
-def execute(arguments: dict) -> None:
+def execute_preprocess(arguments: dict):
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
 
-    ##########################################################
-    # Check inputs
-    ##########################################################
-    preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
-    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    EXISTS_CACHED_CONTROL = preprocess.check_inputs.exists_cached_control(CONTROL, TEMPDIR)
-    EXISTS_CACHED_GENOME = preprocess.check_inputs.exists_cached_genome(GENOME, TEMPDIR, EXISTS_CACHED_CONTROL)
-    UCSC_URL, GOLDENPATH_URL = None, None
-    if GENOME and not EXISTS_CACHED_GENOME:
+    if GENOME:
         UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
 
-    ##########################################################
-    # Format inputs
-    ##########################################################
+    # Format inputs -----------------------------
+
     SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
     CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
     DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
 
+    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
     preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
     if GENOME:
-        GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
-            TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, EXISTS_CACHED_GENOME
-        )
-        if not EXISTS_CACHED_GENOME:
-            preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
-    else:
-        GENOME_COODINATES = None
-        CHROME_SIZE = None
+        GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
+        CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
+        preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
-    ################################################################################
     # Export fasta files as single-FASTA format
-    ################################################################################
     # TODO: use yeild, not export
     for identifier, sequence in DICT_ALLELE.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
 
-    ###############################################################################
+
+# !================================================================================================
+
+
+def execute_control(arguments: dict):
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
+
+    # Check inputs -----------------------------
+    preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+
+    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
+    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
+    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
+
+    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
+    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
+
+    if GENOME:
+        GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
+        CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
+    else:
+        GENOME_COODINATES = None
+        CHROME_SIZE = None
+
+    ##########################################################
     # Mapping with minimap2/mappy
-    ###############################################################################
+    ##########################################################
+
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
-        if name_fasta not in set(DICT_ALLELE.keys()):
-            continue
-        if not EXISTS_CACHED_CONTROL:
-            preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
-        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
 
     if not GENOME:
         path_control = Path(TEMPDIR, "fasta", "control.fasta")
@@ -84,9 +90,78 @@ def execute(arguments: dict) -> None:
     ########################################################################
     # MIDSV conversion
     ########################################################################
-    if not EXISTS_CACHED_CONTROL:
-        for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
-            preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+    for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+
+    ########################################################################
+    # Classify alleles
+    ########################################################################
+
+    path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
+    classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
+
+    ########################################################################
+    # Detect Structural variants
+    ########################################################################
+
+    for classif in classif_control:
+        classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+
+    ########################################################################
+    # Output classification results to cache
+    ########################################################################
+
+    midsv.write_jsonl(classif_control, Path(TEMPDIR, "cache", f"{CONTROL_NAME}.jsonl"))
+
+    ########################################################################
+    # Output BAM to cache
+    ########################################################################
+    report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+
+    ###############################################################################
+    # Cashe inputs (control)
+    ###############################################################################
+
+    control_hash = Path(CONTROL).read_bytes()
+    control_hash = hashlib.sha256(control_hash).hexdigest()
+    PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
+    PATH_CACHE_HASH.write_text(str(control_hash))
+
+
+# !================================================================================================
+
+
+def execute_sample(arguments: dict):
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
+
+    # Check inputs -----------------------------
+    preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+
+    # Format inputs -----------------------------
+    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
+    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
+    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
+
+    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
+    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
+
+    if GENOME:
+        GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
+        CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
+    else:
+        GENOME_COODINATES = None
+        CHROME_SIZE = None
+
+    ###############################################################################
+    # Mapping with minimap2/mappy
+    ###############################################################################
+    for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
+        name_fasta = path_fasta.stem
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
+
+    ########################################################################
+    # MIDSV conversion
+    ########################################################################
 
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
@@ -126,9 +201,11 @@ def execute(arguments: dict) -> None:
     RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
         clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, DICT_ALLELE
     )
+
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM/VCF
     ########################################################################
+
     # RESULT
     midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
 
@@ -143,32 +220,13 @@ def execute(arguments: dict) -> None:
         Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
     # BAM
-    if not EXISTS_CACHED_CONTROL:
-        report.report_bam.output_bam_control(
-            TEMPDIR, CONTROL_NAME, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
-        )
-        # save cashe for igvjs
-        for path_bam_igvjs in Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME).glob(f"{CONTROL_NAME}_control.bam*"):
-            shutil.copy(path_bam_igvjs, Path(TEMPDIR, "cache", ".igvjs"))
-    else:
-        # load cashe for igvjs
-        for path_bam_igvjs in Path(TEMPDIR, "cache", ".igvjs").glob(f"{CONTROL_NAME}_control.bam*"):
-            shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
-
     report.report_bam.output_bam_sample(
         TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
     )
 
+    for path_bam_igvjs in Path(TEMPDIR, "cache", ".igvjs").glob(f"{CONTROL_NAME}_control.bam*"):
+        shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
+
     # VCF
     # working in progress
-
-    ###############################################################################
-    # Cashe inputs (control)
-    ###############################################################################
-
-    if not EXISTS_CACHED_CONTROL:
-        control_hash = Path(CONTROL).read_bytes()
-        control_hash = hashlib.sha256(control_hash).hexdigest()
-        PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
-        PATH_CACHE_HASH.write_text(str(control_hash))
 
