@@ -79,4 +79,3 @@ def return_labels(scores: list[list[float]]) -> list[int]:
 #             break
 #         n_clusters += 1
 #     return labels.tolist()
-

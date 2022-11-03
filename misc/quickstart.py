@@ -76,7 +76,7 @@ SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
 CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
 
-preprocess.format_inputs.make_directories(TEMPDIR)
+preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
 if GENOME:
     GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
@@ -131,6 +131,9 @@ if not flag:
 path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
 classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
+path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
+classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
+
 ########################################################################
 # Detect Structural variants
 ########################################################################
@@ -138,13 +141,21 @@ classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
+for classif in classif_control:
+    classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+
+# d = defaultdict(int)
+# for c in classif_control:
+#     keys = f'{c["ALLELE"]}-{c["SV"]}'
+#     d[keys] += 1
+
 ########################################################################
 # Clustering
 ########################################################################
 
 # allele = "control"
 # sv = False
-# cssplit_sample = [cs["CSSPLIT"] for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
+# cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
 
 MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 
@@ -152,14 +163,37 @@ DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
     TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
 )
 
+clust_control = clustering.add_labels(classif_control, DIFFLOCI_ALLELES)
+clust_control = clustering.add_readnum(clust_control)
+clust_control = clustering.add_percent(clust_control)
+clust_control = clustering.update_labels(clust_control)
+
 clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
-
 clust_sample = clustering.add_readnum(clust_sample)
-
 clust_sample = clustering.add_percent(clust_sample)
-
 clust_sample = clustering.update_labels(clust_sample)
 
+# d_count = defaultdict(int)
+# for c in clust_sample:
+#     d_count[c["LABEL"]] += 1
+
+# coverage = len(clust_sample)
+# d_percent = defaultdict(int)
+# for c in clust_sample:
+#     d_percent[c["LABEL"]] += 1 / coverage * 100
+
+# d_count
+# d_percent
+
+# d = defaultdict(int)
+# for c in clust_sample:
+#     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
+#     d[keys] += 1
+
+# d
+# from pprint import pprint
+
+# pprint(d)
 ########################################################################
 # Consensus call
 ########################################################################
@@ -218,4 +252,3 @@ d
 # for group in classif_sample:
 #     if group["ALLELE"] == ALLELE and group["SV"] == SV:
 #         cssplit_sample.append(group["CSSPLIT"])
-
