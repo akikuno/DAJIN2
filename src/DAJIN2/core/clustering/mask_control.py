@@ -19,11 +19,13 @@ def mask_control(TEMPDIR: Path, DICT_ALLELE: dict, CONTROL_NAME: str):
         cssplit_control = [cs["CSSPLIT"].split(",") for cs in cssplit_control]
         coverage = len(cssplit_control)
         cssplit_control_transposed = list(zip(*cssplit_control))
-        masks_loci = [False] * (len(cssplit_control_transposed) - 1)
+        masks_loci = []
         for i, cs in enumerate(cssplit_control_transposed):
             count_match = sum(1 for c in cs if c.startswith("="))
             percent_match = count_match / coverage * 100
             if percent_match < 1:
-                masks_loci[i] = True
+                masks_loci.append(True)
+            else:
+                masks_loci.append(False)
         masks_control[allele] = masks_loci
     return masks_control
