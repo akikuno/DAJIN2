@@ -24,13 +24,8 @@ def test_make_table():
         "-A,=A,=A",
         "*AG,=A,=A",
     ]
-    cssplit_control = [
-        "=A,=A,+A|+C|=A",
-        "=A,=A,=A",
-        "*AG,=A,=A",
-    ]
-    test = screen_diffloci.make_table(cssplit_sample, cssplit_control)
-    answer = [[2, 3], [1, 1], [1, 1]], [[1, 2], [1, 1], [1, 2]]
+    test = screen_diffloci.make_table(cssplit_sample)
+    answer = [[2, 3], [1, 1], [1, 1]]
     assert test == answer
 
 

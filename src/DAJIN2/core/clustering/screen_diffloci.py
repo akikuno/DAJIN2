@@ -23,18 +23,15 @@ def replaceNtoMatch(sample_cs: list[str]) -> list[str]:
     return sample_cs
 
 
-def make_table(cssplit_sample: list[str], cssplit_control: list[str]) -> tuple(list, list):
+def make_table(cssplit_sample: list[str]) -> tuple(list):
     # Create empty templates
-    length = len(cssplit_control[0].split(","))
+    length = len(cssplit_sample[0].split(","))
     # table of Deletion, Others
     table_sample = [[1, 1] for _ in range(length)]
-    table_control = [[1, 1] for _ in range(length)]
     # Calculate match and mismatch
-    for sample_cs, control_cs in zip(cssplit_sample, cssplit_control):
+    for sample_cs in cssplit_sample:
         sample_cs = sample_cs.split(",")
         sample_cs = replaceNtoMatch(sample_cs)
-        control_cs = control_cs.split(",")
-        control_cs = replaceNtoMatch(control_cs)
         for i, cs in enumerate(sample_cs):
             if cs.startswith("="):
                 continue
@@ -42,14 +39,7 @@ def make_table(cssplit_sample: list[str], cssplit_control: list[str]) -> tuple(l
                 table_sample[i][0] += 1
             else:
                 table_sample[i][1] += 1
-        for i, cs in enumerate(control_cs):
-            if cs.startswith("="):
-                continue
-            if cs.startswith("-"):
-                table_control[i][0] += 1
-            else:
-                table_control[i][1] += 1
-    return table_sample, table_control
+    return table_sample
 
 
 def mask_table_control(table_control, masks_control):
@@ -103,7 +93,8 @@ def screen_different_loci(
     different_loci = []
     repetive_deletion_loci = []
     coverage = min(len(cssplit_sample), len(cssplit_control))
-    table_sample, table_control = make_table(cssplit_sample, cssplit_control)
+    table_sample = make_table(cssplit_sample)
+    table_control = make_table(cssplit_control)
     table_control = mask_table_control(table_control, masks_control)
     repeat_regrex = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_span = list(x.span() for x in re.finditer(repeat_regrex, sequence))
