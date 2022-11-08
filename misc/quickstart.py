@@ -131,8 +131,8 @@ if not flag:
 path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
 classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 
-path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
-classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
+# path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
+# classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
 
 ########################################################################
 # Detect Structural variants
@@ -141,8 +141,8 @@ classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-for classif in classif_control:
-    classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+# for classif in classif_control:
+#     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 # d = defaultdict(int)
 # for c in classif_control:
@@ -174,19 +174,19 @@ clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)
 
 # d_count = defaultdict(int)
-# for c in clust_sample:
+# for c in clust_control:
 #     d_count[c["LABEL"]] += 1
 
-# coverage = len(clust_sample)
+# coverage = len(clust_control)
 # d_percent = defaultdict(int)
-# for c in clust_sample:
+# for c in clust_control:
 #     d_percent[c["LABEL"]] += 1 / coverage * 100
 
 # d_count
 # d_percent
 
 # d = defaultdict(int)
-# for c in clust_sample:
+# for c in clust_control:
 #     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
 #     d[keys] += 1
 

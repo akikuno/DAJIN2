@@ -182,11 +182,7 @@ def execute_sample(arguments: dict):
         TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
     )
 
-    classif_control = midsv.read_jsonl(Path(TEMPDIR, "cache", f"{CONTROL_NAME}.jsonl"))
-    clust_control = clustering.add_labels(classif_control, DIFFLOCI_ALLELES)
-    clust_control = clustering.add_readnum(clust_control)
-    clust_control = clustering.add_percent(clust_control)
-    clust_control = clustering.update_labels(clust_control)
+    # classif_control = midsv.read_jsonl(Path(TEMPDIR, "cache", f"{CONTROL_NAME}.jsonl"))
 
     clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
     clust_sample = clustering.add_readnum(clust_sample)
@@ -197,30 +193,9 @@ def execute_sample(arguments: dict):
     # Consensus call
     ########################################################################
 
-    RESULT_CONTROL, cons_percentage_control, cons_sequence_control = consensus.call(
-        clust_control, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, DICT_ALLELE
-    )
     RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
         clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, DICT_ALLELE
     )
-
-    len(RESULT_CONTROL)
-    cons_percentage_control.keys()
-    cons_sequence.keys()
-    cons_sequence_control["allele1_control_intact_71.562%"] == cons_sequence["allele2_control_intact_24.159%"]
-    cons_seq_sample_set = set(cons_sequence.values())
-    cons_seq_control_set = set(cons_sequence_control.values())
-    len(cons_seq_sample_set)
-    x = list(cons_seq_sample_set & cons_seq_control_set)
-    for xx in x:
-        if xx == cons_sequence_control["allele1_control_intact_71.562%"]:
-            print("YES")
-            break
-
-    set1 = set([1, 2, 3])
-    set2 = set([2, 3])
-    len(set1 - set2)
-    cons_sequence_control["allele3_control_mutated_0.931%"]
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM/VCF
