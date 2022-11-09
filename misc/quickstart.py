@@ -144,10 +144,10 @@ for classif in classif_sample:
 # for classif in classif_control:
 #     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-# d = defaultdict(int)
-# for c in classif_control:
-#     keys = f'{c["ALLELE"]}-{c["SV"]}'
-#     d[keys] += 1
+d = defaultdict(int)
+for c in classif_sample:
+    keys = f'{c["ALLELE"]}-{c["SV"]}'
+    d[keys] += 1
 
 ########################################################################
 # Clustering
@@ -157,10 +157,10 @@ for classif in classif_sample:
 # sv = False
 # cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
 
-MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 
 DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-    TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
+    TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
 )
 
 clust_control = clustering.add_labels(classif_control, DIFFLOCI_ALLELES)

@@ -176,10 +176,10 @@ def execute_sample(arguments: dict):
     # Clustering
     ########################################################################
 
-    MASKS_CONTROL = clustering.mask_control(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+    KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 
     DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-        TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME
+        TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
     )
 
     # classif_control = midsv.read_jsonl(Path(TEMPDIR, "cache", f"{CONTROL_NAME}.jsonl"))
