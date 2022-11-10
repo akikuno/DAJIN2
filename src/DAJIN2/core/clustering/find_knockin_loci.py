@@ -39,12 +39,12 @@ def call_consensus_80percent(cssplit, sequence) -> list[str]:
     return cssplit_consensus
 
 
-def find_knockin_loci(TEMPDIR: Path, DICT_ALLELE: dict, CONTROL_NAME: str) -> defaultdict(set[int]):
+def find_knockin_loci(TEMPDIR: Path, DICT_ALLELE: dict, CONTROL_NAME: str) -> defaultdict(set):
     """
     Alignments between control and knock-in alleles produses deletion loci in control.
     The deletion loci are knock-in loci, not sequencing error, so they should be ignored.
     """
-    knockin_loci = defaultdict(set[int])
+    knockin_loci = defaultdict(set)
     for allele in DICT_ALLELE.keys():
         if allele == "control":
             continue
