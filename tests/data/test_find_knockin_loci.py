@@ -1,9 +1,6 @@
 from __future__ import annotations
-from collections import defaultdict, Counter
 from pathlib import Path
-from copy import deepcopy
 from src.DAJIN2.core.clustering import find_knockin_loci
-import midsv
 
 
 def test_find_knockin_loci():
