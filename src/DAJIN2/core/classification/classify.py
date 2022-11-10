@@ -13,18 +13,18 @@ def calc_match(CSSPLIT: str) -> float:
     return match_score / len(CSSPLIT.split(","))
 
 
-def classify_alleles(path_midsv: Path, sample_name: str) -> list[dict]:
-    score_of_each_allels = []
-    for midsvpath in path_midsv:
-        ALLELE = midsvpath.stem.replace(f"{sample_name}_", "")
-        for midsvcsv in midsv.read_jsonl(midsvpath):
-            QNAME = midsvcsv["QNAME"]
-            CSSPLIT = midsvcsv["CSSPLIT"]
-            SCORE = calc_match(CSSPLIT)
-            score_of_each_allels.append({"QNAME": QNAME, "ALLELE": ALLELE, "SCORE": SCORE, "CSSPLIT": CSSPLIT})
-    score_of_each_allels.sort(key=lambda x: x["QNAME"])
+def classify_alleles(paths_midsv: list[Path]) -> list[dict]:
+    score_of_each_alleles = []
+    for path_midsv in paths_midsv:
+        allele = path_midsv.stem.split("_")[-1]
+        for dict_midsv in midsv.read_jsonl(path_midsv):
+            score = calc_match(dict_midsv["CSSPLIT"])
+            dict_midsv.update({"SCORE": score})
+            dict_midsv.update({"ALLELE": allele})
+            score_of_each_alleles.append(dict_midsv)
+    score_of_each_alleles.sort(key=lambda x: x["QNAME"])
     possible_allele = []
-    for _, group in groupby(score_of_each_allels, key=lambda x: x["QNAME"]):
+    for _, group in groupby(score_of_each_alleles, key=lambda x: x["QNAME"]):
         max_score = -float("inf")
         for readinfo in group:
             if readinfo["SCORE"] > max_score:
