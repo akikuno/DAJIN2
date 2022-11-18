@@ -13,7 +13,7 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
-# # * Point mutation
+# * Subset of Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "misc/data/tyr_albino_10%.fq.gz",
 #     "misc/data/tyr_control.fq.gz",
@@ -37,6 +37,16 @@ reload(report)
 
 
 # * 2-cut deletion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "tests/data/knockout/test_barcode25.fq.gz",
+    "tests/data/knockout/test_barcode30.fq.gz",
+    "tests/data/knockout/design_stx2.fa",
+    "test-stx2-deletion",
+    "mm10",
+    True,
+    14,
+)
+# #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/del-stx2/barcode25.fq.gz",
 #     "examples/del-stx2/barcode30.fq.gz",
@@ -47,16 +57,16 @@ reload(report)
 #     14,
 # )
 
-# * flox insertion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-    "Ayabe-Task1",
-    "mm10",
-    True,
-    14,
-)
+# # * flox insertion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+#     "Ayabe-Task1",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 ##########################################################
 # Check inputs
@@ -79,10 +89,9 @@ DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
 preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
 if GENOME:
-    GENOME_COODINATES, CHROME_SIZE = preprocess.format_inputs.get_coodinates_and_chromsize(
-        TEMPDIR, GENOME, DICT_ALLELE, UCSC_URL, GOLDENPATH_URL, IS_CACHE_GENOME
-    )
-
+    GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
+    CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
+    preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
 flag1 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl").exists()
 flag2 = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl").exists()
@@ -102,19 +111,15 @@ if not flag:
     ###############################################################################
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
-        if name_fasta not in set(DICT_ALLELE.keys()):
-            continue
-        if not IS_CACHE_CONTROL:
-            preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
     ########################################################################
     # MIDSV conversion
     ########################################################################
-    if not IS_CACHE_CONTROL:
-        for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
-            preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+    for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
-        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################
@@ -128,8 +133,8 @@ if not flag:
 # Classify alleles
 ########################################################################
 
-path_midsv = Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*")
-classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
+paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*"))
+classif_sample = classification.classify_alleles(paths_midsv)
 
 # path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
 # classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
@@ -141,13 +146,14 @@ classif_sample = classification.classify_alleles(path_midsv, SAMPLE_NAME)
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-# for classif in classif_control:
-#     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-d = defaultdict(int)
-for c in classif_sample:
-    keys = f'{c["ALLELE"]}-{c["SV"]}'
-    d[keys] += 1
+# d = defaultdict(int)
+# for c in classif_sample:
+#     keys = f'{c["ALLELE"]}-{c["SV"]}'
+#     d[keys] += 1
+
+# d
+# defaultdict(<class 'int'>, {'control-False': 376, 'flox-False': 534, 'control-True': 48, 'flox-True': 23})
 
 ########################################################################
 # Clustering
@@ -162,11 +168,6 @@ KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
     TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
 )
-
-clust_control = clustering.add_labels(classif_control, DIFFLOCI_ALLELES)
-clust_control = clustering.add_readnum(clust_control)
-clust_control = clustering.add_percent(clust_control)
-clust_control = clustering.update_labels(clust_control)
 
 clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
 clust_sample = clustering.add_readnum(clust_sample)

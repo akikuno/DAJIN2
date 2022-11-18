@@ -1,3 +1,8 @@
+#!--------------------------------------------------
+print(f"marge_alleles.py: WOURKING IN PROGRESS...")
+#!--------------------------------------------------
+
+
 def replace_N_to_match(cssplit, sequence):
     for i, cs in enumerate(cssplit):
         if not cs.startswith("N"):
