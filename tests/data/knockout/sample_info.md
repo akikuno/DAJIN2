@@ -9,3 +9,8 @@
 ## test_barcode30.fq.gz
 - Wild type control
 - 2000 reads
+
+
+# Design
+
+- deletion: 2012-2739 (727 bases)
