@@ -14,8 +14,6 @@ from sklearn.cluster import MeanShift
 from scipy.spatial.distance import cosine
 
 
-np.random.seed(1)
-
 # *Stx2 deletion: 2012-2739 (727 bases)
 # tests/data/knockout/test_barcode25.fq.gz
 # tests/data/knockout/test_barcode30.fq.gz
@@ -82,6 +80,91 @@ def replace_repdel_to_n(count: list[dict], repeat_dels: set):
         return count_replaced
 
 
+def compensate_n(count: list[dict]):
+    count_replaced = deepcopy(count)
+    for i, cnt in enumerate(count):
+        if "N" not in cnt.keys():
+            continue
+        n_num = cnt["N"]
+        elements = []
+        probs = []
+        coverage = sum(cnt.values()) - n_num
+        for key, val in cnt.items():
+            if key == "N":
+                continue
+            elements.append(key)
+            probs.append(val / coverage)
+        np.random.seed(1)
+        samples = np.random.choice(a=elements, size=n_num, p=probs)
+        for key in samples:
+            count_replaced[i][key] += 1
+        del count_replaced[i]["N"]
+    return count_replaced
+
+
+###############################################################################
+# Discard common errors
+###############################################################################
+
+
+def call_percent(cssplit_counts: list[dict[str:int]]) -> list[dict[str:int]]:
+    cssplit_percent = []
+    coverage = sum(cssplit_counts[0].values())
+    for counts in cssplit_counts:
+        percent = {k: v / coverage * 100 for k, v in counts.items()}
+        cssplit_percent.append(percent)
+    return cssplit_percent
+
+
+def subtract_percentage(percent_control, percent_sample) -> list[dict]:
+    sample_subtracted = []
+    for cont, samp in zip(percent_control, percent_sample):
+        samp = Counter(samp)
+        samp.subtract(Counter(cont))
+        sample_subtracted.append(dict(samp))
+    return sample_subtracted
+
+
+def discard_common_error(sample_subtracted, threshold=0.5):
+    sample_discarded = []
+    for samp in sample_subtracted:
+        remained = {k: v for k, v in samp.items() if v > threshold}
+        sample_discarded.append(remained)
+    return sample_discarded
+
+
+def discard_match(sample_subtracted):
+    sample_discarded = []
+    for samp in sample_subtracted:
+        remained = {k: v for k, v in samp.items() if not k.startswith("=")}
+        sample_discarded.append(remained)
+    return sample_discarded
+
+
+###############################################################################
+# annotate scores
+###############################################################################
+
+
+def annotate_scores(count_compensated, percent_discarded):
+    scores = []
+    for samp, mutation in zip(count_compensated, percent_discarded):
+        score = []
+        if not mutation:
+            # # TODO 全インデックスにスコアを当てるとデバッグがし易い。本番では計算量低減のために以下の2行は削除する。
+            # score = [0 for _ in range(len(samp))]
+            # scores.append(score)
+            continue
+        for key, val in mutation.items():
+            for s in samp:
+                if s == key:
+                    score.append(val)
+                else:
+                    score.append(0)
+        scores.append(score)
+    return list(zip(*scores))
+
+
 ###############################################################################
 
 allele = "deletion"
@@ -104,6 +187,26 @@ count_sample = call_count(transpose_sample)
 repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
 count_repdel_to_n_control = replace_repdel_to_n(count_control, repeat_dels)
 count_repdel_to_n_sample = replace_repdel_to_n(count_sample, repeat_dels)
+
+# Distribute N
+count_compensated_control = compensate_n(count_repdel_to_n_control)
+count_compensated_sample = compensate_n(count_repdel_to_n_sample)
+
+# Mask common mutations
+percent_control = call_percent(count_compensated_control)
+percent_sample = call_percent(count_compensated_sample)
+percent_subtraction = subtract_percentage(percent_control, percent_sample)
+percent_discarded = discard_common_error(percent_subtraction, 0.5)
+percent_discarded = discard_match(percent_discarded)
+
+scores_control = annotate_scores(count_compensated_control, percent_discarded)
+scores_sample = annotate_scores(count_compensated_sample, percent_discarded)
+
+scores_control[0]
+percent_control[1000]
+percent_sample[1000]
+percent_subtraction[1000]
+percent_discarded[1000]
 
 # qscores = [cs["QSCORE"].split(",") for cs in midsv_control]
 
