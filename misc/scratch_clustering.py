@@ -180,7 +180,7 @@ count_control = call_count(transpose_control)
 
 # Sample
 cssplits_sample = [cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-transpose_sample = list(zip(*cssplits_sample))
+transpose_sample = list(zip(*cssplits_sample))\
 count_sample = call_count(transpose_sample)
 
 # Find repetitive dels
