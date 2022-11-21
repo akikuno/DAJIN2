@@ -14,3 +14,19 @@
 # Design
 
 - deletion: 2012-2739 (727 bases)
+
+- deletion size mapped to deletion alleles
+  - allele1: ~260 bp deletion
+  - allele2: ~620 bp deletion
+  - allele3: ~1800 bp deletion
+
+To examine deletion size
+
+```bash
+cat tests/data/knockout/design_stx2.fa |
+    grep -A 1 deletion > tmp_del.fa
+
+minimap2 -ax map-ont tmp_del.fa tests/data/knockout/test_barcode25.fq.gz |
+samtools sort > tmp_bc25.bam
+samtools index tmp_bc25.bam
+```
