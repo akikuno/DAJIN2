@@ -1,19 +1,31 @@
 # DAJIN2 is now under development👷
 
 I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
+
 ## New planned features
 
 
 ### Experiments
 
-- [ ] support nCATs
-- [ ] support PacBio
+- [x] Nanopore R9.4
+- [ ] Nanopore R10.4
+- [ ] PacBio
+- [ ] nCATs
+- [ ] base-editing
+
+### Design
+
+- [ ] point mutation
+- [ ] 1-cut knockout
+- [ ] 2-cut knockout
+- [ ] flox knockin
+- [ ] humanized exon knockin
 - [ ] multi-allele phasing
 
 ### Functions
 
 - [ ] output VCF
-- [ ] support multi-processing
+- [ ] multi-processing
 - [x] trim microhomology in BAM
 
 ### Usability
