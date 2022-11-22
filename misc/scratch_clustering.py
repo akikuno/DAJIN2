@@ -63,43 +63,95 @@ def find_repetitive_dels(count_control, count_sample, sequence) -> set[int]:
     return set(chain.from_iterable(high_cossims))
 
 
-def replace_repdel_to_n(count: list[dict], repeat_dels: set):
-    count_replaced = deepcopy(count)
-    for i, cnt in enumerate(count):
+# def replace_repdel_to_n(count: list[dict], repeat_dels: set):
+#     count_replaced = deepcopy(count)
+#     for i, cnt in enumerate(count):
+#         if i not in repeat_dels:
+#             continue
+#         val_del = 0
+#         for cs, val in cnt.items():
+#             if cs.startswith("-"):
+#                 val_del += val
+#                 del count_replaced[i][cs]
+#         if "N" in count_replaced[i].keys():
+#             count_replaced[i]["N"] += val_del
+#         else:
+#             count_replaced[i].update({"N": val_del})
+#         return count_replaced
+
+
+def replace_repdels_to_n(transposed_cssplits: list[list[str]], repeat_dels: set):
+    replased_cssplits = deepcopy(transposed_cssplits)
+    for i, cssplit in enumerate(replased_cssplits):
         if i not in repeat_dels:
             continue
-        val_del = 0
-        for cs, val in cnt.items():
+        for j, cs in enumerate(cssplit):
             if cs.startswith("-"):
-                val_del += val
-                del count_replaced[i][cs]
-        if "N" in count_replaced[i].keys():
-            count_replaced[i]["N"] += val_del
-        else:
-            count_replaced[i].update({"N": val_del})
-        return count_replaced
+                replased_cssplits[i][j] = "N"
+    return replased_cssplits
 
 
-def compensate_n(count: list[dict]):
-    count_replaced = deepcopy(count)
-    for i, cnt in enumerate(count):
-        if "N" not in cnt.keys():
+def sampling(cnt: Counter):
+    elements = []
+    probs = []
+    coverage = sum(cnt.values()) - cnt["N"]
+    for key, val in cnt.items():
+        if key == "N":
             continue
-        n_num = cnt["N"]
-        elements = []
-        probs = []
-        coverage = sum(cnt.values()) - n_num
-        for key, val in cnt.items():
-            if key == "N":
-                continue
-            elements.append(key)
-            probs.append(val / coverage)
-        np.random.seed(1)
-        samples = np.random.choice(a=elements, size=n_num, p=probs)
-        for key in samples:
-            count_replaced[i][key] += 1
-        del count_replaced[i]["N"]
-    return count_replaced
+        elements.append(key)
+        probs.append(val / coverage)
+    np.random.seed(1)
+    samples = np.random.choice(a=elements, size=cnt["N"], p=probs)
+    return samples
+
+
+def replace_both_ends_n(transposed_cssplits: list[list[str]]):
+    d_samples = defaultdict(iter)
+    for i, cssplits in enumerate(transposed_cssplits):
+        cnt = Counter(cssplits)
+        if cnt["N"] == 0:  # No N
+            continue
+        if len(cnt) == 1 and cnt["N"] > 0:  # All N
+            continue
+        samples = sampling(cnt)
+        d_samples[i] = iter(samples)
+    cssplits_replaced = [list(cs) for cs in zip(*transposed_cssplits)]
+    for i, cssplits in enumerate(cssplits_replaced):
+        for j, cs in enumerate(cssplits):
+            if cs != "N":
+                break
+            cssplits_replaced[i][j] = next(d_samples[j])
+    for i, cssplits in enumerate(cssplits_replaced):
+        cssplits = cssplits[::-1]
+        for j, cs in enumerate(cssplits):
+            if cs != "N":
+                break
+            cssplits_replaced[i][len(cssplits) - 1 - j] = next(d_samples[len(cssplits) - 1 - j])
+    cssplits_replaced = cssplits_replaced[::-1]
+    cssplits_replaced = [list(cs) for cs in zip(*cssplits_replaced)]
+    return cssplits_replaced
+
+
+# def compensate_n(count: list[dict]):
+#     count_replaced = deepcopy(count)
+#     for i, cnt in enumerate(count):
+#         if "N" not in cnt.keys():
+#             continue
+#         n_num = cnt["N"]
+#         elements = []
+#         probs = []
+#         coverage = sum(cnt.values()) - n_num
+#         for key, val in cnt.items():
+#             if key == "N":
+#                 continue
+#             elements.append(key)
+#             probs.append(val / coverage)
+#         np.random.seed(1)
+#         samples = np.random.choice(a=elements, size=n_num, p=probs)
+#         for key in samples:
+#             count_replaced[i][key] += 1
+#         del count_replaced[i]["N"]
+#     return count_replaced
 
 
 ###############################################################################
@@ -167,7 +219,7 @@ def annotate_scores(count_compensated, percent_discarded):
 
 ###############################################################################
 
-allele = "deletion"
+allele = "control"
 sv = True
 sequence = DICT_ALLELE[allele]
 knockin_loci = KNOCKIN_LOCI[allele]
@@ -175,54 +227,54 @@ knockin_loci = KNOCKIN_LOCI[allele]
 # Control
 midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
 cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-transpose_control = list(zip(*cssplits_control))
+transpose_control = [list(cs) for cs in zip(*cssplits_control)]
 count_control = call_count(transpose_control)
 
 # Sample
 cssplits_sample = [cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-transpose_sample = list(zip(*cssplits_sample))\
+transpose_sample = [list(cs) for cs in zip(*cssplits_sample)]
 count_sample = call_count(transpose_sample)
 
 # Find repetitive dels
 repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
-count_repdel_to_n_control = replace_repdel_to_n(count_control, repeat_dels)
-count_repdel_to_n_sample = replace_repdel_to_n(count_sample, repeat_dels)
+transpose_repdels_control = replace_repdels_to_n(transpose_control, repeat_dels)
+transpose_repdels_sample = replace_repdels_to_n(transpose_sample, repeat_dels)
 
 # Distribute N
-count_compensated_control = compensate_n(count_repdel_to_n_control)
-count_compensated_sample = compensate_n(count_repdel_to_n_sample)
+transpose_compensated_control = replace_both_ends_n(transpose_repdels_control)
+transpose_compensated_sample = replace_both_ends_n(transpose_repdels_sample)
 
 # Mask common mutations
+count_compensated_control = call_count(transpose_compensated_control)
+count_compensated_sample = call_count(transpose_compensated_sample)
 percent_control = call_percent(count_compensated_control)
 percent_sample = call_percent(count_compensated_sample)
 percent_subtraction = subtract_percentage(percent_control, percent_sample)
 percent_discarded = discard_common_error(percent_subtraction, 0.5)
 percent_discarded = discard_match(percent_discarded)
 
-scores_control = annotate_scores(count_compensated_control, percent_discarded)
-scores_sample = annotate_scores(count_compensated_sample, percent_discarded)
+scores_control = annotate_scores(transpose_compensated_control, percent_discarded)
+scores_sample = annotate_scores(transpose_compensated_sample, percent_discarded)
 
-scores_control[0]
-percent_control[1000]
-percent_sample[1000]
-percent_subtraction[1000]
-percent_discarded[1000]
+len(scores_control)
+len(scores_control[0])
 
-# qscores = [cs["QSCORE"].split(",") for cs in midsv_control]
+# Clustering
+scores_control_subset = scores_control[:1000]
+scores = scores_sample + scores_control_subset
+from time import time
 
-# cssplits_replaced = replace_n_to_match(cssplits_control, sequence)
-# cssplits_replaced = replace_lowquality_to_match(cssplits_replaced, qscores, sequence)
-# transpose_control = transpose(cssplits_replaced)
-# count_control = call_count(transpose_control)
+time_start = time()
+labels = MeanShift(n_jobs=THREADS).fit(scores).labels_
+time_exec = time() - time_start
+print(time_exec)
+Counter(labels)
 
-# knockin_loci = find_knockin_loci(count_control, sequence)
-# count_control = recount_knockin_loci(count_control, knockin_loci, sequence)
+Counter(labels[: len(scores_sample)])
 
-# # Sample
-# cssplits_sample = [cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-# transpose_sample = transpose(cssplits_sample)
-# qscores = [cs["QSCORE"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-# cssplits_replaced = replace_n_to_match(cssplits_sample, sequence)
-# cssplits_replaced = replace_lowquality_to_match(cssplits_replaced, qscores, sequence)
-# transpose_sample = transpose(cssplits_replaced)
-# count_sample = call_count(transpose_sample)
+d = []
+for s in scores_sample[:10]:
+    count = sum(1 for ss in s if ss > 30)
+    d.append(count)
+
+d
