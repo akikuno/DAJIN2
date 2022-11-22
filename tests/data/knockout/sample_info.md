@@ -26,6 +26,9 @@ To examine deletion size
 cat tests/data/knockout/design_stx2.fa |
     grep -A 1 deletion > tmp_del.fa
 
+# cat tests/data/knockout/design_stx2.fa |
+#     grep -A 1 control > tmp_cont.fa
+
 minimap2 -ax map-ont tmp_del.fa tests/data/knockout/test_barcode25.fq.gz |
 samtools sort > tmp_bc25.bam
 samtools index tmp_bc25.bam
