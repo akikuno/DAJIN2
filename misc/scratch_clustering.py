@@ -9,7 +9,6 @@ from copy import deepcopy
 import statsmodels.api as sm
 import bisect
 from collections import defaultdict
-from pprint import pprint
 from sklearn.cluster import MeanShift
 from scipy.spatial.distance import cosine
 
@@ -63,46 +62,36 @@ def find_repetitive_dels(count_control, count_sample, sequence) -> set[int]:
     return set(chain.from_iterable(high_cossims))
 
 
-# def replace_repdel_to_n(count: list[dict], repeat_dels: set):
-#     count_replaced = deepcopy(count)
-#     for i, cnt in enumerate(count):
-#         if i not in repeat_dels:
-#             continue
-#         val_del = 0
-#         for cs, val in cnt.items():
-#             if cs.startswith("-"):
-#                 val_del += val
-#                 del count_replaced[i][cs]
-#         if "N" in count_replaced[i].keys():
-#             count_replaced[i]["N"] += val_del
-#         else:
-#             count_replaced[i].update({"N": val_del})
-#         return count_replaced
-
-
-def replace_repdels_to_n(transposed_cssplits: list[list[str]], repeat_dels: set):
-    replased_cssplits = deepcopy(transposed_cssplits)
-    for i, cssplit in enumerate(replased_cssplits):
-        if i not in repeat_dels:
-            continue
-        for j, cs in enumerate(cssplit):
-            if cs.startswith("-"):
-                replased_cssplits[i][j] = "N"
-    return replased_cssplits
-
-
-def sampling(cnt: Counter):
+def sampling(cnt: Counter, size: int):
     elements = []
     probs = []
-    coverage = sum(cnt.values()) - cnt["N"]
+    coverage = sum(cnt.values())
     for key, val in cnt.items():
-        if key == "N":
-            continue
         elements.append(key)
         probs.append(val / coverage)
     np.random.seed(1)
-    samples = np.random.choice(a=elements, size=cnt["N"], p=probs)
+    samples = np.random.choice(a=elements, size=size, p=probs)
     return samples
+
+
+def replace_repdels(transposed_cssplits: list[list[str]], repeat_dels: set):
+    replased_cssplits = deepcopy(transposed_cssplits)
+    for i, cssplits in enumerate(replased_cssplits):
+        if i not in repeat_dels:
+            continue
+        cnt = Counter(cssplits)
+        size = sum(1 for cs in cssplits if cs.startswith("-"))
+        if size == 0:
+            continue
+        for key in list(cnt.keys()):
+            if key.startswith("-"):
+                del cnt[key]
+        samples = sampling(cnt, size)
+        iter_samples = iter(samples)
+        for j, cs in enumerate(cssplits):
+            if cs.startswith("-"):
+                replased_cssplits[i][j] = next(iter_samples)
+    return replased_cssplits
 
 
 def replace_both_ends_n(transposed_cssplits: list[list[str]]):
@@ -113,7 +102,9 @@ def replace_both_ends_n(transposed_cssplits: list[list[str]]):
             continue
         if len(cnt) == 1 and cnt["N"] > 0:  # All N
             continue
-        samples = sampling(cnt)
+        size = cnt["N"]
+        del cnt["N"]
+        samples = sampling(cnt, size)
         d_samples[i] = iter(samples)
     cssplits_replaced = [list(cs) for cs in zip(*transposed_cssplits)]
     for i, cssplits in enumerate(cssplits_replaced):
@@ -130,28 +121,6 @@ def replace_both_ends_n(transposed_cssplits: list[list[str]]):
     cssplits_replaced = cssplits_replaced[::-1]
     cssplits_replaced = [list(cs) for cs in zip(*cssplits_replaced)]
     return cssplits_replaced
-
-
-# def compensate_n(count: list[dict]):
-#     count_replaced = deepcopy(count)
-#     for i, cnt in enumerate(count):
-#         if "N" not in cnt.keys():
-#             continue
-#         n_num = cnt["N"]
-#         elements = []
-#         probs = []
-#         coverage = sum(cnt.values()) - n_num
-#         for key, val in cnt.items():
-#             if key == "N":
-#                 continue
-#             elements.append(key)
-#             probs.append(val / coverage)
-#         np.random.seed(1)
-#         samples = np.random.choice(a=elements, size=n_num, p=probs)
-#         for key in samples:
-#             count_replaced[i][key] += 1
-#         del count_replaced[i]["N"]
-#     return count_replaced
 
 
 ###############################################################################
@@ -237,8 +206,8 @@ count_sample = call_count(transpose_sample)
 
 # Find repetitive dels
 repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
-transpose_repdels_control = replace_repdels_to_n(transpose_control, repeat_dels)
-transpose_repdels_sample = replace_repdels_to_n(transpose_sample, repeat_dels)
+transpose_repdels_control = replace_repdels(transpose_control, repeat_dels)
+transpose_repdels_sample = replace_repdels(transpose_sample, repeat_dels)
 
 # Distribute N
 transpose_compensated_control = replace_both_ends_n(transpose_repdels_control)
