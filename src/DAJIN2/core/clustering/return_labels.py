@@ -1,42 +1,49 @@
 from __future__ import annotations
 
-from collections import defaultdict
+# from collections import defaultdict
 
 import numpy as np
-import scipy.stats as st
-from sklearn.cluster import OPTICS, Birch
+
+# import scipy.stats as st
+# from sklearn.cluster import OPTICS, Birch, MeanShift
+from sklearn.cluster import MeanShift
 
 np.seterr(divide="ignore")  # to suppress "RuntimeWarning: divide by zero encountered in true_divide"
 # from scipy.sparse import csr_matrix
 
 
-def predict_labels(xflatten, n_clusters=1):
-    brc = Birch(n_clusters=n_clusters)
-    brc.fit(xflatten)
-    return brc.predict(xflatten)
-
-
-def make_table(labels):
-    count = defaultdict(int)
-    for label in labels:
-        count[label] += 1
-    table = list(count.values())
-    table.sort(reverse=True)
-    return table
-
-
-def chistatistic(prev_table, current_table, threshold=0.05) -> float:
-    chisq_value, _, ddof, _ = st.chi2_contingency([prev_table, current_table])
-    delta = sum(prev_table + current_table) * threshold ** 2
-    pval = 1 - st.ncx2.cdf(chisq_value, ddof, delta)
-    return pval
-
-
-def return_labels(scores: list[list[float]]) -> list[int]:
-    scores_flatten = np.reshape(scores, (len(scores), -1))
-    labels = OPTICS(min_samples=0.001).fit_predict(scores_flatten)
-    labels[labels == -1] = np.max(labels) + 1
+def return_labels(scores: list[list[float]], THREADS: int) -> list[int]:
+    labels = MeanShift(n_jobs=THREADS).fit(scores).labels_
     return labels.tolist()
+
+
+# def predict_labels(xflatten, n_clusters=1):
+#     brc = Birch(n_clusters=n_clusters)
+#     brc.fit(xflatten)
+#     return brc.predict(xflatten)
+
+
+# def make_table(labels):
+#     count = defaultdict(int)
+#     for label in labels:
+#         count[label] += 1
+#     table = list(count.values())
+#     table.sort(reverse=True)
+#     return table
+
+
+# def chistatistic(prev_table, current_table, threshold=0.05) -> float:
+#     chisq_value, _, ddof, _ = st.chi2_contingency([prev_table, current_table])
+#     delta = sum(prev_table + current_table) * threshold ** 2
+#     pval = 1 - st.ncx2.cdf(chisq_value, ddof, delta)
+#     return pval
+
+
+# def return_labels(scores: list[list[float]]) -> list[int]:
+#     scores_flatten = np.reshape(scores, (len(scores), -1))
+#     labels = OPTICS(min_samples=0.001).fit_predict(scores_flatten)
+#     labels[labels == -1] = np.max(labels) + 1
+#     return labels.tolist()
 
 
 # def return_labels(scores) -> list[int]:
