@@ -41,3 +41,13 @@ def order_labels(labels: list[int]) -> list[int]:
         labels_ordered[i] = d[l]
     return labels_ordered
 
+
+###############################################################################
+# main
+###############################################################################
+
+
+def merge_clusters(labels_control: list[int], labels_sample: list[int]) -> list[int]:
+    labels_merged = merge_mixed_cluster(labels_control, labels_sample)
+    labels_merged = merge_minor_cluster(labels_merged)
+    return order_labels(labels_merged)

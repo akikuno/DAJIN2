@@ -1,22 +1,11 @@
 from __future__ import annotations
 from collections import Counter
-import midsv
 import numpy as np
 import re
-from pathlib import Path
 from itertools import chain
 from copy import deepcopy
-import statsmodels.api as sm
-import bisect
 from collections import defaultdict
-from sklearn.cluster import MeanShift
 from scipy.spatial.distance import cosine
-
-
-# *Stx2 deletion: 2012-2739 (727 bases)
-# tests/data/knockout/test_barcode25.fq.gz
-# tests/data/knockout/test_barcode30.fq.gz
-# tests/data/knockout/design_stx2.fa
 
 
 def transpose(cssplits):
@@ -128,114 +117,21 @@ def replace_both_ends_n(transposed_cssplits: list[list[str]]):
 
 
 ###############################################################################
-# Discard common errors
+# main
 ###############################################################################
 
 
-def call_percent(cssplit_counts: list[dict[str:int]]) -> list[dict[str:int]]:
-    cssplit_percent = []
-    coverage = sum(cssplit_counts[0].values())
-    for counts in cssplit_counts:
-        percent = {k: v / coverage * 100 for k, v in counts.items()}
-        cssplit_percent.append(percent)
-    return cssplit_percent
-
-
-def subtract_percentage(percent_control, percent_sample) -> list[dict]:
-    sample_subtracted = []
-    for cont, samp in zip(percent_control, percent_sample):
-        samp = Counter(samp)
-        samp.subtract(Counter(cont))
-        sample_subtracted.append(dict(samp))
-    return sample_subtracted
-
-
-def discard_common_error(sample_subtracted, threshold=0.5):
-    sample_discarded = []
-    for samp in sample_subtracted:
-        remained = {k: v for k, v in samp.items() if v > threshold}
-        sample_discarded.append(remained)
-    return sample_discarded
-
-
-def discard_match(sample_subtracted):
-    sample_discarded = []
-    for samp in sample_subtracted:
-        remained = {k: v for k, v in samp.items() if not k.startswith("=")}
-        sample_discarded.append(remained)
-    return sample_discarded
-
-
-###############################################################################
-# annotate scores
-###############################################################################
-
-
-def annotate_scores(count_compensated, percent_discarded):
-    scores = []
-    for samp, mutation in zip(count_compensated, percent_discarded):
-        score = []
-        if not mutation:
-            # # TODO 全インデックスにスコアを当てるとデバッグがし易い。本番では計算量低減のために以下の2行は削除する。
-            # score = [0 for _ in range(len(samp))]
-            # scores.append(score)
-            continue
-        for key, val in mutation.items():
-            for s in samp:
-                if s == key:
-                    score.append(val)
-                else:
-                    score.append(0)
-        scores.append(score)
-    return transpose(scores)
-
-
-###############################################################################
-from src.DAJIN2.core import clustering
-
-classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-
-allele = "control"
-sv = True
-sequence = DICT_ALLELE[allele]
-knockin_loci = KNOCKIN_LOCI[allele]
-
-# Control
-midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
-cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-
-# Sample
-cssplits_sample = [cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-
-cssplits_corrected_control, cssplits_corrected_sample = clustering.correct_cssplits(
-    cssplits_control, cssplits_sample, sequence
-)
-
-mutation_score = clustering.make_score(cssplits_corrected_control, cssplits_corrected_sample)
-
-scores_control = clustering.annotate_score(cssplits_corrected_control, mutation_score)
-scores_sample = clustering.annotate_score(cssplits_corrected_sample, mutation_score)
-
-scores = scores_sample + scores_control[:1000]
-
-labels = clustering.return_labels(scores, THREADS)
-
-labels_control = labels[len(scores_sample) :]
-labels_sample = labels[: len(scores_sample)]
-labels_merged = clustering.merge_clusters(labels_control, labels_sample)
-
-# Mask common mutations
-# transpose_control = transpose(cssplits_corrected_control)
-# transpose_sample = transpose(cssplits_corrected_sample)
-# count_compensated_control = call_count(transpose_control)
-# count_compensated_sample = call_count(transpose_sample)
-# percent_control = call_percent(count_compensated_control)
-# percent_sample = call_percent(count_compensated_sample)
-# percent_subtraction = subtract_percentage(percent_control, percent_sample)
-# percent_discarded = discard_common_error(percent_subtraction, 0.5)
-# mutation_score = discard_match(percent_discarded)
-
-# scores_control = annotate_scores(transpose_control, mutation_score)
-# scores_sample = annotate_scores(transpose_sample, mutation_score)
-
-# Clustering
+def correct_cssplits(cssplits_control: list[list[str]], cssplits_sample: list[list[str]], sequence: str):
+    transpose_control = transpose(cssplits_control)
+    transpose_sample = transpose(cssplits_sample)
+    # Make count matrix
+    count_control = call_count(transpose_control)
+    count_sample = call_count(transpose_sample)
+    # Find repetitive dels
+    repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
+    transpose_repdels_control = replace_repdels(transpose_control, repeat_dels)
+    transpose_repdels_sample = replace_repdels(transpose_sample, repeat_dels)
+    # Distribute N
+    transpose_compensated_control = replace_both_ends_n(transpose_repdels_control)
+    transpose_compensated_sample = replace_both_ends_n(transpose_repdels_sample)
+    return transpose(transpose_compensated_control), transpose(transpose_compensated_sample)

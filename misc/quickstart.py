@@ -136,6 +136,12 @@ if not flag:
 paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*"))
 classif_sample = classification.classify_alleles(paths_midsv)
 
+
+# zcat tests/data/knockout/test_barcode25.fq.gz | grep c92bb34552b6 -A 3 |
+# minimap2 -ax map-ont tmp_cont.fa - |
+# samtools sort > tmp_cont.bam
+# samtools index tmp_cont.bam
+
 # path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
 # classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
 
@@ -145,7 +151,6 @@ classif_sample = classification.classify_alleles(paths_midsv)
 
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
-
 
 # d = defaultdict(int)
 # for c in classif_sample:
