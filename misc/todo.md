@@ -31,12 +31,17 @@
   + controlとくらべて配列長が長いアレルのみを対象とする？
   + 本当にノックインだけで良いのか？Deletion、点変異、逆位、エクソン置換で検討が必要
 
-+ [ ] (test) `clustering`
++ [ ] test: `clustering.annotate_score`
++ [ ] test: `clustering.correct_cssplits`
++ [ ] test: `clustering.find_knockin_loci`
++ [ ] test: `clustering.make_score`
++ [ ] test: `clustering.return_labels`
+
 
 ### コンセンサス
 
-+ [ ] (test) call_percentage
-+ [ ] (test) join_listdicts
++ [ ] test: call_percentage
++ [ ] test: join_listdicts
 
 ### レポート
 
@@ -53,7 +58,7 @@
 
 + [ ] 🔴VCFファイル
 
-+ [ ] (test) `report_bam`
++ [ ] test: `report_bam`
 
 + [ ] 🟢名前をどうするか…
   + 2022-10-19時点では`barcode31_allele1_flox_intact_52.979%`のような感じになっている。
@@ -67,7 +72,7 @@
 
 + [ ] 🔴各サンプルごとにviewを分けたほうが見やすい
 + [ ] 🟢バックグラウンド実行
-+ [ ] (test) `view.execute()`
++ [ ] test: `view.execute()`
 
 ## DAJIN gui
 
@@ -129,7 +134,7 @@
 ## 前処理
 
 + [x] `DICT_ALLELE`は80文字改行のFASTAに対応しているのか確認する -> `mappy.fastx_read`で必ず1つにまとまることを確認した
-+ [x] (test) `format_inputs`
++ [x] test: `format_inputs`
 
 
 + [x] 入力ファイルのフォーマット (format_input.py)
@@ -139,7 +144,7 @@
   + [x] alleleで重複配列がある場合にはエラー終了
 
 + [x] `check_inputs`と`format_inputs`を分ける
-+ [x] (test) `check_inputs`
++ [x] test: `check_inputs`
 + [x] 大型欠失とInversionは断端のマイクロホモロジーがあるので、配列とQualityを元にして結合する -> `midsv v0.7.0`で実装
 
 ## マッピング
@@ -148,19 +153,18 @@
 ## クラスタリング
 
 + [x] (2022-11-24) コントロールの各塩基におけるエラー率を計算する（Repeat del領域は除く）
-
 + [x] (2022-11-24) 🔴Opticsでは非常に細かく分かれすぎる問題がある (AyabeTask1. barcode31など) -> スコアリングとMeanShiftでおそらく解決
   + 一度細かくクラスタリングしたあと、コントロールとの引き算を行う？
     + **DIFFLOCIのところだけのコンセンサス配列を作りる＋コントロール以外のアレルはNでマスクする**
   + 共通領域を取り出してマージする？
-
 + [x] コントロールとの引き算を検討する
   +  いまはコントロールと10%以上の差があるとDIFFLOCIとして出力されるが、それではin vivoゲノム編集のような編集効率の悪い場合に見落としが発生する。
   +  -> 2022-10-29 `threshold`を0.01, `OPTICS(min_samples=0.001)`として1%の点変異を検出できることを確認した
-
 + [x] Ayabe-Task1のbarcode31.fq(intact flow/wt)において、連続するCの部位に欠失（`C`CCCCC）がありmutatedとなっていた。
   + シークエンスエラーに起因するものと考えられるため、補正する。
 + [x] `screen_diffloci`：連続する塩基において、**deletionのみ**有意差を厳しくする。
+
++ [x] (2022-11-24) test: `clustering.merge_clusters`
 
 ## コンセンサス
 
@@ -188,10 +192,10 @@
 + [x] HTMLファイルのコンセンサス
 + [x] SAMファイルの配列からマイクロホモロジーを取り除く `report_bam.remove_microhomology`
 + [x] FASTAファイル
-+ [x] (test) `report_af.summary_allele`
-+ [x] (test) `report_af.plot`
++ [x] test: `report_af.summary_allele`
++ [x] test: `report_af.plot`
   + [x] モジュールのimport文を最初に持ってくる
-+ [x] (test) `report_af.all_allele`
++ [x] test: `report_af.all_allele`
 + [x] アリル割合のplot_alleles.pyの草稿作成（2022-03-11）-> `read_af`モジュールに移動
 + [x] 8以上のアレル数にも対応
 
