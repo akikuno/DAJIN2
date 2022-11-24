@@ -1,7 +1,6 @@
 from __future__ import annotations
 from copy import deepcopy
 from collections import defaultdict, Counter
-import numpy as np
 
 
 def merge_mixed_cluster(labels_control: list[int], labels_sample: list[int]) -> list[int]:
