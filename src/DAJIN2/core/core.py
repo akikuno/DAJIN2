@@ -45,6 +45,10 @@ def execute_preprocess(arguments: dict):
 
     # Format inputs -----------------------------
 
+    SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
+    CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
+    ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
+
     SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
     CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
     DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)

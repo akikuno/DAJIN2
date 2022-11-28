@@ -6,6 +6,7 @@ from urllib.request import urlopen
 
 import mappy
 import midsv
+import wslPath
 
 ########################################################################
 # Make directories
@@ -21,6 +22,19 @@ def make_directories(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str):
         Path(TEMPDIR, "report", reportdir, SAMPLE_NAME).mkdir(parents=True, exist_ok=True)
     Path(TEMPDIR, "report", "BAM", CONTROL_NAME).mkdir(parents=True, exist_ok=True)
     Path(TEMPDIR, "cache", ".igvjs").mkdir(parents=True, exist_ok=True)
+
+
+########################################################################
+# Convert Path
+########################################################################
+
+
+def convert_to_posix_path(path: str):
+    try:
+        path = wslPath.toPosix(path)
+    except ValueError:
+        pass
+    return path
 
 
 ########################################################################

@@ -4,6 +4,26 @@ from importlib import reload
 
 reload(format_inputs)
 
+
+########################################################################
+# Convert Path
+########################################################################
+
+
+def test_convert_to_posix_path_winpath():
+    path = r"C:\Windows\System32"
+    test = format_inputs.convert_to_posix_path(path)
+    answer = "/mnt/c/Windows/System32"
+    assert test == answer
+
+
+def test_convert_to_posix_path_posixpath():
+    path = r"/mnt/c/Windows/System32"
+    test = format_inputs.convert_to_posix_path(path)
+    answer = "/mnt/c/Windows/System32"
+    assert test == answer
+
+
 ########################################################################
 # Extract basename
 ########################################################################
