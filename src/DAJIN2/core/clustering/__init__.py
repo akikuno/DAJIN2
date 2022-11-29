@@ -4,3 +4,4 @@ from .find_knockin_loci import find_knockin_loci
 from .merge_clusters import merge_clusters
 from .make_score import make_score
 from .return_labels import return_labels
+from .reorder_labels import reorder_labels

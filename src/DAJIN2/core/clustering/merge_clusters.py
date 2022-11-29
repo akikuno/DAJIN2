@@ -1,6 +1,6 @@
 from __future__ import annotations
 from copy import deepcopy
-from collections import defaultdict, Counter
+from collections import Counter
 
 
 def merge_mixed_cluster(labels_control: list[int], labels_sample: list[int]) -> list[int]:
@@ -30,18 +30,6 @@ def merge_minor_cluster(labels_sample: list[int]) -> list[int]:
     return labels_merged
 
 
-def order_labels(labels: list[int]) -> list[int]:
-    labels_ordered = deepcopy(labels)
-    num = 0
-    d = defaultdict(int)
-    for i, l in enumerate(labels_ordered):
-        if not d[l]:
-            num += 1
-            d[l] = num
-        labels_ordered[i] = d[l]
-    return labels_ordered
-
-
 ###############################################################################
 # main
 ###############################################################################
@@ -50,4 +38,4 @@ def order_labels(labels: list[int]) -> list[int]:
 def merge_clusters(labels_control: list[int], labels_sample: list[int]) -> list[int]:
     labels_merged = merge_mixed_cluster(labels_control, labels_sample)
     labels_merged = merge_minor_cluster(labels_merged)
-    return order_labels(labels_merged)
+    return labels_merged

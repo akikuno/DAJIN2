@@ -1,6 +1,5 @@
 from src.DAJIN2.core.clustering.merge_clusters import merge_mixed_cluster
 from src.DAJIN2.core.clustering.merge_clusters import merge_minor_cluster
-from src.DAJIN2.core.clustering.merge_clusters import order_labels
 
 
 def test_merge_mixed_cluster():
@@ -24,9 +23,3 @@ def test_merge_minor_cluster():
     answer += [5] * 100
     assert test == answer
 
-
-def test_order_labels():
-    labels = [1, 4, 4, 4, 2, 2, 2]
-    test = order_labels(labels)
-    answer = [1, 2, 2, 2, 3, 3, 3]
-    assert test == answer

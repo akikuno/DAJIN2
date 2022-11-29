@@ -11,7 +11,7 @@ import bisect
 from collections import defaultdict
 from sklearn.cluster import MeanShift
 from scipy.spatial.distance import cosine
-
+from itertools import groupby
 
 # *Stx2 deletion: 2012-2739 (727 bases)
 # tests/data/knockout/test_barcode25.fq.gz
@@ -193,8 +193,6 @@ def annotate_scores(count_compensated, percent_discarded):
 ###############################################################################
 from src.DAJIN2.core import clustering
 
-classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-
 allele = "control"
 sv = True
 sequence = DICT_ALLELE[allele]
@@ -203,26 +201,52 @@ knockin_loci = KNOCKIN_LOCI[allele]
 # Control
 midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
 cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-
 # Sample
 cssplits_sample = [cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-
 cssplits_corrected_control, cssplits_corrected_sample = clustering.correct_cssplits(
     cssplits_control, cssplits_sample, sequence
 )
-
 mutation_score = clustering.make_score(cssplits_corrected_control, cssplits_corrected_sample)
-
 scores_control = clustering.annotate_score(cssplits_corrected_control, mutation_score)
 scores_sample = clustering.annotate_score(cssplits_corrected_sample, mutation_score)
-
 scores = scores_sample + scores_control[:1000]
-
 labels = clustering.return_labels(scores, THREADS)
-
 labels_control = labels[len(scores_sample) :]
 labels_sample = labels[: len(scores_sample)]
 labels_merged = clustering.merge_clusters(labels_control, labels_sample)
+
+
+def add_labels(classif_sample, CONTROL_NAME, DICT_ALLELE, KNOCKIN_LOCI, TEMPDIR, THREADS: int):
+    labels = []
+    max_label = 0
+    classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
+    for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
+        sequence = DICT_ALLELE[allele]
+        knockin_loci = KNOCKIN_LOCI[allele]
+        # Control
+        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
+        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+        # Sample
+        cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group if cs["ALLELE"] == allele and cs["SV"] == sv]
+        cssplits_corrected_control, cssplits_corrected_sample = clustering.correct_cssplits(
+            cssplits_control, cssplits_sample, sequence
+        )
+        mutation_score = clustering.make_score(cssplits_corrected_control, cssplits_corrected_sample)
+        scores_control = clustering.annotate_score(cssplits_corrected_control, mutation_score)
+        scores_sample = clustering.annotate_score(cssplits_corrected_sample, mutation_score)
+        scores = scores_sample + scores_control[:1000]
+        labels = clustering.return_labels(scores, THREADS)
+        labels_control = labels[len(scores_sample) :]
+        labels_sample = labels[: len(scores_sample)]
+        labels_merged = clustering.merge_clusters(labels_control, labels_sample)
+        labels_reorder = clustering.reorder_labels(labels_merged, start=max_label)
+        max_label = max(max_label, labels_reorder)
+        labels.append(labels_reorder)
+    clust_sample = deepcopy(classif_sample)
+    for clust, label in zip(clust_sample, labels):
+        clust["LABEL"] = label
+    return clust_sample
+
 
 # Mask common mutations
 # transpose_control = transpose(cssplits_corrected_control)
