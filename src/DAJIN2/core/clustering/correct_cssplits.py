@@ -67,8 +67,8 @@ def sampling(cnt: Counter, size: int):
     return samples
 
 
-def replace_repdels(transposed_cssplits: list[list[str]], repeat_dels: set):
-    replased_cssplits = deepcopy(transposed_cssplits)
+def replace_repdels(transpose_cssplits: list[list[str]], repeat_dels: set):
+    replased_cssplits = deepcopy(transpose_cssplits)
     for i, cssplits in enumerate(replased_cssplits):
         if i not in repeat_dels:
             continue
@@ -79,7 +79,10 @@ def replace_repdels(transposed_cssplits: list[list[str]], repeat_dels: set):
         for key in list(cnt.keys()):
             if key.startswith("-"):
                 del cnt[key]
-        samples = sampling(cnt, size)
+        if cnt:
+            samples = sampling(cnt, size)
+        else:
+            samples = ["N"] * size
         iter_samples = iter(samples)
         for j, cs in enumerate(cssplits):
             if cs.startswith("-"):
@@ -87,9 +90,9 @@ def replace_repdels(transposed_cssplits: list[list[str]], repeat_dels: set):
     return replased_cssplits
 
 
-def replace_both_ends_n(transposed_cssplits: list[list[str]]):
+def replace_both_ends_n(transpose_cssplits: list[list[str]]):
     d_samples = defaultdict(iter)
-    for i, cssplits in enumerate(transposed_cssplits):
+    for i, cssplits in enumerate(transpose_cssplits):
         cnt = Counter(cssplits)
         if cnt["N"] == 0:  # No N
             continue
@@ -99,7 +102,7 @@ def replace_both_ends_n(transposed_cssplits: list[list[str]]):
         del cnt["N"]
         samples = sampling(cnt, size)
         d_samples[i] = iter(samples)
-    cssplits_replaced = [list(cs) for cs in zip(*transposed_cssplits)]
+    cssplits_replaced = [list(cs) for cs in zip(*transpose_cssplits)]
     for i, cssplits in enumerate(cssplits_replaced):
         for j, cs in enumerate(cssplits):
             if cs != "N":
@@ -110,7 +113,10 @@ def replace_both_ends_n(transposed_cssplits: list[list[str]]):
         for j, cs in enumerate(cssplits):
             if cs != "N":
                 break
-            cssplits_replaced[i][len(cssplits) - 1 - j] = next(d_samples[len(cssplits) - 1 - j])
+            try:
+                cssplits_replaced[i][len(cssplits) - 1 - j] = next(d_samples[len(cssplits) - 1 - j])
+            except TypeError:
+                pass
     cssplits_replaced = cssplits_replaced[::-1]
     cssplits_replaced = [list(cs) for cs in zip(*cssplits_replaced)]
     return cssplits_replaced

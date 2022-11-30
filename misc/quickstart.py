@@ -168,35 +168,36 @@ for classif in classif_sample:
 # sv = False
 # cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
 
-KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+# KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
 
-DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-    TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
-)
+# DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
+#     TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
+# )
 
-clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
+# clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
+clust_sample = clustering.add_labels(classif_sample, CONTROL_NAME, DICT_ALLELE, TEMPDIR, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)
 
 # d_count = defaultdict(int)
-# for c in clust_control:
+# for c in clust_sample:
 #     d_count[c["LABEL"]] += 1
 
-# coverage = len(clust_control)
+# coverage = len(clust_sample)
 # d_percent = defaultdict(int)
-# for c in clust_control:
+# for c in clust_sample:
 #     d_percent[c["LABEL"]] += 1 / coverage * 100
 
 # d_count
 # d_percent
 
-# d = defaultdict(int)
-# for c in clust_control:
-#     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
-#     d[keys] += 1
+d = defaultdict(int)
+for c in clust_sample:
+    keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
+    d[keys] += 1
 
-# d
+d
 # from pprint import pprint
 
 # pprint(d)
