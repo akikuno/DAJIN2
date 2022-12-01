@@ -22,6 +22,7 @@
 
 ### クラスタリング
 
++ [ ] `tests/data/knockout/test_barcode25.fq.gz`の`allele, sv = "deletion", True`のグループのクラスタが2つに分かれていない
 + [ ] 補正されたCSSPLITの追加をする
 
 + [ ] 🟢`find_knockin_loci.py`
