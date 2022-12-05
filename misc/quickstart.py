@@ -187,7 +187,7 @@ for classif in classif_control:
 #     TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
 # )
 
-clust_sample = clustering.add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, THREADS)
+clust_sample = clustering.add_labels(classif_sample, classif_control, FASTA_ALLELES, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)
@@ -204,12 +204,12 @@ clust_sample = clustering.update_labels(clust_sample)
 # d_count
 # d_percent
 
-d = defaultdict(int)
-for c in clust_sample:
-    keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
-    d[keys] += 1
+# d = defaultdict(int)
+# for c in clust_sample:
+#     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
+#     d[keys] += 1
 
-d
+# d
 # from pprint import pprint
 
 # pprint(d)

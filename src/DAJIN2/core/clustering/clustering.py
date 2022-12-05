@@ -14,17 +14,18 @@ from src.DAJIN2.core.clustering.return_labels import return_labels
 # find_knockin_loci
 
 
-def add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES: dict, TEMPDIR, THREADS: int):
+def add_labels(classif_sample, classif_control, FASTA_ALLELES: dict, THREADS: int = 1) -> list[dict[str]]:
     labels_all = []
     max_label = 0
     # KNOCKIN_LOCI = find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
-    for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        sequence = FASTA_ALLELES[allele]
+    for (allele, _), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
+        # sequence = FASTA_ALLELES[allele]
         # knockin_loci = KNOCKIN_LOCI[allele]
         # Control
-        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
-        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+        cssplits_control = [
+            cs["CSSPLIT"].split(",") for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == False
+        ]
         # Sample
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
         mutation_score = make_score(cssplits_control, cssplits_sample)
