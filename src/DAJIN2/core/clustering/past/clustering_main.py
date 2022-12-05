@@ -12,12 +12,12 @@ from .return_labels import return_labels
 from .screen_diffloci import screen_different_loci
 
 
-def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, CONTROL_NAME):
+def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, FASTA_ALLELES, CONTROL_NAME):
     """
     Extract significantly different base loci between Sample and Control
     """
     dict_cssplit_control = defaultdict(list[dict])
-    for allele in DICT_ALLELE.keys():
+    for allele in FASTA_ALLELES.keys():
         path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")
         cssplit_control = [cs["CSSPLIT"] for cs in midsv.read_jsonl(path_control)]
         dict_cssplit_control[allele] = cssplit_control
@@ -27,7 +27,7 @@ def extract_different_loci(TEMPDIR, classif_sample, MASKS_CONTROL, DICT_ALLELE, 
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
         cssplit_sample = [record["CSSPLIT"] for record in group]
         cssplit_control = dict_cssplit_control[allele]
-        sequence = DICT_ALLELE[allele]
+        sequence = FASTA_ALLELES[allele]
         masks_control = MASKS_CONTROL[allele]
         diffloci, repetitive_delloci = screen_different_loci(
             cssplit_sample, cssplit_control, sequence, masks_control, alpha=0.01, threshold=0.01

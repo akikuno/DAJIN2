@@ -88,12 +88,12 @@ def call_sequence(cons_percentage_by_key: list[dict]) -> str:
     return "".join(consensus_sequence)
 
 
-def call_allele_name(keys: tuple, cons_seq: str, DICT_ALLELE: dict) -> str:
+def call_allele_name(keys: tuple, cons_seq: str, FASTA_ALLELES: dict) -> str:
     ALLELE, SV, LABEL, PERCENT = keys
     allele_name = f"allele{LABEL}_{ALLELE}"
     if SV:
         allele_name += "_sv"
-    elif cons_seq == DICT_ALLELE[ALLELE]:
+    elif cons_seq == FASTA_ALLELES[ALLELE]:
         allele_name += "_intact"
     else:
         allele_name += "_mutated"
@@ -102,7 +102,7 @@ def call_allele_name(keys: tuple, cons_seq: str, DICT_ALLELE: dict) -> str:
 
 
 def call(
-    clust_sample: list[dict], DIFFLOCI_ALLELES: defaultdict[int], REPETITIVE_DELLOCI: list(tuple), DICT_ALLELE: dict
+    clust_sample: list[dict], DIFFLOCI_ALLELES: defaultdict[int], REPETITIVE_DELLOCI: list(tuple), FASTA_ALLELES: dict
 ):
     result_sample = []
     cons_percentage = defaultdict(list)
@@ -120,7 +120,7 @@ def call(
         repetitive_del_loci = REPETITIVE_DELLOCI[f"{keys[0]}-{keys[1]}"]
         cons_per = call_percentage(cssplit_sample, diffloci, repetitive_del_loci)
         cons_seq = call_sequence(cons_per)
-        allele_name = call_allele_name(keys, cons_seq, DICT_ALLELE)
+        allele_name = call_allele_name(keys, cons_seq, FASTA_ALLELES)
         cons_percentage[allele_name] = cons_per
         cons_sequence[allele_name] = cons_seq
         for cs in cssplit_sample:

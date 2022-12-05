@@ -69,7 +69,7 @@ def find_repetitive_dels(control_count, sample_count, sequence):
     return set(chain.from_iterable(x))
 
 
-sequence = DICT_ALLELE["control"]
+sequence = FASTA_ALLELES["control"]
 control_cssplit = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl"))
 coverage = len(control_cssplit)
 control_cssplit = [cs["CSSPLIT"].split(",") for cs in control_cssplit]

@@ -25,7 +25,7 @@ def parse_args(arguments: dict):
 def format_inputs(SAMPLE, CONTROL, ALLELE, NAME, GENOME):
     SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
     CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
-    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
+    FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
     preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
     if GENOME:
@@ -34,7 +34,7 @@ def format_inputs(SAMPLE, CONTROL, ALLELE, NAME, GENOME):
     else:
         GENOME_COODINATES = None
         CHROME_SIZE = None
-    return SAMPLE_NAME, CONTROL_NAME, DICT_ALLELE, TEMPDIR, GENOME_COODINATES, CHROME_SIZE
+    return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE
 
 
 def execute_preprocess(arguments: dict):
@@ -45,24 +45,24 @@ def execute_preprocess(arguments: dict):
 
     # Format inputs -----------------------------
 
-    SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
-    CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
-    ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
+    SAMPLE: str = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
+    CONTROL: str = preprocess.format_inputs.convert_to_posix_path(CONTROL)
+    ALLELE: str = preprocess.format_inputs.convert_to_posix_path(ALLELE)
 
-    SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
-    CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
-    DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
+    SAMPLE_NAME: str = preprocess.format_inputs.extract_basename(SAMPLE)
+    CONTROL_NAME: str = preprocess.format_inputs.extract_basename(CONTROL)
+    FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
-    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
+    TEMPDIR: Path = Path("DAJINResults", ".tempdir", NAME)
     preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
     if GENOME:
-        GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
-        CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
+        GENOME_COODINATES: dict = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, FASTA_ALLELES["control"])
+        CHROME_SIZE: int = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
         preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
     # Export fasta files as single-FASTA format
-    for identifier, sequence in DICT_ALLELE.items():
+    for identifier, sequence in FASTA_ALLELES.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
@@ -76,7 +76,7 @@ def execute_control(arguments: dict):
 
     preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 
-    _, CONTROL_NAME, DICT_ALLELE, TEMPDIR, GENOME_COODINATES, CHROME_SIZE = format_inputs(
+    _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE = format_inputs(
         SAMPLE, CONTROL, ALLELE, NAME, GENOME
     )
 
@@ -98,7 +98,7 @@ def execute_control(arguments: dict):
     # MIDSV conversion
     ########################################################################
     for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
-        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, FASTA_ALLELES)
 
     ########################################################################
     # Classify alleles
@@ -143,7 +143,7 @@ def execute_sample(arguments: dict):
 
     preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 
-    SAMPLE_NAME, CONTROL_NAME, DICT_ALLELE, TEMPDIR, GENOME_COODINATES, CHROME_SIZE = format_inputs(
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE = format_inputs(
         SAMPLE, CONTROL, ALLELE, NAME, GENOME
     )
 
@@ -160,7 +160,7 @@ def execute_sample(arguments: dict):
     ########################################################################
 
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
-        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, DICT_ALLELE)
+        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, FASTA_ALLELES)
 
     ########################################################################
     # Classify alleles
@@ -180,10 +180,10 @@ def execute_sample(arguments: dict):
     # Clustering
     ########################################################################
 
-    KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+    KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
 
     DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-        TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
+        TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
     )
 
     # classif_control = midsv.read_jsonl(Path(TEMPDIR, "cache", f"{CONTROL_NAME}.jsonl"))
@@ -198,7 +198,7 @@ def execute_sample(arguments: dict):
     ########################################################################
 
     RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
-        clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, DICT_ALLELE
+        clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, FASTA_ALLELES
     )
 
     ########################################################################

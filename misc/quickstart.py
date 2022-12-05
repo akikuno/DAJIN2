@@ -84,12 +84,12 @@ if GENOME and not IS_CACHE_GENOME:
 ##########################################################
 SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
 CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
-DICT_ALLELE = preprocess.format_inputs.dictionize_allele(ALLELE)
+FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 
 preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
 if GENOME:
-    GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, DICT_ALLELE["control"])
+    GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, FASTA_ALLELES["control"])
     CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
     preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
@@ -102,7 +102,7 @@ if not flag:
     # Export fasta files as single-FASTA format
     ################################################################################
     # TODO: use yeild, not export
-    for identifier, sequence in DICT_ALLELE.items():
+    for identifier, sequence in FASTA_ALLELES.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
@@ -168,14 +168,14 @@ for classif in classif_sample:
 # sv = False
 # cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
 
-# KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+# KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
 
 # DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-#     TEMPDIR, classif_sample, KNOCKIN_LOCI, DICT_ALLELE, CONTROL_NAME
+#     TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
 # )
 
 # clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
-clust_sample = clustering.add_labels(classif_sample, CONTROL_NAME, DICT_ALLELE, TEMPDIR, THREADS)
+clust_sample = clustering.add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)
@@ -206,7 +206,7 @@ d
 ########################################################################
 
 RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
-    clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, DICT_ALLELE
+    clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, FASTA_ALLELES
 )
 # cons_percentage["allele1_flox_mutated_52.968%"][461]
 # keys = []

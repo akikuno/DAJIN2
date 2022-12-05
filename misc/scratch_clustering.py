@@ -198,7 +198,7 @@ reload(clustering)
 
 allele = "control"
 sv = True
-sequence = DICT_ALLELE[allele]
+sequence = FASTA_ALLELES[allele]
 knockin_loci = KNOCKIN_LOCI[allele]
 
 # Control
@@ -236,7 +236,7 @@ labels_merged = clustering.merge_clusters(labels_control, labels_sample)
 
 # cssplits_sample = [cs["CSSPLIT"].split(",") for cs in tmp_classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
 
-x, xlabels = add_labels(classif_sample, CONTROL_NAME, DICT_ALLELE, KNOCKIN_LOCI, TEMPDIR, THREADS)
+x, xlabels = add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES, KNOCKIN_LOCI, TEMPDIR, THREADS)
 
 Counter(xlabels)
 d = defaultdict(int)

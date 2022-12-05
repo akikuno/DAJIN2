@@ -14,13 +14,13 @@ from src.DAJIN2.core.clustering.return_labels import return_labels
 # find_knockin_loci
 
 
-def add_labels(classif_sample, CONTROL_NAME, DICT_ALLELE, TEMPDIR, THREADS: int):
+def add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES: dict, TEMPDIR, THREADS: int):
     labels_all = []
     max_label = 0
-    # KNOCKIN_LOCI = find_knockin_loci(TEMPDIR, DICT_ALLELE, CONTROL_NAME)
+    # KNOCKIN_LOCI = find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
     for (allele, sv), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        sequence = DICT_ALLELE[allele]
+        sequence = FASTA_ALLELES[allele]
         # knockin_loci = KNOCKIN_LOCI[allele]
         # Control
         midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
