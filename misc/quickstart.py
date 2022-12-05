@@ -120,17 +120,13 @@ if not flag:
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
-
     ###############################################################################
     # Correct CSSPLITS
     ###############################################################################
-
     preprocess.correct_cssplits.correct_cssplits(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################
-
     if not IS_CACHE_CONTROL:
         control_hash = Path(CONTROL).read_bytes()
         control_hash = hashlib.sha256(control_hash).hexdigest()
@@ -217,9 +213,7 @@ clust_sample = clustering.update_labels(clust_sample)
 # Consensus call
 ########################################################################
 
-RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(
-    clust_sample, DIFFLOCI_ALLELES, REPETITIVE_DELLOCI, FASTA_ALLELES
-)
+RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, FASTA_ALLELES)
 # cons_percentage["allele1_flox_mutated_52.968%"][461]
 # keys = []
 # keys.append("flox")

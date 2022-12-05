@@ -1,1 +1,1 @@
-from .consensus_main import call
+from .consensus import call

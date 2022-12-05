@@ -1,4 +1,4 @@
-from src.DAJIN2.core.consensus import consensus_main as consensus
+from DAJIN2.core.consensus import consensus
 from importlib import reload
 
 reload(consensus)
