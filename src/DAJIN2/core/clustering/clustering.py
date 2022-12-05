@@ -27,12 +27,9 @@ def add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES: dict, TEMPDIR, THREA
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         # Sample
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
-        cssplits_corrected_control, cssplits_corrected_sample = correct_cssplits(
-            cssplits_control, cssplits_sample, sequence
-        )
-        mutation_score = make_score(cssplits_corrected_control, cssplits_corrected_sample)
-        scores_control = annotate_score(cssplits_corrected_control, mutation_score)
-        scores_sample = annotate_score(cssplits_corrected_sample, mutation_score)
+        mutation_score = make_score(cssplits_control, cssplits_sample)
+        scores_control = annotate_score(cssplits_control, mutation_score)
+        scores_sample = annotate_score(cssplits_sample, mutation_score)
         scores = scores_sample + scores_control[:1000]
         labels = return_labels(scores, THREADS)
         labels_control = labels[len(scores_sample) :]

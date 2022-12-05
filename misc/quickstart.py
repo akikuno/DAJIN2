@@ -120,9 +120,17 @@ if not flag:
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
+
+    ###############################################################################
+    # Correct CSSPLITS
+    ###############################################################################
+
+    preprocess.correct_cssplits.correct_cssplits(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################
+
     if not IS_CACHE_CONTROL:
         control_hash = Path(CONTROL).read_bytes()
         control_hash = hashlib.sha256(control_hash).hexdigest()
@@ -136,6 +144,8 @@ if not flag:
 paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*"))
 classif_sample = classification.classify_alleles(paths_midsv)
 
+paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
+classif_control = classification.classify_alleles(paths_midsv)
 
 # zcat tests/data/knockout/test_barcode25.fq.gz | grep c92bb34552b6 -A 3 |
 # minimap2 -ax map-ont tmp_cont.fa - |
@@ -152,13 +162,16 @@ classif_sample = classification.classify_alleles(paths_midsv)
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
+for classif in classif_control:
+    classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+
 # d = defaultdict(int)
 # for c in classif_sample:
 #     keys = f'{c["ALLELE"]}-{c["SV"]}'
 #     d[keys] += 1
 
 # d
-# defaultdict(<class 'int'>, {'control-False': 376, 'flox-False': 534, 'control-True': 48, 'flox-True': 23})
+
 
 ########################################################################
 # Clustering
@@ -174,7 +187,6 @@ for classif in classif_sample:
 #     TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
 # )
 
-# clust_sample = clustering.add_labels(classif_sample, DIFFLOCI_ALLELES)
 clust_sample = clustering.add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)

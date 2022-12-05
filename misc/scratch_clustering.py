@@ -196,28 +196,37 @@ from importlib import reload
 
 reload(clustering)
 
-allele = "control"
+allele = "deletion"
 sv = True
 sequence = FASTA_ALLELES[allele]
-knockin_loci = KNOCKIN_LOCI[allele]
+# knockin_loci = KNOCKIN_LOCI[allele]
 
 # Control
 midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
 cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
 # Sample
 cssplits_sample = [cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
-cssplits_corrected_control, cssplits_corrected_sample = clustering.correct_cssplits(
+cssplits_corrected_control, cssplits_corrected_sample = clustering.correct_cssplits.correct_cssplits(
     cssplits_control, cssplits_sample, sequence
 )
-mutation_score = clustering.make_score(cssplits_corrected_control, cssplits_corrected_sample)
-scores_control = clustering.annotate_score(cssplits_corrected_control, mutation_score)
-scores_sample = clustering.annotate_score(cssplits_corrected_sample, mutation_score)
+mutation_score = clustering.make_score.make_score(cssplits_corrected_control, cssplits_corrected_sample)
+scores_control = clustering.annotate_score.annotate_score(cssplits_corrected_control, mutation_score)
+scores_sample = clustering.annotate_score.annotate_score(cssplits_corrected_sample, mutation_score)
 scores = scores_sample + scores_control[:1000]
-labels = clustering.return_labels(scores, THREADS)
+labels = clustering.return_labels.return_labels(scores, THREADS)
 labels_control = labels[len(scores_sample) :]
 labels_sample = labels[: len(scores_sample)]
-labels_merged = clustering.merge_clusters(labels_control, labels_sample)
+labels_merged = clustering.merge_clusters.merge_clusters(labels_control, labels_sample)
+Counter(labels_merged)
 
+
+d = defaultdict(int)
+for cs in cssplits_corrected_sample:
+    x = sum(1 for c in cs if c == "N")
+    d[x] += 1
+
+sorted(d.items(), key=lambda x: x[0])
+sorted(d.items(), key=lambda x: -x[1])
 
 # labels = []
 # max_label = 0
@@ -236,25 +245,25 @@ labels_merged = clustering.merge_clusters(labels_control, labels_sample)
 
 # cssplits_sample = [cs["CSSPLIT"].split(",") for cs in tmp_classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv]
 
-x, xlabels = add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES, KNOCKIN_LOCI, TEMPDIR, THREADS)
+# x, xlabels = add_labels(classif_sample, CONTROL_NAME, FASTA_ALLELES, KNOCKIN_LOCI, TEMPDIR, THREADS)
 
-Counter(xlabels)
-d = defaultdict(int)
-Counter([xx["LABEL"] for xx in x])
-for xx in x:
-    d[xx["LABEL"]] += 1
+# Counter(xlabels)
+# d = defaultdict(int)
+# Counter([xx["LABEL"] for xx in x])
+# for xx in x:
+#     d[xx["LABEL"]] += 1
 
-d
+# d
 
-original = [["A", "C", "N", "N"]]
-replaced = [["A", "C", "N", "N"]]
+# original = [["A", "C", "N", "N"]]
+# replaced = [["A", "C", "N", "N"]]
 
-for i, cssplits in enumerate(replaced):
-    cssplits_reverse = cssplits[::-1]
-    for j, cs in enumerate(cssplits_reverse):
-        if cs != "N":
-            break
-        print(len(cssplits_reverse) - 1 - j)
+# for i, cssplits in enumerate(replaced):
+#     cssplits_reverse = cssplits[::-1]
+#     for j, cs in enumerate(cssplits_reverse):
+#         if cs != "N":
+#             break
+#         print(len(cssplits_reverse) - 1 - j)
 
 # Mask common mutations
 # transpose_control = transpose(cssplits_corrected_control)

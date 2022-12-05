@@ -17,6 +17,8 @@
 
 ###  前処理
 
++ [ ] (test) `correct_cssplits`
+
 ### マッピング
 
 ### クラスタリング
@@ -131,6 +133,8 @@
   + メイン関数内のcontrolとsampleの処理を分ける
 
 ## 前処理
+
++ [x] 2022-12-05 `CORRECT_CSSPLITS`を前処理に加える
 
 + [x] 2022-11-28 🟡`wslPath`をcore.mainのなかに入れる
 
