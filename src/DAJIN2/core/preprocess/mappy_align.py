@@ -82,8 +82,10 @@ def to_sam(
         yield record
 
 
-def output_sam(TEMPDIR, path_fasta, name_fasta, path_fastq, name_fastq):
-    sam = to_sam(str(path_fasta), path_fastq)
+def output_sam(
+    TEMPDIR: Path, path_fasta: str | Path, name_fasta: str, path_fastq: str | Path, name_fastq: str, THREADS: int = 1
+):
+    sam = to_sam(str(path_fasta), str(path_fastq), THREADS=THREADS)
     output_sam = Path(TEMPDIR, "sam", f"{name_fastq}_{name_fasta}.sam")
     output_sam.write_text("\n".join(sam))
 
