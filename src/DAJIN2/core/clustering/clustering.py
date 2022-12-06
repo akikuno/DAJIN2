@@ -1,10 +1,22 @@
 from __future__ import annotations
-from pathlib import Path
 from itertools import groupby
-import midsv
 from copy import deepcopy
 from collections import defaultdict
-from src.DAJIN2.core.clustering.correct_cssplits import correct_cssplits
+
+# from importlib import reload
+# from src.DAJIN2.core.clustering import replace_both_ends_n
+# from src.DAJIN2.core.clustering import make_score
+# from src.DAJIN2.core.clustering import annotate_score
+# from src.DAJIN2.core.clustering import merge_clusters
+# from src.DAJIN2.core.clustering import reorder_labels
+# from src.DAJIN2.core.clustering import return_labels
+# reload(replace_both_ends_n)
+# reload(make_score)
+# reload(annotate_score)
+# reload(merge_clusters)
+# reload(reorder_labels)
+# reload(return_labels)
+from src.DAJIN2.core.clustering.replace_both_ends_n import replace_both_ends_n
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
 from src.DAJIN2.core.clustering.merge_clusters import merge_clusters
@@ -24,10 +36,15 @@ def add_labels(classif_sample, classif_control, FASTA_ALLELES: dict, THREADS: in
         # knockin_loci = KNOCKIN_LOCI[allele]
         # Control
         cssplits_control = [
-            cs["CSSPLIT"].split(",") for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == False
+            cs["CSSPLIT"].split(",") for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] is False
         ]
         # Sample
+        # cssplits_sample = [
+        #     cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv
+        # ]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
+        cssplits_control = replace_both_ends_n(cssplits_control)
+        cssplits_sample = replace_both_ends_n(cssplits_sample)
         mutation_score = make_score(cssplits_control, cssplits_sample)
         scores_control = annotate_score(cssplits_control, mutation_score)
         scores_sample = annotate_score(cssplits_sample, mutation_score)
@@ -45,7 +62,7 @@ def add_labels(classif_sample, classif_control, FASTA_ALLELES: dict, THREADS: in
     return clust_sample
 
 
-def add_readnum(clust_sample):
+def add_readnum(clust_sample: list[dict]) -> list[dict]:
     clust_result = deepcopy(clust_sample)
     readnum = defaultdict(int)
     for cs in clust_result:
@@ -55,7 +72,7 @@ def add_readnum(clust_sample):
     return clust_result
 
 
-def add_percent(clust_sample):
+def add_percent(clust_sample: list[dict]) -> list[dict]:
     clust_result = deepcopy(clust_sample)
     n_sample = len(clust_result)
     percent = defaultdict(int)
@@ -67,7 +84,7 @@ def add_percent(clust_sample):
     return clust_result
 
 
-def update_labels(clust_sample):
+def update_labels(clust_sample: list[dict]) -> list[dict]:
     """
     Allocate new labels according to the ranking by PERCENT
     """

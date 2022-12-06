@@ -6,7 +6,9 @@ from pathlib import Path
 import json
 import midsv
 
-from . import classification, clustering, consensus, preprocess, report
+from src.DAJIN2.core import classification, clustering, consensus, preprocess, report
+
+# from src.DAJIN2.core.clustering import clustering
 
 
 def parse_args(arguments: dict):

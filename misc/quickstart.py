@@ -13,6 +13,8 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
+from src.DAJIN2.core.clustering import clustering
+
 # * Subset of Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "misc/data/tyr_albino_10%.fq.gz",
@@ -176,6 +178,18 @@ for classif in classif_control:
 # allele = "control"
 # sv = False
 # cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
+
+# for classif in classif_sample:
+#     if "904d78ec7a0e" in classif["QNAME"]:
+#         print(classif["CSSPLIT"])
+
+# # 476 del
+
+# for classif in classif_sample:
+#     if "edc66c43a83f" in classif["QNAME"]:
+#         print(classif["CSSPLIT"])
+
+# 615 del
 
 # KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
 

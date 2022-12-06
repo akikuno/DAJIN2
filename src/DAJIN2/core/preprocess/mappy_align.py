@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
-from typing import Union
 
 import cstag
 import mappy
@@ -14,24 +13,26 @@ def revcomp(sequence: str) -> str:
     return "".join(complement[nt] for nt in sequence[::-1])
 
 
-def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True) -> Generator[str]:
+def to_sam(path_reference_fasta: str | Path, path_query_fastx: str | Path, cslong: bool = True) -> Generator[str]:
     """Align seqences using mappy and Convert PAF to SAM
 
     Args:
         path_reference_fasta (str): Path of reference fasta
-        path_query_fastq (str): Path of query fasta/fastq
+        path_query_fastx (str): Path of query fasta/fastq
         cslong (bool, optional): long formatted CS tag if True. Defaults to True
 
     Returns:
         list: List of SAM
     """
+    path_reference_fasta = str(path_reference_fasta)
+    path_query_fastx = str(path_query_fastx)
     # SQ header
     SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(path_reference_fasta)]
     # Mappy
     ref = mappy.Aligner(path_reference_fasta)
     if not ref:
         raise AttributeError(f"Failed to load {path_reference_fasta}")
-    for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastq):
+    for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastx):
         for hit in ref.map(MAPPY_SEQ, cs=True):
             query_seq = deepcopy(MAPPY_SEQ)
             query_qual = deepcopy(MAPPY_QUAL)
@@ -51,7 +52,8 @@ def to_sam(path_reference_fasta: str, path_query_fastq: str, cslong: bool = True
             # Revcomp
             if hit.strand == -1:
                 query_seq = revcomp(query_seq)
-                query_qual = query_qual[::-1]
+                if query_qual:
+                    query_qual = query_qual[::-1]
             query_seq = query_seq.upper()
             # cslong
             cs = "cs:Z:" + hit.cs
@@ -89,7 +91,7 @@ def output_sam(TEMPDIR, path_fasta, name_fasta, path_fastq, name_fastq):
 ########################################################################
 
 
-def make_faidx(path_fasta: Union[Path, str]) -> str:
+def make_faidx(path_fasta: Path | str) -> str:
     fasta = Path(path_fasta).read_text().split()
     name = fasta[0].strip(">")
     length = len("".join(fasta[1:]))

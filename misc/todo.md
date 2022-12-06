@@ -21,6 +21,9 @@
 
 ### マッピング
 
++ [ ] 巨大な挿入を検出できていない
+  + mappyではSoftclipとして検出され、これは現状のmidsvでは除去される
+
 ### クラスタリング
 
 + [ ] `tests/data/knockout/test_barcode25.fq.gz`の`allele, sv = "deletion", True`のグループのクラスタが2つに分かれていない
