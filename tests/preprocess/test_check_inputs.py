@@ -83,22 +83,26 @@ def test_fasta_without_error():
 ###############################################################################
 
 
+@pytest.mark.skip("This test takes long time due to URL access")
 def test_available_url_pass():
     url, flag_fail = check_inputs.available_url(["https://example.com"])
     assert ("https://example.com", False) == (url, flag_fail)
 
 
+@pytest.mark.skip("This test takes long time due to URL access")
 def test_available_url_fail():
     url, flag_fail = check_inputs.available_url(["https://example_xxx.com"])
     assert ("https://example_xxx.com", True) == (url, flag_fail)
 
 
+@pytest.mark.skip("This test takes long time due to URL access")
 def test_available_genome_pass():
     genome = "mm10"
     ucsc_url = "https://genome.ucsc.edu/"
     assert check_inputs.available_genome(genome, ucsc_url) is None
 
 
+@pytest.mark.skip("This test takes long time due to URL access")
 def test_available_genome_fail():
     genome = "xxxx"
     ucsc_url = "https://genome.ucsc.edu/"

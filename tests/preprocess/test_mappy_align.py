@@ -23,6 +23,15 @@ def test_to_sam_stx2():
     assert value == answer
 
 
+def test_to_sam_threads():
+    reffa = Path("tests", "data", "mappy", "tyr_control.fa")
+    quefq = Path("tests", "data", "mappy", "tyr_query.fq")
+    value = mappy_align.to_sam(str(reffa), str(quefq), THREADS=5)
+    value = list(value)
+    answer = Path("tests", "data", "mappy", "tyr_query.sam").read_text().strip().split("\n")
+    assert value == answer
+
+
 ########################################################################
 # Create faidx
 ########################################################################

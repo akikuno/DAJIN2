@@ -13,7 +13,9 @@ def revcomp(sequence: str) -> str:
     return "".join(complement[nt] for nt in sequence[::-1])
 
 
-def to_sam(path_reference_fasta: str | Path, path_query_fastx: str | Path, cslong: bool = True) -> Generator[str]:
+def to_sam(
+    path_reference_fasta: str | Path, path_query_fastx: str | Path, cslong: bool = True, THREADS: int = 1
+) -> Generator[str]:
     """Align seqences using mappy and Convert PAF to SAM
 
     Args:
@@ -29,7 +31,7 @@ def to_sam(path_reference_fasta: str | Path, path_query_fastx: str | Path, cslon
     # SQ header
     SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(path_reference_fasta)]
     # Mappy
-    ref = mappy.Aligner(path_reference_fasta)
+    ref = mappy.Aligner(path_reference_fasta, n_threads=THREADS)
     if not ref:
         raise AttributeError(f"Failed to load {path_reference_fasta}")
     for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastx):
