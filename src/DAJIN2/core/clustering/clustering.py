@@ -2,6 +2,8 @@ from __future__ import annotations
 from itertools import groupby
 from copy import deepcopy
 from collections import defaultdict
+from pathlib import Path
+import midsv
 
 # from importlib import reload
 # from src.DAJIN2.core.clustering import replace_both_ends_n
@@ -26,7 +28,7 @@ from src.DAJIN2.core.clustering.return_labels import return_labels
 # find_knockin_loci
 
 
-def add_labels(classif_sample, classif_control, FASTA_ALLELES: dict, THREADS: int = 1) -> list[dict[str]]:
+def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREADS: int = 1) -> list[dict[str]]:
     labels_all = []
     max_label = 0
     # KNOCKIN_LOCI = find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
@@ -35,9 +37,8 @@ def add_labels(classif_sample, classif_control, FASTA_ALLELES: dict, THREADS: in
         # sequence = FASTA_ALLELES[allele]
         # knockin_loci = KNOCKIN_LOCI[allele]
         # Control
-        cssplits_control = [
-            cs["CSSPLIT"].split(",") for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] is False
-        ]
+        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
+        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         # Sample
         # cssplits_sample = [
         #     cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv

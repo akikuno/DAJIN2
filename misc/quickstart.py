@@ -142,8 +142,8 @@ if not flag:
 paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*"))
 classif_sample = classification.classify_alleles(paths_midsv)
 
-paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
-classif_control = classification.classify_alleles(paths_midsv)
+# paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
+# classif_control = classification.classify_alleles(paths_midsv)
 
 # zcat tests/data/knockout/test_barcode25.fq.gz | grep c92bb34552b6 -A 3 |
 # minimap2 -ax map-ont tmp_cont.fa - |
@@ -160,8 +160,8 @@ classif_control = classification.classify_alleles(paths_midsv)
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-for classif in classif_control:
-    classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+# for classif in classif_control:
+#     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 # d = defaultdict(int)
 # for c in classif_sample:
@@ -197,7 +197,7 @@ for classif in classif_control:
 #     TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
 # )
 
-clust_sample = clustering.add_labels(classif_sample, classif_control, FASTA_ALLELES, THREADS)
+clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)

@@ -57,7 +57,6 @@ def replace_both_ends_n_by_sampling(transpose_cssplits: list[list[str]]):
             except TypeError:
                 pass
     cssplits_replaced = cssplits_replaced[::-1]
-    cssplits_replaced = [list(cs) for cs in zip(*cssplits_replaced)]
     return cssplits_replaced
 
 
@@ -66,18 +65,6 @@ def replace_both_ends_n_by_sampling(transpose_cssplits: list[list[str]]):
 ###############################################################################
 
 
-def replace_both_ends_n(cssplits_control: list[list[str]]):
-    transpose_control = transpose(cssplits_control)
-    # Make count matrix
-    count_control = call_count(transpose_control)
-    # Distribute N
-    transpose_compensated_control = replace_both_ends_n_by_sampling(count_control)
-    return transpose(transpose_compensated_control)
-
-
-import midsv
-
-sam = midsv.read_sam("tmp_ins.sam")
-x = midsv.transform(sam, midsv=False, qscore=False)
-
-x[0]["CSSPLIT"].count(",")
+def replace_both_ends_n(cssplits: list[list[str]]):
+    transpose_cssplits = transpose(cssplits)
+    return replace_both_ends_n_by_sampling(transpose_cssplits)
