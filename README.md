@@ -19,6 +19,7 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 - [ ] 1-cut knockout
 - [ ] 2-cut knockout
 - [ ] flox knockin
+- [ ] large insertion knockin
 - [ ] humanized exon knockin
 - [ ] multi-allele phasing
 
