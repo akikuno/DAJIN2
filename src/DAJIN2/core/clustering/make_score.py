@@ -3,10 +3,6 @@ from collections import defaultdict
 from collections import Counter
 
 
-def transpose(cssplits):
-    return [list(cs) for cs in zip(*cssplits)]
-
-
 def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
     """Count cssplits within 3-mer range.
     Args:
@@ -24,15 +20,6 @@ def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
     count_score += [dict(count_kmer[i]) for i in range(1, len(cssplit) - 1)]
     count_score += [{"N": coverage}]
     return count_score
-
-
-# def call_count(transpose_cssplits: list[list[str]]) -> list[dict[str:int]]:
-#     cssplit_counts = []
-#     for cssplit in transpose_cssplits:
-#         count = Counter(cssplit)
-#         count = dict(count)
-#         cssplit_counts.append(count)
-#     return cssplit_counts
 
 
 def call_percent(counts: list[dict[str:int]]) -> list[dict[str:int]]:
@@ -75,8 +62,6 @@ def discard_match(sample_subtracted):
 
 
 def make_score(cssplits_control, cssplits_sample):
-    # transpose_cssplits_control = transpose(cssplits_control)
-    # transpose_cssplits_sample = transpose(cssplits_sample)
     counts_control = call_count(cssplits_control)
     counts_sample = call_count(cssplits_sample)
     percent_control = call_percent(counts_control)
