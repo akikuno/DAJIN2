@@ -14,7 +14,11 @@ def revcomp(sequence: str) -> str:
 
 
 def to_sam(
-    path_reference_fasta: str | Path, path_query_fastx: str | Path, cslong: bool = True, THREADS: int = 1
+    path_reference_fasta: str | Path,
+    path_query_fastx: str | Path,
+    preset: str = "map-ont",
+    threads: int = 1,
+    cslong: bool = True,
 ) -> Generator[str]:
     """Align seqences using mappy and Convert PAF to SAM
 
@@ -31,7 +35,7 @@ def to_sam(
     # SQ header
     SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(path_reference_fasta)]
     # Mappy
-    ref = mappy.Aligner(path_reference_fasta, n_threads=THREADS)
+    ref = mappy.Aligner(path_reference_fasta, preset=preset, n_threads=threads)
     if not ref:
         raise AttributeError(f"Failed to load {path_reference_fasta}")
     for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastx):
@@ -83,10 +87,16 @@ def to_sam(
 
 
 def output_sam(
-    TEMPDIR: Path, path_fasta: str | Path, name_fasta: str, path_fastq: str | Path, name_fastq: str, THREADS: int = 1
+    tmpdir: Path,
+    path_fasta: str | Path,
+    name_fasta: str,
+    path_fastq: str | Path,
+    name_fastq: str,
+    preset: str = "map-ont",
+    threads: int = 1,
 ):
-    sam = to_sam(str(path_fasta), str(path_fastq), THREADS=THREADS)
-    output_sam = Path(TEMPDIR, "sam", f"{name_fastq}_{name_fasta}.sam")
+    sam = to_sam(path_fasta, path_fastq, preset=preset, threads=threads)
+    output_sam = Path(tmpdir, "sam", f"{name_fastq}_{preset}_{name_fasta}.sam")
     output_sam.write_text("\n".join(sam))
 
 

@@ -129,44 +129,45 @@ def replace_repdels(transpose_cssplits: list[list[str]], repeat_dels: set):
 ###############################################################################
 
 
-def correct_cssplits(TEMPDIR: Path, FASTA_ALLELS: dict[str, str], CONTROL_NAME: str, SAMPLE_NAME: str) -> None:
+def correct_cssplits(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAMPLE_NAME: str) -> None:
     """
     - Mask the following mutations as sequence errors
-        - 1. Repetitive deletions
-        - 2. Unknown bases at the both end of sequence
-        - 3. Common mutations between control and sample (<- TODO!)
+        - Repetitive deletions
+        # - Unknown bases at the both end of sequence
+        - Common mutations between control and sample (<- TODO!)
     - Random sampling
     """
-    for allele, sequence in FASTA_ALLELS.items():
-        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
-        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        # Sample
-        midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl")))
-        cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
-        transpose_control = transpose(cssplits_control)
-        transpose_sample = transpose(cssplits_sample)
-        # Make count matrix
-        count_control = call_count(transpose_control)
-        count_sample = call_count(transpose_sample)
-        # Find repetitive dels
-        repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
-        transpose_mask_control = replace_repdels(transpose_control, repeat_dels)
-        transpose_mask_sample = replace_repdels(transpose_sample, repeat_dels)
-        # transpose_mask_control = replace_both_ends_n(transpose_mask_control)
-        # transpose_mask_sample = replace_both_ends_n(transpose_mask_sample)
-        # Replace CSSPLIT
-        transpose_mask_control = [",".join(t) for t in transpose(transpose_mask_control)]
-        transpose_mask_sample = [",".join(t) for t in transpose(transpose_mask_sample)]
-        for i, cssplits in enumerate(transpose_mask_control):
-            midsv_control[i]["CSSPLIT"] = cssplits
-        for i, cssplits in enumerate(transpose_mask_sample):
-            midsv_sample[i]["CSSPLIT"] = cssplits
-        # Save as a json
-        if "QSCORE" in midsv_control[0]:
-            for cont in midsv_control:
-                del cont["QSCORE"]
-        if "QSCORE" in midsv_sample[0]:
-            for samp in midsv_sample:
-                del samp["QSCORE"]
-        midsv.write_jsonl(midsv_control, Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl"))
-        midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))
+    for allele, sequence in FASTA_ALLELES.items():
+        for preset in ["map-ont", "splice"]:
+            midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{preset}_{allele}.jsonl")))
+            cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+            # Sample
+            midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{preset}_{allele}.jsonl")))
+            cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
+            transpose_control = transpose(cssplits_control)
+            transpose_sample = transpose(cssplits_sample)
+            # Make count matrix
+            count_control = call_count(transpose_control)
+            count_sample = call_count(transpose_sample)
+            # Find repetitive dels
+            repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
+            transpose_mask_control = replace_repdels(transpose_control, repeat_dels)
+            transpose_mask_sample = replace_repdels(transpose_sample, repeat_dels)
+            # transpose_mask_control = replace_both_ends_n(transpose_mask_control)
+            # transpose_mask_sample = replace_both_ends_n(transpose_mask_sample)
+            # Replace CSSPLIT
+            transpose_mask_control = [",".join(t) for t in transpose(transpose_mask_control)]
+            transpose_mask_sample = [",".join(t) for t in transpose(transpose_mask_sample)]
+            for i, cssplits in enumerate(transpose_mask_control):
+                midsv_control[i]["CSSPLIT"] = cssplits
+            for i, cssplits in enumerate(transpose_mask_sample):
+                midsv_sample[i]["CSSPLIT"] = cssplits
+            # Save as a json
+            if "QSCORE" in midsv_control[0]:
+                for cont in midsv_control:
+                    del cont["QSCORE"]
+            if "QSCORE" in midsv_sample[0]:
+                for samp in midsv_sample:
+                    del samp["QSCORE"]
+            midsv.write_jsonl(midsv_control, Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{preset}_{allele}.jsonl"))
+            midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{preset}_{allele}.jsonl"))

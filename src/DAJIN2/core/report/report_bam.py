@@ -249,35 +249,31 @@ def subset_reads(name, sam_content, qnames_by_name):
 
 def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
-
-    path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_control.sam")
-    sam = midsv.read_sam(path_sam)
-
+    intput_path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
+    sam = midsv.read_sam(intput_path_sam)
+    # Update sam
     sam_update = deepcopy(sam)
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
-
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
-
-    path_sam_update = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
-    write_sam(sam_update, path_sam_update)
-
-    path_bam = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
-    pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam_update))
-    pysam.index("-@", f"{THREADS}", str(path_bam))
-
+    # Output SAM/BAM
+    output_path_sam = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
+    output_path_bam = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
+    write_sam(sam_update, output_path_sam)
+    pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
+    pysam.index("-@", f"{THREADS}", str(output_path_bam))
     # igvjs
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
     qnames = [s[0] for s in sam_contents[:10000]]
     qnames = set(list(set(qnames))[:100])
     sam_subset = [s for s in sam_update if s[0] in qnames]
-    write_sam(sam_headers + sam_subset, path_sam)
+    output_path_sam = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control_cache.sam")
+    write_sam(sam_headers + sam_subset, output_path_sam)
     path_bam = Path(TEMPDIR, "cache", ".igvjs", f"{CONTROL_NAME}_control.bam")
-    pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
+    pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(output_path_sam))
     pysam.index("-@", f"{THREADS}", str(path_bam))
-
     # Remove temporary files
     sam_temp = Path(TEMPDIR, "report", "BAM").glob(f"tmp{randomnum}*.sam")
     [s.unlink() for s in sam_temp]
@@ -285,43 +281,40 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
 
 def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
-    path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_control.sam")
-    sam = midsv.read_sam(path_sam)
-
+    input_path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
+    sam = midsv.read_sam(input_path_sam)
+    # Update sam
     sam_update = deepcopy(sam)
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
-
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
-
-    path_sam_update = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
-    write_sam(sam_update, path_sam_update)
-
-    path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")
-    pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam_update))
-    pysam.index("-@", f"{THREADS}", str(path_bam))
-
+    # Output SAM/BAM
+    output_path_sam = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
+    output_path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")
+    write_sam(sam_update, output_path_sam)
+    pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
+    pysam.index("-@", f"{THREADS}", str(output_path_bam))
+    # Prepare SAM according to LABEL
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
     sam_groups = group_by_name(sam_contents, RESULT_SAMPLE)
     qnames_by_name = subset_qnames(RESULT_SAMPLE)
-
+    # Output SAM/BAM
     for name, sam_content in sam_groups.items():
         # BAM
-        path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
-        path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}_{name}.bam")
-        write_sam(sam_headers + sam_content, path_sam)
-        pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
-        pysam.index("-@", f"{THREADS}", str(path_bam))
+        output_path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
+        output_path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}_{name}.bam")
+        write_sam(sam_headers + sam_content, output_path_sam)
+        pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
+        pysam.index("-@", f"{THREADS}", str(output_path_bam))
         # igvjs
         sam_subset = subset_reads(name, sam_content, qnames_by_name)
-        path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
-        write_sam(sam_headers + sam_subset, path_sam)
-        path_bam = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{name}.bam")
-        pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(path_sam))
-        pysam.index("-@", f"{THREADS}", str(path_bam))
-
+        output_path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
+        write_sam(sam_headers + sam_subset, output_path_sam)
+        output_path_bam = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{name}.bam")
+        pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
+        pysam.index("-@", f"{THREADS}", str(output_path_bam))
     # Remove temporary files
     sam_temp = Path(TEMPDIR, "report", "bam").glob(f"tmp{randomnum}*.sam")
     [s.unlink() for s in sam_temp]

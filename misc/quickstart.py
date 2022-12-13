@@ -95,8 +95,8 @@ if GENOME:
     CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
     preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
-flag1 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.jsonl").exists()
-flag2 = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.jsonl").exists()
+flag1 = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_map-ont_control.jsonl").exists()
+flag2 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_map-ont_control.jsonl").exists()
 flag = flag1 and flag2
 
 if not flag:
@@ -113,8 +113,14 @@ if not flag:
     ###############################################################################
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
-        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME)
-        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME)
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, threads=THREADS)
+        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
+        preprocess.mappy_align.output_sam(
+            TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS
+        )
+        preprocess.mappy_align.output_sam(
+            TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, preset="splice", threads=THREADS
+        )
     ########################################################################
     # MIDSV conversion
     ########################################################################
@@ -145,14 +151,6 @@ classif_sample = classification.classify_alleles(paths_midsv)
 # paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
 # classif_control = classification.classify_alleles(paths_midsv)
 
-# zcat tests/data/knockout/test_barcode25.fq.gz | grep c92bb34552b6 -A 3 |
-# minimap2 -ax map-ont tmp_cont.fa - |
-# samtools sort > tmp_cont.bam
-# samtools index tmp_cont.bam
-
-# path_midsv = Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*")
-# classif_control = classification.classify_alleles(path_midsv, CONTROL_NAME)
-
 ########################################################################
 # Detect Structural variants
 ########################################################################
@@ -165,10 +163,14 @@ for classif in classif_sample:
 
 # d = defaultdict(int)
 # for c in classif_sample:
-#     keys = f'{c["ALLELE"]}-{c["SV"]}'
+#     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["PRESET"]}'
 #     d[keys] += 1
 
 # d
+
+# for classif in classif_sample:
+#     if "e0174c91bd7b" in classif["QNAME"]:
+#         print(classif["CSSPLIT"])
 
 
 ########################################################################
@@ -180,7 +182,7 @@ for classif in classif_sample:
 # cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
 
 # for classif in classif_sample:
-#     if "904d78ec7a0e" in classif["QNAME"]:
+#     if "e0174c91bd7b" in classif["QNAME"]:
 #         print(classif["CSSPLIT"])
 
 # # 476 del

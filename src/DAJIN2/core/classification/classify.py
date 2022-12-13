@@ -17,10 +17,12 @@ def classify_alleles(paths_midsv: list[Path]) -> list[dict]:
     score_of_each_alleles = []
     for path_midsv in paths_midsv:
         allele = path_midsv.stem.split("_")[-1]
+        preset = path_midsv.stem.split("_")[-2]
         for dict_midsv in midsv.read_jsonl(path_midsv):
             score = calc_match(dict_midsv["CSSPLIT"])
             dict_midsv.update({"SCORE": score})
             dict_midsv.update({"ALLELE": allele})
+            dict_midsv.update({"PRESET": preset})
             score_of_each_alleles.append(dict_midsv)
     score_of_each_alleles.sort(key=lambda x: x["QNAME"])
     possible_allele = []
