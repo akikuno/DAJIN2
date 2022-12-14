@@ -29,7 +29,7 @@ from src.DAJIN2.core.clustering.return_labels import return_labels
 
 
 def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREADS: int = 1) -> list[dict[str]]:
-    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
+    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}_splice_*"))
     cssplits_control_by_alleles = defaultdict(list)
     for path_midsv in paths_midsv:
         midsv_control = midsv.read_jsonl(path_midsv)
@@ -55,8 +55,7 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
         mutation_score = make_score(cssplits_control, cssplits_sample)
         scores_control = annotate_score(cssplits_control, mutation_score)
         scores_sample = annotate_score(cssplits_sample, mutation_score)
-        scores = scores_sample + scores_control[:1000]
-        labels = return_labels(scores, THREADS)
+        labels = return_labels(scores_sample, scores_control[:1000])
         labels_control = labels[len(scores_sample) :]
         labels_sample = labels[: len(scores_sample)]
         labels_merged = merge_clusters(labels_control, labels_sample)

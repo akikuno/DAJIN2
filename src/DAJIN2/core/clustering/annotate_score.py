@@ -7,6 +7,7 @@ def annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str, flo
         score = []
         for i in range(1, len(cssplit) - 1):
             if not mutation_score[i]:
+                score.append(0)
                 continue
             kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
             if kmer in mutation_score[i].keys():

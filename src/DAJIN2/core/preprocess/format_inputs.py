@@ -14,7 +14,7 @@ import wslPath
 
 
 def make_directories(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str):
-    subdirectoris = ["cache", "fasta", "sam", "midsv", "report", "result"]
+    subdirectoris = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
     reportdirectories = ["HTML", "FASTA", "VCF", "BAM", ".igvjs"]

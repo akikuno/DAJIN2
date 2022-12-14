@@ -95,8 +95,8 @@ if GENOME:
     CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
     preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
 
-flag1 = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_map-ont_control.jsonl").exists()
-flag2 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_map-ont_control.jsonl").exists()
+flag1 = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_control.jsonl").exists()
+flag2 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_control.jsonl").exists()
 flag = flag1 and flag2
 
 if not flag:
@@ -124,9 +124,9 @@ if not flag:
     ########################################################################
     # MIDSV conversion
     ########################################################################
-    for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
+    for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
-    for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
+    for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     ###############################################################################
     # Correct CSSPLITS
@@ -203,6 +203,13 @@ clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FAST
 clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)
+
+# import midsv
+# from pathlib import Path
+# # Save
+# # midsv.write_jsonl(clust_sample, Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.jsonl"))
+# # Load
+# # clust_sample = midsv.read_jsonl(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.jsonl"))
 
 # d_count = defaultdict(int)
 # for c in clust_sample:
