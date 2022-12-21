@@ -31,4 +31,4 @@ jobs:
       #     conda install --file requirements.txt --yes
       - name: Test with pytest
         run: |
-          python -m pytest -p no:warnings
+          python -m pytest tests/ -p no:warnings
