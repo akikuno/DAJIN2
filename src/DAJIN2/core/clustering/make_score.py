@@ -51,7 +51,7 @@ def discard_common_error(sample_subtracted, threshold=0.5):
 def discard_match(sample_subtracted):
     sample_discarded = []
     for samp in sample_subtracted:
-        remained = {k: v for k, v in samp.items() if not k.startswith("=")}
+        remained = {k: v for k, v in samp.items() if k.count("=") != 3}
         sample_discarded.append(remained)
     return sample_discarded
 

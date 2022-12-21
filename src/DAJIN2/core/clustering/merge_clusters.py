@@ -1,16 +1,15 @@
 from __future__ import annotations
 from copy import deepcopy
-from collections import Counter
+from collections import Counter, defaultdict
 
 
 def merge_mixed_cluster(labels_control: list[int], labels_sample: list[int]) -> list[int]:
-    labels_all = labels_sample + labels_control
     labels_merged = deepcopy(labels_sample)
     coverage_control = len(labels_control)
-    labels_percent_control = [0] * len(Counter(labels_all).keys())
+    labels_percent_control = defaultdict(float)
     for i, label in enumerate(labels_control):
         labels_percent_control[label] += 1 / coverage_control * 100
-    labels_mixed = {i for i, per in enumerate(labels_percent_control) if per > 0.5}
+    labels_mixed = {i for i, per in labels_percent_control.items() if per > 0.5}
     max_label = max(labels_merged) + 1
     for i, label in enumerate(labels_sample):
         if label in labels_mixed:

@@ -8,37 +8,37 @@ reload(mappy_align)
 def test_to_sam_tyr():
     path_reference_fasta = Path("tests", "data", "mappy", "tyr_control.fa")
     path_query_fastx = Path("tests", "data", "mappy", "tyr_query.fq")
-    value = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx))
-    value = list(value)
+    test = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx))
+    test = list(test)
     answer = Path("tests", "data", "mappy", "tyr_query.sam").read_text().strip().split("\n")
-    assert value == answer
+    assert test == answer
 
 
 def test_to_sam_stx2():
     path_reference_fasta = Path("tests", "data", "mappy", "stx2_control.fa")
     path_query_fastx = Path("tests", "data", "mappy", "stx2_del.fq")
-    value = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx))
-    value = list(value)
+    test = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx))
+    test = list(test)
     answer = Path("tests", "data", "mappy", "stx2_del.sam").read_text().strip().split("\n")
-    assert value == answer
+    assert test == answer
 
 
 def test_to_sam_stx2_splice():
     path_reference_fasta = Path("tests", "data", "mappy", "stx2_control.fa")
     path_query_fastx = Path("tests", "data", "mappy", "stx2_splice.fq")
-    value = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx), preset="splice")
-    value = list(value)
-    answer = Path("tests", "data", "mappy", "stx2_del.sam").read_text().strip().split("\n")
-    assert value == answer
+    test = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx), preset="splice")
+    test = list(test)
+    answer = eval(Path("tests", "data", "mappy", "answer_stx2_splice.txt").read_text())
+    assert test == answer
 
 
 def test_to_sam_threads():
     path_reference_fasta = Path("tests", "data", "mappy", "tyr_control.fa")
     path_query_fastx = Path("tests", "data", "mappy", "tyr_query.fq")
-    value = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx), THREADS=5)
-    value = list(value)
+    test = mappy_align.to_sam(str(path_reference_fasta), str(path_query_fastx), threads=5)
+    test = list(test)
     answer = Path("tests", "data", "mappy", "tyr_query.sam").read_text().strip().split("\n")
-    assert value == answer
+    assert test == answer
 
 
 ########################################################################

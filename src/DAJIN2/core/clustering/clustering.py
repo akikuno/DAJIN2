@@ -21,7 +21,6 @@ import midsv
 from src.DAJIN2.core.clustering.replace_both_ends_n import replace_both_ends_n
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
-from src.DAJIN2.core.clustering.merge_clusters import merge_clusters
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
 from src.DAJIN2.core.clustering.return_labels import return_labels
 
@@ -55,11 +54,9 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
         mutation_score = make_score(cssplits_control, cssplits_sample)
         scores_control = annotate_score(cssplits_control, mutation_score)
         scores_sample = annotate_score(cssplits_sample, mutation_score)
-        labels = return_labels(scores_sample, scores_control[:1000])
-        labels_control = labels[len(scores_sample) :]
-        labels_sample = labels[: len(scores_sample)]
-        labels_merged = merge_clusters(labels_control, labels_sample)
-        labels_reorder = reorder_labels(labels_merged, start=max_label)
+        scores_control_subset = scores_control[:1000]
+        labels = return_labels(scores_sample, scores_control_subset)
+        labels_reorder = reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
         labels_all.extend(labels_reorder)
     clust_sample = deepcopy(classif_sample)
@@ -67,6 +64,10 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
         clust["LABEL"] = label
     return clust_sample
 
+
+# for i, v in enumerate(mutation_score):
+#     if any(True for x in v.values() if x > 5):
+#         print(i)
 
 # def add_labels(classif_sample, cssplits_control_keys, FASTA_ALLELES: dict, THREADS: int = 1) -> list[dict[str]]:
 #     labels_all = []

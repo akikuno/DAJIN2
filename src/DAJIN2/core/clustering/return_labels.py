@@ -16,9 +16,9 @@ from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
 
 
 def reduce_dimention(
-    scores_sample: list[list[float]], scores_control: list[list[float]], n_components: int = 20
+    scores_sample: list[list[float]], scores_control_subset: list[list[float]], n_components: int = 20
 ) -> np.array:
-    scores = scores_sample + scores_control
+    scores = scores_sample + scores_control_subset
     n_components = min(n_components, len(scores))
     scaler = StandardScaler()
     scores_scaler = scaler.fit_transform(scores)
@@ -28,9 +28,9 @@ def reduce_dimention(
 
 
 def optimize_labels(
-    X: np.array, scores_sample: list[list[float]], scores_control: list[list[float]], n_components: int = 20
+    X: np.array, scores_sample: list[list[float]], scores_control_subset: list[list[float]], n_components: int = 20
 ) -> list[int]:
-    scores = scores_sample + scores_control
+    scores = scores_sample + scores_control_subset
     point_coodinates = []
     n_components = min(n_components, len(scores))
     for i in range(1, n_components):
@@ -62,16 +62,8 @@ def edist(x1, y1, x2, y2):
 
 
 def return_labels(
-    scores_sample: list[list[float]], scores_control: list[list[float]], n_components: int = 20
+    scores_sample: list[list[float]], scores_control_subset: list[list[float]], n_components: int = 20
 ) -> list[int]:
-    X = reduce_dimention(scores_sample, scores_control)
-    labels = optimize_labels(X, scores_sample, scores_control)
+    X = reduce_dimention(scores_sample, scores_control_subset)
+    labels = optimize_labels(X, scores_sample, scores_control_subset)
     return labels
-    # labels = MeanShift(n_jobs=THREADS).fit(scores).labels_
-    # return labels.tolist()
-
-
-# Counter(labels)
-# labels[idx_large_del]
-# labels[idx_medium_del]
-# labels[idx_small_del]

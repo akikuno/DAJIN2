@@ -16,15 +16,16 @@ reload(report)
 from src.DAJIN2.core.clustering import clustering
 
 # * Subset of Point mutation
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "misc/data/tyr_albino_10%.fq.gz",
-#     "misc/data/tyr_control.fq.gz",
-#     "misc/data/tyr_control.fasta",
-#     "tyr-albino_10%",
-#     "mm10",
-#     True,
-#     14,
-# )
+# 50 or 10 or 01%
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "misc/data/tyr_albino_01%.fq.gz",
+    "misc/data/tyr_control.fq.gz",
+    "misc/data/tyr_control.fasta",
+    "test_tyr_albino_01%",
+    "mm10",
+    True,
+    14,
+)
 
 # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -39,15 +40,15 @@ from src.DAJIN2.core.clustering import clustering
 
 
 # * 2-cut deletion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "tests/data/knockout/test_barcode25.fq.gz",
-    "tests/data/knockout/test_barcode30.fq.gz",
-    "tests/data/knockout/design_stx2.fa",
-    "test-stx2-deletion",
-    "mm10",
-    True,
-    14,
-)
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "tests/data/knockout/test_barcode25.fq.gz",
+#     "tests/data/knockout/test_barcode30.fq.gz",
+#     "tests/data/knockout/design_stx2.fa",
+#     "test-stx2-deletion",
+#     "mm10",
+#     True,
+#     14,
+# )
 # #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/del-stx2/barcode25.fq.gz",
@@ -145,7 +146,7 @@ if not flag:
 # Classify alleles
 ########################################################################
 
-paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*"))
+paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
 classif_sample = classification.classify_alleles(paths_midsv)
 
 # paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
@@ -167,11 +168,6 @@ for classif in classif_sample:
 #     d[keys] += 1
 
 # d
-
-# for classif in classif_sample:
-#     if "e0174c91bd7b" in classif["QNAME"]:
-#         print(classif["CSSPLIT"])
-
 
 ########################################################################
 # Clustering
@@ -206,7 +202,7 @@ clust_sample = clustering.update_labels(clust_sample)
 
 # import midsv
 # from pathlib import Path
-# # Save
+# Save
 # # midsv.write_jsonl(clust_sample, Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.jsonl"))
 # # Load
 # # clust_sample = midsv.read_jsonl(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.jsonl"))
