@@ -9,28 +9,40 @@ from misc.scripts import scratch_correct_cssplits
 
 
 def test_extract_indexes_with_both_ends_not_N___noN():
-    cssplits = "=A,=C,=G,=T"
+    cssplits = ["=A,=C,=G,=T"]
+    cssplits = [cs.split(",") for cs in cssplits]
     test = scratch_correct_cssplits.extract_indexes_with_both_ends_not_N(cssplits)
-    answer = (0, 3)
+    answer = [(0, 3)]
     assert test == answer
 
 
 def test_extract_indexes_with_both_ends_not_N___leftN():
-    cssplits = "N,N,N,N,=A,=C,=G,=T"
+    cssplits = ["N,N,N,N,=A,=C,=G,=T"]
+    cssplits = [cs.split(",") for cs in cssplits]
     test = scratch_correct_cssplits.extract_indexes_with_both_ends_not_N(cssplits)
-    answer = (4, 7)
+    answer = [(4, 7)]
     assert test == answer
 
 
 def test_extract_indexes_with_both_ends_not_N___rightN():
-    cssplits = "=A,=C,=G,=T,N,N,N,N"
+    cssplits = ["=A,=C,=G,=T,N,N,N,N"]
+    cssplits = [cs.split(",") for cs in cssplits]
     test = scratch_correct_cssplits.extract_indexes_with_both_ends_not_N(cssplits)
-    answer = (0, 3)
+    answer = [(0, 3)]
     assert test == answer
 
 
 def test_extract_indexes_with_both_ends_not_N___bothN():
-    cssplits = "N,N,=A,=C,=G,=T,=A,N,N"
+    cssplits = ["N,N,=A,=C,=G,=T,=A,N,N"]
+    cssplits = [cs.split(",") for cs in cssplits]
     test = scratch_correct_cssplits.extract_indexes_with_both_ends_not_N(cssplits)
-    answer = (2, 6)
+    answer = [(2, 6)]
+    assert test == answer
+
+
+def test_extract_indexes_with_both_ends_not_N___multiple():
+    cssplits = ["=A,=C,=G,=T", "N,N,N,N,=A,=C,=G,=T", "=A,=C,=G,=T,N,N,N,N", "N,N,=A,=C,=G,=T,=A,N,N"]
+    cssplits = [cs.split(",") for cs in cssplits]
+    test = scratch_correct_cssplits.extract_indexes_with_both_ends_not_N(cssplits)
+    answer = [(0, 3), (4, 7), (0, 3), (2, 6)]
     assert test == answer
