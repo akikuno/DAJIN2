@@ -22,7 +22,7 @@ def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
     return count_score
 
 
-def call_percent(counts: list[dict[str:int]]) -> list[dict[str:int]]:
+def call_percent(counts: list[dict[str:int]]) -> list[dict[str:float]]:
     cssplit_percent = []
     coverage = sum(counts[0].values())
     for count in counts:

@@ -46,7 +46,7 @@ def extract_indexes_with_both_ends_not_N(cssplits: list[list[str]]) -> list[tupl
 #     return left_idx, right_idx
 
 
-def call_count(cssplits: list[list[str]], indexes: list[tuple(int, int)]) -> list[dict[str, int]]:
+def call_count(cssplits: list[list[str]], indexes: list[tuple(int, int)]) -> dict[dict[str, int]]:
     """Count cssplits within 3-mer range.
     Args:
         cssplits (list[list[str]])
@@ -57,44 +57,25 @@ def call_count(cssplits: list[list[str]], indexes: list[tuple(int, int)]) -> lis
     for cssplit, idx in zip(cssplits, indexes):
         left_idx, right_idx = idx
         for i in range(left_idx + 1, right_idx):
+            if cssplit[i].startswith("="):
+                continue
             kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
             count_kmer[i] += Counter([kmer])
-    count_score = [{i: dict(count_kmer[i])} for i in count_kmer.keys()]
-    return count_score
+    counts = {i: dict(count_kmer[i]) for i in count_kmer.keys()}
+    return counts
 
 
-# def call_count(cssplits: list[list[str]], left_idx, right_idx) -> list[dict[str, int]]:
-#     """Count cssplits within 3-mer range.
-#     Args:
-#         cssplits (list[list[str]])
-#     Returns:
-#         list[dict[str, int]]: Both ends are counted as "N" to keep sequence length.
-#     """
-#     count_kmer = defaultdict(lambda: defaultdict(int))
-#     for cssplit in cssplits:
-#         for i in range(left_idx + 1, right_idx):
-#             for j in range(i - 1, i + 2):
-#                 if cssplit[j].startswith("="):
-#                     continue
-#                 if cssplit[j].startswith("+"):
-#                     count_kmer[j]["+"] += 1
-#                 if cssplit[j].startswith("-"):
-#                     count_kmer[j]["-"] += 1
-#                 if cssplit[j].startswith("*"):
-#                     count_kmer[j]["*"] += 1
-#                 if re.search(r"a|c|g|t|n", cssplit[j]):
-#                     count_kmer[j]["v"] += 1  # inversion
-
-#         kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
-#         count_kmer[i][] += 1
-# count_score = [{i: dict(count_kmer[i])} for i in count_kmer.keys()]
-# return count_score
+def call_percentage(cssplits: list[list[str]], counts: dict[dict[str, int]]) -> dict[dict[str:float]]:
+    coverage = len(cssplits)
+    percents = deepcopy(counts)
+    for i, c in counts.items():
+        for kmer, count in c.items():
+            percents[i][kmer] = count / coverage * 100
+    return percents
 
 
-# cssplits = ["=A,+G|=C,-G,*TA,=A", "=A,+G|=C,-G,=T,=A"]
-# cssplits = [cs.split(",") for cs in cssplits]
-# indexes = [(0, 4), (0, 4)]
-# call_count(cssplits, indexes)
+# call_percentage(counts)
+
 
 # length = cssplits[0].count(",") + 1
 # count_kmer = defaultdict(Counter)
