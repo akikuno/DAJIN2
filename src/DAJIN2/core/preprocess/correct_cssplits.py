@@ -93,37 +93,6 @@ def replace_repdels(transpose_cssplits: list[list[str]], repeat_dels: set):
     return replased_cssplits
 
 
-# def replace_both_ends_n(transpose_cssplits: list[list[str]]):
-#     d_samples = defaultdict(iter)
-#     for i, cssplits in enumerate(transpose_cssplits):
-#         cnt = Counter(cssplits)
-#         if cnt["N"] == 0:  # No N
-#             continue
-#         if len(cnt) == 1 and cnt["N"] > 0:  # All N
-#             continue
-#         size = cnt["N"]
-#         del cnt["N"]
-#         samples = sampling(cnt, size)
-#         d_samples[i] = iter(samples)
-#     cssplits_replaced = [list(cs) for cs in zip(*transpose_cssplits)]
-#     for i, cssplits in enumerate(cssplits_replaced):
-#         for j, cs in enumerate(cssplits):
-#             if cs != "N":
-#                 break
-#             cssplits_replaced[i][j] = next(d_samples[j])
-#     for i, cssplits in enumerate(cssplits_replaced):
-#         cssplits = cssplits[::-1]
-#         for j, cs in enumerate(cssplits):
-#             if cs != "N":
-#                 break
-#             try:
-#                 cssplits_replaced[i][len(cssplits) - 1 - j] = next(d_samples[len(cssplits) - 1 - j])
-#             except TypeError:
-#                 pass
-#     cssplits_replaced = [list(cs) for cs in zip(*cssplits_replaced)]
-#     return cssplits_replaced
-
-
 ###############################################################################
 # main
 ###############################################################################
@@ -152,8 +121,6 @@ def correct_cssplits(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME:
         repeat_dels = find_repetitive_dels(count_control, count_sample, sequence)
         transpose_mask_control = replace_repdels(transpose_control, repeat_dels)
         transpose_mask_sample = replace_repdels(transpose_sample, repeat_dels)
-        # transpose_mask_control = replace_both_ends_n(transpose_mask_control)
-        # transpose_mask_sample = replace_both_ends_n(transpose_mask_sample)
         # Replace CSSPLIT
         transpose_mask_control = [",".join(t) for t in transpose(transpose_mask_control)]
         transpose_mask_sample = [",".join(t) for t in transpose(transpose_mask_sample)]

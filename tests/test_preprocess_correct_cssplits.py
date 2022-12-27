@@ -66,11 +66,81 @@ def test_call_count():
     assert test == answer
 
 
+def test_call_count_N():
+    cssplits = ["=A,+G|=C,-G,*TA,=A", "N,N,-G,*TA,=A"]
+    cssplits = [cs.split(",") for cs in cssplits]
+    indexes = [(0, 4), (2, 4)]
+    test = scratch_correct_cssplits.call_count(cssplits, indexes)
+    answer = {1: {"=A,+G|=C,-G": 1}, 2: {"+G|=C,-G,*TA": 1}, 3: {"-G,*TA,=A": 2}}
+    assert test == answer
+
+
+###############################################################################
+# call_percentage
+###############################################################################
+
+
 def test_call_percentage():
     cssplits = ["=A,+G|=C,-G,*TA,=A", "=A,+G|=C,-G,=T,=A"]
     cssplits = [cs.split(",") for cs in cssplits]
     counts = {1: {"=A,+G|=C,-G": 2}, 2: {"+G|=C,-G,*TA": 1, "+G|=C,-G,=T": 1}, 3: {"-G,*TA,=A": 1}}
     test = scratch_correct_cssplits.call_percentage(cssplits, counts)
     answer = {1: {"=A,+G|=C,-G": 100.0}, 2: {"+G|=C,-G,*TA": 50.0, "+G|=C,-G,=T": 50.0}, 3: {"-G,*TA,=A": 50.0}}
+    assert test == answer
+
+
+###############################################################################
+# subtract_percentage
+###############################################################################
+
+
+def test_subtract_percentage():
+    percent_sample = {
+        1: {"=A,+G|=C,-G": 100.0},
+        2: {"+G|=C,-G,*TA": 50.0, "+G|=C,-G,=T": 50.0},
+        3: {"-G,*TA,=A": 50.0, "-G,-T,=A": 50.0},
+    }
+    percent_control = {
+        1: {"=A,+G|=C,-G": 75.0},
+        2: {"+G|=C,-G,*TA": 50.0, "+G|=C,-G,=T": 50.0},
+        3: {"-G,*TA,=A": 25.0},
+    }
+    test = scratch_correct_cssplits.subtract_percentage(percent_sample, percent_control)
+    answer = {
+        1: {"=A,+G|=C,-G": 25.0},
+        2: {"+G|=C,-G,*TA": 0.0, "+G|=C,-G,=T": 0.0},
+        3: {"-G,*TA,=A": 25.0, "-G,-T,=A": 50.0},
+    }
+    assert test == answer
+
+
+###############################################################################
+# select_candidate_mutation
+###############################################################################
+
+
+def test_select_candidate_mutation():
+    percent_subtracted = {
+        1: {"=A,+G|=C,-G": 25.0},
+        2: {"+G|=C,-G,*TA": 0.0, "+G|=C,-G,=T": 0.0},
+        3: {"-G,*TA,=A": 25.0, "-G,-T,=A": 50.0},
+    }
+    test = scratch_correct_cssplits.select_candidate_mutation(percent_subtracted)
+    answer = {1: {"=A,+G|=C,-G"}, 2: set(), 3: {"-G,*TA,=A", "-G,-T,=A"}}
+    assert test == answer
+
+
+###############################################################################
+# update_cssplits
+###############################################################################
+
+
+def test_update_cssplits():
+    cssplits = ["=A,+G|=C,-G,*TA,=A", "=A,+G|=C,-G,-T,=A"]
+    cssplits = [cs.split(",") for cs in cssplits]
+    sequence = "ACGTA"
+    candidate_mutation = {1: {"=A,+G|=C,-G"}, 2: set(), 3: {"-G,*TA,=A", "-G,-T,=A"}}
+    test = scratch_correct_cssplits.update_cssplits(cssplits, sequence, candidate_mutation)
+    answer = [["=A", "+G|=C", "=G", "*TA", "=A"], ["=A", "+G|=C", "=G", "-T", "=A"]]
     assert test == answer
 

@@ -1,15 +1,14 @@
 from __future__ import annotations
 from collections import Counter
-import numpy as np
 import re
 from itertools import chain
 from copy import deepcopy
 from collections import defaultdict
+from pathlib import Path
 
+import numpy as np
 from scipy import stats
 from scipy.spatial.distance import cosine
-
-from pathlib import Path
 
 import midsv
 
@@ -35,23 +34,8 @@ def extract_indexes_with_both_ends_not_N(cssplits: list[list[str]]) -> list[tupl
     return indexes
 
 
-# def extract_indexes_with_both_ends_not_N(cssplits: str) -> tuple(int, int):
-#     n_prefix = re.search(r"^(N,)+", cssplits)
-#     left_idx = n_prefix.end() if n_prefix else 0
-#     n_suffix = re.search(r"(,N)+$", cssplits)
-#     right_idx = n_suffix.start() if n_suffix else len(cssplits)
-#     # output index of splitted cssplits
-#     left_idx = cssplits[:left_idx].count(",")
-#     right_idx = cssplits.count(",") - cssplits[right_idx:].count(",")
-#     return left_idx, right_idx
-
-
 def call_count(cssplits: list[list[str]], indexes: list[tuple(int, int)]) -> dict[dict[str, int]]:
     """Count cssplits within 3-mer range.
-    Args:
-        cssplits (list[list[str]])
-    Returns:
-        list[dict[str, int]]: Both ends are counted as "N" to keep sequence length.
     """
     count_kmer = defaultdict(Counter)
     for cssplit, idx in zip(cssplits, indexes):
@@ -65,7 +49,7 @@ def call_count(cssplits: list[list[str]], indexes: list[tuple(int, int)]) -> dic
     return counts
 
 
-def call_percentage(cssplits: list[list[str]], counts: dict[dict[str, int]]) -> dict[dict[str:float]]:
+def call_percentage(cssplits: list[list[str]], counts: dict[dict[str, int]]) -> dict[dict[str, float]]:
     coverage = len(cssplits)
     percents = deepcopy(counts)
     for i, c in counts.items():
@@ -74,30 +58,32 @@ def call_percentage(cssplits: list[list[str]], counts: dict[dict[str, int]]) -> 
     return percents
 
 
-# call_percentage(counts)
+def subtract_percentage(percent_sample: dict, percent_control: dict) -> dict[dict[str, float]]:
+    percent_subtracted = deepcopy(percent_sample)
+    for i, samp in percent_sample.items():
+        cont = percent_control.get(i)
+        for kmer_samp, per_samp in samp.items():
+            if cont.get(kmer_samp):
+                percent_subtracted[i][kmer_samp] = per_samp - cont[kmer_samp]
+    return percent_subtracted
 
 
-# length = cssplits[0].count(",") + 1
-# count_kmer = defaultdict(Counter)
-# for cs in cssplits:
-#     cs = cs.split(",")
-#     for i in range(1, length - 1):
-#         print(cs[i - 1], cs[i], cs[i + 1])
-#         kmer = ",".join([cs[i - 1], cs[i], cs[i + 1]])
-#         count_kmer[i] += Counter([kmer])
+def select_candidate_mutation(percent_subtracted: dict, threshold: float = 0.5) -> dict[dict[str, float]]:
+    candidate_mutation = dict()
+    for i, samp in percent_subtracted.items():
+        mutation = {k for k, v in samp.items() if v > threshold}
+        candidate_mutation.update({i: mutation})
+    return candidate_mutation
 
 
-# # cssplits = "N,N,N,N,=A,=C,=G,=T"
-# cssplits = "N,N,=A,=C,=G,=T,N,N"
-# left_idx, right_idx = extract_indexes_with_both_ends_not_N(cssplits)
-# # cssplits.split(",")[left_idx]
-# # cssplits.split(",")[right_idx]
+def update_cssplits(cssplits: list, sequence: str, candidate_mutation: dict) -> list[list[str]]:
+    cssplits_update = deepcopy(cssplits)
+    for j, mutation in candidate_mutation.items():
+        for i, cssplit in enumerate(cssplits):
+            kmer = ",".join([cssplit[j - 1], cssplit[j], cssplit[j + 1]])
+            if kmer in mutation:
+                continue
+            else:
+                cssplits_update[i][j] = "=" + sequence[j]
+    return cssplits_update
 
-# cssplits_sample = ["=A,=C,=G,=T", "*AT,-C,+A|G,=t"]
-
-# a = [0.01, 0.02, 0.03]
-# b = [0.97, 0.98, 0.99]
-# 1 - cosine(a, b)
-
-# _, pval = stats.ttest_ind(a, b, equal_var=False)
-# pval
