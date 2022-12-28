@@ -65,6 +65,36 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
     return clust_sample
 
 
+# muts = defaultdict(lambda: defaultdict(int))
+# for cs, label in zip(cssplits_sample, labels):
+#     if label == 1:
+#         for i, c in enumerate(cs):
+#             if c.startswith("="):
+#                 continue
+#             muts[i][c] += 1
+
+# i = 533
+# muts = {i: dict(m) for i, m in muts.items()}
+# muts = dict(sorted(muts.items(), key=lambda m: m[0]))
+# muts[i]
+# sequence[i - 15 : i + 1]
+# for i, m in muts.items():
+#     if sum(m.values()) >= 20:
+#         print(i)
+
+"""label1
+51
+533
+736
+828
+1311
+2271
+"""
+# # label2: 828
+# muts.keys()
+# muts[i]
+# labels
+# 87493949 - 51
 # for i, v in enumerate(mutation_score):
 #     if any(True for x in v.values() if x > 5):
 #         print(i)

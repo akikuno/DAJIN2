@@ -17,15 +17,15 @@ from src.DAJIN2.core.clustering import clustering
 
 # * Subset of Point mutation
 # 50 or 10 or 01%
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "misc/data/tyr_albino_01%.fq.gz",
-    "misc/data/tyr_control.fq.gz",
-    "misc/data/tyr_control.fasta",
-    "test_tyr_albino_01%",
-    "mm10",
-    True,
-    14,
-)
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "misc/data/tyr_albino_01%.fq.gz",
+#     "misc/data/tyr_control.fq.gz",
+#     "misc/data/tyr_control.fasta",
+#     "test_tyr_albino_01%",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
