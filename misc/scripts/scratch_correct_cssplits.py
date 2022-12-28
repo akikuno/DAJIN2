@@ -93,13 +93,15 @@ def update_cssplits(cssplits: list, sequence: str, candidate_mutation: dict) -> 
 ###############################################################################
 
 allele = "control"
-sequence_length = len(FASTA_ALLELES[allele])
+sequence = FASTA_ALLELES[allele]
+sequence_length = len(sequence)
 midsv_sample = midsv.read_jsonl("DAJINResults/.tempdir/tyr-pm/midsv/barcode31_splice_control.jsonl")
 midsv_control = midsv.read_jsonl("DAJINResults/.tempdir/tyr-pm/midsv/barcode32_splice_control.jsonl")
 
 cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
 cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
 
+sequence = "GATATCTTTG"
 sequence_length = 10
 test_sample = []
 for cs in cssplits_sample:
@@ -127,12 +129,12 @@ elif num_subset == 4:
     left_idx += 2
     right_idx -= 2
 
-for t in test_sample:
-    for i in range(left_idx, right_idx, 5):
-        t[i : i + 5]
+# for t in test_sample:
+#     for i in range(left_idx, right_idx, 5):
+#         t[i : i + 5]
 
-for i in range(left_idx, right_idx, 5):
-    print(i, t[i])
+# for i in range(left_idx, right_idx, 5):
+#     print(i, t[i])
 
 
 def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) -> list[dict]:
@@ -196,15 +198,33 @@ def replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_i
 
 cssplits_replaced = replace_errors_to_atmark(test_sample, sequence_errors, left_idx, right_idx)
 
-for cs in cssplits_replaced:
-    if any(c.startswith("-") for c in cs[0:5]):
-        print(cs)
+
+def replace_at_loci_to_match(cssplits_replaced, sequence):
+    """Replace @ loci to Match at the following regions:
+    - first and last loci, because of the next 3-mer annotation
+    - loci at all bases are @, because the @ will be remained after sampling compensation
+    """
+    cssplits_match = deepcopy(cssplits_replaced)
+    cssplits_transposed = [list(cs) for cs in zip(*cssplits_match)]
+    for i, cssplits in enumerate(cssplits_transposed):
+        if not all(True if cs == "@" else False for cs in cssplits):
+            continue
+        for cs in cssplits_match:
+            cs[i] = "=" + sequence[i]
+            if cs[0] == "@":
+                cs[0] = "=" + sequence[0]
+            if cs[-1] == "@":
+                cs[-1] = "=" + sequence[-1]
+    return cssplits_match
+
+
+cssplits_replaced = replace_at_loci_to_match(cssplits_replaced, sequence)
 
 
 def correct_cssplits():
     """
     - samplingによって@をNとinv以外のMIDSに置き換える。
-    - このsannplingも、5merにする？
+    - このsamplingも、5merにする？ 3merでもOK？
     """
     pass
 
