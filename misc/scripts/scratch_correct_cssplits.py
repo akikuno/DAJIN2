@@ -101,15 +101,15 @@ midsv_control = midsv.read_jsonl("DAJINResults/.tempdir/tyr-pm/midsv/barcode32_s
 cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
 cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
 
-sequence = "GATATCTTTG"
-sequence_length = 10
+sequence = sequence[51 - 9 : 53]
+sequence_length = len(sequence)
 test_sample = []
 for cs in cssplits_sample:
-    test_sample.append(cs[51 - 9 : 52])
+    test_sample.append(cs[51 - 9 : 53])
 
 test_control = []
 for cs in cssplits_control:
-    test_control.append(cs[51 - 9 : 52])
+    test_control.append(cs[51 - 9 : 53])
 
 """
 - Ins, Del, Sub, Invについてカウントする
@@ -219,6 +219,32 @@ def replace_at_loci_to_match(cssplits_replaced, sequence):
 
 
 cssplits_replaced = replace_at_loci_to_match(cssplits_replaced, sequence)
+
+cssplits = [["=T", "@", "=G"], ["=T", "=T", "=G"], ["=T", "-T", "=G"]]
+sequence = "TTG"
+sequence_length = len(sequence)
+
+for i in range(1, sequence_length -1):
+    cssplits_atmark = defaultdict(str)
+    cssplits_sampling = defaultdict(list)
+    for idx, cssplit in enumerate(cssplits):
+        key = ",".join([cssplit[i - 1], cssplit[i + 1]])
+        if cssplit[i] == "@":
+            cssplits_atmark[idx] = key
+        else:
+            cssplits_sampling[key].append(cssplit[i])
+    
+
+
+sampling_3mers = []
+for cssplit in cssplits:
+    for i in range(1, len(cssplit) - 1):
+        if cssplit[i] == "@":
+            continue
+        kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
+        sampling_3mers.append(kmer)
+    for i in range(1, len(cssplit) - 1):
+        if cssplit[i] == "@":
 
 
 def correct_cssplits():
