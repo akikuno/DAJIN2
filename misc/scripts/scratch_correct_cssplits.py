@@ -5,6 +5,7 @@ from itertools import chain
 from copy import deepcopy
 from collections import defaultdict
 from pathlib import Path
+import random
 
 import numpy as np
 from scipy import stats
@@ -111,30 +112,27 @@ test_control = []
 for cs in cssplits_control:
     test_control.append(cs[51 - 9 : 53])
 
-"""
-- Ins, Del, Sub, Invについてカウントする
-"""
-num_subset = sequence_length % 5
-left_idx = 0
-right_idx = sequence_length
-if num_subset == 1:
-    left_idx += 1
-elif num_subset == 2:
-    left_idx += 1
-    right_idx -= 1
-elif num_subset == 3:
-    left_idx += 2
-    right_idx -= 1
-elif num_subset == 4:
-    left_idx += 2
-    right_idx -= 2
 
-# for t in test_sample:
-#     for i in range(left_idx, right_idx, 5):
-#         t[i : i + 5]
+def set_indexes(cssplits_sample):
+    sequence_length = len(cssplits_sample[0])
+    num_subset = sequence_length % 5
+    left_idx = 0
+    right_idx = sequence_length
+    if num_subset == 1:
+        left_idx += 1
+    elif num_subset == 2:
+        left_idx += 1
+        right_idx -= 1
+    elif num_subset == 3:
+        left_idx += 2
+        right_idx -= 1
+    elif num_subset == 4:
+        left_idx += 2
+        right_idx -= 2
+    return left_idx, right_idx
 
-# for i in range(left_idx, right_idx, 5):
-#     print(i, t[i])
+
+left_idx, right_idx = set_indexes(test_sample)
 
 
 def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) -> list[dict]:
@@ -158,8 +156,8 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
     return count_indels_5mer
 
 
-count_5mer_sample = count_indels_5mer(test_sample)
-count_5mer_control = count_indels_5mer(test_control)
+count_5mer_sample = count_indels_5mer(test_sample, left_idx, right_idx)
+count_5mer_control = count_indels_5mer(test_control, left_idx, right_idx)
 
 
 def extractr_sequence_errors(count_5mer_sample, count_5mer_control):
@@ -196,55 +194,64 @@ def replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_i
     return cssplits_replaced
 
 
-cssplits_replaced = replace_errors_to_atmark(test_sample, sequence_errors, left_idx, right_idx)
+cssplits_error_replaced = replace_errors_to_atmark(test_sample, sequence_errors, left_idx, right_idx)
 
 
-def replace_at_loci_to_match(cssplits_replaced, sequence):
-    """Replace @ loci to Match at the following regions:
-    - first and last loci, because of the next 3-mer annotation
-    - loci at all bases are @, because the @ will be remained after sampling compensation
-    """
-    cssplits_match = deepcopy(cssplits_replaced)
-    cssplits_transposed = [list(cs) for cs in zip(*cssplits_match)]
-    for i, cssplits in enumerate(cssplits_transposed):
-        if not all(True if cs == "@" else False for cs in cssplits):
-            continue
-        for cs in cssplits_match:
-            cs[i] = "=" + sequence[i]
-            if cs[0] == "@":
-                cs[0] = "=" + sequence[0]
-            if cs[-1] == "@":
-                cs[-1] = "=" + sequence[-1]
-    return cssplits_match
+# def replace_at_loci_to_match(cssplits_replaced, sequence):
+#     """Replace @ loci to Match at the following regions:
+#     - first and last loci, because of the next 3-mer annotation
+#     - loci at all bases are @, because the @ will be remained after sampling compensation
+#     """
+#     cssplits_match = deepcopy(cssplits_replaced)
+#     cssplits_transposed = [list(cs) for cs in zip(*cssplits_match)]
+#     for i, cssplits in enumerate(cssplits_transposed):
+#         if not all(True if cs == "@" else False for cs in cssplits):
+#             continue
+#         for cs in cssplits_match:
+#             cs[i] = "=" + sequence[i]
+#             if cs[0] == "@":
+#                 cs[0] = "=" + sequence[0]
+#             if cs[-1] == "@":
+#                 cs[-1] = "=" + sequence[-1]
+#     return cssplits_match
 
 
-cssplits_replaced = replace_at_loci_to_match(cssplits_replaced, sequence)
-
-cssplits = [["=T", "@", "=G"], ["=T", "=T", "=G"], ["=T", "-T", "=G"]]
-sequence = "TTG"
-sequence_length = len(sequence)
-
-for i in range(1, sequence_length -1):
-    cssplits_atmark = defaultdict(str)
-    cssplits_sampling = defaultdict(list)
-    for idx, cssplit in enumerate(cssplits):
-        key = ",".join([cssplit[i - 1], cssplit[i + 1]])
-        if cssplit[i] == "@":
-            cssplits_atmark[idx] = key
-        else:
-            cssplits_sampling[key].append(cssplit[i])
-    
+# cssplits_replaced = replace_at_loci_to_match(cssplits_replaced, sequence)
 
 
-sampling_3mers = []
-for cssplit in cssplits:
-    for i in range(1, len(cssplit) - 1):
-        if cssplit[i] == "@":
-            continue
-        kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
-        sampling_3mers.append(kmer)
-    for i in range(1, len(cssplit) - 1):
-        if cssplit[i] == "@":
+# cssplits = [["=T", "@", "=G"], ["=T", "@", "=G"], ["=T", "=T", "=G"], ["=T", "-T", "=G"]]
+
+
+def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
+    random.seed(1)
+    cssplits_replaced = deepcopy(cssplits)
+    sequence_length = len(sequence)
+    for i in range(1, sequence_length - 1):
+        cssplits_atmark = defaultdict(str)
+        cssplits_sampling_key = defaultdict(list)
+        cssplits_sampling_all = []
+        for idx, cssplit in enumerate(cssplits):
+            key = ",".join([cssplit[i - 1], cssplit[i + 1]])
+            if cssplit[i] == "@":
+                cssplits_atmark[idx] = key
+            else:
+                cssplits_sampling_key[key].append(cssplit[i])
+                cssplits_sampling_all.append(cssplit[i])
+        for idx, key in cssplits_atmark.items():
+            if cssplits_sampling_key[key]:
+                cssplits_replaced[idx][i] = random.choice(cssplits_sampling_key[key])
+            else:
+                cssplits_replaced[idx][i] = random.choice(cssplits_sampling_all)
+    for cs in cssplits_replaced:
+        if cs[0] == "@":
+            cs[0] = "=" + sequence[0]
+        if cs[-1] == "@":
+            cs[-1] = "=" + sequence[-1]
+    return cssplits_replaced
+
+
+cssplits = cssplits_error_replaced
+cssplits_atmark_replaced = replace_atmark(cssplits_error_replaced, sequence)
 
 
 def correct_cssplits():
@@ -255,6 +262,20 @@ def correct_cssplits():
     pass
 
 
+before = defaultdict(int)
+for cs in test_sample:
+    before[cs[-2]] += 1
+
+before = sorted(before.items(), key=lambda x: -x[1])
+
+after = defaultdict(int)
+for cs in cssplits_atmark_replaced:
+    after[cs[-2]] += 1
+
+after = sorted(after.items(), key=lambda x: -x[1])
+
+before
+after
 # d = defaultdict(int)
 # for cs in cssplits_sample:
 #     d[cs[51]] += 1

@@ -27,16 +27,16 @@ from src.DAJIN2.core.clustering import clustering
 #     14,
 # )
 
-# # * Point mutation
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/pm-tyr/barcode31.fq.gz",
-#     "examples/pm-tyr/barcode32.fq.gz",
-#     "examples/pm-tyr/design_tyr.fa",
-#     "tyr-pm",
-#     "mm10",
-#     True,
-#     14,
-# )
+# * Point mutation
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "examples/pm-tyr/barcode31.fq.gz",
+    "examples/pm-tyr/barcode32.fq.gz",
+    "examples/pm-tyr/design_tyr.fa",
+    "tyr-pm",
+    "mm10",
+    True,
+    14,
+)
 
 
 # * 2-cut deletion
