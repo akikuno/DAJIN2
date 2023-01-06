@@ -54,8 +54,7 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
         mutation_score = make_score(cssplits_control, cssplits_sample)
         scores_control = annotate_score(cssplits_control, mutation_score)
         scores_sample = annotate_score(cssplits_sample, mutation_score)
-        scores_control_subset = scores_control[:1000]
-        labels = return_labels(scores_sample, scores_control_subset)
+        labels = return_labels(scores_sample, scores_control)
         labels_reorder = reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
         labels_all.extend(labels_reorder)

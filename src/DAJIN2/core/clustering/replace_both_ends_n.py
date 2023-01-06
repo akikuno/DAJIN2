@@ -48,6 +48,8 @@ def replace_both_ends_n(cssplits: list[list[str]]):
         del cnt["N"]
         samples = sampling(cnt, size)
         d_samples[i] = iter(samples)
+    if not d_samples:
+        return cssplits
     cssplits_replaced = deepcopy(cssplits)
     for i, cssplit in enumerate(cssplits_replaced):
         for j, cs in enumerate(cssplit):
