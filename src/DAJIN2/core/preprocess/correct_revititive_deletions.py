@@ -98,7 +98,7 @@ def replace_repdels(transpose_cssplits: list[list[str]], repeat_dels: set):
 ###############################################################################
 
 
-def correct_cssplits(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAMPLE_NAME: str) -> None:
+def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAMPLE_NAME: str) -> None:
     """
     - Mask the following mutations as sequence errors
         - Repetitive deletions

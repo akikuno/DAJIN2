@@ -15,8 +15,8 @@ reload(report)
 
 from src.DAJIN2.core.clustering import clustering
 
-# * Subset of Point mutation
-# 50 or 10 or 01%
+# # * Subset of Point mutation
+# # 50 or 10 or 01%
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "misc/data/tyr_albino_01%.fq.gz",
 #     "misc/data/tyr_control.fq.gz",
@@ -27,34 +27,35 @@ from src.DAJIN2.core.clustering import clustering
 #     14,
 # )
 
-# * Point mutation
+# # * Point mutation
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/pm-tyr/barcode31.fq.gz",
+#     "examples/pm-tyr/barcode32.fq.gz",
+#     "examples/pm-tyr/design_tyr.fa",
+#     "test-pm-tyr",
+#     "mm10",
+#     True,
+#     14,
+# )
+
+
+# * 2-cut deletion
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/pm-tyr/barcode31.fq.gz",
-    "examples/pm-tyr/barcode32.fq.gz",
-    "examples/pm-tyr/design_tyr.fa",
-    "tyr-pm",
+    "tests/data/knockout/test_barcode25.fq.gz",
+    "tests/data/knockout/test_barcode30.fq.gz",
+    "tests/data/knockout/design_stx2.fa",
+    "test-knockout",
     "mm10",
     True,
     14,
 )
 
-
-# * 2-cut deletion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "tests/data/knockout/test_barcode25.fq.gz",
-#     "tests/data/knockout/test_barcode30.fq.gz",
-#     "tests/data/knockout/design_stx2.fa",
-#     "test-stx2-deletion",
-#     "mm10",
-#     True,
-#     14,
-# )
 # #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/del-stx2/barcode25.fq.gz",
 #     "examples/del-stx2/barcode30.fq.gz",
 #     "examples/del-stx2/design_stx2.fa",
-#     "stx2-deletion",
+#     "test-stx2-deletion",
 #     "mm10",
 #     True,
 #     14,
@@ -65,7 +66,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "Ayabe-Task1",
+#     "test-Ayabe-Task1",
 #     "mm10",
 #     True,
 #     14,
@@ -132,7 +133,8 @@ if not flag:
     ###############################################################################
     # Correct CSSPLITS
     ###############################################################################
-    preprocess.correct_cssplits.correct_cssplits(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    preprocess.correct_revititive_deletions.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################

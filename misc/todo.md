@@ -18,8 +18,6 @@
 
 ###  前処理
 
-+ [ ] 🔴補正において、Deletionだけではなくて他の変異についても3-merで補正してみる
-
 + [ ] (test) `correct_cssplits`
 
 ### マッピング
@@ -119,13 +117,10 @@
 ## 開発一般
 
 + [x] (2022-12-05) 🟡`DICT_ALLELE`の名称変更 -> `FASTA_ALLELES`
-
 + [x] (2022-11-02) Controlを先に処理する。
   + `main`関数を`check_inputs`、`execute_control`、`execute_sample`の３つに分ける
   + `NAME`が同じで`CONTROL`が違うという場合も考慮する
-
 + [x] (2022-10-29) 点変異のヘテロ（ポジコン）と10%, 5%, 1%のサンプルを用意する（in vivoゲノム編集を想定）
-
 + [x] 引数チェック関数 → メイン関数 → レポート関数の3部構成とする
   + メイン関数はbatchでも使えるようにする
   + 引数チェックとレポートはbatchとsingleで異なる（可能性がある）
@@ -141,6 +136,9 @@
   + メイン関数内のcontrolとsampleの処理を分ける
 
 ## 前処理
+
++ [x] 🔴Deletionだけではなくて他の変異についても5-merで補正してみる
+  + 2023-01-06 `correct_sequence_error`として実装
 
 + [x] 2022-12-05 `CORRECT_CSSPLITS`を前処理に加える
 + [x] 2022-12-05 補正されたCSSPLITの追加をする
