@@ -1,30 +1,66 @@
 from __future__ import annotations
 
 from itertools import groupby
+from itertools import permutations
+from collections import defaultdict
 from pathlib import Path
 
+from src.DAJIN2.core.preprocess import mappy_align
 import midsv
 
 
-def calc_match(CSSPLIT: str) -> float:
+def extract_diff_loci(TEMPDIR) -> defaultdict[dict]:
+    """
+    Extract differencial loci between alleles
+        - The purpose is to lower match_score between very similar alleles such as point mutation.
+    """
+    fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
+    mutation_alleles = defaultdict(dict)
+    for comb in list(permutations(fasta_alleles, 2)):
+        ref, query = comb
+        ref_allele = ref.stem
+        alignments = mappy_align.to_sam(ref, query, preset="splice")
+        alignments = list(alignments)
+        alignments = [a.split("\t") for a in alignments]
+        alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
+        cssplits = alignments_midsv["CSSPLIT"].split(",")
+        mutations = dict()
+        for i, cs in enumerate(cssplits):
+            if cs.startswith("="):
+                continue
+            mutations.update({i: cs})
+        if len(mutations) < 10:
+            mutation_alleles[ref_allele].update(mutations)
+    return mutation_alleles
+
+
+def calc_match(CSSPLIT: str, mutations: dict) -> float:
     match_score = CSSPLIT.count("=")
     match_score -= CSSPLIT.count("+")  # insertion
     match_score -= sum(cs.islower() for cs in CSSPLIT)  # inversion
-    return match_score / len(CSSPLIT.split(","))
+    cssplit = CSSPLIT.split(",")
+    for i, mut in mutations.items():
+        if cssplit[i] == mut:
+            match_score = 0
+    return match_score / len(cssplit)
 
 
-def classify_alleles(paths_midsv: list[Path]) -> list[dict]:
+def classify_alleles(TEMPDIR, SAMPLE_NAME) -> list[dict]:
+    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
+    mutations = extract_diff_loci(TEMPDIR)
+    # Scoring
     score_of_each_alleles = []
     for path_midsv in paths_midsv:
         allele = path_midsv.stem.split("_")[-1]
         preset = path_midsv.stem.split("_")[-2]
         for dict_midsv in midsv.read_jsonl(path_midsv):
-            score = calc_match(dict_midsv["CSSPLIT"])
+            score = calc_match(dict_midsv["CSSPLIT"], mutations[allele])
             dict_midsv.update({"SCORE": score})
             dict_midsv.update({"ALLELE": allele})
             dict_midsv.update({"PRESET": preset})
             score_of_each_alleles.append(dict_midsv)
     score_of_each_alleles.sort(key=lambda x: x["QNAME"])
+    # Extract alleles with max scores
     possible_allele = []
     for _, group in groupby(score_of_each_alleles, key=lambda x: x["QNAME"]):
         max_score = -float("inf")

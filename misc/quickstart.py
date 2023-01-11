@@ -17,38 +17,39 @@ from src.DAJIN2.core.clustering import clustering
 
 # # * Subset of Point mutation
 # # 50 or 10 or 01%
+# percent = 50
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "misc/data/tyr_albino_01%.fq.gz",
+#     f"misc/data/tyr_albino_{percent}%.fq.gz",
 #     "misc/data/tyr_control.fq.gz",
-#     "misc/data/tyr_control.fasta",
-#     "test_tyr_albino_01%",
+#     "misc/data/tyr_design.fasta",
+#     f"test-tyr-albino_{percent}%",
 #     "mm10",
 #     True,
 #     14,
 # )
 
-# # * Point mutation
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/pm-tyr/barcode31.fq.gz",
-#     "examples/pm-tyr/barcode32.fq.gz",
-#     "examples/pm-tyr/design_tyr.fa",
-#     "test-pm-tyr",
-#     "mm10",
-#     True,
-#     14,
-# )
-
-
-# * 2-cut deletion
+# * Point mutation
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "tests/data/knockout/test_barcode25.fq.gz",
-    "tests/data/knockout/test_barcode30.fq.gz",
-    "tests/data/knockout/design_stx2.fa",
-    "test-knockout",
+    "examples/pm-tyr/barcode31.fq.gz",
+    "examples/pm-tyr/barcode32.fq.gz",
+    "examples/pm-tyr/design_tyr.fa",
+    "test-pm-tyr",
     "mm10",
     True,
     14,
 )
+
+
+# # * 2-cut deletion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "tests/data/knockout/test_barcode25.fq.gz",
+#     "tests/data/knockout/test_barcode30.fq.gz",
+#     "tests/data/knockout/design_stx2.fa",
+#     "test-knockout",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 # #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -148,8 +149,8 @@ if not flag:
 # Classify alleles
 ########################################################################
 
-paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
-classif_sample = classification.classify_alleles(paths_midsv)
+# paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
+classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 
 # paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
 # classif_control = classification.classify_alleles(paths_midsv)
