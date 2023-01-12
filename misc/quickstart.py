@@ -15,20 +15,20 @@ reload(report)
 
 from src.DAJIN2.core.clustering import clustering
 
-# * Subset of Point mutation
-# 50 or 10 or 01%
-percent = 50
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    f"misc/data/tyr_albino_{percent}%.fq.gz",
-    "misc/data/tyr_control.fq.gz",
-    "misc/data/tyr_design.fasta",
-    f"test-tyr-albino_{percent}%",
-    "mm10",
-    True,
-    14,
-)
+# # # * Subset of Point mutation
+# # # 50 or 10 or 01%
+# percent = "01"
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     f"misc/data/tyr_albino_{percent}%.fq.gz",
+#     "misc/data/tyr_control.fq.gz",
+#     "misc/data/tyr_control.fasta",
+#     f"test-tyr-albino_{percent}%",
+#     "mm10",
+#     True,
+#     14,
+# )
 
-# # * Point mutation
+# # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/pm-tyr/barcode31.fq.gz",
 #     "examples/pm-tyr/barcode32.fq.gz",
@@ -41,17 +41,17 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 
 
 # # * 2-cut deletion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "tests/data/knockout/test_barcode25.fq.gz",
-#     "tests/data/knockout/test_barcode30.fq.gz",
-#     "tests/data/knockout/design_stx2.fa",
-#     "test-knockout",
-#     "mm10",
-#     True,
-#     14,
-# )
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "tests/data/knockout/test_barcode25.fq.gz",
+    "tests/data/knockout/test_barcode30.fq.gz",
+    "tests/data/knockout/design_stx2.fa",
+    "test-knockout",
+    "mm10",
+    True,
+    14,
+)
 
-# #* 2-cut deletion
+# # #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/del-stx2/barcode25.fq.gz",
 #     "examples/del-stx2/barcode30.fq.gz",
