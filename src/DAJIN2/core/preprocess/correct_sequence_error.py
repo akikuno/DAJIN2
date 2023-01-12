@@ -50,14 +50,14 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
     return count_indels_5mer
 
 
-def extractr_sequence_errors(count_5mer_sample, count_5mer_control):
+def extractr_sequence_errors(count_5mer_sample, count_5mer_control, coverage_sample, coverage_control):
     sequence_errors = [set() for _ in range(len(count_5mer_sample))]
     for i in range(len(sequence_errors)):
         for ids in ["ins", "del", "sub"]:
-            x = count_5mer_sample[i][ids]
-            y = count_5mer_control[i][ids]
-            distance = 1 - cosine(x, y)
-            _, pvalue = stats.ttest_ind(x, y, equal_var=False)
+            samp = [c / coverage_sample for c in count_5mer_sample[i][ids]]
+            cont = [c / coverage_control for c in count_5mer_control[i][ids]]
+            distance = 1 - cosine(samp, cont)
+            _, pvalue = stats.ttest_ind(samp, cont, equal_var=False)
             if distance > 0.95 and pvalue > 0.05:
                 sequence_errors[i].add(ids)
     return sequence_errors
@@ -118,12 +118,16 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
     for allele, sequence in FASTA_ALLELES.items():
         midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl")))
         midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
-        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+        coverage_sample = len(midsv_sample)
+        coverage_control = len(midsv_control)
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
+        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         left_idx, right_idx = set_indexes(sequence)
         count_5mer_sample = count_indels_5mer(cssplits_sample, left_idx, right_idx)
         count_5mer_control = count_indels_5mer(cssplits_control, left_idx, right_idx)
-        sequence_errors = extractr_sequence_errors(count_5mer_sample, count_5mer_control)
+        sequence_errors = extractr_sequence_errors(
+            count_5mer_sample, count_5mer_control, coverage_sample, coverage_control
+        )
         cssplits_sample_error_replaced = replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_idx)
         cssplits_control_error_replaced = replace_errors_to_atmark(
             cssplits_control, sequence_errors, left_idx, right_idx

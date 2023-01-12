@@ -4,7 +4,6 @@ import numpy as np
 import re
 from itertools import chain
 from copy import deepcopy
-from collections import defaultdict
 from scipy.spatial.distance import cosine
 from pathlib import Path
 
@@ -76,11 +75,11 @@ def replace_repdels(transpose_cssplits: list[list[str]], repeat_dels: set):
         if i not in repeat_dels:
             continue
         cnt = Counter(cssplits)
-        size = sum(1 for cs in cssplits if cs.startswith("-"))
+        size = sum(1 for cs in cssplits if cs.startswith("-") or cs == "N")
         if size == 0:
             continue
         for key in list(cnt.keys()):
-            if key.startswith("-"):
+            if key.startswith("-") or key == "N":
                 del cnt[key]
         if cnt:
             samples = sampling(cnt, size)
@@ -88,7 +87,7 @@ def replace_repdels(transpose_cssplits: list[list[str]], repeat_dels: set):
             samples = ["N"] * size
         iter_samples = iter(samples)
         for j, cs in enumerate(cssplits):
-            if cs.startswith("-"):
+            if cs.startswith("-") or cs == "N":
                 replased_cssplits[i][j] = next(iter_samples)
     return replased_cssplits
 
