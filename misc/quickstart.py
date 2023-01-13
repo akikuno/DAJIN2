@@ -40,16 +40,16 @@ from src.DAJIN2.core.clustering import clustering
 # )
 
 
-# # * 2-cut deletion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "tests/data/knockout/test_barcode25.fq.gz",
-    "tests/data/knockout/test_barcode30.fq.gz",
-    "tests/data/knockout/design_stx2.fa",
-    "test-knockout",
-    "mm10",
-    True,
-    14,
-)
+# # # * 2-cut deletion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "tests/data/knockout/test_barcode25.fq.gz",
+#     "tests/data/knockout/test_barcode30.fq.gz",
+#     "tests/data/knockout/design_stx2.fa",
+#     "test-knockout",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 # # #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -62,16 +62,16 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
-# # * flox insertion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "test-Ayabe-Task1",
-#     "mm10",
-#     True,
-#     14,
-# )
+# * flox insertion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+    "test-ayabe-task1",
+    "mm10",
+    True,
+    14,
+)
 
 ##########################################################
 # Check inputs
