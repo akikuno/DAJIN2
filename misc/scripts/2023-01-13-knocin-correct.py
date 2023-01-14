@@ -9,9 +9,14 @@
     - knock-in配列を完全に含むように、周辺配列から1-2mer選択する
 - 類似配列において、knock-in配列と変異プロファイルを比較し、変異の類似性が高い場合にはその変異を置き換える
 
+メモ
+- knock-in配列のスタート
+    left-loxp: 1733
+    right-loxp: 2428
 結果
 """
 import midsv
+from collections import defaultdict
 from pathlib import Path
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
 
@@ -31,19 +36,30 @@ FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 
 allele = "flox"
 sv = False
-midsv_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", "barcode31_splice_flox.jsonl"))
-midsv_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", "barcode42_splice_flox.jsonl"))
-midsv_sample[0]
+midsv_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"barcode31_splice_{allele}.jsonl"))
+midsv_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"barcode42_splice_{allele}.jsonl"))
+midsv_sample[1]
 midsv_control[3]
-cssplits_sample = []
-for samp in classif_sample:
-    if samp["ALLELE"] == allele and not samp["SV"]:
-        cssplits_sample.append(samp)
+# cssplits_sample = []
+# for samp in classif_sample:
+#     if samp["ALLELE"] == allele and not samp["SV"]:
+#         cssplits_sample.append(samp)
 
 idx = 2444
 idx = 1776
-for cs in cssplits_sample:
-    cs["CSSPLIT"].split(",")[idx]
+# left_start = 1733
+count_sample = defaultdict(int)
+for cs in midsv_sample:
+    x = cs["CSSPLIT"].split(",")[idx]
+    count_sample[x] += 1
+
+count_control = defaultdict(int)
+for cs in midsv_control:
+    x = cs["CSSPLIT"].split(",")[idx]
+    count_control[x] += 1
+
+count_sample
+count_control
 
 cssplits_sample
 sequence = ["TAGCTAAT"]
