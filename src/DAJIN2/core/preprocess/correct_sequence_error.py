@@ -50,7 +50,7 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
     return count_indels_5mer
 
 
-def extractr_sequence_errors(count_5mer_sample, count_5mer_control, coverage_sample, coverage_control):
+def extract_sequence_errors(count_5mer_sample, count_5mer_control, coverage_sample, coverage_control):
     sequence_errors = [set() for _ in range(len(count_5mer_sample))]
     for i in range(len(sequence_errors)):
         for ids in ["ins", "del", "sub"]:
@@ -125,7 +125,7 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
         left_idx, right_idx = set_indexes(sequence)
         count_5mer_sample = count_indels_5mer(cssplits_sample, left_idx, right_idx)
         count_5mer_control = count_indels_5mer(cssplits_control, left_idx, right_idx)
-        sequence_errors = extractr_sequence_errors(
+        sequence_errors = extract_sequence_errors(
             count_5mer_sample, count_5mer_control, coverage_sample, coverage_control
         )
         cssplits_sample_error_replaced = replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_idx)
