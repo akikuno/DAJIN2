@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 課題
 - Cables2 floxアレルにおいて、knock-in配列の補正がされていないため、knock-in配列上のシークエンスエラーによってアレルがクラスタリングされてしまっている
@@ -6,6 +8,7 @@
     - 2438の-C, 2456の-C, 2458の*TC
 対策
 - kcnok-in配列上の5merをとり、コントロールの5merと類似の配列を探す
+    - FASTA_ALLELEのマッピングによりknock-in配列箇所を探す
     - knock-in配列を完全に含むように、周辺配列から1-2mer選択する
 - 類似配列において、knock-in配列と変異プロファイルを比較し、変異の類似性が高い場合にはその変異を置き換える
 
@@ -19,6 +22,12 @@ import midsv
 from collections import defaultdict
 from pathlib import Path
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
+from itertools import groupby
+from itertools import permutations
+from collections import defaultdict
+from pathlib import Path
+
+from src.DAJIN2.core.preprocess import mappy_align
 
 # * flox insertion
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -31,7 +40,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
     14,
 )
 
-
+TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 
 allele = "flox"
@@ -76,4 +85,29 @@ knockin_5mer = ["AGCTA", "TAACT"]
 import difflib
 
 difflib.get_close_matches(knockin_5mer, sequence, n=10, cutoff=0.0)
+
+
+def extract_diff_loci(TEMPDIR) -> defaultdict[dict]:
+    """
+    Extract differencial loci between alleles
+        - The purpose is to lower match_score between very similar alleles such as point mutation.
+    """
+    fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
+    mutation_alleles = defaultdict(dict)
+    for comb in list(permutations(fasta_alleles, 2)):
+        ref, query = comb
+        ref_allele = ref.stem
+        alignments = mappy_align.to_sam(ref, query, preset="splice")
+        alignments = list(alignments)
+        alignments = [a.split("\t") for a in alignments]
+        alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
+        cssplits = alignments_midsv["CSSPLIT"].split(",")
+        mutations = dict()
+        for i, cs in enumerate(cssplits):
+            if cs.startswith("="):
+                continue
+            mutations.update({i: cs})
+        if len(mutations) < 10:
+            mutation_alleles[ref_allele].update(mutations)
+    return mutation_alleles
 
