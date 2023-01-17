@@ -53,13 +53,13 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
 def extract_sequence_errors(count_5mer_sample, count_5mer_control, coverage_sample, coverage_control):
     sequence_errors = [set() for _ in range(len(count_5mer_sample))]
     for i in range(len(sequence_errors)):
-        for ids in ["ins", "del", "sub"]:
-            samp = [c / coverage_sample for c in count_5mer_sample[i][ids]]
-            cont = [c / coverage_control for c in count_5mer_control[i][ids]]
+        for mutation in ["ins", "del", "sub"]:
+            samp = [c / coverage_sample for c in count_5mer_sample[i][mutation]]
+            cont = [c / coverage_control for c in count_5mer_control[i][mutation]]
             distance = 1 - cosine(samp, cont)
             _, pvalue = stats.ttest_ind(samp, cont, equal_var=False)
             if distance > 0.95 and pvalue > 0.05:
-                sequence_errors[i].add(ids)
+                sequence_errors[i].add(mutation)
     return sequence_errors
 
 
