@@ -1,6 +1,6 @@
 # DAJIN2 is now under development👷
 
-I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
+I aim to release a stable version of DAJIN2 by ~~March~~ August 2023:crossed_fingers:
 
 ## New planned features
 
@@ -13,12 +13,12 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 - [ ] nCATs
 - [ ] base-editing
 
-### Design
+### Tested Design
 
-- [ ] point mutation
+- [x] point mutation
+- [x] 2-cut knockout
+- [x] flox knockin
 - [ ] 1-cut knockout
-- [ ] 2-cut knockout
-- [ ] flox knockin
 - [ ] large insertion knockin
 - [ ] humanized exon knockin
 - [ ] multi-allele phasing
@@ -27,6 +27,9 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 
 - [ ] output VCF
 - [ ] multi-processing
+- [x] error correction
+  - repetitive deletion
+  - knockin sequence
 - [x] trim microhomology in BAM
 
 ### Usability
@@ -39,7 +42,7 @@ I aim to release a stable version of DAJIN2 by March 2023:crossed_fingers:
 - [x] support macOS
 - [x] support samples without a reference genome
 - [x] support visualization using `igv.js` via `DAJIN2 view` command
-- [x] support graphical user interface using `flask` via `DAJIN2 gui` command
+- [x] support graphical user interface (GUI) using `flask` via `DAJIN2 gui` command
 
 ### Maintainability
 
