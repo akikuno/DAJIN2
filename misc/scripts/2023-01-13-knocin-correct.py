@@ -203,6 +203,15 @@ def replace_errors_to_match(cssplits_sample, sequence_errors, sequence):
 
 
 ##########################################################
+# main
+# Todo 入力がFASTA_ALLELE、出力はmidsv.write_jsonl
+##########################################################
+
+
+def execute(TEMPDIR, FASTA_ALLELES):
+    pass
+
+
 knockin_alleles = extract_knockin_loci(TEMPDIR)
 knockin_loci = knockin_alleles["flox"]
 sequence = FASTA_ALLELES["flox"]
@@ -262,7 +271,7 @@ for i, count_knockin in count_5mer_knockin.items():
 # Knock-in配列中のシークエンスエラーを補正する
 ###############################################################
 
-cssplits_replaced = replace_errors_to_atmark(cssplits_sample, sequence_errors, sequence)
+cssplits_replaced = replace_errors_to_match(cssplits_sample, sequence_errors, sequence)
 
 
 # 確認
