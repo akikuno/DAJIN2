@@ -56,21 +56,21 @@ def test_extract_basename_change_filename():
 
 
 def test_dictionize_allele_fasta():
-    path_fasta = "tests/data/format_input/fasta.fa"
+    path_fasta = "tests/data/preprocess/format_input/fasta.fa"
     test = format_inputs.dictionize_allele(path_fasta)
     answer = {"test1": "ACGTACGTACGTACGTACGTACGTACGTACGTACGT", "test2": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"}
     assert test == answer
 
 
 def test_dictionize_allele_fasta_wrap():
-    path_fasta = "tests/data/format_input/fasta_wrap.fa"
+    path_fasta = "tests/data/preprocess/format_input/fasta_wrap.fa"
     test = format_inputs.dictionize_allele(path_fasta)
     answer = {"test1": "ACGTACGTACGTACGTACGTACGTACGTACGTACGT", "test2": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"}
     assert test == answer
 
 
 def test_dictionize_allele_empty():
-    path_fasta = "tests/data/format_input/fasta_empty.fa"
+    path_fasta = "tests/data/preprocess/format_input/fasta_empty.fa"
     with pytest.raises(AttributeError) as e:
         format_inputs.dictionize_allele(path_fasta)
     assert str(e.value) == f"{path_fasta} contains an empty header"

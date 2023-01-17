@@ -1,6 +1,9 @@
 import pytest
-from src.DAJIN2.core.preprocess import check_inputs
+from src.DAJIN2.core.preprocess import correct_knockin
 from importlib import reload
 
-reload(check_inputs)
+reload(correct_knockin)
 
+
+def test_extract_knockin_loci() -> None:
+    pass
