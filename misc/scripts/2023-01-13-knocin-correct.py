@@ -18,40 +18,19 @@ from __future__ import annotations
     right-loxp: 2428
 結果
 """
-from difflib import get_close_matches
 import re
 from collections import Counter, defaultdict
 from copy import deepcopy
+from difflib import get_close_matches
+from itertools import groupby, permutations
 from pathlib import Path
+
 import midsv
 from scipy import stats
 from scipy.spatial.distance import cosine
-import midsv
-from collections import defaultdict, Counter
-from pathlib import Path
-from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
-from itertools import groupby
-from itertools import permutations
-from collections import defaultdict
-from pathlib import Path
 
+from src.DAJIN2.core import classification, clustering, consensus, preprocess, report
 from src.DAJIN2.core.preprocess import mappy_align
-
-for fastas in permutations(Path("tests/data/preprocess/correct_knockin/").iterdir(), 2):
-    print(fastas)
-    ref, query = fastas
-    ref_allele = ref.stem
-    alignments = mappy_align.to_sam(ref, query, preset="splice")
-    alignments = list(alignments)
-    alignments = [a.split("\t") for a in alignments]
-    alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
-    cssplits = alignments_midsv["CSSPLIT"].split(",")
-    print(cssplits)
-    mutations = dict()
-    for i, cs in enumerate(cssplits):
-        if cs.startswith("="):
-            continue
-        mutations.update({i: cs})
 
 # * flox insertion
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (

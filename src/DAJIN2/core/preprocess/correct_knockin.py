@@ -18,29 +18,35 @@ from src.DAJIN2.core.preprocess import mappy_align
 ###############################################################################
 
 
-def extract_knockin_loci(TEMPDIR) -> defaultdict[set]:
+def extract_knockin_loci(TEMPDIR) -> defaultdict(set):
     """
-    Extract differencial loci between alleles
-        - The purpose is to lower match_score between very similar alleles such as point mutation.
+    Returns:
+        defaultdict(set): loci of knockin in each fasta pairs
     """
     fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
     knockin_alleles = defaultdict(set)
-    for comb in list(permutations(fasta_alleles, 2)):
-        ref, query = comb
+    for pair in list(permutations(fasta_alleles, 2)):
+        ref, query = pair
         ref_allele = ref.stem
         alignments = mappy_align.to_sam(ref, query, preset="splice")
         alignments = [a.split("\t") for a in alignments]
         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
         cssplits = alignments_midsv["CSSPLIT"].split(",")
-        knockin = set()
+        knockin_loci = set()
         for i, cs in enumerate(cssplits):
-            if cs == "N":
-                knockin.add(i)
-        knockin_alleles[ref_allele] = knockin
+            if cs == "N" or cs.startswith("-"):
+                knockin_loci.add(i)
+        knockin_alleles[ref_allele] = knockin_loci
     return knockin_alleles
 
 
-def split_sequence_in_5mer(sequence: str):
+def split_sequence_in_5mer(sequence: str) -> dict:
+    """
+    Returns:
+        dict: 5mer sequence and index of the center of 5mer
+    """
+    if len(sequence) <= 5:
+        return {sequence: len(sequence) // 2}
     sequence_kmer = dict()
     for i in range(len(sequence) - 5):
         sequence_kmer.update({sequence[i : i + 5]: i + 2})
@@ -69,7 +75,7 @@ def get_idx_of_similar_5mers(
     return idx_of_similar_5mers
 
 
-def count_indel_5mer(cssplits_transposed, indexes) -> defaultdict(dict):
+def count_indel_5mer(cssplits_transposed: list, indexes: list(int)) -> defaultdict(dict):
     count_5mer = defaultdict(dict)
     for i in indexes:
         cssplits_5mer = cssplits_transposed[i - 2 : i + 3]
@@ -89,21 +95,21 @@ def count_indel_5mer(cssplits_transposed, indexes) -> defaultdict(dict):
     return count_5mer
 
 
-def replace_errors_to_match(cssplits_sample, sequence_errors, sequence):
+def replace_errors_to_match(cssplits_sample: list, sequence_errors: defaultdict(set), sequence: str):
     cssplits_replaced = []
     for cssplits in cssplits_sample:
         cssplits_copy = deepcopy(cssplits)
-        for idx, error in sequence_errors.items():
-            cssplits_5mer = cssplits_copy[idx - 2 : idx + 3]
+        for i, error in sequence_errors.items():
+            cssplits_5mer = cssplits_copy[i - 2 : i + 3]
             for j, mer in enumerate(cssplits_5mer):
-                match_seq = "=" + sequence[idx - 2 + j]
+                match_seq = "=" + sequence[i - 2 + j]
                 if "ins" in error and mer.startswith("+"):
                     cssplits_5mer[j] = match_seq
                 if "del" in error and mer.startswith("-"):
                     cssplits_5mer[j] = match_seq
                 if "del" in error and mer.startswith("*"):
                     cssplits_5mer[j] = match_seq
-            cssplits_copy[idx - 2 : idx + 3] = cssplits_5mer
+            cssplits_copy[i - 2 : i + 3] = cssplits_5mer
         cssplits_replaced.append(cssplits_copy)
     return cssplits_replaced
 
@@ -132,8 +138,8 @@ def execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME):
         for i, indexes in idx_of_similar_5mers.items():
             count_5mer_similar_sequences[i] = count_indel_5mer(cssplits_transposed, indexes)
         # Find the number of indels in 5mer of Knock-in sequence
-        transposed_cssplits = [list(t) for t in zip(*cssplits_sample)]
-        count_5mer_knockin = count_indel_5mer(transposed_cssplits, knockin_loci)
+        cssplits_transposed = [list(t) for t in zip(*cssplits_sample)]
+        count_5mer_knockin = count_indel_5mer(cssplits_transposed, knockin_loci)
         # If there is an error profile similar to the Knock-in sequence and similar sequences, consider it a sequencing error
         coverage_sample = len(midsv_sample)
         coverage_control = len(midsv_control)
