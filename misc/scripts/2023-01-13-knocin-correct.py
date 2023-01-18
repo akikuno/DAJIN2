@@ -3,9 +3,8 @@ from __future__ import annotations
 """
 課題
 - Cables2 floxアレルにおいて、knock-in配列の補正がされていないため、knock-in配列上のシークエンスエラーによってアレルがクラスタリングされてしまっている
-    - 1776番目の*GA変異
-    - 2444番目の-T欠失
-    - 2438の-C, 2456の-C, 2458の*TC
+    - 1763 番目の-G
+    - 2716~2719 の-TCC
 対策
 - kcnok-in配列上のkmerをとり、コントロールのkmerと類似の配列を探す
     - FASTA_ALLELEのマッピングによりknock-in配列箇所を探す
@@ -50,8 +49,6 @@ allele = "flox"
 sv = False
 midsv_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"barcode31_splice_{allele}.jsonl"))
 midsv_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"barcode42_splice_{allele}.jsonl"))
-midsv_sample[1]
-midsv_control[3]
 
 cssplits_sample = [m["CSSPLIT"].split(",") for m in midsv_sample]
 cssplits_control = [m["CSSPLIT"].split(",") for m in midsv_control]
@@ -60,8 +57,7 @@ cssplits_control = [m["CSSPLIT"].split(",") for m in midsv_control]
 #     if samp["ALLELE"] == allele and not samp["SV"]:
 #         cssplits_sample.append(samp)
 
-idx = 2444  # -A
-idx = 1776  # *GA
+idx = 1763
 # left_start = 1733
 count_sample = defaultdict(int)
 for cs in midsv_sample:
@@ -115,29 +111,31 @@ def extract_knockin_loci(TEMPDIR) -> defaultdict[set]:
     return knockin_alleles
 
 
-def split_sequence_in_5mer(sequence: str):
-    sequence_kmer = dict()
-    for i in range(len(sequence) - 5):
-        sequence_kmer.update({sequence[i : i + 5]: i + 2})
-    return sequence_kmer
-
-
-def get_5mer_of_knockin_loci(sequence: str, knockin_loci: list):
+def get_5mer_of_knockin_loci(sequence: str, knockin_loci: list) -> dict:
     sequence_kmer = dict()
     for i in knockin_loci:
-        sequence_kmer.update({sequence[i : i + 5]: i + 2})
+        sequence_kmer.update({i + 2: sequence[i : i + 5]})
     return sequence_kmer
 
 
-def get_idx_of_similar_5mers(knockin_kmer: dict, sequence_kmer: dict) -> defaultdict(list):
+def get_5mer_of_sequence(sequence: str) -> dict:
+    if len(sequence) <= 5:
+        return [sequence]
+    sequence_kmer = dict()
+    for i in range(len(sequence) - 5):
+        sequence_kmer.update({i + 2: sequence[i : i + 5]})
+    return sequence_kmer
+
+
+def get_idx_of_similar_5mers(knockin_kmer: dict, sequence_kmer: dict, knockin_loci: set, n=100) -> defaultdict(set):
     idx_of_similar_5mers = defaultdict(list)
-    for kmer, locus in knockin_kmer.items():
-        idxes = []
-        for key in get_close_matches(kmer, sequence_kmer.keys(), n=100, cutoff=0.0):
-            idx = sequence_kmer[key]
-            if set(range(idx - 2, idx + 3)) & knockin_loci:
-                continue
-            idxes.append(idx)
+    for locus, kmer in knockin_kmer.items():
+        idxes = set()
+        for similar_kmer in get_close_matches(kmer, sequence_kmer.values(), n=n, cutoff=0.0):
+            for idx in (key for key, val in sequence_kmer.items() if val == similar_kmer):
+                if set(range(idx - 2, idx + 3)) & knockin_loci:
+                    continue
+                idxes.add(idx)
         idx_of_similar_5mers[locus] = idxes
     return idx_of_similar_5mers
 
@@ -194,7 +192,6 @@ def execute(TEMPDIR, FASTA_ALLELES):
 knockin_alleles = extract_knockin_loci(TEMPDIR)
 knockin_loci = knockin_alleles["flox"]
 sequence = FASTA_ALLELES["flox"]
-i = 1776
 
 """
 コントロールとの類似配列において、エラーの相同性が高いものをシークエンスエラーとする
@@ -202,11 +199,12 @@ i = 1776
 
 
 knockin_kmer = get_5mer_of_knockin_loci(sequence, knockin_loci)
-sequence_kmer = split_sequence_in_5mer(sequence)
+sequence_kmer = get_5mer_of_sequence(sequence)
 
-idx_of_similar_5mers = get_idx_of_similar_5mers(knockin_kmer, sequence_kmer)
-
-# i = 1776
+idx_of_similar_5mers = get_idx_of_similar_5mers(knockin_kmer, sequence_kmer, knockin_loci, n=100)
+get_idx_of_similar_5mers({1763: "ACGAA"}, sequence_kmer)
+# i = 1763
+# idx_of_similar_5mers[i]
 # sequence[i - 2 : i + 3], i
 # j = 1299
 # sequence[j - 2 : j + 3]
@@ -222,8 +220,8 @@ for i, indexes in idx_of_similar_5mers.items():
 Knock-in配列のエラープロファイル
 """
 # i = 1776
-transposed_cssplits = [list(t) for t in zip(*cssplits_sample)]
-count_5mer_knockin = count_indel_5mer(transposed_cssplits, knockin_loci)
+cssplits_transposed = [list(t) for t in zip(*cssplits_sample)]
+count_5mer_knockin = count_indel_5mer(cssplits_transposed, knockin_loci)
 
 
 coverage_sample = len(midsv_sample)
@@ -256,7 +254,7 @@ cssplits_replaced = replace_errors_to_match(cssplits_sample, sequence_errors, se
 # 確認
 
 idx = 2444  # -A
-idx = 1776  # *GA
+idx = 2717  # -G
 # left_start = 1733
 count_sample = defaultdict(int)
 for cs in midsv_sample:

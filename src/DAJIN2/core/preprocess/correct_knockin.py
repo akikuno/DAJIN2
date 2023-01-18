@@ -40,37 +40,31 @@ def extract_knockin_loci(TEMPDIR) -> defaultdict(set):
     return knockin_alleles
 
 
-def split_sequence_in_5mer(sequence: str) -> dict:
-    """
-    Returns:
-        dict: 5mer sequence and index of the center of 5mer
-    """
-    if len(sequence) <= 5:
-        return {sequence: len(sequence) // 2}
-    sequence_kmer = dict()
-    for i in range(len(sequence) - 5):
-        sequence_kmer.update({sequence[i : i + 5]: i + 2})
-    return sequence_kmer
-
-
-def get_5mer_of_knockin_loci(sequence: str, knockin_loci: list):
+def get_5mer_of_knockin_loci(sequence: str, knockin_loci: list) -> dict:
     sequence_kmer = dict()
     for i in knockin_loci:
-        sequence_kmer.update({sequence[i : i + 5]: i + 2})
+        sequence_kmer.update({i + 2: sequence[i : i + 5]})
     return sequence_kmer
 
 
-def get_idx_of_similar_5mers(
-    knockin_kmer: dict, sequence_kmer: dict, knockin_loci: list, n: int = 100
-) -> defaultdict(list):
+def get_5mer_of_sequence(sequence: str) -> dict:
+    if len(sequence) <= 5:
+        return [sequence]
+    sequence_kmer = dict()
+    for i in range(len(sequence) - 5):
+        sequence_kmer.update({i + 2: sequence[i : i + 5]})
+    return sequence_kmer
+
+
+def get_idx_of_similar_5mers(knockin_kmer: dict, sequence_kmer: dict, knockin_loci: set, n=100) -> defaultdict(set):
     idx_of_similar_5mers = defaultdict(list)
-    for kmer, locus in knockin_kmer.items():
-        idxes = []
-        for key in get_close_matches(kmer, sequence_kmer.keys(), n=n, cutoff=0.0):
-            idx = sequence_kmer[key]
-            if set(range(idx - 2, idx + 3)) & knockin_loci:
-                continue
-            idxes.append(idx)
+    for locus, kmer in knockin_kmer.items():
+        idxes = set()
+        for similar_kmer in get_close_matches(kmer, sequence_kmer.values(), n=n, cutoff=0.0):
+            for idx in (key for key, val in sequence_kmer.items() if val == similar_kmer):
+                if set(range(idx - 2, idx + 3)) & knockin_loci:
+                    continue
+                idxes.add(idx)
         idx_of_similar_5mers[locus] = idxes
     return idx_of_similar_5mers
 
@@ -119,7 +113,7 @@ def replace_errors_to_match(cssplits_sample: list, sequence_errors: defaultdict(
 ##########################################################
 
 
-def execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME):
+def execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME):
     knockin_alleles = extract_knockin_loci(TEMPDIR)
     for allele, sequence in FASTA_ALLELES.items():
         sequence = FASTA_ALLELES[allele]
@@ -130,7 +124,7 @@ def execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME):
         cssplits_control = [m["CSSPLIT"].split(",") for m in midsv_control]
         # Split the knock-in sequence and control into 5 mer and find 100 similar sequences in the control
         knockin_kmer = get_5mer_of_knockin_loci(sequence, knockin_loci)
-        sequence_kmer = split_sequence_in_5mer(sequence)
+        sequence_kmer = get_5mer_of_sequence(sequence)
         idx_of_similar_5mers = get_idx_of_similar_5mers(knockin_kmer, sequence_kmer, knockin_loci, n=100)
         # Find the number of indels in 5mer of similar sequence
         count_5mer_similar_sequences = defaultdict(dict)

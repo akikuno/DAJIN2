@@ -112,7 +112,7 @@ if not flag:
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
     ###############################################################################
-    # Mapping with minimap2/mappy
+    # Mapping with mappy
     ###############################################################################
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
@@ -136,6 +136,7 @@ if not flag:
     ###############################################################################
     preprocess.correct_revititive_deletions.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################

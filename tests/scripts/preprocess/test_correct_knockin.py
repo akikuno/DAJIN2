@@ -13,19 +13,19 @@ def test_extract_knockin_loci() -> None:
     assert test == answer
 
 
-def test_split_sequence_in_5mer() -> None:
+def test_get_5mer_of_sequence() -> None:
     sequence = "ACGTACGT"
-    test = correct_knockin.split_sequence_in_5mer(sequence)
-    answer = {"ACGTA": 2, "CGTAC": 3, "GTACG": 4}
+    test = correct_knockin.get_5mer_of_sequence(sequence)
+    answer = {2: "ACGTA", 3: "CGTAC", 4: "GTACG"}
     assert test == answer
 
 
 def test_get_idx_of_similar_5mers() -> None:
-    kmer = {"CATAA": 1738, "ATAAC": 2451}
-    seq = {"CTAAT": 2796, "TAATG": 2797}
+    kmer = {1738: "CATAA", 2451: "ATAAC"}
+    seq = {2796: "CTAAT", 2797: "TAATG"}
     loci = {1000, 2000}
     test = correct_knockin.get_idx_of_similar_5mers(kmer, seq, loci, n=5)
-    answer = {1738: [2796, 2797], 2451: [2797, 2796]}
+    answer = {1738: {2796, 2797}, 2451: {2796, 2797}}
     assert dict(test) == answer
 
 
