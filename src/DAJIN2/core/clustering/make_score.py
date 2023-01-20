@@ -43,7 +43,7 @@ def subtract_percentage(percent_control, percent_sample) -> list[dict]:
 def discard_common_error(sample_subtracted, threshold=0.5):
     sample_discarded = []
     for samp in sample_subtracted:
-        remained = {k: v for k, v in samp.items() if v > threshold}
+        remained = {k: v for k, v in samp.items() if abs(v) > threshold}
         sample_discarded.append(remained)
     return sample_discarded
 

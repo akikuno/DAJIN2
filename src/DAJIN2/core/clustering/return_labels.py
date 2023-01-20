@@ -1,11 +1,9 @@
 from __future__ import annotations
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from collections import Counter
-
-# from sklearn.cluster import MeanShift
-from sklearn.decomposition import PCA
 
 from src.DAJIN2.core.clustering.merge_clusters import merge_clusters
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
@@ -17,12 +15,12 @@ from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
 
 def reduce_dimention(scores_sample: list[list], scores_control_subset: list[list]) -> np.array:
     scores = scores_sample + scores_control_subset
-    n_components = min(20, len(scores))
-    scaler = StandardScaler()
-    scores_scaler = scaler.fit_transform(scores)
-    pca = PCA(n_components=n_components).fit(scores_scaler)
-    variance = pca.explained_variance_
-    return pca.transform(scores_scaler) * variance
+    n_components = min(20, len(scores[0]))
+    # scaler = StandardScaler()
+    # scores = scaler.fit_transform(scores)
+    pca = PCA(n_components=n_components).fit(scores)
+    # variance = pca.explained_variance_
+    return pca.transform(scores)  # * variance
 
 
 def edist(x1, y1, x2, y2):
@@ -37,13 +35,13 @@ def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subse
         np.random.seed(seed=1)
         labels = GaussianMixture(n_components=i, random_state=1).fit_predict(X)
         labels = labels.tolist()
-        labels_control = labels[len(scores_sample) :]
         labels_sample = labels[: len(scores_sample)]
+        labels_control = labels[len(scores_sample) :]
         labels_merged = merge_clusters(labels_control, labels_sample)
         labels_reorder = reorder_labels(labels_merged)
-        # print(np.random.get_state()[1][0], Counter(labels))  # ! -------------------------------------------
         x = len(Counter(labels_control))
         y = len(Counter(labels_reorder))
+        # print(i, Counter(labels_control), Counter(labels_reorder))  # ! -------------------------------------------
         point_coodinates.append([i, x, y, iter(labels_reorder)])
     idx = point_coodinates[0][0]
     x = max(c[1] for c in point_coodinates)
@@ -62,9 +60,10 @@ def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subse
 def return_labels(scores_sample: list[list], scores_control: list[list]) -> list[int]:
     np.random.seed(seed=1)
     X_control = reduce_dimention([], scores_control)
-    labels = GaussianMixture(n_components=20, random_state=1).fit_predict(X_control)
+    labels = GaussianMixture(n_components=5, random_state=1).fit_predict(X_control)
     label_most = Counter(labels).most_common()[0][0]
     scores_control_subset = [s for l, s in zip(labels, scores_control) if l == label_most][:1000]
     X = reduce_dimention(scores_sample, scores_control_subset)
     labels = optimize_labels(X, scores_sample, scores_control_subset)
     return labels
+
