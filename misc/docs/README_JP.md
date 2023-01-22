@@ -1,8 +1,21 @@
 # DAJIN2
 
-⚠️ DAJIN2は現在開発中です。2023年3月のリリースを予定しています。⚠️
+⚠️ DAJIN2は現在開発中です。2023年8月のリリースを予定しています。⚠️
 
-# 使い方
+DAJIN2はゲノム編集によって
+
+## Install/インストール
+
+```bash
+pip install DAJIN2
+```
+
+
+```bash
+conda install -c bioconda -c conda-forge DAJIN2
+```
+
+# Usage/使い方
 
 ## Singleモード
 
@@ -42,3 +55,6 @@ DAJIN2 \
 ```bash
 DAJIN2 batch [-f/--file] batch.csv [-t/--threads] THREADS
 ```
+
+## Citation/引用
+
