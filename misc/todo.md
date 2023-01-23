@@ -34,7 +34,7 @@
 
 ### クラスタリング
 
-+ [ ] 🔴`find_knockin_loci.py`
++ [x] 🔴`find_knockin_loci.py`
   + controlとくらべて配列長が長いアレルのみを対象とする？
   + 本当にノックインだけで良いのか？Deletion、点変異、逆位、エクソン置換で検討が必要
 
