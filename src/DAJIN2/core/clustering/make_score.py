@@ -1,6 +1,7 @@
 from __future__ import annotations
 from collections import defaultdict
 from collections import Counter
+import re
 
 
 def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
@@ -51,7 +52,7 @@ def discard_common_error(sample_subtracted, threshold=0.5):
 def discard_match(sample_subtracted):
     sample_discarded = []
     for samp in sample_subtracted:
-        remained = {k: v for k, v in samp.items() if k.count("=") != 3}
+        remained = {k: v for k, v in samp.items() if not re.search(r"=[ACGT],=[ACGT],=[ACGT]", k)}
         sample_discarded.append(remained)
     return sample_discarded
 

@@ -18,13 +18,11 @@ import midsv
 # reload(merge_clusters)
 # reload(reorder_labels)
 # reload(return_labels)
-from src.DAJIN2.core.clustering.replace_both_ends_n import replace_both_ends_n
+from DAJIN2.core.clustering.preprocess import replace_both_ends_n
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
 from src.DAJIN2.core.clustering.return_labels import return_labels
-
-# find_knockin_loci
 
 
 def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREADS: int = 1) -> list[dict[str]]:
@@ -37,17 +35,9 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
         cssplits_control_by_alleles[allele] = cssplits
     labels_all = []
     max_label = 0
-    # KNOCKIN_LOCI = find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     classif_sample.sort(key=lambda x: (x["ALLELE"], x["SV"]))
     for (allele, _), group in groupby(classif_sample, key=lambda x: (x["ALLELE"], x["SV"])):
-        # sequence = FASTA_ALLELES[allele]
-        # knockin_loci = KNOCKIN_LOCI[allele]
-        # Control
         cssplits_control = cssplits_control_by_alleles[allele]
-        # Sample
-        # cssplits_sample = [
-        #     cs["CSSPLIT"].split(",") for cs in classif_sample if cs["ALLELE"] == allele and cs["SV"] == sv
-        # ]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
         cssplits_control = replace_both_ends_n(cssplits_control)
         cssplits_sample = replace_both_ends_n(cssplits_sample)
