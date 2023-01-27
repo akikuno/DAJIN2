@@ -41,7 +41,7 @@ def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subse
         labels_reorder = reorder_labels(labels_merged)
         x = len(Counter(labels_control))
         y = len(Counter(labels_reorder))
-        # print(i, Counter(labels_control), Counter(labels_reorder))  # ! -------------------------------------------
+        print(i, Counter(labels_control), Counter(labels_reorder))  # ! -------------------------------------------
         point_coodinates.append([i, x, y, iter(labels_reorder)])
     idx = point_coodinates[0][0]
     x = max(c[1] for c in point_coodinates)
@@ -60,7 +60,7 @@ def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subse
 def return_labels(scores_sample: list[list], scores_control: list[list]) -> list[int]:
     np.random.seed(seed=1)
     X_control = reduce_dimention([], scores_control)
-    labels = GaussianMixture(n_components=5, random_state=1).fit_predict(X_control)
+    labels = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)
     label_most = Counter(labels).most_common()[0][0]
     scores_control_subset = [s for l, s in zip(labels, scores_control) if l == label_most][:1000]
     X = reduce_dimention(scores_sample, scores_control_subset)
