@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from src.DAJIN2.core.clustering import find_knockin_loci
+from DAJIN2.core.clustering.past import find_knockin_loci
 
 
 def test_find_knockin_loci():
