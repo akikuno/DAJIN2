@@ -1,7 +1,6 @@
 from __future__ import annotations
 from collections import defaultdict
 from collections import Counter
-import re
 
 
 def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
@@ -74,4 +73,3 @@ def make_score(cssplits_control, cssplits_sample, knockin_loci):
     percent_discarded = discard_common_error(percent_subtraction, 0.5)
     mutation_score = discard_match(percent_discarded)
     return mutation_score
-

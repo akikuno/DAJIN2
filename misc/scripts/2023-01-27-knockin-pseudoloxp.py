@@ -209,13 +209,15 @@ from sklearn.svm import OneClassSVM
 X_control = reduce_dimention([], scores_control)
 labels = OneClassSVM(gamma="auto").fit_predict(X_control)
 
+cssplits, scores, labels, target_label = cssplits_control, scores_control, labels, 1
 cont_normal = return_consensus_label(cssplits_control, scores_control, labels, 0)
 cont_abnormal = return_consensus_label(cssplits_control, scores_control, labels, 1)
-cssplits, scores, labels, target_label = cssplits_control, scores_control, labels, 1
 
 cont_normal
 cont_abnormal
-
+[i for i, l in enumerate(labels) if l == 1]
+cssplits_control[19][1760:1780]
+["" if cs.startswith("=") else cs for cs in cssplits_control[45]]
 cssplits_control[0][1740]
 cssplits_control[1][1740]
 scores_control[0][1740]
