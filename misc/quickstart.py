@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import sys, os
+from pathlib import Path
+
+sys.path.append("/mnt/d/Research/DAJIN2")
+os.chdir("/mnt/d/Research/DAJIN2")
+
 import hashlib
 from collections import defaultdict
 from pathlib import Path
@@ -17,7 +23,7 @@ from src.DAJIN2.core.clustering import clustering
 
 # # # * Subset of Point mutation
 # # # 50 or 10 or 01%
-# percent = "01"
+# percent = "10"
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     f"misc/data/tyr_albino_{percent}%.fq.gz",
 #     "misc/data/tyr_control.fq.gz",
@@ -27,7 +33,6 @@ from src.DAJIN2.core.clustering import clustering
 #     True,
 #     14,
 # )
-
 # # # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/pm-tyr/barcode31.fq.gz",
@@ -40,16 +45,16 @@ from src.DAJIN2.core.clustering import clustering
 # )
 
 
-# # # * 2-cut deletion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "tests/data/knockout/test_barcode25.fq.gz",
-#     "tests/data/knockout/test_barcode30.fq.gz",
-#     "tests/data/knockout/design_stx2.fa",
-#     "test-knockout",
-#     "mm10",
-#     True,
-#     14,
-# )
+# # * 2-cut deletion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "tests/data/knockout/test_barcode25.fq.gz",
+    "tests/data/knockout/test_barcode30.fq.gz",
+    "tests/data/knockout/design_stx2.fa",
+    "test-knockout",
+    "mm10",
+    True,
+    14,
+)
 
 # # #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -63,15 +68,17 @@ from src.DAJIN2.core.clustering import clustering
 # )
 
 # * flox insertion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-    "test-ayabe-task1",
-    "mm10",
-    True,
-    14,
-)
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+#     "test-ayabe-task1",
+#     "mm10",
+#     True,
+#     14,
+# )
+
+print(f"processing {NAME}...")
 
 ##########################################################
 # Check inputs
