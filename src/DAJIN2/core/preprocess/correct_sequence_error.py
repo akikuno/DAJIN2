@@ -89,6 +89,7 @@ def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
         cssplits_atmark = defaultdict(str)
         cssplits_sampling_key = defaultdict(list)
         cssplits_sampling_all = []
+        flag_all_atmark = True
         for idx, cssplit in enumerate(cssplits):
             key = ",".join([cssplit[i - 1], cssplit[i + 1]])
             if cssplit[i] == "@":
@@ -96,8 +97,11 @@ def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
             else:
                 cssplits_sampling_key[key].append(cssplit[i])
                 cssplits_sampling_all.append(cssplit[i])
+                flag_all_atmark = False
         for idx, key in cssplits_atmark.items():
-            if cssplits_sampling_key[key]:
+            if flag_all_atmark:
+                cssplits_replaced[idx][i] = "N"
+            elif cssplits_sampling_key[key]:
                 cssplits_replaced[idx][i] = random.choice(cssplits_sampling_key[key])
             else:
                 cssplits_replaced[idx][i] = random.choice(cssplits_sampling_all)

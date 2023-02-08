@@ -12,14 +12,13 @@ from pathlib import Path
 from importlib import reload
 
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
+from src.DAJIN2.core.clustering import clustering
 
 reload(preprocess)
 reload(classification)
 reload(clustering)
 reload(consensus)
 reload(report)
-
-from src.DAJIN2.core.clustering import clustering
 
 # # # * Subset of Point mutation
 # # # 50 or 10 or 01%
