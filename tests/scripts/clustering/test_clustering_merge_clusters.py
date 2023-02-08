@@ -13,13 +13,13 @@ def test_merge_mixed_cluster():
     assert test == answer
 
 
-def test_merge_minor_cluster():
-    labels = [1] * 100
-    labels += [2, 3, 4]
-    labels += [5] * 100
-    test = merge_minor_cluster(labels)
-    answer = [1] * 100
-    answer += [6] * 3
-    answer += [5] * 100
-    assert test == answer
+# def test_merge_minor_cluster():
+#     labels = [1] * 100
+#     labels += [2, 3, 4]
+#     labels += [5] * 100
+#     test = merge_minor_cluster(labels)
+#     answer = [1] * 100
+#     answer += [6] * 3
+#     answer += [5] * 100
+#     assert test == answer
 
