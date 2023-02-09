@@ -3,10 +3,15 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
+from sklearn.exceptions import ConvergenceWarning
 from collections import Counter
 
 from src.DAJIN2.core.clustering.merge_clusters import merge_clusters
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
+
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 ###############################################################################
 # Dimension reduction
@@ -17,7 +22,7 @@ def reduce_dimension(scores_sample: list[list], scores_control_subset: list[list
     scores = scores_sample + scores_control_subset
     n_components = min(20, len(scores[0]))
     pca = PCA(n_components=n_components).fit(scores)
-    return pca.transform(scores)  # * variance
+    return pca.transform(scores)
 
 
 def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subset: list[list]) -> list[int]:
