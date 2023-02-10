@@ -55,7 +55,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
     14,
 )
 
-# # #* 2-cut deletion
+# #### #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/del-stx2/barcode25.fq.gz",
 #     "examples/del-stx2/barcode30.fq.gz",
@@ -66,7 +66,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
-# * flox insertion
+# #### * flox insertion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
@@ -156,21 +156,11 @@ if not flag:
 # Classify alleles
 ########################################################################
 
-# paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
 classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
-
-# paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
-# classif_control = classification.classify_alleles(paths_midsv)
-
-########################################################################
-# Detect Structural variants
-########################################################################
 
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-# for classif in classif_control:
-#     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 # d = defaultdict(int)
 # for c in classif_sample:
@@ -182,28 +172,6 @@ for classif in classif_sample:
 ########################################################################
 # Clustering
 ########################################################################
-
-# allele = "control"
-# sv = False
-# cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
-
-# for classif in classif_sample:
-#     if "e0174c91bd7b" in classif["QNAME"]:
-#         print(classif["CSSPLIT"])
-
-# # 476 del
-
-# for classif in classif_sample:
-#     if "edc66c43a83f" in classif["QNAME"]:
-#         print(classif["CSSPLIT"])
-
-# 615 del
-
-# KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-
-# DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-#     TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
-# )
 
 clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)

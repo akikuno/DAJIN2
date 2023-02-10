@@ -6,7 +6,7 @@ from pathlib import Path
 import midsv
 
 from src.DAJIN2.core.preprocess.correct_knockin import extract_knockin_loci
-from src.DAJIN2.core.clustering.preprocess import replace_both_ends_n
+from src.DAJIN2.core.clustering.preprocess import replace_both_ends_n, compress_insertion
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
@@ -30,6 +30,8 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, THREA
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
         cssplits_control = replace_both_ends_n(cssplits_control)
         cssplits_sample = replace_both_ends_n(cssplits_sample)
+        cssplits_control = compress_insertion(cssplits_control)
+        cssplits_sample = compress_insertion(cssplits_sample)
         mutation_score = make_score(cssplits_control, cssplits_sample, knockin_alleles[allele])
         scores_control = annotate_score(cssplits_control, mutation_score)
         scores_sample = annotate_score(cssplits_sample, mutation_score)
