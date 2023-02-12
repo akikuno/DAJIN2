@@ -58,7 +58,7 @@ def extract_sequence_errors(count_5mer_sample, count_5mer_control, coverage_samp
             cont = [c / coverage_control for c in count_5mer_control[i][mutation]]
             distance = 1 - cosine(samp, cont)
             _, pvalue = stats.ttest_ind(samp, cont, equal_var=False)
-            if distance > 0.95 and pvalue > 0.05:
+            if distance > 0.9 and pvalue > 0.05:
                 sequence_errors[i].add(mutation)
     return sequence_errors
 
@@ -147,4 +147,3 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
             midsv_control[i]["CSSPLIT"] = cssplits
         midsv.write_jsonl(midsv_control, Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl"))
         midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl"))
-
