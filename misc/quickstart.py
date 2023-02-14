@@ -20,19 +20,20 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
-# # # * Subset of Point mutation
-# # # 50 or 10 or 01%
-# percent = "10"
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     f"misc/data/tyr_albino_{percent}%.fq.gz",
-#     "misc/data/tyr_control.fq.gz",
-#     "misc/data/tyr_control.fasta",
-#     f"test-tyr-albino_{percent}%",
-#     "mm10",
-#     True,
-#     14,
-# )
-# # # * Point mutation
+##### # * Subset of Point mutation
+##### # 50 or 10 or 01%
+percent = "01"
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    f"misc/data/tyr_albino_{percent}%.fq.gz",
+    "misc/data/tyr_control.fq.gz",
+    "misc/data/tyr_control.fasta",
+    f"test-tyr-albino-{percent}%",
+    "mm10",
+    True,
+    14,
+)
+
+# ##### # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/pm-tyr/barcode31.fq.gz",
 #     "examples/pm-tyr/barcode32.fq.gz",
@@ -44,16 +45,16 @@ reload(report)
 # )
 
 
-# # * 2-cut deletion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "tests/data/knockout/test_barcode25.fq.gz",
-    "tests/data/knockout/test_barcode30.fq.gz",
-    "tests/data/knockout/design_stx2.fa",
-    "test-knockout",
-    "mm10",
-    True,
-    14,
-)
+# ##### # * 2-cut deletion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "tests/data/knockout/test_barcode25.fq.gz",
+#     "tests/data/knockout/test_barcode30.fq.gz",
+#     "tests/data/knockout/design_stx2.fa",
+#     "test-knockout",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 # #### #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
