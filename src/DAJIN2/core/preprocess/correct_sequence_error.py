@@ -7,7 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 import midsv
 from scipy import stats
-from scipy.spatial.distance import cosine
+from scipy.spatial import distance
 
 
 def set_indexes(sequence: str):
@@ -56,9 +56,9 @@ def extract_sequence_errors(count_5mer_sample, count_5mer_control, coverage_samp
         for mutation in ["ins", "del", "sub"]:
             samp = [c / coverage_sample for c in count_5mer_sample[i][mutation]]
             cont = [c / coverage_control for c in count_5mer_control[i][mutation]]
-            distance = 1 - cosine(samp, cont)
+            cossim = 1 - distance.cosine(samp, cont)
             _, pvalue = stats.ttest_ind(samp, cont, equal_var=False)
-            if distance > 0.9 and pvalue > 0.05:
+            if cossim > 0.9 and pvalue > 0.05:
                 sequence_errors[i].add(mutation)
     return sequence_errors
 
