@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import sys, os
+from pathlib import Path
+
+sys.path.append("/mnt/d/Research/DAJIN2")
+os.chdir("/mnt/d/Research/DAJIN2")
+
 import hashlib
 from collections import defaultdict
 from pathlib import Path
 from importlib import reload
 
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
+from src.DAJIN2.core.clustering import clustering
 
 reload(preprocess)
 reload(classification)
@@ -13,21 +20,20 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
-from src.DAJIN2.core.clustering import clustering
+##### # * Subset of Point mutation
+##### # 50 or 10 or 01%
+percent = "01"
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    f"misc/data/tyr_albino_{percent}%.fq.gz",
+    "misc/data/tyr_control.fq.gz",
+    "misc/data/tyr_control.fasta",
+    f"test-tyr-albino-{percent}%",
+    "mm10",
+    True,
+    14,
+)
 
-# # * Subset of Point mutation
-# # 50 or 10 or 01%
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "misc/data/tyr_albino_01%.fq.gz",
-#     "misc/data/tyr_control.fq.gz",
-#     "misc/data/tyr_control.fasta",
-#     "test_tyr_albino_01%",
-#     "mm10",
-#     True,
-#     14,
-# )
-
-# # * Point mutation
+# ##### # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/pm-tyr/barcode31.fq.gz",
 #     "examples/pm-tyr/barcode32.fq.gz",
@@ -39,18 +45,18 @@ from src.DAJIN2.core.clustering import clustering
 # )
 
 
-# * 2-cut deletion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "tests/data/knockout/test_barcode25.fq.gz",
-    "tests/data/knockout/test_barcode30.fq.gz",
-    "tests/data/knockout/design_stx2.fa",
-    "test-knockout",
-    "mm10",
-    True,
-    14,
-)
+# ##### # * 2-cut deletion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "tests/data/knockout/test_barcode25.fq.gz",
+#     "tests/data/knockout/test_barcode30.fq.gz",
+#     "tests/data/knockout/design_stx2.fa",
+#     "test-knockout",
+#     "mm10",
+#     True,
+#     14,
+# )
 
-# #* 2-cut deletion
+# #### #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/del-stx2/barcode25.fq.gz",
 #     "examples/del-stx2/barcode30.fq.gz",
@@ -61,16 +67,18 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
-# # * flox insertion
+# #### * flox insertion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "test-Ayabe-Task1",
+#     "test-ayabe-task1",
 #     "mm10",
 #     True,
 #     14,
 # )
+
+print(f"processing {NAME}...")
 
 ##########################################################
 # Check inputs
@@ -111,7 +119,7 @@ if not flag:
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
     ###############################################################################
-    # Mapping with minimap2/mappy
+    # Mapping with mappy
     ###############################################################################
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
@@ -135,6 +143,7 @@ if not flag:
     ###############################################################################
     preprocess.correct_revititive_deletions.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################
@@ -148,21 +157,11 @@ if not flag:
 # Classify alleles
 ########################################################################
 
-paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
-classif_sample = classification.classify_alleles(paths_midsv)
-
-# paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}*"))
-# classif_control = classification.classify_alleles(paths_midsv)
-
-########################################################################
-# Detect Structural variants
-########################################################################
+classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-# for classif in classif_control:
-#     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 # d = defaultdict(int)
 # for c in classif_sample:
@@ -174,28 +173,6 @@ for classif in classif_sample:
 ########################################################################
 # Clustering
 ########################################################################
-
-# allele = "control"
-# sv = False
-# cssplit_control = [cs["CSSPLIT"] for cs in classif_control if cs["ALLELE"] == allele and cs["SV"] == sv]
-
-# for classif in classif_sample:
-#     if "e0174c91bd7b" in classif["QNAME"]:
-#         print(classif["CSSPLIT"])
-
-# # 476 del
-
-# for classif in classif_sample:
-#     if "edc66c43a83f" in classif["QNAME"]:
-#         print(classif["CSSPLIT"])
-
-# 615 del
-
-# KNOCKIN_LOCI = clustering.find_knockin_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-
-# DIFFLOCI_ALLELES, REPETITIVE_DELLOCI = clustering.extract_different_loci(
-#     TEMPDIR, classif_sample, KNOCKIN_LOCI, FASTA_ALLELES, CONTROL_NAME
-# )
 
 clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, THREADS)
 clust_sample = clustering.add_readnum(clust_sample)

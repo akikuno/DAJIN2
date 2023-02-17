@@ -21,11 +21,11 @@ def merge_minor_cluster(labels_sample: list[int]) -> list[int]:
     total_num = sum(Counter(labels_sample).values())
     cnt = Counter(labels_sample)
     labels_minor = {label for label, num in cnt.items() if num / total_num * 100 < 0.5}
-    max_label = max(labels_sample) + 1
+    comon_label = cnt.most_common()[0][0]
     labels_merged = deepcopy(labels_sample)
     for i, label in enumerate(labels_sample):
         if label in labels_minor:
-            labels_merged[i] = max_label
+            labels_merged[i] = comon_label
     return labels_merged
 
 

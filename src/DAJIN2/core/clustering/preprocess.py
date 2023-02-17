@@ -39,17 +39,16 @@ def replace_both_ends_n(cssplits: list[list[str]]):
     transpose_cssplits = [list(cs) for cs in zip(*cssplits)]
     d_samples = defaultdict(iter)
     for i, cssplit in enumerate(transpose_cssplits):
+        flag_no_N = all(True if cs != "N" else False for cs in cssplit)
+        if flag_no_N:
+                continue
+        flag_all_N = all(True if cs == "N" else False for cs in cssplit)
         cnt = Counter(cssplit)
-        if cnt["N"] == 0:  # No N
-            continue
-        if len(cnt) == 1 and cnt["N"] > 0:  # All N
-            continue
         size = cnt["N"]
-        del cnt["N"]
+        if not flag_all_N:
+            del cnt["N"]
         samples = sampling(cnt, size)
         d_samples[i] = iter(samples)
-    if not d_samples:
-        return cssplits
     cssplits_replaced = deepcopy(cssplits)
     for i, cssplit in enumerate(cssplits_replaced):
         for j, cs in enumerate(cssplit):
@@ -66,3 +65,17 @@ def replace_both_ends_n(cssplits: list[list[str]]):
             except TypeError:
                 pass
     return cssplits_replaced
+
+
+def compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
+    """
+    Insertion will be subdivided by mutations in the its sequence, so it is compressed as a '+I' to eliminate mutations.
+    """
+    cssplits_abstracted = []
+    for cssplit in cssplits:
+        for i, cs in enumerate(cssplit):
+            if cs.startswith("+"):
+                cssplit[i] = "+I" + cs.split("|")[-1]
+        cssplits_abstracted.append(cssplit)
+    return cssplits_abstracted
+

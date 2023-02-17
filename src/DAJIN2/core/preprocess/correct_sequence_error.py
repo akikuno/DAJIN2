@@ -7,7 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 import midsv
 from scipy import stats
-from scipy.spatial.distance import cosine
+from scipy.spatial import distance
 
 
 def set_indexes(sequence: str):
@@ -50,16 +50,16 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
     return count_indels_5mer
 
 
-def extractr_sequence_errors(count_5mer_sample, count_5mer_control):
+def extract_sequence_errors(count_5mer_sample, count_5mer_control, coverage_sample, coverage_control):
     sequence_errors = [set() for _ in range(len(count_5mer_sample))]
     for i in range(len(sequence_errors)):
-        for ids in ["ins", "del", "sub"]:
-            x = count_5mer_sample[i][ids]
-            y = count_5mer_control[i][ids]
-            distance = 1 - cosine(x, y)
-            _, pvalue = stats.ttest_ind(x, y, equal_var=False)
-            if distance > 0.95 and pvalue > 0.05:
-                sequence_errors[i].add(ids)
+        for mutation in ["ins", "del", "sub"]:
+            samp = [c / coverage_sample for c in count_5mer_sample[i][mutation]]
+            cont = [c / coverage_control for c in count_5mer_control[i][mutation]]
+            cossim = 1 - distance.cosine(samp, cont)
+            _, pvalue = stats.ttest_ind(samp, cont, equal_var=False)
+            if cossim > 0.9 and pvalue > 0.05:
+                sequence_errors[i].add(mutation)
     return sequence_errors
 
 
@@ -89,6 +89,7 @@ def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
         cssplits_atmark = defaultdict(str)
         cssplits_sampling_key = defaultdict(list)
         cssplits_sampling_all = []
+        flag_all_atmark = True
         for idx, cssplit in enumerate(cssplits):
             key = ",".join([cssplit[i - 1], cssplit[i + 1]])
             if cssplit[i] == "@":
@@ -96,8 +97,11 @@ def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
             else:
                 cssplits_sampling_key[key].append(cssplit[i])
                 cssplits_sampling_all.append(cssplit[i])
+                flag_all_atmark = False
         for idx, key in cssplits_atmark.items():
-            if cssplits_sampling_key[key]:
+            if flag_all_atmark:
+                cssplits_replaced[idx][i] = "N"
+            elif cssplits_sampling_key[key]:
                 cssplits_replaced[idx][i] = random.choice(cssplits_sampling_key[key])
             else:
                 cssplits_replaced[idx][i] = random.choice(cssplits_sampling_all)
@@ -118,12 +122,16 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
     for allele, sequence in FASTA_ALLELES.items():
         midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl")))
         midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
-        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+        coverage_sample = len(midsv_sample)
+        coverage_control = len(midsv_control)
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
+        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         left_idx, right_idx = set_indexes(sequence)
         count_5mer_sample = count_indels_5mer(cssplits_sample, left_idx, right_idx)
         count_5mer_control = count_indels_5mer(cssplits_control, left_idx, right_idx)
-        sequence_errors = extractr_sequence_errors(count_5mer_sample, count_5mer_control)
+        sequence_errors = extract_sequence_errors(
+            count_5mer_sample, count_5mer_control, coverage_sample, coverage_control
+        )
         cssplits_sample_error_replaced = replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_idx)
         cssplits_control_error_replaced = replace_errors_to_atmark(
             cssplits_control, sequence_errors, left_idx, right_idx
@@ -139,4 +147,3 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
             midsv_control[i]["CSSPLIT"] = cssplits
         midsv.write_jsonl(midsv_control, Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl"))
         midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl"))
-

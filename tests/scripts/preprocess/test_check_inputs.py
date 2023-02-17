@@ -31,7 +31,7 @@ def test_fastq_extension():
 
 def test_fastq_error_not_fastq_format():
     with pytest.raises(AttributeError):
-        fastq_path = "tests/data/check_inputs/empty.fq"
+        fastq_path = "tests/data/preprocess/check_inputs/empty.fq"
         _ = check_inputs.fastq_content(fastq_path)
 
 
@@ -47,28 +47,28 @@ def test_fastq_without_error():
 
 def test_fasta_error_not_fasta_format():
     with pytest.raises(AttributeError) as e:
-        fasta_path = "tests/data/check_inputs/empty.fa"
+        fasta_path = "tests/data/preprocess/check_inputs/empty.fa"
         _ = check_inputs.fasta_content(fasta_path)
     assert str(e.value) == f"{fasta_path} is not a FASTA format"
 
 
 def test_fasta_error_duplicated_identifiers():
     with pytest.raises(AttributeError) as e:
-        fasta_path = "tests/data/check_inputs/duplicated_name.fa"
+        fasta_path = "tests/data/preprocess/check_inputs/duplicated_name.fa"
         _ = check_inputs.fasta_content(fasta_path)
     assert str(e.value) == f"{fasta_path} must include unique identifiers"
 
 
 def test_fasta_error_duplicated_sequences():
     with pytest.raises(AttributeError) as e:
-        fasta_path = "tests/data/check_inputs/duplicated_seq.fa"
+        fasta_path = "tests/data/preprocess/check_inputs/duplicated_seq.fa"
         _ = check_inputs.fasta_content(fasta_path)
     assert str(e.value) == f"{fasta_path} must include unique DNA sequences"
 
 
 def test_fasta_error_without_control():
     with pytest.raises(AttributeError) as e:
-        fasta_path = "tests/data/check_inputs/no_control.fa"
+        fasta_path = "tests/data/preprocess/check_inputs/no_control.fa"
         _ = check_inputs.fasta_content(fasta_path)
     assert str(e.value) == f"{fasta_path} must include a 'control' sequence"
 
