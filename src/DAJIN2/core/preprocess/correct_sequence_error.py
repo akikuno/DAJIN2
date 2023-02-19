@@ -6,6 +6,7 @@ from collections import Counter, defaultdict
 from copy import deepcopy
 from pathlib import Path
 import midsv
+import numpy as np
 from scipy import stats
 from scipy.spatial import distance
 
@@ -50,15 +51,29 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
     return count_indels_5mer
 
 
-def extract_sequence_errors(count_5mer_sample, count_5mer_control, coverage_sample, coverage_control):
+def extract_sequence_errors(count_5mer_sample, count_5mer_control):
     sequence_errors = [set() for _ in range(len(count_5mer_sample))]
-    for i in range(len(sequence_errors)):
+    dists = defaultdict(list)
+    # Calculate Jensen-Shannon distance
+    for samp, cont in zip(count_5mer_sample, count_5mer_control):
         for mutation in ["ins", "del", "sub"]:
-            samp = [c / coverage_sample for c in count_5mer_sample[i][mutation]]
-            cont = [c / coverage_control for c in count_5mer_control[i][mutation]]
-            cossim = 1 - distance.cosine(samp, cont)
-            _, pvalue = stats.ttest_ind(samp, cont, equal_var=False)
-            if cossim > 0.9 and pvalue > 0.05:
+            s = samp[mutation]
+            c = cont[mutation]
+            dists[mutation].append(distance.jensenshannon(s, c))
+    # Discrimitate seq errors and real mutation using Hotelling's T-squared distribution
+    dists_all = np.array(list(dists.values())).flatten()
+    avg = np.average(dists_all[~np.isnan(dists_all)])
+    var = np.var(dists_all[~np.isnan(dists_all)])
+    threshold = 0.05
+    for mutation in ["ins", "del", "sub"]:
+        dists_subset = dists[mutation]
+        scores = [(xi - avg) ** 2 / var for xi in dists_subset]
+        thres = stats.chi2.interval(1 - threshold, 1)[1]
+        for i, score in enumerate(scores):
+            # 'nan' means the two distributions have too different, so it could be a real mutation
+            if np.isnan(score):
+                continue
+            if score < thres:
                 sequence_errors[i].add(mutation)
     return sequence_errors
 
@@ -122,16 +137,14 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
     for allele, sequence in FASTA_ALLELES.items():
         midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl")))
         midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
-        coverage_sample = len(midsv_sample)
-        coverage_control = len(midsv_control)
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+        # Extract sequence errors
         left_idx, right_idx = set_indexes(sequence)
         count_5mer_sample = count_indels_5mer(cssplits_sample, left_idx, right_idx)
         count_5mer_control = count_indels_5mer(cssplits_control, left_idx, right_idx)
-        sequence_errors = extract_sequence_errors(
-            count_5mer_sample, count_5mer_control, coverage_sample, coverage_control
-        )
+        sequence_errors = extract_sequence_errors(count_5mer_sample, count_5mer_control)
+        # Correct sequence errors
         cssplits_sample_error_replaced = replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_idx)
         cssplits_control_error_replaced = replace_errors_to_atmark(
             cssplits_control, sequence_errors, left_idx, right_idx

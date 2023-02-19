@@ -22,16 +22,16 @@ reload(report)
 
 ##### # * Subset of Point mutation
 ##### # 50 or 10 or 01%
-percent = "01"
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    f"misc/data/tyr_albino_{percent}%.fq.gz",
-    "misc/data/tyr_control.fq.gz",
-    "misc/data/tyr_control.fasta",
-    f"test-tyr-albino-{percent}%",
-    "mm10",
-    True,
-    14,
-)
+# percent = "01"
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     f"misc/data/tyr_albino_{percent}%.fq.gz",
+#     "misc/data/tyr_control.fq.gz",
+#     "misc/data/tyr_control.fasta",
+#     f"test-tyr-albino-{percent}%",
+#     "mm10",
+#     True,
+#     30,
+# )
 
 # ##### # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -53,7 +53,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "test-knockout",
 #     "mm10",
 #     True,
-#     14,
+#     30,
 # )
 
 # #### #* 2-cut deletion
@@ -67,16 +67,16 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
-# #### * flox insertion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "test-ayabe-task1",
-#     "mm10",
-#     True,
-#     14,
-# )
+#### * flox insertion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+    "test-ayabe-task1",
+    "mm10",
+    True,
+    14,
+)
 
 print(f"processing {NAME}...")
 
