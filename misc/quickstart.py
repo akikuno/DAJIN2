@@ -20,8 +20,8 @@ reload(clustering)
 reload(consensus)
 reload(report)
 
-##### # * Subset of Point mutation
-##### # 50 or 10 or 01%
+# #### # * Subset of Point mutation
+# #### # 50 or 10 or 01%
 # percent = "01"
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     f"misc/data/tyr_albino_{percent}%.fq.gz",
@@ -45,16 +45,16 @@ reload(report)
 # )
 
 
-# ##### # * 2-cut deletion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "tests/data/knockout/test_barcode25.fq.gz",
-#     "tests/data/knockout/test_barcode30.fq.gz",
-#     "tests/data/knockout/design_stx2.fa",
-#     "test-knockout",
-#     "mm10",
-#     True,
-#     30,
-# )
+##### # * 2-cut deletion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "tests/data/knockout/test_barcode25.fq.gz",
+    "tests/data/knockout/test_barcode30.fq.gz",
+    "tests/data/knockout/design_stx2.fa",
+    "test-knockout",
+    "mm10",
+    True,
+    30,
+)
 
 # #### #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -67,16 +67,16 @@ reload(report)
 #     14,
 # )
 
-#### * flox insertion
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
-    "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
-    "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-    "test-ayabe-task1",
-    "mm10",
-    True,
-    14,
-)
+# #### * flox insertion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
+#     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
+#     "test-ayabe-task1",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 print(f"processing {NAME}...")
 
@@ -141,7 +141,7 @@ if not flag:
     ###############################################################################
     # Correct CSSPLITS
     ###############################################################################
-    preprocess.correct_revititive_deletions.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    # preprocess.correct_revititive_deletions.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ###############################################################################
@@ -161,14 +161,6 @@ classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 
 for classif in classif_sample:
     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
-
-
-# d = defaultdict(int)
-# for c in classif_sample:
-#     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["PRESET"]}'
-#     d[keys] += 1
-
-# d
 
 ########################################################################
 # Clustering

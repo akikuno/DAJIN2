@@ -15,9 +15,10 @@ def extract_diff_loci(TEMPDIR) -> defaultdict[dict]:
         - The purpose is to lower match_score between very similar alleles such as point mutation.
     """
     fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
+    fasta_alleles = [f for f in fasta_alleles if f.suffix != ".fai"]
     mutation_alleles = defaultdict(dict)
-    for comb in list(permutations(fasta_alleles, 2)):
-        ref, query = comb
+    for pair in list(permutations(fasta_alleles, 2)):
+        ref, query = pair
         ref_allele = ref.stem
         alignments = mappy_align.to_sam(ref, query, preset="splice")
         alignments = list(alignments)

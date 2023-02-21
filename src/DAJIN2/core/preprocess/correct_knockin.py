@@ -24,6 +24,7 @@ def extract_knockin_loci(TEMPDIR) -> defaultdict(set):
         defaultdict(set): loci of knockin in each fasta pairs
     """
     fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
+    fasta_alleles = [f for f in fasta_alleles if f.suffix != ".fai"]
     knockin_alleles = defaultdict(set)
     for pair in list(permutations(fasta_alleles, 2)):
         ref, query = pair

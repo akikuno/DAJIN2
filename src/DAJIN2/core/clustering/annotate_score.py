@@ -13,4 +13,3 @@ def annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str, flo
             score.append(mutation_score[i].get(kmer, 0))
         scores.append(score + [0])
     return scores
-
