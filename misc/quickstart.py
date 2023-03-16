@@ -3,8 +3,9 @@ from __future__ import annotations
 import sys, os
 from pathlib import Path
 
-sys.path.append("/mnt/d/Research/DAJIN2")
-os.chdir("/mnt/d/Research/DAJIN2")
+HOMEDIR_DAJIN2 = __file__.replace("misc/quickstart.py", "")
+sys.path.append(HOMEDIR_DAJIN2)
+os.chdir(HOMEDIR_DAJIN2)
 
 import hashlib
 from collections import defaultdict
@@ -33,28 +34,28 @@ reload(report)
 #     30,
 # )
 
-# ##### # * Point mutation
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/pm-tyr/barcode31.fq.gz",
-#     "examples/pm-tyr/barcode32.fq.gz",
-#     "examples/pm-tyr/design_tyr.fa",
-#     "test-pm-tyr",
-#     "mm10",
-#     True,
-#     14,
-# )
-
-
-##### # * 2-cut deletion
+##### # * Point mutation
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "tests/data/knockout/test_barcode25.fq.gz",
-    "tests/data/knockout/test_barcode30.fq.gz",
-    "tests/data/knockout/design_stx2.fa",
-    "test-knockout",
+    "examples/pm-tyr/barcode31.fq.gz",
+    "examples/pm-tyr/barcode32.fq.gz",
+    "examples/pm-tyr/design_tyr.fa",
+    "test-pm-tyr",
     "mm10",
     True,
-    30,
+    14,
 )
+
+
+# ##### # * 2-cut deletion
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "tests/data/knockout/test_barcode25.fq.gz",
+#     "tests/data/knockout/test_barcode30.fq.gz",
+#     "tests/data/knockout/design_stx2.fa",
+#     "test-knockout",
+#     "mm10",
+#     True,
+#     30,
+# )
 
 # #### #* 2-cut deletion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
