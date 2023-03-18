@@ -5,11 +5,9 @@ from . import batch, gui, single, view
 
 
 def update_threads(threads):
-    os_cpus = int(os.cpu_count())
-    new_threads = max(1, threads)
-    if threads > os_cpus:
-        new_threads = os_cpus - 1
-    return new_threads
+    threads_updated = min(threads, os.cpu_count() - 1)
+    threads_updated = max(1, threads_updated)
+    return threads_updated
 
 
 def main():
