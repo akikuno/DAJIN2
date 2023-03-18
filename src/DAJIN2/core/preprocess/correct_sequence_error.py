@@ -30,9 +30,22 @@ def set_indexes(sequence: str):
     return left_idx, right_idx
 
 
-def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) -> list[dict]:
+def remove_minor_indels(cssplits: list[list[str]], count_5mer: list[dict]) -> list[dict]:
+    coverage = len(cssplits)
+    count_5mer_filtered = []
+    for count in count_5mer:
+        dict_mutation = defaultdict(list)
+        for mutation in ["ins", "del", "sub"]:
+            if all(True for c in count[mutation] if c < coverage * 0.01):
+                count[mutation] = [1] * 5
+            dict_mutation[mutation] = count[mutation]
+        count_5mer_filtered.append(dict_mutation)
+    return count_5mer_filtered
+
+
+def count_5mer_indels(cssplits: list[list[str]], left_idx: int, right_idx: int) -> list[dict]:
     transposed = [list(t) for t in zip(*cssplits)]
-    count_indels_5mer = []
+    count_5mer = []
     for i in range(left_idx, right_idx, 5):
         count = {"ins": [1] * 5, "del": [1] * 5, "sub": [1] * 5}
         cssplits_5mer = transposed[i : i + 5]
@@ -47,8 +60,9 @@ def count_indels_5mer(cssplits: list[list[str]], left_idx: int, right_idx: int) 
                     count["del"][j] += cnt
                 elif key.startswith("*"):
                     count["sub"][j] += cnt
-        count_indels_5mer.append(count)
-    return count_indels_5mer
+        count_5mer.append(count)
+        count_5mer = remove_minor_indels(cssplits, count_5mer)
+    return count_5mer
 
 
 def extract_sequence_errors(count_5mer_sample, count_5mer_control):
@@ -141,8 +155,8 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         # Extract sequence errors
         left_idx, right_idx = set_indexes(sequence)
-        count_5mer_sample = count_indels_5mer(cssplits_sample, left_idx, right_idx)
-        count_5mer_control = count_indels_5mer(cssplits_control, left_idx, right_idx)
+        count_5mer_sample = count_5mer_indels(cssplits_sample, left_idx, right_idx)
+        count_5mer_control = count_5mer_indels(cssplits_control, left_idx, right_idx)
         sequence_errors = extract_sequence_errors(count_5mer_sample, count_5mer_control)
         # Correct sequence errors
         cssplits_sample_error_replaced = replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_idx)

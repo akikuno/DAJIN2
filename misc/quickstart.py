@@ -98,7 +98,7 @@ if GENOME and not IS_CACHE_GENOME:
 SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
 CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
-THREADS = min(THREADS, os.cpu_count())
+THREADS = min(THREADS, os.cpu_count() - 1)
 
 preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
