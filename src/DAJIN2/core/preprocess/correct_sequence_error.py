@@ -57,9 +57,10 @@ def remove_minor_indels(cssplits: list[list[str]], count_5mer: list[dict]) -> li
     for count in count_5mer:
         dict_mutation = defaultdict(list)
         for mutation in ["ins", "del", "sub"]:
-            if all(True for c in count[mutation] if c < coverage * 0.01):
-                count[mutation] = [1] * 5
-            dict_mutation[mutation] = count[mutation]
+            if all(True if c < coverage * 0.01 else False for c in count[mutation]):
+                dict_mutation[mutation] = [1] * 5
+            else:
+                dict_mutation[mutation] = count[mutation]
         count_5mer_filtered.append(dict_mutation)
     return count_5mer_filtered
 
