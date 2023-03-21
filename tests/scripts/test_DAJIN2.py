@@ -2,9 +2,9 @@ from src.DAJIN2 import DAJIN2
 import os
 
 def test_threads_ok():
-    threads = 2
+    threads = 1
     test = DAJIN2.update_threads(threads)
-    assert test == 2
+    assert test == 1
 
 def test_threads_minus():
     threads = -100
