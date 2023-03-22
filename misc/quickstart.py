@@ -34,16 +34,27 @@ reload(report)
 #     30,
 # )
 
-##### # * Point mutation
+# ##### # * R9 vs R10 Point mutation
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "examples/pm-tyr/barcode31.fq.gz",
-    "examples/pm-tyr/barcode32.fq.gz",
+    "../fastq_20230304/barcode31.fq.gz",
+    "../fastq_20230304/barcode32.fq.gz",
     "examples/pm-tyr/design_tyr.fa",
-    "test-pm-tyr",
+    "test-20230304-pm-tyr",
     "mm10",
     True,
-    14,
+    6,
 )
+
+# ##### # * Point mutation
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "examples/pm-tyr/barcode31.fq.gz",
+#     "examples/pm-tyr/barcode32.fq.gz",
+#     "examples/pm-tyr/design_tyr.fa",
+#     "test-pm-tyr",
+#     "mm10",
+#     True,
+#     14,
+# )
 
 
 # ##### # * 2-cut deletion
