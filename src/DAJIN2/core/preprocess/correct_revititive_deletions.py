@@ -101,7 +101,6 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
     """
     - Mask the following mutations as sequence errors
         - Repetitive deletions
-        # - Unknown bases at the both end of sequence
         - Common mutations between control and sample (<- TODO!)
     - Random sampling
     """

@@ -1,7 +1,7 @@
-# from .clustering import add_labels
-# from .clustering import add_readnum
-# from .clustering import add_percent
-# from .clustering import update_labels
+from .clustering import add_labels
+from .clustering import add_readnum
+from .clustering import add_percent
+from .clustering import update_labels
 
 # from .annotate_score import annotate_score
 # from .correct_cssplits import correct_cssplits

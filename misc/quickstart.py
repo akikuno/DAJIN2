@@ -13,7 +13,6 @@ from pathlib import Path
 from importlib import reload
 
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
-from src.DAJIN2.core.clustering import clustering
 
 reload(preprocess)
 reload(classification)
@@ -34,16 +33,16 @@ reload(report)
 #     30,
 # )
 
-# ##### # * R9 vs R10 Point mutation
-SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-    "../fastq_20230304/barcode31.fq.gz",
-    "../fastq_20230304/barcode32.fq.gz",
-    "examples/pm-tyr/design_tyr.fa",
-    "test-20230304-pm-tyr",
-    "mm10",
-    True,
-    6,
-)
+# # ##### # * R9 vs R10 Point mutation
+# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+#     "../fastq_20230304/barcode31.fq.gz",
+#     "../fastq_20230304/barcode32.fq.gz",
+#     "examples/pm-tyr/design_tyr.fa",
+#     "test-20230304-pm-tyr",
+#     "mm10",
+#     True,
+#     6,
+# )
 
 # ##### # * Point mutation
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -68,16 +67,16 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     30,
 # )
 
-# #### #* 2-cut deletion
-# SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
-#     "examples/del-stx2/barcode25.fq.gz",
-#     "examples/del-stx2/barcode30.fq.gz",
-#     "examples/del-stx2/design_stx2.fa",
-#     "test-stx2-deletion",
-#     "mm10",
-#     True,
-#     14,
-# )
+#### #* 2-cut deletion
+SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
+    "examples/del-stx2/barcode25.fq.gz",
+    "examples/del-stx2/barcode30.fq.gz",
+    "examples/del-stx2/design_stx2.fa",
+    "test-stx2-deletion",
+    "mm10",
+    True,
+    14,
+)
 
 # #### * flox insertion
 # SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
@@ -123,6 +122,7 @@ flag2 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_control.jsonl").exists()
 flag = flag1 and flag2
 
 if not flag:
+    print("preprocessing...")
     ################################################################################
     # Export fasta files as single-FASTA format
     ################################################################################
@@ -152,15 +152,15 @@ if not flag:
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     ###############################################################################
-    # Convert any `N` as deletions other than consecutive `N` from both ends
-    ###############################################################################
-    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
-    ###############################################################################
     # CSSPLITS Error Correction
     ###############################################################################
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    ###############################################################################
+    # Convert any `N` as deletions other than consecutive `N` from both ends
+    ###############################################################################
+    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################
@@ -173,6 +173,7 @@ if not flag:
 ########################################################################
 # Classify alleles
 ########################################################################
+print("Classify...")
 
 classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 
@@ -182,15 +183,17 @@ for classif in classif_sample:
 ########################################################################
 # Clustering
 ########################################################################
+print("Clustering...")
 
-clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, THREADS)
-clust_sample = clustering.add_readnum(clust_sample)
-clust_sample = clustering.add_percent(clust_sample)
-clust_sample = clustering.update_labels(clust_sample)
+clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, THREADS)
+clust_sample = clustering.clustering.add_readnum(clust_sample)
+clust_sample = clustering.clustering.add_percent(clust_sample)
+clust_sample = clustering.clustering.update_labels(clust_sample)
 
 ########################################################################
 # Consensus call
 ########################################################################
+print("Consensus call...")
 
 RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, FASTA_ALLELES)
 
