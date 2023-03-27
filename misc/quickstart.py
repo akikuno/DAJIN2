@@ -152,7 +152,12 @@ if not flag:
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
         preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
     ###############################################################################
-    # Correct CSSPLITS
+    # Convert any `N` as deletions other than consecutive `N` from both ends
+    ###############################################################################
+    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    ###############################################################################
+    # CSSPLITS Error Correction
     ###############################################################################
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
