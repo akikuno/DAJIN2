@@ -183,50 +183,11 @@ clust_sample = clustering.add_readnum(clust_sample)
 clust_sample = clustering.add_percent(clust_sample)
 clust_sample = clustering.update_labels(clust_sample)
 
-# import midsv
-# from pathlib import Path
-# Save
-# # midsv.write_jsonl(clust_sample, Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.jsonl"))
-# # Load
-# # clust_sample = midsv.read_jsonl(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.jsonl"))
-
-# d_count = defaultdict(int)
-# for c in clust_sample:
-#     d_count[c["LABEL"]] += 1
-
-# coverage = len(clust_sample)
-# d_percent = defaultdict(int)
-# for c in clust_sample:
-#     d_percent[c["LABEL"]] += 1 / coverage * 100
-
-# d_count
-# d_percent
-
-# d = defaultdict(int)
-# for c in clust_sample:
-#     keys = f'{c["ALLELE"]}-{c["SV"]}-{c["LABEL"]}'
-#     d[keys] += 1
-
-# d
-# from pprint import pprint
-
-# pprint(d)
 ########################################################################
 # Consensus call
 ########################################################################
 
 RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, FASTA_ALLELES)
-# cons_percentage["allele1_flox_mutated_52.968%"][461]
-# keys = []
-# keys.append("flox")
-# keys.append(False)
-# cssplit_sample = [cs for cs in clust_sample if cs["ALLELE"] == keys[0] and cs["SV"] == keys[1]]
-
-# readid = "3f7aff2243b8"  # strand +
-# readid = "28e12f325a68"  # strand -
-# for res in RESULT_SAMPLE:
-#     if readid in res["QNAME"]:
-#         print(res)
 
 # ----------------------------------------------------------
 # Conseusns Report：FASTA/HTML/VCF
