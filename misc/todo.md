@@ -1,5 +1,25 @@
 # ToDO
 
+-----------------------
+## 5月末までの目標
+**使えること**を最優先に！
+細かい改善点はいったん保存して無視する
+
+- [ ] 明らかなバグがないこと
+  - 点変異
+  - 欠失
+  - 挿入
+
+- [ ] 使い勝手に問題はないこと
+  - CUI
+  - GUI
+- [ ] インストールできること
+  - Pip
+  - BioConda
+  - (できれば) Docker
+
+-----------------------
+
 + 🔴: Better to focus on to publish a stable version.
 + 🟡: Take a few time to complete.
 + 🟢: Need a time to complete.
