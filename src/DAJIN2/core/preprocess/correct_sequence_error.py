@@ -136,9 +136,9 @@ def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
                 cssplits_replaced[idx][i] = random.choice(cssplits_sampling_all)
     for cs in cssplits_replaced:
         if cs[0] == "@":
-            cs[0] = "=" + sequence[0]
+            cs[0] = "N"
         if cs[-1] == "@":
-            cs[-1] = "=" + sequence[-1]
+            cs[-1] = "N"
     return cssplits_replaced
 
 
