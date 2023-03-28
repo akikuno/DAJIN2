@@ -3,7 +3,6 @@ from __future__ import annotations
 import random
 import re
 from collections import Counter, defaultdict
-from copy import deepcopy
 from pathlib import Path
 import midsv
 import numpy as np
@@ -95,7 +94,7 @@ def extract_sequence_errors(count_5mer_sample, count_5mer_control):
 def replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_idx):
     cssplits_replaced = []
     for samp in cssplits_sample:
-        samp_replaced = deepcopy(samp)
+        samp_replaced = samp.copy()
         for idx_error, idx_5mer in enumerate(range(left_idx, right_idx, 5)):
             samp_5mer = samp[idx_5mer : idx_5mer + 5]
             error = sequence_errors[idx_error]
@@ -112,7 +111,7 @@ def replace_errors_to_atmark(cssplits_sample, sequence_errors, left_idx, right_i
 
 def replace_atmark(cssplits: list[list[str]], sequence: str) -> list[list[str]]:
     random.seed(1)
-    cssplits_replaced = deepcopy(cssplits)
+    cssplits_replaced = cssplits.copy()
     sequence_length = len(sequence)
     for i in range(1, sequence_length - 1):
         cssplits_atmark = defaultdict(str)
