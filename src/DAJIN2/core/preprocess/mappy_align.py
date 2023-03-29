@@ -40,8 +40,8 @@ def to_sam(
         raise AttributeError(f"Failed to load {path_reference_fasta}")
     for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastx):
         for hit in ref.map(MAPPY_SEQ, cs=True):
-            query_seq = deepcopy(MAPPY_SEQ)
-            query_qual = deepcopy(MAPPY_QUAL)
+            query_seq = MAPPY_SEQ
+            query_qual = MAPPY_QUAL
             # flag
             if hit.is_primary:
                 flag = 0 if hit.strand == 1 else 16

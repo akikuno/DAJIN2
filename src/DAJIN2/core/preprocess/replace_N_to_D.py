@@ -1,12 +1,11 @@
 from __future__ import annotations
-from copy import deepcopy
 from pathlib import Path
 
 import midsv
 
 
 def replaceNtoD(cssplits_sample, sequence):
-    cssplits_replaced = deepcopy(cssplits_sample)
+    cssplits_replaced = cssplits_sample.copy()
     for i, cssplits in enumerate(cssplits_sample):
         flag_n_start = True
         flag_n_end = True

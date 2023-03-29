@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
-from copy import deepcopy
 from difflib import get_close_matches
 from itertools import permutations
 from pathlib import Path
@@ -93,7 +92,7 @@ def count_indel_5mer(cssplits_transposed: list, indexes: list(int)) -> defaultdi
 def replace_errors_to_match(cssplits_sample: list, sequence_errors: defaultdict(set), sequence: str):
     cssplits_replaced = []
     for cssplits in cssplits_sample:
-        cssplits_copy = deepcopy(cssplits)
+        cssplits_copy = cssplits.copy()
         for i, error in sequence_errors.items():
             cssplits_5mer = cssplits_copy[i - 2 : i + 3]
             for j, mer in enumerate(cssplits_5mer):
