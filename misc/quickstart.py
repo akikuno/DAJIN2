@@ -187,7 +187,9 @@ for classif in classif_sample:
 ########################################################################
 print("Clustering...")
 
-clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, THREADS)
+clust_sample = clustering.clustering.add_labels(
+    classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, MUTATION_LOCI, THREADS
+)
 clust_sample = clustering.clustering.add_readnum(clust_sample)
 clust_sample = clustering.clustering.add_percent(clust_sample)
 clust_sample = clustering.clustering.update_labels(clust_sample)

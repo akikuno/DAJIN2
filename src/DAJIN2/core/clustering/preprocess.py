@@ -2,7 +2,6 @@ from __future__ import annotations
 from collections import Counter
 import numpy as np
 from collections import defaultdict
-from copy import deepcopy
 
 
 def transpose(cssplits):
@@ -49,7 +48,7 @@ def replace_both_ends_n(cssplits: list[list[str]]):
             del cnt["N"]
         samples = sampling(cnt, size)
         d_samples[i] = iter(samples)
-    cssplits_replaced = deepcopy(cssplits)
+    cssplits_replaced = cssplits.copy()
     for i, cssplit in enumerate(cssplits_replaced):
         for j, cs in enumerate(cssplit):
             if cs != "N":

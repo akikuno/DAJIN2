@@ -1,10 +1,9 @@
 from __future__ import annotations
-from copy import deepcopy
 from collections import Counter, defaultdict
 
 
 def merge_mixed_cluster(labels_control: list[int], labels_sample: list[int]) -> list[int]:
-    labels_merged = deepcopy(labels_sample)
+    labels_merged = labels_sample.copy()
     coverage_control = len(labels_control)
     labels_percent_control = defaultdict(float)
     for i, label in enumerate(labels_control):
@@ -22,7 +21,7 @@ def merge_minor_cluster(labels_sample: list[int]) -> list[int]:
     cnt = Counter(labels_sample)
     labels_minor = {label for label, num in cnt.items() if num / total_num * 100 < 0.5}
     comon_label = cnt.most_common()[0][0]
-    labels_merged = deepcopy(labels_sample)
+    labels_merged = labels_sample.copy()
     for i, label in enumerate(labels_sample):
         if label in labels_minor:
             labels_merged[i] = comon_label

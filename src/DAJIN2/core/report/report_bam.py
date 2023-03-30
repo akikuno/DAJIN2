@@ -3,7 +3,6 @@ from __future__ import annotations
 import random
 import re
 from collections import defaultdict
-from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
 from typing import Union
@@ -252,7 +251,7 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
     intput_path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
     sam = midsv.read_sam(intput_path_sam)
     # Update sam
-    sam_update = deepcopy(sam)
+    sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
     if GENOME:
@@ -284,7 +283,7 @@ def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODIN
     input_path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
     sam = midsv.read_sam(input_path_sam)
     # Update sam
-    sam_update = deepcopy(sam)
+    sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
     if GENOME:

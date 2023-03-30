@@ -7,9 +7,9 @@ from sklearn.exceptions import ConvergenceWarning
 from collections import Counter
 
 from src.DAJIN2.core.clustering.merge_clusters import merge_clusters
-from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
 
 import warnings
+
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
@@ -36,13 +36,12 @@ def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subse
         labels_sample = labels[: len(scores_sample)]
         labels_control = labels[len(scores_sample) :]
         labels_merged = merge_clusters(labels_control, labels_sample)
-        labels_reorder = reorder_labels(labels_merged)
         # Reads < 1% in the control are considered clustering errors and are not counted
         count_control = Counter(labels_control)
-        num_labels_control = sum(1 for reads in count_control.values() if reads/sum(count_control.values())*100 > 1)
+        num_labels_control = sum(1 for reads in count_control.values() if reads / sum(count_control.values()) * 100 > 1)
         if num_labels_control > 1:
             return labels_results
-        labels_results = labels_reorder
+        labels_results = labels_merged
     return labels_results
 
 
