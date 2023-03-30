@@ -170,6 +170,8 @@ if not flag:
         PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
         PATH_CACHE_HASH.write_text(str(control_hash))
 
+MUTATION_LOCI = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+
 ########################################################################
 # Classify alleles
 ########################################################################

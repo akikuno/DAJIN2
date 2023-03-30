@@ -6,3 +6,4 @@ from . import correct_sequence_error
 from . import correct_knockin
 from . import replace_N_to_D
 from . import calc_midsv
+from .extract_mutation_loci import main as extract_mutation_loci
