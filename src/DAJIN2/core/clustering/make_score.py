@@ -16,9 +16,9 @@ def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
             kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
             count_kmer[i] += Counter([kmer])
     coverage = len(cssplits)
-    count_score = [{"N": coverage}]
+    count_score = [{"N,N,N": coverage}]
     count_score += [dict(count_kmer[i]) for i in range(1, len(cssplit) - 1)]
-    count_score += [{"N": coverage}]
+    count_score += [{"N,N,N": coverage}]
     return count_score
 
 

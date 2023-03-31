@@ -179,17 +179,15 @@ print("Classify...")
 
 classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 
-for classif in classif_sample:
-    classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+# for classif in classif_sample:
+#     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
 ########################################################################
 # Clustering
 ########################################################################
 print("Clustering...")
 
-clust_sample = clustering.clustering.add_labels(
-    classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES, MUTATION_LOCI, THREADS
-)
+clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
 clust_sample = clustering.clustering.add_readnum(clust_sample)
 clust_sample = clustering.clustering.add_percent(clust_sample)
 clust_sample = clustering.clustering.update_labels(clust_sample)

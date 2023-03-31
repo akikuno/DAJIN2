@@ -47,9 +47,7 @@ def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
     return labels_ordered
 
 
-def add_labels(
-    classif_sample, TEMPDIR, CONTROL_NAME, FASTA_ALLELES: dict, MUTATION_LOCI, THREADS: int = 1
-) -> list[dict[str]]:
+def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS: int = 1) -> list[dict[str]]:
     paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}_splice_*"))
     cssplits_control_by_alleles = defaultdict(list)
     for path_midsv in paths_midsv:
@@ -65,8 +63,8 @@ def add_labels(
         mutation_loci: set = MUTATION_LOCI[allele]
         cssplits_control = cssplits_control_by_alleles[allele]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
-        cssplits_control = replace_both_ends_n(cssplits_control)
-        cssplits_sample = replace_both_ends_n(cssplits_sample)
+        # cssplits_control = replace_both_ends_n(cssplits_control)
+        # cssplits_sample = replace_both_ends_n(cssplits_sample)
         cssplits_control = extract_cssplits_in_mutation(cssplits_control, mutation_loci)
         cssplits_sample = extract_cssplits_in_mutation(cssplits_sample, mutation_loci)
         cssplits_control = compress_insertion(cssplits_control)

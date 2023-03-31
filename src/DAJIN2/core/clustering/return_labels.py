@@ -1,6 +1,5 @@
 from __future__ import annotations
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.exceptions import ConvergenceWarning
