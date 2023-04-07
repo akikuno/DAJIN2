@@ -10,13 +10,13 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 
 
-def core_execute(arguments: dict[str]):
+def batch_execute(arguments: dict[str]):
     path_batchfile = arguments["file"]
     threads = arguments["threads"]
     # debug = arguments["debug"]
 
     ###############################################################################
-    # Check arguments
+    # Validate arguments
     ###############################################################################
     try:
         path_batchfile = wslPath.toPosix(path_batchfile)
@@ -29,6 +29,9 @@ def core_execute(arguments: dict[str]):
     if not Path(path_batchfile).exists():
         raise FileNotFoundError(f"'{path_batchfile}' does not exist.")
 
+    # ----------------------------------------------------------
+    # Load the file
+    # ----------------------------------------------------------
     try:
         df_batchfile = pd.read_excel(path_batchfile)
         inputs = []
@@ -40,15 +43,15 @@ def core_execute(arguments: dict[str]):
     # ----------------------------------------------------------
     # Check Column
     # ----------------------------------------------------------
-    keys = inputs[0]
-    keys_set = set(keys)
-    keys_required = set(["sample", "control", "allele", "name"])
-    keys_all = set(["sample", "control", "allele", "name", "genome"])
+    columns = inputs[0]
+    columns_set = set(columns)
+    columns_required = set(["sample", "control", "allele", "name"])
+    columns_all = set(["sample", "control", "allele", "name", "genome"])
 
-    if not keys_required.issubset(keys_set):
+    if not columns_required.issubset(columns_set):
         raise ValueError(f"{path_batchfile} must contain 'sample', 'control', and 'allele' in the header")
 
-    if not keys_set.issubset(keys_all):
+    if not columns_set.issubset(columns_all):
         raise ValueError(
             f"Accepted header names of {path_batchfile} are 'sample', 'control', 'allele', 'name', and 'genome'."
         )
@@ -56,17 +59,16 @@ def core_execute(arguments: dict[str]):
     ##############################################################################
     # Perform DAJIN
     ##############################################################################
-    index_name = keys.index("name")
+    index_name = columns.index("name")
 
     contents = inputs[1:]
     contents.sort(key=lambda x: x[index_name])
 
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
         for i, group in enumerate(groups):
-            args = {h: g for h, g in zip(keys, group)}
+            args = {h: g for h, g in zip(columns, group)}
             args["threads"] = threads
             if i == 0:
-                core_execute.execute_preprocess(args)
                 core_execute.execute_control(args)
             core_execute.execute_sample(args)
         report.report(name)

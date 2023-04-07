@@ -4,8 +4,7 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 
 
-def core_execute(arguments: dict[str]):
-    core_execute.execute_preprocess(arguments)
+def single_execute(arguments: dict[str]):
     core_execute.execute_control(arguments)
     core_execute.execute_sample(arguments)
     name = arguments["name"]

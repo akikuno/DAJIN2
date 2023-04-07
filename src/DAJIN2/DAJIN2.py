@@ -34,7 +34,7 @@ def main():
         arguments["file"] = args.file
         arguments["threads"] = threads
         arguments["debug"] = args.debug
-        batch.execute(arguments)
+        batch.batch_execute(arguments)
 
     subparser = parser.add_subparsers()
     parser_batch = subparser.add_parser("batch", help="DAIJN2 batch mode")
@@ -91,7 +91,7 @@ def main():
             arguments["genome"] = args.genome
         arguments["threads"] = threads
         arguments["debug"] = args.debug
-        single.execute(arguments)
+        single.single_execute(arguments)
 
 
 if __name__ == "__main__":

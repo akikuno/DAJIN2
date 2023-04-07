@@ -89,13 +89,20 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     14,
 # )
 
+######################################################################
+# Preprocessing
+######################################################################
+
 print(f"processing {NAME}...")
 
-THREADS = min(THREADS, os.cpu_count() - 1)
+SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
+CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
+ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
 
-##########################################################
-# Check inputs
-##########################################################
+# ====================================================================
+# Varidate inputs
+# ====================================================================
+
 preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
 IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
@@ -104,12 +111,13 @@ UCSC_URL, GOLDENPATH_URL = None, None
 if GENOME and not IS_CACHE_GENOME:
     UCSC_URL, GOLDENPATH_URL = preprocess.validate_inputs.check_and_fetch_genome(GENOME)
 
-##########################################################
+# ====================================================================
 # Format inputs
-##########################################################
+# ====================================================================
 SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
 CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
+THREADS = preprocess.format_inputs.update_threads(THREADS)
 
 preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
@@ -123,18 +131,17 @@ flag2 = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_control.jsonl").exists()
 flag = flag1 and flag2
 
 if not flag:
-    print("preprocessing...")
-    ################################################################################
+    # ====================================================================
     # Export fasta files as single-FASTA format
-    ################################################################################
+    # ====================================================================
     # TODO: use yeild, not export
     for identifier, sequence in FASTA_ALLELES.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
-    ###############################################################################
+    # ====================================================================
     # Mapping with mappy
-    ###############################################################################
+    # ====================================================================
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, threads=THREADS)
@@ -145,26 +152,26 @@ if not flag:
         preprocess.mappy_align.output_sam(
             TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, preset="splice", threads=THREADS
         )
-    ########################################################################
+    # ====================================================================
     # MIDSV conversion
-    ########################################################################
+    # ====================================================================
     for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
-        preprocess.call_midsv.output_midsv(TEMPDIR, path_sam)
+        preprocess.call_midsv(TEMPDIR, path_sam)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
-        preprocess.call_midsv.output_midsv(TEMPDIR, path_sam)
-    ###############################################################################
+        preprocess.call_midsv(TEMPDIR, path_sam)
+    # ====================================================================
     # CSSPLITS Error Correction
-    ###############################################################################
+    # ====================================================================
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-    ###############################################################################
+    # ====================================================================
     # Convert any `N` as deletions other than consecutive `N` from both ends
-    ###############################################################################
+    # ====================================================================
     preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
-    ###############################################################################
+    # ====================================================================
     # Cashe inputs (control)
-    ###############################################################################
+    # ====================================================================
     if not IS_CACHE_CONTROL:
         control_hash = Path(CONTROL).read_bytes()
         control_hash = hashlib.sha256(control_hash).hexdigest()
@@ -173,9 +180,9 @@ if not flag:
 
 MUTATION_LOCI = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
 
-########################################################################
+####################################################################################
 # Classify alleles
-########################################################################
+####################################################################################
 print("Classify...")
 
 classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
@@ -183,9 +190,9 @@ classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 # for classif in classif_sample:
 #     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
 
-########################################################################
+####################################################################################
 # Clustering
-########################################################################
+####################################################################################
 print("Clustering...")
 
 clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
@@ -193,9 +200,9 @@ clust_sample = clustering.clustering.add_readnum(clust_sample)
 clust_sample = clustering.clustering.add_percent(clust_sample)
 clust_sample = clustering.clustering.update_labels(clust_sample)
 
-########################################################################
+####################################################################################
 # Consensus call
-########################################################################
+####################################################################################
 print("Consensus call...")
 
 RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, FASTA_ALLELES)
@@ -223,9 +230,9 @@ report.report_bam.output_bam_sample(
 # working in progress
 
 
-########################################################################
+####################################################################################
 # MEMO
-########################################################################
+####################################################################################
 
 d = defaultdict(int)
 for res in RESULT_SAMPLE:
