@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-# from collections import defaultdict
-
 import numpy as np
-
 # import scipy.stats as st
 # from sklearn.cluster import OPTICS, Birch, MeanShift
 from sklearn.cluster import MeanShift
+
+# from collections import defaultdict
+
+
 
 np.seterr(divide="ignore")  # to suppress "RuntimeWarning: divide by zero encountered in true_divide"
 # from scipy.sparse import csr_matrix

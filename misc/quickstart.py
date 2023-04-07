@@ -91,16 +91,18 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 
 print(f"processing {NAME}...")
 
+THREADS = min(THREADS, os.cpu_count() - 1)
+
 ##########################################################
 # Check inputs
 ##########################################################
-preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-IS_CACHE_CONTROL = preprocess.check_inputs.exists_cached_control(CONTROL, TEMPDIR)
-IS_CACHE_GENOME = preprocess.check_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
+IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
 UCSC_URL, GOLDENPATH_URL = None, None
 if GENOME and not IS_CACHE_GENOME:
-    UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
+    UCSC_URL, GOLDENPATH_URL = preprocess.validate_inputs.check_and_fetch_genome(GENOME)
 
 ##########################################################
 # Format inputs
@@ -108,7 +110,6 @@ if GENOME and not IS_CACHE_GENOME:
 SAMPLE_NAME = preprocess.format_inputs.extract_basename(SAMPLE)
 CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
-THREADS = min(THREADS, os.cpu_count() - 1)
 
 preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
 
@@ -148,9 +149,9 @@ if not flag:
     # MIDSV conversion
     ########################################################################
     for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
-        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
+        preprocess.call_midsv.output_midsv(TEMPDIR, path_sam)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
-        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam)
+        preprocess.call_midsv.output_midsv(TEMPDIR, path_sam)
     ###############################################################################
     # CSSPLITS Error Correction
     ###############################################################################

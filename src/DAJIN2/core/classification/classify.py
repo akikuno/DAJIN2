@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from itertools import groupby
-from itertools import permutations
 from collections import defaultdict
+from itertools import groupby, permutations
 from pathlib import Path
 
-from src.DAJIN2.core.preprocess import mappy_align
 import midsv
+
+from DAJIN2.core.preprocess import mappy_align
 
 
 def extract_diff_loci(TEMPDIR) -> defaultdict[dict]:

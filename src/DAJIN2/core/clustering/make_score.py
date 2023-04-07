@@ -1,6 +1,6 @@
 from __future__ import annotations
-from collections import defaultdict
-from collections import Counter
+
+from collections import Counter, defaultdict
 
 
 def call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:

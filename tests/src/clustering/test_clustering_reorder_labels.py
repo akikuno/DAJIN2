@@ -1,4 +1,4 @@
-from src.DAJIN2.core.clustering.reorder_labels import reorder_labels
+from src.DAJIN2.core.clustering.clustering import reorder_labels
 
 
 def test_reorder_labels():

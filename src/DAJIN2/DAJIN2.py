@@ -1,13 +1,9 @@
 import argparse
 import os
 
-from . import batch, gui, single, view
+from DAJIN2 import batch, gui, single, view
 
-
-def update_threads(threads):
-    threads_updated = min(threads, os.cpu_count() - 1)
-    threads_updated = max(1, threads_updated)
-    return threads_updated
+_version = "1.0.1"
 
 
 def main():
@@ -25,7 +21,7 @@ def main():
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm10) [default: '']"
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument("-v", "--version", action="version", version="DAJIN2 version 1.0.0")
+    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {_version}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
     ###############################################################################
@@ -33,7 +29,7 @@ def main():
     ###############################################################################
 
     def batchmode(args):
-        threads = update_threads(args.threads)
+        threads = int(args.threads)
         arguments = dict()
         arguments["file"] = args.file
         arguments["threads"] = threads
@@ -85,7 +81,7 @@ def main():
             raise AttributeError("the following arguments are required: -a/--allele")
         if args.name is None:
             raise AttributeError("the following arguments are required: -n/--name")
-        threads = update_threads(args.threads)
+        threads = int(args.threads)
         arguments = dict()
         arguments["sample"] = args.sample
         arguments["control"] = args.control

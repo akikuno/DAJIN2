@@ -1,13 +1,14 @@
 from __future__ import annotations
-import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.mixture import GaussianMixture
-from sklearn.exceptions import ConvergenceWarning
-from collections import Counter
-
-from src.DAJIN2.core.clustering.merge_clusters import merge_clusters
 
 import warnings
+from collections import Counter
+
+import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.mixture import GaussianMixture
+
+from DAJIN2.core.clustering.merge_clusters import merge_clusters
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=ConvergenceWarning)

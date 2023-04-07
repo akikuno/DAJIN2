@@ -29,13 +29,13 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 ##########################################################
 # Check inputs
 ##########################################################
-preprocess.check_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
 TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-IS_CACHE_CONTROL = preprocess.check_inputs.exists_cached_control(CONTROL, TEMPDIR)
-IS_CACHE_GENOME = preprocess.check_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
+IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
 UCSC_URL, GOLDENPATH_URL = None, None
 if GENOME and not IS_CACHE_GENOME:
-    UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
+    UCSC_URL, GOLDENPATH_URL = preprocess.validate_inputs.check_and_fetch_genome(GENOME)
 
 ##########################################################
 # Format inputs
@@ -80,9 +80,9 @@ if not flag:
     ########################################################################
     if not IS_CACHE_CONTROL:
         for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}*"):
-            preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, FASTA_ALLELE)
+            preprocess.call_midsv.output_midsv(TEMPDIR, path_sam, FASTA_ALLELE)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}*"):
-        preprocess.calc_midsv.output_midsv(TEMPDIR, path_sam, FASTA_ALLELE)
+        preprocess.call_midsv.output_midsv(TEMPDIR, path_sam, FASTA_ALLELE)
     ###############################################################################
     # Cashe inputs (control)
     ###############################################################################

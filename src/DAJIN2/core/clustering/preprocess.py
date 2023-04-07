@@ -1,7 +1,8 @@
 from __future__ import annotations
-from collections import Counter
+
+from collections import Counter, defaultdict
+
 import numpy as np
-from collections import defaultdict
 
 
 def transpose(cssplits):

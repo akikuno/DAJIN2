@@ -1,8 +1,6 @@
 import setuptools
 from pathlib import Path
 
-from pathlib import Path
-
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
@@ -19,7 +17,9 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/akikuno/DAJIN2",
     install_requires=install_requirements,
-    packages=setuptools.find_packages(where="src",),
+    packages=setuptools.find_packages(
+        where="src",
+    ),
     package_dir={"": "src"},
     entry_points={"console_scripts": ["DAJIN2=DAJIN2.DAJIN2:main"]},
     include_package_data=True,

@@ -10,7 +10,7 @@ import midsv
 from scipy import stats
 from scipy.spatial.distance import cosine
 
-from src.DAJIN2.core.preprocess import mappy_align
+from DAJIN2.core.preprocess import mappy_align
 
 ###############################################################################
 # functions

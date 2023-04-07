@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from urllib.request import urlopen
@@ -29,12 +30,12 @@ def make_directories(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str):
 ########################################################################
 
 
-def convert_to_posix_path(path: str):
+def convert_to_posix_path(path: str) -> str:
     try:
         path = wslPath.toPosix(path)
     except ValueError:
         pass
-    return path
+    return str(path)
 
 
 ########################################################################
@@ -67,6 +68,16 @@ def dictionize_allele(path_fasta: str) -> dict:
         header.append(name)
         sequence.append(seq.upper())
     return {h: s for h, s in zip(header, sequence)}
+
+
+########################################################################
+# Update threads
+########################################################################
+
+def update_threads(threads):
+    threads_updated = min(int(threads), os.cpu_count() - 1)
+    threads_updated = max(1, threads_updated)
+    return threads_updated
 
 
 ########################################################################

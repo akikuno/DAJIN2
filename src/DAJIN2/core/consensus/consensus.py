@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections import defaultdict
 from itertools import groupby
 
-
 # def merge_dict1(d1, d2):
 #     d_merged = d1.copy()
 #     for k, v in d2.items():

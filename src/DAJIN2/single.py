@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from .core import core
-from .postprocess import report
+from DAJIN2.core import core_execute
+from DAJIN2.postprocess import report
 
 
-def execute(arguments: dict[str]):
-    core.execute_preprocess(arguments)
-    core.execute_control(arguments)
-    core.execute_sample(arguments)
+def core_execute(arguments: dict[str]):
+    core_execute.execute_preprocess(arguments)
+    core_execute.execute_control(arguments)
+    core_execute.execute_sample(arguments)
     name = arguments["name"]
     report.report(name)

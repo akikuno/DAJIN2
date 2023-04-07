@@ -48,7 +48,7 @@ CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 
 if GENOME:
-    UCSC_URL, GOLDENPATH_URL = preprocess.check_inputs.check_and_fetch_genome(GENOME)
+    UCSC_URL, GOLDENPATH_URL = preprocess.validate_inputs.check_and_fetch_genome(GENOME)
     GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, FASTA_ALLELES["control"])
     CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
 

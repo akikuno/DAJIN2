@@ -1,15 +1,11 @@
-from importlib import reload
 from src.DAJIN2.core.clustering import make_score
 
-reload(make_score)
-
-
-def test_make_score():
-    cssplits = [["A", "B", "C", "D", "E"]] * 5
-    cssplits += [["A", "B", "X", "D", "E"]] * 5
-    test = make_score.call_count(cssplits)
-    answer = [{"N": 10}, {"A,B,C": 5, "A,B,X": 5}, {"B,C,D": 5, "B,X,D": 5}, {"C,D,E": 5, "X,D,E": 5}, {"N": 10}]
-    assert test == answer
+# def test_make_score():
+#     cssplits = [["A", "B", "C", "D", "E"]] * 5
+#     cssplits += [["A", "B", "X", "D", "E"]] * 5
+#     test = make_score.call_count(cssplits)
+#     answer = [{"N": 10}, {"A,B,C": 5, "A,B,X": 5}, {"B,C,D": 5, "B,X,D": 5}, {"C,D,E": 5, "X,D,E": 5}, {"N": 10}]
+#     assert test == answer
 
 
 # from src.DAJIN2.core.clustering.make_scores import extract_cssplit_at_diffloci

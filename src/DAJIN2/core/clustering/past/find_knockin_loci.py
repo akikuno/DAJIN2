@@ -1,7 +1,9 @@
 from __future__ import annotations
-from collections import defaultdict, Counter
-from pathlib import Path
+
+from collections import Counter, defaultdict
 from copy import deepcopy
+from pathlib import Path
+
 import midsv
 
 

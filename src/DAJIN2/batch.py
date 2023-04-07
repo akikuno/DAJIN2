@@ -6,11 +6,11 @@ from pathlib import Path
 import pandas as pd
 import wslPath
 
-from .core import core
-from .postprocess import report
+from DAJIN2.core import core_execute
+from DAJIN2.postprocess import report
 
 
-def execute(arguments: dict[str]):
+def core_execute(arguments: dict[str]):
     path_batchfile = arguments["file"]
     threads = arguments["threads"]
     # debug = arguments["debug"]
@@ -66,7 +66,7 @@ def execute(arguments: dict[str]):
             args = {h: g for h, g in zip(keys, group)}
             args["threads"] = threads
             if i == 0:
-                core.execute_preprocess(args)
-                core.execute_control(args)
-            core.execute_sample(args)
+                core_execute.execute_preprocess(args)
+                core_execute.execute_control(args)
+            core_execute.execute_sample(args)
         report.report(name)

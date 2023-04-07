@@ -1,8 +1,6 @@
 import pytest
+import os
 from src.DAJIN2.core.preprocess import format_inputs
-from importlib import reload
-
-reload(format_inputs)
 
 
 ########################################################################
@@ -51,6 +49,29 @@ def test_extract_basename_change_filename():
 
 
 ########################################################################
+# Test update threads
+########################################################################
+
+
+def test_threads_ok():
+    threads = 1
+    test = format_inputs.update_threads(threads)
+    assert test == 1
+
+
+def test_threads_minus():
+    threads = -100
+    test = format_inputs.update_threads(threads)
+    assert test == 1
+
+
+def test_threads_over():
+    threads = 10**100
+    test = format_inputs.update_threads(threads)
+    assert test == os.cpu_count() - 1
+
+
+########################################################################
 # Convert allele file to dictionary type fasta format
 ########################################################################
 
@@ -74,4 +95,3 @@ def test_dictionize_allele_empty():
     with pytest.raises(AttributeError) as e:
         format_inputs.dictionize_allele(path_fasta)
     assert str(e.value) == f"{path_fasta} contains an empty header"
-

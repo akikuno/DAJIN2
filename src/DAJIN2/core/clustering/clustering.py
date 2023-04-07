@@ -1,13 +1,16 @@
 from __future__ import annotations
-from itertools import groupby
+
 from collections import defaultdict
+from itertools import groupby
 from pathlib import Path
+
 import midsv
 
-from src.DAJIN2.core.preprocess.correct_knockin import extract_knockin_loci
-from src.DAJIN2.core.clustering.preprocess import replace_both_ends_n, compress_insertion
-from src.DAJIN2.core.clustering.make_score import make_score
-from src.DAJIN2.core.clustering.return_labels import return_labels
+from DAJIN2.core.clustering.make_score import make_score
+from DAJIN2.core.clustering.preprocess import (compress_insertion,
+                                               replace_both_ends_n)
+from DAJIN2.core.clustering.return_labels import return_labels
+from DAJIN2.core.preprocess.correct_knockin import extract_knockin_loci
 
 
 def extract_cssplits_in_mutation(cssplits_sample: list[list], mutation_loci: set) -> list[list]:

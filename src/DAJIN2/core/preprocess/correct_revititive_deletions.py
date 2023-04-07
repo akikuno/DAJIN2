@@ -1,13 +1,14 @@
 from __future__ import annotations
-from collections import Counter
-import numpy as np
+
 import re
-from itertools import chain
+from collections import Counter
 from copy import deepcopy
-from scipy.spatial.distance import cosine
+from itertools import chain
 from pathlib import Path
 
 import midsv
+import numpy as np
+from scipy.spatial.distance import cosine
 
 
 def transpose(cssplits):

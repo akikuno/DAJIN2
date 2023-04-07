@@ -1,11 +1,12 @@
 from __future__ import annotations
+
+import re
 from collections import Counter
+from copy import deepcopy
+from itertools import chain
+
 import midsv
 import numpy as np
-import re
-from itertools import chain
-from copy import deepcopy
-
 
 #!--------------------------------------------------
 print(f"mask_repeditive_dels.py: WOURKING IN PROGRESS...")

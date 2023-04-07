@@ -10,7 +10,7 @@ from flask import Flask, render_template, request
 from waitress import serve
 from werkzeug.utils import secure_filename
 
-from . import batch
+from DAJIN2 import batch
 
 
 def find_free_port():
