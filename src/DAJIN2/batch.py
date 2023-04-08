@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from itertools import groupby
 from pathlib import Path
 
@@ -11,9 +12,8 @@ from DAJIN2.postprocess import report
 
 
 def batch_execute(arguments: dict[str]):
+    threads = int(arguments["threads"])
     path_batchfile = arguments["file"]
-    threads = arguments["threads"]
-    # debug = arguments["debug"]
 
     ###############################################################################
     # Validate arguments
@@ -69,6 +69,9 @@ def batch_execute(arguments: dict[str]):
             args = {h: g for h, g in zip(columns, group)}
             args["threads"] = threads
             if i == 0:
+                print(f"{args['control']} is now processing...", file=sys.stderr)
                 core_execute.execute_control(args)
+            print(f"{args['sample']} is now processing...", file=sys.stderr)
             core_execute.execute_sample(args)
         report.report(name)
+        print(f"Finished! Open DAJINResults/{name} to see the report.", file=sys.stderr)
