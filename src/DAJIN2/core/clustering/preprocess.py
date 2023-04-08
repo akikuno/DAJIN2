@@ -67,15 +67,3 @@ def replace_both_ends_n(cssplits: list[list[str]]):
     return cssplits_replaced
 
 
-def compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
-    """
-    Insertion will be subdivided by mutations in the its sequence, so it is compressed as a '+I' to eliminate mutations.
-    """
-    cssplits_abstracted = []
-    for cssplit in cssplits:
-        for i, cs in enumerate(cssplit):
-            if cs.startswith("+"):
-                cssplit[i] = "+I" + cs.split("|")[-1]
-        cssplits_abstracted.append(cssplit)
-    return cssplits_abstracted
-

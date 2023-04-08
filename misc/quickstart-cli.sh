@@ -13,7 +13,7 @@ rm -rf DAJINResults/test-single DAJINResults/.tempdir/test-single &&
     (cd DAJINResults/test-single && explorer.exe .)
 
 rm -rf DAJINResults/tyr-DAJIN2 DAJINResults/.tempdir/tyr-DAJIN2
-pip install -e . && DAJIN2 batch -f misc/data/design-dajin2.csv
+pip install -qe . && DAJIN2 batch -f misc/data/design-dajin2.csv
 
 rm -rf DAJINResults/Ayabe-Task1 DAJINResults/.tempdir/Ayabe-Task1 &&
     pip install -e . && DAJIN2 batch -f examples/flox-cables2/AyabeTask1/batch.csv --debug &&
