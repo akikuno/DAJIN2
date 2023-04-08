@@ -13,10 +13,10 @@ def main():
     # Single mode
     ###############################################################################
 
-    parser.add_argument("-s", "--sample", type=str, help="Give the full path to a control FASTQ file")
-    parser.add_argument("-c", "--control", type=str, help="Give the full path to a control FASTQ file")
-    parser.add_argument("-a", "--allele", type=str, help="Give the full path to allele FASTA file")
-    parser.add_argument("-n", "--name", type=str, help="Output name of the report")
+    parser.add_argument("-s", "--sample", type=str, help="Full path to a sample FASTQ file")
+    parser.add_argument("-c", "--control", type=str, help="Full path to a control FASTQ file")
+    parser.add_argument("-a", "--allele", type=str, help="Full path to a FASTA file")
+    parser.add_argument("-n", "--name", type=str, help="Output directory name")
     parser.add_argument(
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm10) [default: '']"
     )
