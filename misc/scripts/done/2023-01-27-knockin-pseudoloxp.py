@@ -27,7 +27,7 @@ import midsv
 from scipy import stats
 from scipy.spatial.distance import cosine
 
-from src.DAJIN2.core import classification, clustering, consensus, preprocess, report
+from src.DAJIN2.core import classification, clustering, consensus, preprocess, postprocess
 from src.DAJIN2.core.clustering import clustering
 from src.DAJIN2.core.preprocess import mappy_align
 
