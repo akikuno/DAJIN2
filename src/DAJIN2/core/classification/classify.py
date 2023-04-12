@@ -9,7 +9,7 @@ import midsv
 from DAJIN2.core.preprocess import mappy_align
 
 
-def extract_diff_loci(TEMPDIR) -> defaultdict[dict]:
+def _extract_diff_loci(TEMPDIR: Path) -> defaultdict[dict]:
     """
     Extract differencial loci between alleles
         - The purpose is to lower match_score between very similar alleles such as point mutation.
@@ -35,7 +35,7 @@ def extract_diff_loci(TEMPDIR) -> defaultdict[dict]:
     return mutation_alleles
 
 
-def calc_match(CSSPLIT: str, mutations: dict) -> float:
+def _calc_match(CSSPLIT: str, mutations: dict) -> float:
     match_score = CSSPLIT.count("=")
     match_score -= CSSPLIT.count("+")  # insertion
     match_score -= sum(cs.islower() for cs in CSSPLIT)  # inversion
@@ -46,16 +46,16 @@ def calc_match(CSSPLIT: str, mutations: dict) -> float:
     return match_score / len(cssplit)
 
 
-def classify_alleles(TEMPDIR, SAMPLE_NAME) -> list[dict]:
+def classify_alleles(TEMPDIR: Path, SAMPLE_NAME: str) -> list[dict]:
     paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
-    mutations = extract_diff_loci(TEMPDIR)
+    mutations = _extract_diff_loci(TEMPDIR)
     # Scoring
     score_of_each_alleles = []
     for path_midsv in paths_midsv:
         allele = path_midsv.stem.split("_")[-1]
         preset = path_midsv.stem.split("_")[-2]
         for dict_midsv in midsv.read_jsonl(path_midsv):
-            score = calc_match(dict_midsv["CSSPLIT"], mutations[allele])
+            score = _calc_match(dict_midsv["CSSPLIT"], mutations[allele])
             dict_midsv.update({"SCORE": score})
             dict_midsv.update({"ALLELE": allele})
             dict_midsv.update({"PRESET": preset})

@@ -1,7 +1,4 @@
 from src.DAJIN2.core import report
-from importlib import reload
-
-reload(report)
 
 ########################################################################
 # Convert to files
