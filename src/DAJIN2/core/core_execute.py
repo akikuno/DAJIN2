@@ -70,14 +70,15 @@ def execute_control(arguments: dict):
         preprocess.mappy_align.output_sam(
             TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS
         )
-    # ============================================================##############
+    # ============================================================
     # MIDSV conversion
-    # ============================================================##############
+    # ============================================================
     for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
         preprocess.call_midsv(TEMPDIR, path_sam)
-    # ============================================================##############
+    shutil.copytree(Path(TEMPDIR, "midsv"), Path(TEMPDIR, "midsv_control"), dirs_exist_ok=True)
+    # ============================================================
     # Output BAM to cache
-    # ============================================================##############
+    # ============================================================
     report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
 
 
@@ -102,6 +103,7 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
+    shutil.copytree(Path(TEMPDIR, "midsv_control"), Path(TEMPDIR, "midsv"), dirs_exist_ok=True)
     for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
         preprocess.call_midsv(TEMPDIR, path_sam)
     # ============================================================
@@ -121,12 +123,14 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Classify alleles
     ########################################################################
+    print("Classify...")
     classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
     for classif in classif_sample:
         classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
     ########################################################################
     # Clustering
     ########################################################################
+    print("Clustering...")
     clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
     clust_sample = clustering.clustering.add_readnum(clust_sample)
     clust_sample = clustering.clustering.add_percent(clust_sample)
@@ -134,6 +138,7 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Consensus call
     ########################################################################
+    print("Consensus call...")
     RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, FASTA_ALLELES)
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM/VCF

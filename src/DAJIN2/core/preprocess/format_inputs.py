@@ -15,7 +15,7 @@ import wslPath
 
 
 def make_directories(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str):
-    subdirectoris = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result"]
+    subdirectoris = ["cache", "fasta", "sam", "midsv_control", "midsv", "report", "result"]
     for subdir in subdirectoris:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
     reportdirectories = ["HTML", "FASTA", "VCF", "BAM", ".igvjs"]
@@ -73,6 +73,7 @@ def dictionize_allele(path_fasta: str) -> dict:
 ########################################################################
 # Update threads
 ########################################################################
+
 
 def update_threads(threads):
     threads_updated = min(int(threads), os.cpu_count() - 1)
