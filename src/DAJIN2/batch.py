@@ -65,12 +65,14 @@ def batch_execute(arguments: dict[str]):
     contents.sort(key=lambda x: x[index_name])
 
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
-        for i, group in enumerate(groups):
+        control_done = False
+        for group in groups:
             args = {h: g for h, g in zip(columns, group)}
             args["threads"] = threads
-            if i == 0:
+            if control_done == False:
                 print(f"{args['control']} is now processing...", file=sys.stderr)
                 core_execute.execute_control(args)
+                control_done = True
             print(f"{args['sample']} is now processing...", file=sys.stderr)
             core_execute.execute_sample(args)
         report.report(name)
