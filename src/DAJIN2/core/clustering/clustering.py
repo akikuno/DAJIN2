@@ -52,6 +52,9 @@ def annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:floa
     for cssplit in cssplits:
         score = []
         for cs, mutscore in zip(cssplit, mutation_score):
+            if mutscore == {}:
+                score.append(0)
+                continue
             mutation = list(mutscore.keys())[0]
             value = list(mutscore.values())[0]
             if cs == mutation:
@@ -89,13 +92,6 @@ def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
 
 
 def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS: int = 1) -> list[dict[str]]:
-    # paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}_splice_*"))
-    # cssplits_control_by_alleles = defaultdict(list)
-    # for path_midsv in paths_midsv:
-    #     midsv_control = midsv.read_jsonl(path_midsv)
-    #     allele = path_midsv.stem.split("_")[-1]
-    #     cssplits = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-    #     cssplits_control_by_alleles[allele] = cssplits
     knockin_alleles = extract_knockin_loci(TEMPDIR)
     labels_all = []
     max_label = 0
