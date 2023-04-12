@@ -139,7 +139,12 @@ def execute_sample(arguments: dict):
     # Consensus call
     ########################################################################
     print("Consensus call...")
-    RESULT_SAMPLE, cons_percentage, cons_sequence = consensus.call(clust_sample, FASTA_ALLELES)
+    cons_percentage, cons_sequence = consensus.call_consensus(clust_sample)
+    allele_names = consensus.call_allele_name(cons_sequence, FASTA_ALLELES)
+    cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
+    cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
+    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM/VCF
     ########################################################################
