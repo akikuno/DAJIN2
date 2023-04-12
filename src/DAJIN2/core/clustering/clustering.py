@@ -89,22 +89,26 @@ def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
 
 
 def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS: int = 1) -> list[dict[str]]:
-    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}_splice_*"))
-    cssplits_control_by_alleles = defaultdict(list)
-    for path_midsv in paths_midsv:
-        midsv_control = midsv.read_jsonl(path_midsv)
-        allele = path_midsv.stem.split("_")[-1]
-        cssplits = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        cssplits_control_by_alleles[allele] = cssplits
+    # paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{CONTROL_NAME}_splice_*"))
+    # cssplits_control_by_alleles = defaultdict(list)
+    # for path_midsv in paths_midsv:
+    #     midsv_control = midsv.read_jsonl(path_midsv)
+    #     allele = path_midsv.stem.split("_")[-1]
+    #     cssplits = [cs["CSSPLIT"].split(",") for cs in midsv_control]
+    #     cssplits_control_by_alleles[allele] = cssplits
     knockin_alleles = extract_knockin_loci(TEMPDIR)
     labels_all = []
     max_label = 0
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         mutation_loci: set = MUTATION_LOCI[allele]
+        if mutation_loci == set():
+            labels_all.extend([1] * len(classif_sample))
+            continue
         knockin_loci: set = knockin_alleles[allele]
-        cssplits_control = cssplits_control_by_alleles[allele]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
+        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
+        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         # cssplits_control = replace_both_ends_n(cssplits_control)
         # cssplits_sample = replace_both_ends_n(cssplits_sample)
         cssplits_control = compress_insertion(cssplits_control)
