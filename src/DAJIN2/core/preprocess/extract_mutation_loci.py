@@ -38,7 +38,7 @@ def _extract(cssplits_sample, cssplits_control) -> set():
         for mutation_type in ["ins", "del", "sub"]:
             if i in mutation_loci:
                 break
-            if abs(samp[mutation_type] - cont[mutation_type]) > 1:
+            if abs(samp[mutation_type] - cont[mutation_type]) > 0.5:
                 mutation_loci.add(i)
     return mutation_loci
 
@@ -46,7 +46,7 @@ def _extract(cssplits_sample, cssplits_control) -> set():
 ###############################################################################
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME:str) -> defaultdict(set):
+def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> defaultdict(set):
     mutation_loci = defaultdict(set)
     for allele in FASTA_ALLELES.keys():
         midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl")))
