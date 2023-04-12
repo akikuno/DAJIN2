@@ -5,13 +5,13 @@ from collections import defaultdict
 from pathlib import Path
 from importlib import reload
 import shutil
-from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
+from src.DAJIN2.core import preprocess, classification, clustering, consensus, postprocess
 
 reload(preprocess)
 reload(classification)
 reload(clustering)
 reload(consensus)
-reload(report)
+reload(postprocess)
 
 # * Point mutation
 name = "tyr_albino_50%_only_control"
@@ -221,17 +221,17 @@ d
 # ----------------------------------------------------------
 # FASTA
 for header, cons_seq in cons_sequence.items():
-    cons_fasta = report.report_files.to_fasta(header, cons_seq)
+    cons_fasta = postprocess.report_files.to_fasta(header, cons_seq)
     Path(TEMPDIR, "report", "FASTA", f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
 
 # HTML
 for header, cons_per in cons_percentage.items():
-    cons_html = report.report_files.to_html(header, cons_per)
+    cons_html = postprocess.report_files.to_html(header, cons_per)
     Path(TEMPDIR, "report", "HTML", f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
 
 # BAM and igvjs
-report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
-report.report_bam.output_bam_sample(
+postprocess.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+postprocess.report_bam.output_bam_sample(
     TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
 )
 
