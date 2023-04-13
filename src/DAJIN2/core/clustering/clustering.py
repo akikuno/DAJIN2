@@ -11,7 +11,7 @@ from DAJIN2.core.clustering.return_labels import return_labels
 from DAJIN2.core.preprocess.correct_knockin import extract_knockin_loci
 
 
-def compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
+def _compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
     """Insertion will be subdivided by sequence error in the its sequence, so it is compressed as a '+I' to eliminate mutations.
     #TODO ただ、これでは、insertion配列の中に真のmutationがある場合に、そのmutationを抽出できないので、**insertion配列の中にmutationがある場合は、insertion配列をそのまま残す**必要がある。
     """
@@ -24,7 +24,7 @@ def compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
     return cssplits_abstracted
 
 
-def extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_loci: set) -> list[list]:
+def _extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_loci: set) -> list[list]:
     cssplits_mutation = []
     for cssplits in cssplits_sample:
         cs_mutation = []
@@ -36,18 +36,7 @@ def extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_l
     return cssplits_mutation
 
 
-# def extract_cssplits_in_mutation(cssplits_sample: list[list], mutation_loci: set) -> list[list]:
-#     cssplits_mutation = []
-#     for cssplits in cssplits_sample:
-#         cs_mutation = []
-#         for i, cs in enumerate(cssplits):
-#             if i in mutation_loci:
-#                 cs_mutation.append(cs)
-#         cssplits_mutation.append(cs_mutation)
-#     return cssplits_mutation
-
-
-def annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:float]]) -> list[list[float]]:
+def _annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:float]]) -> list[list[float]]:
     scores = []
     for cssplit in cssplits:
         score = []
@@ -65,21 +54,7 @@ def annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:floa
     return scores
 
 
-# def annotate_score(cssplits: list[list], mutation_loci: set, mutation_score: list[dict]):
-#     scores = []
-#     for cssplit in cssplits:
-#         score = [0]
-#         for i in range(1, len(cssplit) - 1):
-#             if not i in mutation_loci:
-#                 score.append(0)
-#                 continue
-#             kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
-#             score.append(mutation_score[i].get(kmer, 0))
-#         scores.append(score + [0])
-#     return scores
-
-
-def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
+def _reorder_labels(labels: list[int], start: int = 0) -> list[int]:
     labels_ordered = labels.copy()
     num = start
     d = defaultdict(int)
@@ -97,25 +72,23 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS: in
     max_label = 0
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
-        mutation_loci: set = MUTATION_LOCI[allele]
-        if mutation_loci == set():
+        mutation_loci: dict[int, str] = MUTATION_LOCI[allele]
+        if mutation_loci == {}:
             labels_all.extend([1] * len(classif_sample))
             continue
         knockin_loci: set = knockin_alleles[allele]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
         midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        # cssplits_control = replace_both_ends_n(cssplits_control)
-        # cssplits_sample = replace_both_ends_n(cssplits_sample)
-        cssplits_control = compress_insertion(cssplits_control)
-        cssplits_sample = compress_insertion(cssplits_sample)
-        cssplits_control = extract_cssplits_in_mutation_by_3mer(cssplits_control, mutation_loci)
-        cssplits_sample = extract_cssplits_in_mutation_by_3mer(cssplits_sample, mutation_loci)
+        cssplits_control = _compress_insertion(cssplits_control)
+        cssplits_sample = _compress_insertion(cssplits_sample)
+        cssplits_control = _extract_cssplits_in_mutation_by_3mer(cssplits_control, mutation_loci)
+        cssplits_sample = _extract_cssplits_in_mutation_by_3mer(cssplits_sample, mutation_loci)
         mutation_score = make_score(cssplits_control, cssplits_sample)
-        scores_control = annotate_score(cssplits_control, mutation_score)
-        scores_sample = annotate_score(cssplits_sample, mutation_score)
+        scores_control = _annotate_score(cssplits_control, mutation_score)
+        scores_sample = _annotate_score(cssplits_sample, mutation_score)
         labels = return_labels(scores_sample, scores_control)
-        labels_reorder = reorder_labels(labels, start=max_label)
+        labels_reorder = _reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
         labels_all.extend(labels_reorder)
     clust_sample = classif_sample.copy()

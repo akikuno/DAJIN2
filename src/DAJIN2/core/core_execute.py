@@ -114,27 +114,24 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Convert any `N` as deletions other than consecutive `N` from both ends
     # ============================================================
-    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
-    # ============================================================
-    # Extract possible mutation loci
-    # ============================================================
-    MUTATION_LOCI = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
     print("Classify...")
     classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
-    for classif in classif_sample:
-        classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+    # for classif in classif_sample:
+    #     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
     ########################################################################
     # Clustering
     ########################################################################
     print("Clustering...")
-    clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
-    clust_sample = clustering.clustering.add_readnum(clust_sample)
-    clust_sample = clustering.clustering.add_percent(clust_sample)
-    clust_sample = clustering.clustering.update_labels(clust_sample)
+    MUTATION_LOCI = clustering.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+    clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
+    clust_sample = clustering.add_readnum(clust_sample)
+    clust_sample = clustering.add_percent(clust_sample)
+    clust_sample = clustering.update_labels(clust_sample)
     ########################################################################
     # Consensus call
     ########################################################################

@@ -10,7 +10,7 @@ import plotly.express as px
 
 def all_info(batch_directory: Path) -> pd.DataFrame:
     df_results = pd.DataFrame()
-    colum = ["SAMPLE", "QNAME", "NAME", "READNUM", "PERCENT", "LABEL", "ALLELE", "SV"]
+    colum = ["SAMPLE", "QNAME", "NAME", "READNUM", "PERCENT", "LABEL", "ALLELE"]
     for path_result in batch_directory.iterdir():
         sample_name = path_result.stem
         result_jsonl = midsv.read_jsonl(path_result)
@@ -22,7 +22,7 @@ def all_info(batch_directory: Path) -> pd.DataFrame:
 
 
 def summary_info(df_all: pd.DataFrame) -> pd.DataFrame:
-    df_summary = df_all.drop(columns=["QNAME", "LABEL", "ALLELE", "SV"]).drop_duplicates()
+    df_summary = df_all.drop(columns=["QNAME", "LABEL", "ALLELE"]).drop_duplicates()
     return df_summary
 
 

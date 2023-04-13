@@ -167,8 +167,8 @@ if not flag:
     # ====================================================================
     # Convert any `N` as deletions other than consecutive `N` from both ends
     # ====================================================================
-    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-    preprocess.replace_N_to_D.execute(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
     # ====================================================================
     # Cashe inputs (control)
     # ====================================================================
@@ -177,8 +177,6 @@ if not flag:
         control_hash = hashlib.sha256(control_hash).hexdigest()
         PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
         PATH_CACHE_HASH.write_text(str(control_hash))
-
-MUTATION_LOCI = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
 
 ####################################################################################
 # Classify alleles
@@ -195,10 +193,11 @@ classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
 ####################################################################################
 print("Clustering...")
 
-clust_sample = clustering.clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
-clust_sample = clustering.clustering.add_readnum(clust_sample)
-clust_sample = clustering.clustering.add_percent(clust_sample)
-clust_sample = clustering.clustering.update_labels(clust_sample)
+MUTATION_LOCI = clustering.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS)
+clust_sample = clustering.add_readnum(clust_sample)
+clust_sample = clustering.add_percent(clust_sample)
+clust_sample = clustering.update_labels(clust_sample)
 
 ####################################################################################
 # Consensus call
