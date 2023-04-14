@@ -31,4 +31,5 @@ jobs:
       #     conda install --file requirements.txt --yes
       - name: Test with pytest
         run: |
+          export PYTHONPATH=./src
           python -m pytest tests/ -p no:warnings
