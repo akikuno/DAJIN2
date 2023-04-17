@@ -205,7 +205,7 @@ clust_sample = clustering.update_labels(clust_sample)
 print("Consensus call...")
 
 cons_percentage, cons_sequence = consensus.call_consensus(clust_sample)
-allele_names = consensus.call_allele_name(cons_sequence, FASTA_ALLELES)
+allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
 cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
 cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
 RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)

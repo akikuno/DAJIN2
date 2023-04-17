@@ -10,6 +10,9 @@ DAJINResults/*
 *error_profile*
 training_*
 
+# vscode
+.vscode/*
+
 # PyPI
 .pypirc
 # Byte-compiled / optimized / DLL files

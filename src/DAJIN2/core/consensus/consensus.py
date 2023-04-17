@@ -5,7 +5,7 @@ from itertools import groupby
 from collections import defaultdict
 
 
-def call_percentage(cssplits: list[str]) -> list[dict[str, float]]:
+def _call_percentage(cssplits: list[str]) -> list[dict[str, float]]:
     """
     Call position weight matrix in defferent loci.
     Non defferent loci are annotated to "Match" or "Unknown(N)"
@@ -14,7 +14,7 @@ def call_percentage(cssplits: list[str]) -> list[dict[str, float]]:
     coverage = len(cssplits)
     cons_percentage = []
     for cs_transposed in cssplits_transposed:
-        count_cs = defaultdict(int)
+        count_cs = defaultdict(float)
         for cs in cs_transposed:
             count_cs[cs] += 1 / coverage * 100
         count_cs_sorted = dict(sorted(count_cs.items(), key=lambda x: x[1], reverse=True))
@@ -22,7 +22,7 @@ def call_percentage(cssplits: list[str]) -> list[dict[str, float]]:
     return cons_percentage
 
 
-def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
+def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     consensus_sequence = []
     for cons_per in cons_percentage:
         cons = max(cons_per, key=cons_per.get)
@@ -46,9 +46,9 @@ def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     return "".join(consensus_sequence)
 
 
-def call_consensus(clust_sample: list[dict]) -> tuple[dict, dict]:
+def call_consensus(clust_sample: list[dict]) -> tuple[defaultdict[list], defaultdict[str]]:
     cons_percentage = defaultdict(list)
-    cons_sequence = defaultdict(list)
+    cons_sequence = defaultdict(str)
     clust_sample.sort(key=lambda x: x["LABEL"])
     for _, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
         clust = list(group)
@@ -58,34 +58,41 @@ def call_consensus(clust_sample: list[dict]) -> tuple[dict, dict]:
             clust[0]["PERCENT"],
         )
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
-        cons_per = call_percentage(cssplits)
-        cons_seq = call_sequence(cons_per)
+        cons_per = _call_percentage(cssplits)
+        cons_seq = _call_sequence(cons_per)
         cons_percentage[keys] = cons_per
         cons_sequence[keys] = cons_seq
     return cons_percentage, cons_sequence
 
 
-def detect_sv(cons_sequence: dict, threshold: int = 50) -> list[bool]:
+def _detect_sv(cons_percentage: defaultdict[list], threshold: int = 50) -> list[bool]:
     exists_sv = []
-    for seq in cons_sequence.values():
-        if "N" * threshold in seq:
+    for cons_per in cons_percentage.values():
+        cons_cssplits = []
+        for cssplit in cons_per:
+            seq = max(cssplit, key=cssplit.get)
+            cons_cssplits.append(seq)
+        cons_cssplits = "".join(cons_cssplits)
+        if "N" * threshold in cons_cssplits:
             exists_sv.append(True)
-        elif re.search(rf"(\+[ACGTN]\|){{{threshold}}}", seq):
+        elif re.search(rf"(\+[ACGTN]\|){{{threshold}}}", cons_cssplits):
             exists_sv.append(True)
-        elif re.search(rf"(\-[ACGTN]){{{threshold}}}", seq):
+        elif re.search(rf"(\-[ACGTN]){{{threshold}}}", cons_cssplits):
             exists_sv.append(True)
-        elif re.search(rf"(\*[ACGTN][ACGTN]){{{threshold}}}", seq):
+        elif re.search(rf"(\*[ACGTN][ACGTN]){{{threshold}}}", cons_cssplits):
             exists_sv.append(True)
-        elif re.search(r"[acgtn]", seq):
+        elif re.search(r"[acgtn]", cons_cssplits):
             exists_sv.append(True)
         else:
             exists_sv.append(False)
     return exists_sv
 
 
-def call_allele_name(cons_sequence: dict, FASTA_ALLELES: dict) -> dict[int, str]:
-    exists_sv = detect_sv(cons_sequence)
-    label_digits = len(str(len(cons_sequence)))
+def call_allele_name(
+    cons_sequence: defaultdict[dict], cons_percentage: defaultdict[list], FASTA_ALLELES: dict
+) -> dict[int, str]:
+    exists_sv = _detect_sv(cons_percentage)
+    label_digits = len(str(len(cons_percentage)))
     allele_names = {}
     for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequence.items()):
         ALLELE, LABEL, PERCENT = keys
@@ -107,9 +114,9 @@ def update_key_by_allele_name(cons: dict, allele_names: dict[int, str]) -> dict:
         cons[allele_name] = cons.pop(key)
     return cons
 
+
 def add_key_by_allele_name(clust_sample: list[dict], allele_names: dict[int, str]) -> list[dict]:
     for clust in clust_sample:
         label = clust["LABEL"]
         clust["NAME"] = allele_names[label]
     return clust_sample
-
