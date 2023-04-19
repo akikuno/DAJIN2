@@ -85,21 +85,21 @@ def test_fasta_without_error():
 
 @pytest.mark.skip("This test takes long time due to URL access")
 def test_available_url_pass():
-    url, flag_fail = validate_inputs.available_url(["https://example.com"])
-    assert ("https://example.com", False) == (url, flag_fail)
+    flag = validate_inputs._check_url_availabilities(["https://example.com"])
+    assert flag == [True]
 
 
 @pytest.mark.skip("This test takes long time due to URL access")
 def test_available_url_fail():
-    url, flag_fail = validate_inputs.available_url(["https://example_xxx.com"])
-    assert ("https://example_xxx.com", True) == (url, flag_fail)
+    flag = validate_inputs._check_url_availabilities(["https://example_xxx.com"])
+    assert flag == [False]
 
 
 @pytest.mark.skip("This test takes long time due to URL access")
 def test_available_genome_pass():
     genome = "mm10"
     ucsc_url = "https://genome.ucsc.edu/"
-    assert validate_inputs.available_genome(genome, ucsc_url) is None
+    assert validate_inputs._is_listed(genome, ucsc_url) is None
 
 
 @pytest.mark.skip("This test takes long time due to URL access")
@@ -107,7 +107,7 @@ def test_available_genome_fail():
     genome = "xxxx"
     ucsc_url = "https://genome.ucsc.edu/"
     with pytest.raises(AttributeError) as e:
-        validate_inputs.available_genome(genome, ucsc_url)
+        validate_inputs._is_listed(genome, ucsc_url)
     assert (
         str(e.value)
         == f"{genome} is not listed in UCSC genome browser. Available genomes are in {ucsc_url}/cgi-bin/das/dsn"
