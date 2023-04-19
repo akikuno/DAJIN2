@@ -92,12 +92,12 @@ def exists_cached_genome(GENOME: str, TEMPDIR: Path, EXISTS_CACHE_CONTROL: bool)
 ########################################################################
 
 
-def available_url(urls: list[str]) -> tuple[str, bool]:
+def _available_url(urls: list[str]) -> tuple[str, bool]:
     flag_fail = False
     url = ""
     for url in urls:
         try:
-            _ = urlopen(url)
+            _ = urlopen(url, timeout=10)
         except URLError:
             flag_fail = True
         else:
@@ -106,7 +106,7 @@ def available_url(urls: list[str]) -> tuple[str, bool]:
     return url, flag_fail
 
 
-def available_genome(genome: str, ucsc_url: str):
+def _available_genome(genome: str, ucsc_url: str):
     url = f"{ucsc_url}/cgi-bin/das/{genome}/dna?segment=1:1,10"
     response = urlopen(url)
     content = response.read()
@@ -124,7 +124,7 @@ def check_and_fetch_genome(GENOME: str) -> tuple(str, str):
         "https://genome-asia.ucsc.edu/",
         "https://genome-euro.ucsc.edu/",
     ]
-    UCSC_URL, flag_fail = available_url(UCSC_URLS)
+    UCSC_URL, flag_fail = _available_url(UCSC_URLS)
     if flag_fail:
         raise URLError("UCSC Servers are currently down")
     # Check UCSC Download Server
@@ -132,9 +132,9 @@ def check_and_fetch_genome(GENOME: str) -> tuple(str, str):
         "https://hgdownload.cse.ucsc.edu/goldenPath",
         "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
     ]
-    GOLDENPATH_URL, flag_fail = available_url(GOLDENPATH_URLS)
+    GOLDENPATH_URL, flag_fail = _available_url(GOLDENPATH_URLS)
     if flag_fail:
         raise URLError("UCSC Download Servers are currently down")
     # Check input genome
-    available_genome(GENOME, UCSC_URL)
+    _available_genome(GENOME, UCSC_URL)
     return UCSC_URL, GOLDENPATH_URL
