@@ -118,8 +118,8 @@ def execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME):
     for allele, sequence in FASTA_ALLELES.items():
         sequence = FASTA_ALLELES[allele]
         knockin_loci = knockin_alleles[allele]
-        midsv_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl"))
-        midsv_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl"))
+        midsv_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))
+        midsv_control = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl"))
         cssplits_sample = [m["CSSPLIT"].split(",") for m in midsv_sample]
         cssplits_control = [m["CSSPLIT"].split(",") for m in midsv_control]
         # Split the knock-in sequence and control into 5 mer and find 100 similar sequences in the control
@@ -158,4 +158,4 @@ def execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME):
         for i, cssplits in enumerate(cssplits_corrected):
             midsv_sample[i]["CSSPLIT"] = cssplits
         # Save to jsonl
-        midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl"))
+        midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))

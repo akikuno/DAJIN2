@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from collections import defaultdict
 from pathlib import Path
 
@@ -44,12 +43,12 @@ def _extract(cssplits_sample, cssplits_control) -> dict[int, str]:
 ###############################################################################
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> defaultdict(dict):
-    mutation_loci = defaultdict(dict)
+def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> dict[str, dict[int, str]]:
+    mutation_loci = dict()
     for allele in FASTA_ALLELES.keys():
-        midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_splice_{allele}.jsonl")))
-        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
+        midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl")))
+        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        mutation_loci[allele] = _extract(cssplits_sample, cssplits_control)
+        mutation_loci.update({allele: _extract(cssplits_sample, cssplits_control)})
     return mutation_loci

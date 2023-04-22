@@ -47,7 +47,7 @@ def _calc_match(CSSPLIT: str, mutations: dict) -> float:
 
 
 def classify_alleles(TEMPDIR: Path, SAMPLE_NAME: str) -> list[dict]:
-    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}_splice*"))
+    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*.jsonl"))
     mutations = _extract_diff_loci(TEMPDIR)
     # Scoring
     score_of_each_alleles = []

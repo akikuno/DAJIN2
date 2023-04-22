@@ -78,7 +78,7 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS: in
             continue
         knockin_loci: set = knockin_alleles[allele]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
-        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_splice_{allele}.jsonl")))
+        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         cssplits_control = _compress_insertion(cssplits_control)
         cssplits_sample = _compress_insertion(cssplits_sample)
