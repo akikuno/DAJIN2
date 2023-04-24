@@ -103,7 +103,7 @@ def execute_sample(arguments: dict):
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
-/mnt/d/Research/DAJIN2/misc/experiments        preprocess.mappy_align.output_sam(
+        preprocess.mappy_align.output_sam(
             TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, preset="splice", threads=THREADS
         )
     # ============================================================
