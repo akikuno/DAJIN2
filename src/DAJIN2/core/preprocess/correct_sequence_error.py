@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import random
 import re
-# from collections import Counter
+from collections import Counter
 from collections import defaultdict
 from pathlib import Path
 
 import midsv
 import numpy as np
-# from scipy.stats import chi2
+from scipy import stats
 from scipy.spatial import distance
-from sklearn.ensemble import IsolationForest
+from sklearn.mixture import GaussianMixture
+from sklearn.neighbors import LocalOutlierFactor
 
 
 def _count_indels(cssplits: list[list[str]]) -> dict[str, list[int]]:
@@ -39,14 +40,33 @@ def _remove_minor_indels(count_indels: dict[str, list[int]], coverage: int) -> d
     return count_indels_removed
 
 
-def _extract_anomaly_loci(count_indels: dict[str, list[int | float]]) -> dict[str, set[int]]:
+def _extract_anomaly_loci(indels_sample: dict, indels_control: dict) -> dict[str, set[int]]:
     anomaly_loci = dict()
-    for key, values in count_indels.items():
-        clf = IsolationForest(random_state=0)
-        pred = clf.fit_predict(np.array(values).reshape(-1, 1))
-        loci = {i for i, p in enumerate(pred) if p == -1}
+    for key in indels_sample.keys():
+        clf = LocalOutlierFactor(novelty=True)
+        clf.fit(indels_control[key])
+        pred = clf.predict(indels_sample[key])
+        # はじめの9塩基はまず正常と判定されるはずなので、これをもとにして正常か異常かを判定する
+        normal, abnormal = Counter(pred).keys()
+        if Counter(pred[:9]).most_common()[0][0] == abnormal:
+            normal, abnormal = abnormal, normal
+        loci = {i for i, p in enumerate(pred) if p == abnormal}
         anomaly_loci.update({key: loci})
     return anomaly_loci
+
+# def _extract_anomaly_loci(indels_sample: dict) -> dict[str, set[int]]:
+#     anomaly_loci = dict()
+#     for key, values in indels_sample.items():
+#         clf = GaussianMixture(n_components = 2, random_state=0)
+#         pred = clf.fit_predict(np.array(values).reshape(-1, 1))
+#         # はじめの9塩基はまず正常と判定されるはずなので、これをもとにして正常か異常かを判定する
+#         normal, abnormal = Counter(pred).keys()
+#         if Counter(pred[:9]).most_common()[0][0] == abnormal:
+#             normal, abnormal = abnormal, normal
+#         loci = {i for i, p in enumerate(pred) if p == abnormal}
+#         anomaly_loci.update({key: loci})
+#     return anomaly_loci
+
 
 # def _score_anomaly(count_sample: list[int | float]) -> list[float]:
 #     x = np.array(count_sample)
@@ -56,7 +76,7 @@ def _extract_anomaly_loci(count_indels: dict[str, list[int | float]]) -> dict[st
 #     return score.tolist()
 
 
-# def _extract_anomaly_loci(score: list[float], threshold: float = 0.99) -> set[int]:
+# def _extract_anomaly_loci_hotelling(score: list[float], threshold: float = 0.99) -> set[int]:
 #     anomaly_loci = set()
 #     thres = chi2.ppf(q=threshold, df=1)
 #     for i, s in enumerate(score):
@@ -96,25 +116,27 @@ def _extract(cssplits_sample, cssplits_control) -> dict[str, set[int]]:
     indels_sample = _remove_minor_indels(indels_sample, len(cssplits_sample))
     indels_control = _remove_minor_indels(indels_control, len(cssplits_control))
     # anomaly at single locus
-    mutation_locus_single = {}
-    loci_sample = _extract_anomaly_loci(indels_sample)
-    loci_control = _extract_anomaly_loci(indels_control)
-    for key in ["ins", "del", "sub"]:
-        mutation_locus_single.update({key: loci_sample[key] - loci_control[key]})
+    # mutation_locus_single = _extract_anomaly_loci(indels_sample)
+    # mutation_locus_single = {}
+    # loci_sample = _extract_anomaly_loci(indels_sample)
+    # loci_control = _extract_anomaly_loci(indels_control)
+    # for key in ["ins", "del", "sub"]:
+    #     mutation_locus_single.update({key: loci_sample[key] - loci_control[key]})
     # Difference of anomaly within kmers
     x = _split_kmer(indels_sample, kmer = 10)
     y = _split_kmer(indels_control, kmer = 10)
-    dists = _calc_distance(x, y)
-    loci_sample = _extract_anomaly_loci(dists)
-    mutation_locus_kmer = {}
-    for key in ["ins", "del", "sub"]:
-        # score_sample = _score_anomaly(dists[key])
-        mutation_locus_kmer.update({key: loci_sample[key]})
-    # Output
-    results = {}
-    for key in ["ins", "del", "sub"]:
-        results.update({key: mutation_locus_single[key] & mutation_locus_kmer[key]})
-    return results
+    return _extract_anomaly_loci(x, y)
+    # dists = _calc_distance(x, y)
+    # loci_sample = _extract_anomaly_loci(dists)
+    # mutation_locus_kmer = {}
+    # for key in ["ins", "del", "sub"]:
+    #     # score_sample = _score_anomaly(dists[key])
+    #     mutation_locus_kmer.update({key: loci_sample[key]})
+    # # Output
+    # mutation_loci = {}
+    # for key in ["ins", "del", "sub"]:
+    #     mutation_loci.update({key: mutation_locus_single[key] & mutation_locus_kmer[key]})
+    # return mutation_loci
 
 ###########################################################
 # postprocesss
@@ -202,6 +224,7 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
         midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))
         midsv.write_jsonl(midsv_control, Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl"))
 
+###############################################################################
 
 # def _set_indexes(sequence: str):
 #     sequence_length = len(sequence)

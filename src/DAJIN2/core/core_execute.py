@@ -103,7 +103,7 @@ def execute_sample(arguments: dict):
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
-        preprocess.mappy_align.output_sam(
+/mnt/d/Research/DAJIN2/misc/experiments        preprocess.mappy_align.output_sam(
             TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, preset="splice", threads=THREADS
         )
     # ============================================================
@@ -122,7 +122,7 @@ def execute_sample(arguments: dict):
     # CSSPLITS Error Correction
     # ============================================================
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-    preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
