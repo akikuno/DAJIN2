@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import midsv
+from scipy import stats
 from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
 
@@ -69,23 +70,31 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
     return results
 
 
-def _calc_distance(indels_sample: dict[str, list[list[int]]], indels_control: dict[str, list[list[int]]]) -> dict[str, list[float]]:
-    results = defaultdict(list)
-    for mut, value in indels_sample.items():
-        for i, val in enumerate(value):
-            dist = distance.euclidean(val, indels_control[mut][i])
-            results[mut].append(dist)
+def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]) -> dict[str, set]:
+    results = dict()
+    for mut in indels_kmer_sample:
+        cossim = [distance.cosine(x, y) for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
+        pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
+        cossim_pval_false = [cossim if pvalue > 0.05 else 1 for cossim, pvalue in zip(cossim, pvalues)]
+        dissimilar_loci = {i for i, x in enumerate(cossim_pval_false) if x > 0.05}
+        results.update({mut: dissimilar_loci})
     return results
 
-def _extract(cssplits_sample, cssplits_control) -> dict[str, set[int]]:
+
+def _extract_mutation_loci(cssplits_sample, cssplits_control) -> dict[str, set[int]]:
     indels_sample = _count_indels(cssplits_sample)
     indels_control = _count_indels(cssplits_control)
     indels_sample = _remove_minor_indels(indels_sample, len(cssplits_sample))
     indels_control = _remove_minor_indels(indels_control, len(cssplits_control))
     # Difference of anomaly within kmers
-    x = _split_kmer(indels_sample, kmer = 10)
-    y = _split_kmer(indels_control, kmer = 10)
-    return _extract_anomaly_loci(x, y)
+    indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
+    indels_kmer_control = _split_kmer(indels_control, kmer = 10)
+    anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control)
+    dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
+    mutation_loci = dict()
+    for mut in anomaly_loci:
+        mutation_loci.update({mut: anomaly_loci[mut] & dissimilar_loci[mut]})
+    return mutation_loci
 
 ###########################################################
 # postprocesss
@@ -157,7 +166,7 @@ def execute(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAM
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
         # Extract mutation loci
-        mutation_loci = _extract(cssplits_sample, cssplits_control)
+        mutation_loci = _extract_mutation_loci(cssplits_sample, cssplits_control)
         # Correct sequence errors
         cssplits_sample_atmark = _replace_errors_to_atmark(cssplits_sample, mutation_loci)
         cssplits_control_atmark = _replace_errors_to_atmark(cssplits_control, mutation_loci)
