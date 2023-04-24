@@ -1,5 +1,5 @@
-from pathlib import Path
-from collections import defaultdict
+from __future__ import annotations
+
 import midsv
 import re
 from itertools import groupby
