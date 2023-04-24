@@ -73,12 +73,18 @@ def execute_control(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
-        preprocess.call_midsv(TEMPDIR, path_sam)
+    for allele in FASTA_ALLELES:
+        preprocess.call_midsv(TEMPDIR, CONTROL_NAME, allele)
+    # for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
+    #     preprocess.call_midsv(TEMPDIR, path_sam)
+    # ============================================================
+    # Convert any `N` as deletions other than consecutive `N` from both ends
+    # ============================================================
+    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    # ============================================================
+    # Output MIDSV and BAM to cache
+    # ============================================================
     shutil.copytree(Path(TEMPDIR, "midsv"), Path(TEMPDIR, "midsv_control"), dirs_exist_ok=True)
-    # ============================================================
-    # Output BAM to cache
-    # ============================================================
     report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
 
 
@@ -104,18 +110,19 @@ def execute_sample(arguments: dict):
     # MIDSV conversion
     # ============================================================
     shutil.copytree(Path(TEMPDIR, "midsv_control"), Path(TEMPDIR, "midsv"), dirs_exist_ok=True)
-    for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
-        preprocess.call_midsv(TEMPDIR, path_sam)
+    for allele in FASTA_ALLELES:
+        preprocess.call_midsv(TEMPDIR, SAMPLE_NAME, allele)
+    # for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
+    #     preprocess.call_midsv(TEMPDIR, path_sam)
+    # ============================================================
+    # Convert any `N` as deletions other than consecutive `N` from both ends
+    # ============================================================
+    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
     # ============================================================
     # CSSPLITS Error Correction
     # ============================================================
     preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-    preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-    # ============================================================
-    # Convert any `N` as deletions other than consecutive `N` from both ends
-    # ============================================================
-    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
