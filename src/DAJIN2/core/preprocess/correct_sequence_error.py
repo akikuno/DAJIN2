@@ -2,55 +2,33 @@ from __future__ import annotations
 
 import random
 import re
-from collections import Counter
 from collections import defaultdict
 from pathlib import Path
 
 import midsv
+import numpy as np
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
 
 
 def _count_indels(cssplits: list[list[str]]) -> dict[str, list[int]]:
-    count = {"ins": [1] * len(cssplits[0]),
-            "del": [1] * len(cssplits[0]),
-            "sub": [1] * len(cssplits[0])}
     transposed_cssplits = [list(t) for t in zip(*cssplits)]
+    count = {"ins": [1] * len(transposed_cssplits),
+            "del": [1] * len(transposed_cssplits),
+            "sub": [1] * len(transposed_cssplits)}
     for i, transposed_cssplit in enumerate(transposed_cssplits):
         for cs in transposed_cssplit:
             if cs.startswith("=") or cs == "N" or re.search(r"a|c|g|t|n", cs):
                 continue
             if cs.startswith("+"):
-                count["ins"][i] += len(cs.split("|"))
+                # count["ins"][i] += len(cs.split("|"))
+                count["ins"][i] += 1
             elif cs.startswith("-"):
                 count["del"][i] += 1
             elif cs.startswith("*"):
                 count["sub"][i] += 1
     return count
-
-def _remove_minor_indels(count_indels: dict[str, list[int]], coverage: int) -> dict[str, list[int]]:
-    count_indels_removed = dict()
-    threshold = coverage * 0.01
-    for key, values in count_indels.items():
-        values_removed = [v if v >= threshold else 1 for v in values]
-        count_indels_removed.update({key: values_removed})
-    return count_indels_removed
-
-
-def _extract_anomaly_loci(indels_sample: dict, indels_control: dict) -> dict[str, set[int]]:
-    anomaly_loci = dict()
-    for key in indels_sample.keys():
-        clf = LocalOutlierFactor(novelty=True)
-        clf.fit(indels_control[key])
-        pred = clf.predict(indels_sample[key])
-        # はじめの9塩基はまず正常と判定されるはずなので、これをもとにして正常か異常かを判定する
-        normal, abnormal = Counter(pred).keys()
-        if Counter(pred[:9]).most_common()[0][0] == abnormal:
-            normal, abnormal = abnormal, normal
-        loci = {i for i, p in enumerate(pred) if p == abnormal}
-        anomaly_loci.update({key: loci})
-    return anomaly_loci
 
 
 def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[list[int]]]:
@@ -70,6 +48,28 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
     return results
 
 
+def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int) -> dict[str, set[int]]:
+    anomaly_loci = dict()
+    clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
+    for key in indels_kmer_sample.keys():
+        loci = set()
+        values_control = np.array(indels_kmer_control[key]) / coverage_control
+        values_sample = np.array(indels_kmer_sample[key]) / coverage_sample
+        index = -1
+        for i, (value_control, value_sample) in enumerate(zip(values_control, values_sample)):
+            if i == index:
+                continue
+            clf.fit(value_control.reshape(-1, 1))
+            pred = clf.predict(value_sample.reshape(-1, 1))
+            if pred[5] == -1:
+                loci.add(i)
+            # 次の塩基が-1でない場合は、次の塩基を検証しない
+            if pred[6] == 1:
+                index = i + 1
+        anomaly_loci.update({key: loci})
+    return anomaly_loci
+
+
 def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]) -> dict[str, set]:
     results = dict()
     for mut in indels_kmer_sample:
@@ -84,12 +84,9 @@ def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], ind
 def _extract_mutation_loci(cssplits_sample, cssplits_control) -> dict[str, set[int]]:
     indels_sample = _count_indels(cssplits_sample)
     indels_control = _count_indels(cssplits_control)
-    indels_sample = _remove_minor_indels(indels_sample, len(cssplits_sample))
-    indels_control = _remove_minor_indels(indels_control, len(cssplits_control))
-    # Difference of anomaly within kmers
     indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
     indels_kmer_control = _split_kmer(indels_control, kmer = 10)
-    anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control)
+    anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, len(cssplits_sample), len(cssplits_control))
     dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
     mutation_loci = dict()
     for mut in anomaly_loci:
