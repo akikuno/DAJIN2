@@ -2,7 +2,9 @@ from DAJIN2.core.preprocess import validate_inputs
 from DAJIN2.core.preprocess import format_inputs
 from DAJIN2.core.preprocess import mappy_align
 from DAJIN2.core.preprocess import correct_revititive_deletions
-from DAJIN2.core.preprocess import correct_sequence_error
 from DAJIN2.core.preprocess import correct_knockin
 from DAJIN2.core.preprocess.replace_NtoD import replace_NtoD
 from DAJIN2.core.preprocess.call_midsv import call_midsv
+from DAJIN2.core.preprocess.extract_mutation_loci import extract_mutation_loci
+from DAJIN2.core.preprocess.correct_sequence_error import correct_sequence_error
+from DAJIN2.core.preprocess.extract_knockin_loci import extract_knockin_loci
