@@ -57,11 +57,11 @@ def _discard_match_and_n(percent_discarded) -> list[dict]:
 ###############################################################################
 
 
-def make_score(cssplits_control, cssplits_sample, knockin_loci: set(int)) -> list[dict[str, float]]:
-    counts_control = _call_count(cssplits_control)
+def make_score(cssplits_sample, cssplits_control, knockin_loci: set(int)) -> list[dict[str, float]]:
     counts_sample = _call_count(cssplits_sample)
-    percent_control = _call_percent(counts_control)
+    counts_control = _call_count(cssplits_control)
     percent_sample = _call_percent(counts_sample)
+    percent_control = _call_percent(counts_control)
     percent_subtraction = _subtract_percentage(percent_control, percent_sample, knockin_loci)
     percent_discarded = _discard_common_error(percent_subtraction, 0.5)
     mutation_score = _discard_match_and_n(percent_discarded)

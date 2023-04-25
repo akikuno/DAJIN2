@@ -32,26 +32,27 @@ def _transpose_mutation_loci(mutation_loci, cssplits_sample):
     return mutation_loci_transposed
 
 
-def _extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_loci_transposed: list[set[str]]) -> list[list]:
+def _extract_cssplits_in_mutation_by_3mer(cssplits: list[list[str]], mutation_loci_transposed: list[set[str]]) -> list[list[str]]:
     cssplits_mutation = []
-    for cssplits in cssplits_sample:
-        cs_mutation = []
-        for i in range(1, len(cssplits) - 1):
+    for cssplit in cssplits:
+        cs_mutation = ["N,N,N"]
+        for i in range(1, len(cssplit) - 1):
             if mutation_loci_transposed[i] == set():
                 cs_mutation.append("N,N,N")
                 continue
             mutation = ""
-            if cssplits[i].startswith("+"):
+            if cssplit[i].startswith("+"):
                 mutation = "ins"
-            elif cssplits[i].startswith("-"):
+            elif cssplit[i].startswith("-"):
                 mutation = "del"
-            elif cssplits[i].startswith("*"):
+            elif cssplit[i].startswith("*"):
                 mutation = "sub"
             if mutation in mutation_loci_transposed[i]:
-                kmer = ",".join([cssplits[i - 1], cssplits[i], cssplits[i + 1]])
+                kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
                 cs_mutation.append(kmer)
             else:
                 cs_mutation.append("N,N,N")
+        cs_mutation.append("N,N,N")
         cssplits_mutation.append(cs_mutation)
     return cssplits_mutation
 
@@ -67,23 +68,6 @@ def _annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:flo
                 score[i] = mutscore[cs]
         scores.append(score)
     return scores
-
-# def _annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:float]]) -> list[list[float]]:
-#     scores = []
-#     for cssplit in cssplits:
-#         score = []
-#         for cs, mutscore in zip(cssplit, mutation_score):
-#             if mutscore == {}:
-#                 score.append(0)
-#                 continue
-#             mutation = list(mutscore.keys())[0]
-#             value = list(mutscore.values())[0]
-#             if cs == mutation:
-#                 score.append(value)
-#             else:
-#                 score.append(0)
-#         scores.append(score)
-#     return scores
 
 
 def _reorder_labels(labels: list[int], start: int = 0) -> list[int]:
@@ -104,8 +88,11 @@ def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNO
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         mutation_loci: dict[str, set[int]] = MUTATION_LOCI_ALLELES[allele]
-        if mutation_loci == {}:
-            labels_all.extend([1] * len(classif_sample))
+        if sum(len(v) for v in mutation_loci.values()) == 0:
+            labels = [1] * len(classif_sample)
+            labels_reorder = _reorder_labels(labels, start=max_label)
+            max_label = max(labels_reorder)
+            labels_all.extend(labels_reorder)
             continue
         knockin_loci = set()
         if allele in KNOCKIN_LOCI_ALLELES:
