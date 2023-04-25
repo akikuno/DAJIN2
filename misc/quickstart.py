@@ -155,20 +155,21 @@ if not flag:
     # ====================================================================
     # MIDSV conversion
     # ====================================================================
-    for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
-        preprocess.call_midsv(TEMPDIR, path_sam)
-    for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
-        preprocess.call_midsv(TEMPDIR, path_sam)
-    # ====================================================================
-    # CSSPLITS Error Correction
-    # ====================================================================
-    preprocess.correct_sequence_error.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-    preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    for allele in FASTA_ALLELES:
+        preprocess.call_midsv(TEMPDIR, CONTROL_NAME, allele)
+    for allele in FASTA_ALLELES:
+        preprocess.call_midsv(TEMPDIR, SAMPLE_NAME, allele)
     # ====================================================================
     # Convert any `N` as deletions other than consecutive `N` from both ends
     # ====================================================================
     preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    # ====================================================================
+    # CSSPLITS Error Correction
+    # ====================================================================
+    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
+    preprocess.correct_sequence_error(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME, MUTATION_LOCI_ALLELES)
+    # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     # ====================================================================
     # Cashe inputs (control)
     # ====================================================================

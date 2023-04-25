@@ -19,9 +19,12 @@ def _call_percent(counts: list[dict[str, int]]) -> list[dict[str, float]]:
     return cssplit_percent
 
 
-def _subtract_percentage(percent_control, percent_sample) -> list[dict]:
+def _subtract_percentage(percent_control, percent_sample, knockin_loci: set(int)) -> list[dict]:
     sample_subtracted = []
-    for cont, samp in zip(percent_control, percent_sample):
+    for i, (cont, samp) in enumerate(zip(percent_control, percent_sample)):
+        if i in knockin_loci:
+            sample_subtracted.append(dict(samp))
+            continue
         samp = Counter(samp)
         samp.subtract(Counter(cont))
         sample_subtracted.append(dict(samp))
@@ -37,18 +40,16 @@ def _discard_common_error(percent_subtraction, threshold=0.5) -> list[dict]:
 
 
 def _discard_match_and_n(percent_discarded) -> list[dict]:
-    mutation_score = []
-    for samp in percent_discarded:
-        if samp == {} or "" in samp:
-            mutation_score.append({})
+    mutation_score_discarded = [dict() for _ in range(len(percent_discarded))]
+    for i, mutation_percent in enumerate(percent_discarded):
+        if mutation_percent == {} or "" in mutation_percent:
             continue
-        cs_center = list(samp.keys())[0].split(",")[1]
-        if cs_center.startswith("=") or cs_center == ("N"):
-            mutation_score.append({})
-            continue
-        score = {k: v for k, v in samp.items()}
-        mutation_score.append(score)
-    return mutation_score
+        for mutation, percent in mutation_percent.items():
+            mutation_center = mutation.split(",")[1]
+            if mutation_center.startswith("=") or mutation_center == ("N"):
+                continue
+            mutation_score_discarded[i].update({mutation: percent})
+    return mutation_score_discarded
 
 
 ###############################################################################
@@ -56,12 +57,12 @@ def _discard_match_and_n(percent_discarded) -> list[dict]:
 ###############################################################################
 
 
-def make_score(cssplits_control, cssplits_sample) -> list[dict[str, float]]:
+def make_score(cssplits_control, cssplits_sample, knockin_loci: set(int)) -> list[dict[str, float]]:
     counts_control = _call_count(cssplits_control)
     counts_sample = _call_count(cssplits_sample)
     percent_control = _call_percent(counts_control)
     percent_sample = _call_percent(counts_sample)
-    percent_subtraction = _subtract_percentage(percent_control, percent_sample)
+    percent_subtraction = _subtract_percentage(percent_control, percent_sample, knockin_loci)
     percent_discarded = _discard_common_error(percent_subtraction, 0.5)
     mutation_score = _discard_match_and_n(percent_discarded)
     return mutation_score

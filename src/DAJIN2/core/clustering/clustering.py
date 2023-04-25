@@ -8,7 +8,6 @@ import midsv
 
 from DAJIN2.core.clustering.make_score import make_score
 from DAJIN2.core.clustering.return_labels import return_labels
-from DAJIN2.core.preprocess.correct_knockin import extract_knockin_loci
 
 
 def _compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
@@ -24,14 +23,35 @@ def _compress_insertion(cssplits: list[list[str]]) -> list[dict[str, int]]:
     return cssplits_abstracted
 
 
-def _extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_loci: set) -> list[list]:
+def _transpose_mutation_loci(mutation_loci, cssplits_sample):
+    mutation_loci_transposed = [set() for _ in range(len(cssplits_sample[0]))]
+    for mut, values in mutation_loci.items():
+        for i, loci in enumerate(mutation_loci_transposed):
+            if i in values:
+                loci.add(mut)
+    return mutation_loci_transposed
+
+
+def _extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_loci_transposed: list[set[str]]) -> list[list]:
     cssplits_mutation = []
     for cssplits in cssplits_sample:
         cs_mutation = []
         for i in range(1, len(cssplits) - 1):
-            if i in mutation_loci:
+            if mutation_loci_transposed[i] == set():
+                cs_mutation.append("N,N,N")
+                continue
+            mutation = ""
+            if cssplits[i].startswith("+"):
+                mutation = "ins"
+            elif cssplits[i].startswith("-"):
+                mutation = "del"
+            elif cssplits[i].startswith("*"):
+                mutation = "sub"
+            if mutation in mutation_loci_transposed[i]:
                 kmer = ",".join([cssplits[i - 1], cssplits[i], cssplits[i + 1]])
                 cs_mutation.append(kmer)
+            else:
+                cs_mutation.append("N,N,N")
         cssplits_mutation.append(cs_mutation)
     return cssplits_mutation
 
@@ -39,19 +59,31 @@ def _extract_cssplits_in_mutation_by_3mer(cssplits_sample: list[list], mutation_
 def _annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:float]]) -> list[list[float]]:
     scores = []
     for cssplit in cssplits:
-        score = []
-        for cs, mutscore in zip(cssplit, mutation_score):
+        score = [0 for _ in range(len(cssplit))]
+        for i, (cs, mutscore) in enumerate(zip(cssplit, mutation_score)):
             if mutscore == {}:
-                score.append(0)
                 continue
-            mutation = list(mutscore.keys())[0]
-            value = list(mutscore.values())[0]
-            if cs == mutation:
-                score.append(value)
-            else:
-                score.append(0)
+            if cs in mutscore:
+                score[i] = mutscore[cs]
         scores.append(score)
     return scores
+
+# def _annotate_score(cssplits: list[list[str]], mutation_score: list[dict[str:float]]) -> list[list[float]]:
+#     scores = []
+#     for cssplit in cssplits:
+#         score = []
+#         for cs, mutscore in zip(cssplit, mutation_score):
+#             if mutscore == {}:
+#                 score.append(0)
+#                 continue
+#             mutation = list(mutscore.keys())[0]
+#             value = list(mutscore.values())[0]
+#             if cs == mutation:
+#                 score.append(value)
+#             else:
+#                 score.append(0)
+#         scores.append(score)
+#     return scores
 
 
 def _reorder_labels(labels: list[int], start: int = 0) -> list[int]:
@@ -66,27 +98,29 @@ def _reorder_labels(labels: list[int], start: int = 0) -> list[int]:
     return labels_ordered
 
 
-def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI, THREADS: int = 1) -> list[dict[str]]:
-    knockin_alleles = extract_knockin_loci(TEMPDIR)
+def add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS: int = 1) -> list[dict[str]]:
     labels_all = []
     max_label = 0
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
-        mutation_loci: dict[int, str] = MUTATION_LOCI[allele]
+        mutation_loci: dict[str, set[int]] = MUTATION_LOCI_ALLELES[allele]
         if mutation_loci == {}:
             labels_all.extend([1] * len(classif_sample))
             continue
-        knockin_loci: set = knockin_alleles[allele]
+        knockin_loci = set()
+        if allele in KNOCKIN_LOCI_ALLELES:
+            knockin_loci = KNOCKIN_LOCI_ALLELES[allele]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in group]
         midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
         cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        cssplits_control = _compress_insertion(cssplits_control)
         cssplits_sample = _compress_insertion(cssplits_sample)
-        cssplits_control = _extract_cssplits_in_mutation_by_3mer(cssplits_control, mutation_loci)
-        cssplits_sample = _extract_cssplits_in_mutation_by_3mer(cssplits_sample, mutation_loci)
-        mutation_score = make_score(cssplits_control, cssplits_sample)
-        scores_control = _annotate_score(cssplits_control, mutation_score)
-        scores_sample = _annotate_score(cssplits_sample, mutation_score)
+        cssplits_control = _compress_insertion(cssplits_control)
+        mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, cssplits_sample)
+        cssplits_mutation_loci_sample = _extract_cssplits_in_mutation_by_3mer(cssplits_sample, mutation_loci_transposed)
+        cssplits_mutation_loci_control = _extract_cssplits_in_mutation_by_3mer(cssplits_control, mutation_loci_transposed)
+        mutation_score = make_score(cssplits_mutation_loci_sample, cssplits_mutation_loci_control, knockin_loci)
+        scores_sample = _annotate_score(cssplits_mutation_loci_sample, mutation_score)
+        scores_control = _annotate_score(cssplits_mutation_loci_control, mutation_score)
         labels = return_labels(scores_sample, scores_control)
         labels_reorder = _reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
