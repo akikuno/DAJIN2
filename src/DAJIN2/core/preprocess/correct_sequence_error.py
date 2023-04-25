@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import random
 import re
-from collections import Counter
 from collections import defaultdict
 from pathlib import Path
 
@@ -31,14 +30,6 @@ def _count_indels(cssplits: list[list[str]]) -> dict[str, list[int]]:
                 count["sub"][i] += 1
     return count
 
-# def _remove_minor_indels(count_indels: dict[str, list[int]], coverage: int) -> dict[str, list[int]]:
-#     count_indels_removed = dict()
-#     threshold = coverage * 0.5 / 100 # 0.5%
-#     for key, values in count_indels.items():
-#         values_removed = [v if v >= threshold else 1 for v in values]
-#         count_indels_removed.update({key: values_removed})
-#     return count_indels_removed
-
 
 def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[list[int]]]:
     results = defaultdict(list)
@@ -59,7 +50,7 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
 
 def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int) -> dict[str, set[int]]:
     anomaly_loci = dict()
-    clf = LocalOutlierFactor(novelty=True, n_neighbors=10)
+    clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
     for key in indels_kmer_sample.keys():
         loci = set()
         values_control = np.array(indels_kmer_control[key]) / coverage_control
@@ -93,7 +84,6 @@ def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], ind
 def _extract_mutation_loci(cssplits_sample, cssplits_control) -> dict[str, set[int]]:
     indels_sample = _count_indels(cssplits_sample)
     indels_control = _count_indels(cssplits_control)
-    # Difference of anomaly within kmers
     indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
     indels_kmer_control = _split_kmer(indels_control, kmer = 10)
     anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, len(cssplits_sample), len(cssplits_control))

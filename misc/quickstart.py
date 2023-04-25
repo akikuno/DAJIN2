@@ -61,7 +61,7 @@ reload(report)
 #     "tests/data/knockout/test_barcode25.fq.gz",
 #     "tests/data/knockout/test_barcode30.fq.gz",
 #     "tests/data/knockout/design_stx2.fa",
-#     "test-knockout",
+#     "single-stx2deletion",
 #     "mm10",
 #     True,
 #     30,
