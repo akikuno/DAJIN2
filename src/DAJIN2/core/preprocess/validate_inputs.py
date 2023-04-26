@@ -47,7 +47,7 @@ def fasta_content(fasta_path: str):
     if len(seq) > len(set(seq)):
         raise AttributeError(f"{fasta_path} must include unique DNA sequences")
     if name.count("control") == 0:
-        raise AttributeError(f"{fasta_path} must include a 'control' sequence")
+        raise AttributeError(f"One of the headers in the {fasta_path} must be '>control'")
 
 
 def check_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:

@@ -70,7 +70,7 @@ def test_fasta_error_without_control():
     with pytest.raises(AttributeError) as e:
         fasta_path = "tests/data/preprocess/validate_inputs/no_control.fa"
         _ = validate_inputs.fasta_content(fasta_path)
-    assert str(e.value) == f"{fasta_path} must include a 'control' sequence"
+    assert str(e.value) == f"One of the headers in the {fasta_path} must be '>control'"
 
 
 def test_fasta_without_error():
