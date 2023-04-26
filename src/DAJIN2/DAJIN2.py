@@ -1,9 +1,8 @@
 import argparse
-import os
 
 from DAJIN2 import batch, gui, single, view
 
-_version = "1.0.1"
+_version = "0.1.30"
 
 
 def main():
