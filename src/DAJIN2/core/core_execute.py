@@ -1,43 +1,54 @@
 from __future__ import annotations
-import hashlib
 import shutil
 from pathlib import Path
 import json
 import midsv
+from datetime import datetime
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
+import pickle
+
+import sys
+# limit max memory usage
+import os
+import resource
+mem_bytes = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+resource.setrlimit(resource.RLIMIT_DATA, (int(mem_bytes * 9/10), -1))
 
 
-def parse_args(arguments: dict):
+def _parse_arguments(arguments: dict):
     SAMPLE: str = arguments["sample"]
     CONTROL: str = arguments["control"]
     ALLELE: str = arguments["allele"]
     NAME: str = arguments["name"]
     THREADS: int = arguments["threads"]
-    try:
+    if "genome" in arguments:
         GENOME: str = arguments["genome"]
-    except KeyError:
-        GENOME = None
-    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME
+        URL_UCSC = arguments["ucsc"]
+        URL_GOLDENPATH = arguments["goldenpath"]
+    else:
+        GENOME = ""
+        URL_UCSC = ""
+        URL_GOLDENPATH = ""
+    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, URL_UCSC, URL_GOLDENPATH
 
 
-def format_inputs(SAMPLE, CONTROL, ALLELE, NAME, GENOME, THREADS):
+def _format_inputs(arguments: dict):
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, URL_UCSC, URL_GOLDENPATH = _parse_arguments(arguments)
     SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
     CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
     ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
     SAMPLE_NAME: str = preprocess.format_inputs.extract_basename(SAMPLE)
     CONTROL_NAME: str = preprocess.format_inputs.extract_basename(CONTROL)
     FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
-    THREADS: int = preprocess.format_inputs.update_threads(THREADS)
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
+    SUBDIRS = ["cache", "fasta", "sam", "midsv", "report", "result", "mutation_loci"]
+    preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SAMPLE_NAME, CONTROL_NAME)
     IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
     IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
-    UCSC_URL, GOLDENPATH_URL = None, None
     if GENOME:
         if not IS_CACHE_GENOME:
-            UCSC_URL, GOLDENPATH_URL = preprocess.validate_inputs.check_and_fetch_genome(GENOME)
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, FASTA_ALLELES["control"])
-            CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, GOLDENPATH_URL)
+            GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
+            CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, URL_GOLDENPATH)
             preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
         else:
             GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
@@ -45,15 +56,27 @@ def format_inputs(SAMPLE, CONTROL, ALLELE, NAME, GENOME, THREADS):
     return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS
 
 
+def _dtnow() -> str:
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
 def execute_control(arguments: dict):
+    print(f"{arguments['control']} is now processing...")
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
-    preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
-    _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = format_inputs(
-        SAMPLE, CONTROL, ALLELE, NAME, GENOME, THREADS
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
+    # preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+    _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
+        arguments
     )
+    ###########################################################
+    # Save Caches
+    ###########################################################
+    done_midsv = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}.plk").exists()
+    done_bam = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam").exists()
+    if done_midsv and done_bam:
+        print(f"{arguments['control']} is finished...")
+        return
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
@@ -73,33 +96,36 @@ def execute_control(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    for allele in FASTA_ALLELES:
-        preprocess.call_midsv(TEMPDIR, CONTROL_NAME, allele)
-    # for path_sam in Path(TEMPDIR, "sam").glob(f"{CONTROL_NAME}_splice_*"):
-    #     preprocess.call_midsv(TEMPDIR, path_sam)
+    midsv_control_alleles = preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    print(f"{arguments['control']}: midsv_control_alleles is {sys.getsizeof(midsv_control_alleles)}") #! ========================================
     # ============================================================
     # Convert any `N` as deletions other than consecutive `N` from both ends
     # ============================================================
-    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-    # ============================================================
-    # Output MIDSV and BAM to cache
-    # ============================================================
-    shutil.copytree(Path(TEMPDIR, "midsv"), Path(TEMPDIR, "midsv_control"), dirs_exist_ok=True)
+    # midsv_control_alleles = preprocess.replace_NtoD(midsv_control_alleles, FASTA_ALLELES)
+    ###########################################################
+    # Save MIDSV and BAM
+    ###########################################################
+    with open(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}.plk"), 'wb') as p:
+        pickle.dump(midsv_control_alleles, p)
     report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    print(f"{arguments['control']} is finished...")
 
 
 def execute_sample(arguments: dict):
+    print(f"{arguments['sample']} is now processing...")
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME = parse_args(arguments)
-    preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
-    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = format_inputs(
-        SAMPLE, CONTROL, ALLELE, NAME, GENOME, THREADS
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
+    # preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
+        arguments
     )
+    print(f"{_dtnow()}: Preprocess {SAMPLE_NAME}...")
     # ============================================================
     # Mapping with minimap2/mappy
     # ============================================================
+    print(f"{_dtnow()}: mapping {SAMPLE_NAME}...") #!====================
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
@@ -109,41 +135,53 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    shutil.copytree(Path(TEMPDIR, "midsv_control"), Path(TEMPDIR, "midsv"), dirs_exist_ok=True)
-    for allele in FASTA_ALLELES:
-        preprocess.call_midsv(TEMPDIR, SAMPLE_NAME, allele)
-    # for path_sam in Path(TEMPDIR, "sam").glob(f"{SAMPLE_NAME}_splice_*"):
-    #     preprocess.call_midsv(TEMPDIR, path_sam)
-    # ============================================================
-    # Convert any `N` as deletions other than consecutive `N` from both ends
-    # ============================================================
-    preprocess.replace_NtoD(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    print(f"{_dtnow()}: midsv {SAMPLE_NAME}...") #!====================
+    midsv_sample_alleles = preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    with open(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}.plk"), 'wb') as p:
+        pickle.dump(midsv_sample_alleles, p)
+    with open(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}.plk"), 'rb') as p:
+        midsv_control_alleles = pickle.load(p)
     # ============================================================
     # CSSPLITS Error Correction
     # ============================================================
-    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
-    preprocess.correct_sequence_error(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME, MUTATION_LOCI_ALLELES)
+    print(f"{_dtnow()}: extract_mutation_loci {SAMPLE_NAME}...") #!====================
+    try:
+        MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(midsv_sample_alleles, midsv_control_alleles)
+    except Exception as e:
+        print(f"{SAMPLE_NAME} is failed at extract mutation loci.")
+        print(type(e), e)
+        exit(1)
+    with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), 'wb') as p:
+        pickle.dump(MUTATION_LOCI_ALLELES, p)
+
+    print(f"{_dtnow()}: correct_sequence_error {SAMPLE_NAME}...") #!====================
+    try:
+        midsv_alleles_corrected = preprocess.correct_sequence_error(midsv_sample_alleles, midsv_control_alleles, FASTA_ALLELES, MUTATION_LOCI_ALLELES)
+    except Exception as e:
+        print(f"{SAMPLE_NAME} is failed at `correct_sequence_error`.")
+        print(type(e), e)
+        exit(1)
+    print(f"{SAMPLE_NAME} is finished by correct_sequence_error.")
+    exit(0) #!====================
     KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
     # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
-    print("Classify...")
-    classif_sample = classification.classify_alleles(TEMPDIR, SAMPLE_NAME)
-    # for classif in classif_sample:
-    #     classif["SV"] = classification.detect_sv(classif["CSSPLIT"], threshold=50)
+    print(f"{_dtnow()}: Classify {SAMPLE_NAME}...")
+    classif_sample = classification.classify_alleles(midsv_alleles_corrected["sample"], TEMPDIR)
     ########################################################################
     # Clustering
     ########################################################################
-    print("Clustering...")
-    clust_sample = clustering.add_labels(classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS)
+    print(f"{_dtnow()}: Clustering {SAMPLE_NAME}...")
+    clust_sample = clustering.add_labels(classif_sample, midsv_alleles_corrected["control"], MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
     ########################################################################
     # Consensus call
     ########################################################################
-    print("Consensus call...")
+    print(f"{_dtnow()}: Consensus calling {SAMPLE_NAME}......")
     cons_percentage, cons_sequence = consensus.call_consensus(clust_sample)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
@@ -171,3 +209,4 @@ def execute_sample(arguments: dict):
         shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
     # VCF
     # working in progress
+    print(f"{arguments['sample']} is finished...")

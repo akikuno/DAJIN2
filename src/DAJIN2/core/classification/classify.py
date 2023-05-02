@@ -46,19 +46,15 @@ def _calc_match(CSSPLIT: str, mutations: dict) -> float:
     return match_score / len(cssplit)
 
 
-def classify_alleles(TEMPDIR: Path, SAMPLE_NAME: str) -> list[dict]:
-    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*.jsonl"))
+def classify_alleles(midsv_alleles, TEMPDIR: Path) -> list[dict]:
     mutations = _extract_diff_loci(TEMPDIR)
     # Scoring
     score_of_each_alleles = []
-    for path_midsv in paths_midsv:
-        allele = path_midsv.stem.split("_")[-1]
-        preset = path_midsv.stem.split("_")[-2]
-        for dict_midsv in midsv.read_jsonl(path_midsv):
+    for allele in midsv_alleles:
+        for dict_midsv in midsv_alleles[allele]:
             score = _calc_match(dict_midsv["CSSPLIT"], mutations[allele])
             dict_midsv.update({"SCORE": score})
             dict_midsv.update({"ALLELE": allele})
-            dict_midsv.update({"PRESET": preset})
             score_of_each_alleles.append(dict_midsv)
     score_of_each_alleles.sort(key=lambda x: x["QNAME"])
     # Extract alleles with max scores

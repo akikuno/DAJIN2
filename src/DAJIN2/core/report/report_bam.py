@@ -249,7 +249,7 @@ def subset_reads(name, sam_content, qnames_by_name):
 def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
     intput_path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
-    sam = midsv.read_sam(intput_path_sam)
+    sam = list(midsv.read_sam(intput_path_sam))
     # Update sam
     sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)
@@ -281,7 +281,7 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
 def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
     input_path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
-    sam = midsv.read_sam(input_path_sam)
+    sam = list(midsv.read_sam(input_path_sam))
     # Update sam
     sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)

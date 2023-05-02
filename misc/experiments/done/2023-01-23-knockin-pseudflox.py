@@ -76,8 +76,8 @@ clust_sample = clustering.update_labels(clust_sample)
 ###########################################################
 # Classification
 ###########################################################
-from DAJIN2.core.clustering.preprocess import replace_both_ends_n
-from DAJIN2.core.clustering.preprocess import compress_insertion
+from DAJIN2.core.clustering.past.preprocess import replace_both_ends_n
+from DAJIN2.core.clustering.past.preprocess import compress_insertion
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels

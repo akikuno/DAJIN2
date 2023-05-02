@@ -31,17 +31,18 @@ def _replaceNtoD(cssplits_sample, sequence) -> list[list[str]]:
 # main
 ###############################################################################
 
-
-def replace_NtoD(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> None:
+def replace_NtoD(midsv_sample_alleles: dict[str, list[dict]], FASTA_ALLELES: dict) -> dict[str, list[dict]]:
     """
     Convert any `N` as deletions other than consecutive `N` from both ends
     """
+    midsv_updated = dict()
     for allele, sequence in FASTA_ALLELES.items():
-        midsv_sample = midsv.read_jsonl(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))
+        midsv_sample = midsv_sample_alleles[allele]
         cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
         cssplits_replaced = _replaceNtoD(cssplits_sample, sequence)
         midsv_cssplits = [",".join(cs) for cs in cssplits_replaced]
         # Save as a json
         for i, cssplits in enumerate(midsv_cssplits):
             midsv_sample[i]["CSSPLIT"] = cssplits
-        midsv.write_jsonl(midsv_sample, Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl"))
+        midsv_updated[allele] = midsv_sample
+    return midsv_updated

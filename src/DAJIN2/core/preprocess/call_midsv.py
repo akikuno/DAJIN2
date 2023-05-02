@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 import midsv
+from pathlib import Path
 import re
 from itertools import groupby
+from itertools import chain
+import pickle
+from typing import Generator
+
+
+def _load_sam(path_sam: str | Path) -> Generator[list[str]]:
+    return midsv.read_sam(path_sam)
 
 def _split_cigar(CIGAR:str) -> list[str]:
     cigar = re.split(r"([MIDNSH=X])", CIGAR)
@@ -11,7 +19,6 @@ def _split_cigar(CIGAR:str) -> list[str]:
     for i, j in zip(range(0, n, 2), range(1, n, 2)):
         cigar_split.append(cigar[i] + cigar[j])
     return cigar_split
-
 
 
 def _call_alignment_length(CIGAR: str) -> int:
@@ -39,15 +46,15 @@ def _has_inversion_in_splice(CIGAR: str) -> bool:
     return is_splice
 
 
-def _extract_qname_of_map_ont(sam_ont: list[list[str]], sam_splice: list[list[str]]) -> set():
+def _extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set():
     """Extract qname of reads from `map-ont` when:
         - no inversion signal in `splice` alignment (insertion + deletion)
         - single read
         - long alignment length
     """
+    dict_alignments_splice = {s[0]: s for s in sam_splice if not s[0].startswith("@")}
     alignments_ont = [s for s in sam_ont if not s[0].startswith("@")]
     alignments_ont.sort(key=lambda x: x[0])
-    dict_alignments_splice = {s[0]: s for s in sam_splice if not s[0].startswith("@")}
     qname_of_map_ont = set()
     for qname_ont, group in groupby(alignments_ont, key=lambda x: x[0]):
         alignment_ont = list(group)
@@ -68,39 +75,70 @@ def _extract_qname_of_map_ont(sam_ont: list[list[str]], sam_splice: list[list[st
     return qname_of_map_ont
 
 
-def _extract_sam(sam: list[list[str]], qname_of_map_ont: set, preset:str="map-ont") -> list[list[str]]:
-    sam_extracted = []
+def _extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset:str="map-ont") -> Generator[list[str]]:
     for alignment in sam:
         if alignment[0].startswith("@"):
-            sam_extracted.append(alignment)
+            yield alignment
         if preset == "map-ont":
             if alignment[0] in qname_of_map_ont:
-                sam_extracted.append(alignment)
+                yield alignment
         else:
             if alignment[0] not in qname_of_map_ont:
-                sam_extracted.append(alignment)
-    return sam_extracted
+                yield alignment
 
 
-def _midsv_transform(sam: list[list[str]]) -> list[list[str]]:
-    num_header = 0
-    for s in sam:
-        if s[0].startswith("@"):
-            num_header += 1
-        else:
-            break
-    if len(sam) == num_header:
-        return []
-    return midsv.transform(sam, midsv=False, cssplit=True, qscore=False)
+def _midsv_transform(sam: Generator[list[str]]) -> Generator[list[str]]:
+    for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False):
+        yield midsv_sample
 
 
-def call_midsv(TEMPDIR, SAMPLE_NAME, allele) -> None:
-    sam_ont = midsv.read_sam(f"{TEMPDIR}/sam/{SAMPLE_NAME}_map-ont_{allele}.sam")
-    sam_splice = midsv.read_sam(f"{TEMPDIR}/sam/{SAMPLE_NAME}_splice_{allele}.sam")
-    qname_of_map_ont = _extract_qname_of_map_ont(sam_ont, sam_splice)
-    sam_of_map_ont = _extract_sam(sam_ont, qname_of_map_ont, preset="map-ont")
-    sam_of_splice = _extract_sam(sam_splice, qname_of_map_ont, preset="splice")
-    midsv_of_single_read = _midsv_transform(sam_of_map_ont)
-    midsv_of_multiple_reads = _midsv_transform(sam_of_splice)
-    midsv_sample = midsv_of_single_read + midsv_of_multiple_reads
-    midsv.write_jsonl(midsv_sample, f"{TEMPDIR}/midsv/{SAMPLE_NAME}_{allele}.jsonl")
+def _replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> list[dict[str, str]]:
+    midsv_replaced = []
+    for samp in midsv_sample:
+        qname = samp["QNAME"]
+        cssplits = samp["CSSPLIT"].split(",")
+        # extract right/left index of the end of sequential Ns
+        left_idx_n = 0
+        for cs in cssplits:
+            if cs != "N":
+                break
+            left_idx_n += 1
+        right_idx_n = 0
+        for cs in cssplits[::-1]:
+            if cs != "N":
+                break
+            right_idx_n += 1
+        right_idx_n = len(cssplits) - right_idx_n - 1
+        # replace sequential Ns within the sequence
+        for j, (cs, seq) in enumerate(zip(cssplits, sequence)):
+            if left_idx_n <= j <= right_idx_n and cs == "N":
+                cssplits[j] = f"-{seq}"
+        midsv_replaced.append({"QNAME": qname, "CSSPLIT": ",".join(cssplits)})
+    return midsv_replaced
+
+# def _select_columns(midsv_sample: Generator[list[str]], columns: list[str]) -> list[dict[str, str]]:
+#     midsv_replaced = []
+#     for samp in midsv_sample:
+#         midsv_replaced.append({col: samp[col] for col in columns})
+#     return midsv_replaced
+
+# def _replace_midsv_cssplits(midsv_sample: Generator[list[str]], cssplits: Generator[str]) -> Generator[list[str]]:
+#     # Update midsv
+#     for i, samp in enumerate(midsv_sample):
+#         samp["CSSPLIT"] = cssplits_replaced[i]
+#         yield samp
+
+
+
+def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> dict[list[list[str]]]:
+    midsv_sample = dict()
+    for allele, sequence in FASTA_ALLELES.items():
+        path_ont = f"{TEMPDIR}/sam/{SAMPLE_NAME}_map-ont_{allele}.sam"
+        path_splice = f"{TEMPDIR}/sam/{SAMPLE_NAME}_splice_{allele}.sam"
+        qname_of_map_ont = _extract_qname_of_map_ont(_load_sam(path_ont), _load_sam(path_splice))
+        sam_of_map_ont = _extract_sam(_load_sam(path_ont), qname_of_map_ont, preset="map-ont")
+        sam_of_splice = _extract_sam(_load_sam(path_splice), qname_of_map_ont, preset="splice")
+        sam_chained = chain(sam_of_map_ont, sam_of_splice)
+        midsv_chaind = _midsv_transform(sam_chained)
+        midsv_sample[allele] = _replaceNtoD(midsv_chaind, sequence)
+    return midsv_sample

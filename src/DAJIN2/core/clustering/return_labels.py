@@ -7,6 +7,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.mixture import GaussianMixture
+from typing import Generator
 
 from DAJIN2.core.clustering.merge_clusters import merge_clusters
 
@@ -50,7 +51,7 @@ def optimize_labels(X: np.array, scores_sample: list[list], scores_control_subse
 ###############################################################################
 
 
-def return_labels(scores_sample: list[list], scores_control: list[list]) -> list[int]:
+def return_labels(scores_sample: Generator[list[float]], scores_control: Generator[list[float]]) -> list[int]:
     np.random.seed(seed=1)
     X_control = reduce_dimension([], scores_control)
     labels = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)

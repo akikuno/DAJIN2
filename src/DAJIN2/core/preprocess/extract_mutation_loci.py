@@ -2,31 +2,28 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from pathlib import Path
 
-import midsv
 import numpy as np
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
 
 
-def _count_indels(cssplits: list[list[str]]) -> dict[str, list[int]]:
-    transposed_cssplits = [list(t) for t in zip(*cssplits)]
-    count = {"ins": [0] * len(transposed_cssplits),
-            "del": [0] * len(transposed_cssplits),
-            "sub": [0] * len(transposed_cssplits)}
-    for i, transposed_cssplit in enumerate(transposed_cssplits):
-        for cs in transposed_cssplit:
+def _count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
+    count = {"+": [0] * len_sequence,
+            "-": [0] * len_sequence,
+            "*": [0] * len_sequence}
+    for samp in midsv_sample:
+        for i, cs in enumerate(samp["CSSPLIT"].split(",")):
             if cs.startswith("=") or cs == "N" or re.search(r"a|c|g|t|n", cs):
                 continue
             if cs.startswith("+"):
-                # count["ins"][i] += len(cs.split("|"))
-                count["ins"][i] += 1
+                # count["+"][i] += len(cs.split("|"))
+                count["+"][i] += 1
             elif cs.startswith("-"):
-                count["del"][i] += 1
+                count["-"][i] += 1
             elif cs.startswith("*"):
-                count["sub"][i] += 1
+                count["*"][i] += 1
     return count
 
 
@@ -81,26 +78,34 @@ def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], ind
     return results
 
 
+def _transpose_mutation_loci(mutation_loci, len_sequence):
+    mutation_loci_transposed = [set() for _ in range(len_sequence)]
+    for mut, idx_mutation in mutation_loci.items():
+        for i, loci in enumerate(mutation_loci_transposed):
+            if i in idx_mutation:
+                loci.add(mut)
+    return mutation_loci_transposed
+
 ###########################################################
 # main
 ###########################################################
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAMPLE_NAME: str) -> dict[str, dict[str, set[int]]]:
+def extract_mutation_loci(midsv_sample_alleles: dict[list[dict[str, str]]], midsv_control_alleles: dict[list[dict[str, str]]]) -> dict[str, list[set[str]]]:
     MUTATION_LOCI_ALLELES = dict()
-    for allele in FASTA_ALLELES:
-        midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl")))
-        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
-        cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
-        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        indels_sample = _count_indels(cssplits_sample)
-        indels_control = _count_indels(cssplits_control)
+    for allele in midsv_sample_alleles:
+        midsv_sample = midsv_sample_alleles[allele]
+        midsv_control = midsv_control_alleles[allele]
+        len_sequence = len(midsv_sample_alleles[allele][0]["CSSPLIT"].split(","))
+        indels_sample = _count_indels(midsv_sample, len_sequence)
+        indels_control = _count_indels(midsv_control, len_sequence)
         indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
         indels_kmer_control = _split_kmer(indels_control, kmer = 10)
-        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, len(cssplits_sample), len(cssplits_control))
+        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, len(midsv_sample), len(midsv_control))
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         mutation_loci = dict()
         for mut in anomaly_loci:
             mutation_loci.update({mut: anomaly_loci[mut] & dissimilar_loci[mut]})
-        MUTATION_LOCI_ALLELES.update({allele: mutation_loci})
+        mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, len_sequence)
+        MUTATION_LOCI_ALLELES.update({allele: mutation_loci_transposed})
     return MUTATION_LOCI_ALLELES

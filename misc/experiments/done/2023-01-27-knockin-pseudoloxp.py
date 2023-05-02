@@ -74,7 +74,7 @@ for c in classif_sample:
 # Classification
 ###########################################################
 from src.DAJIN2.core.preprocess.correct_knockin import extract_knockin_loci
-from src.DAJIN2.core.clustering.preprocess import replace_both_ends_n
+from DAJIN2.core.clustering.past.preprocess import replace_both_ends_n
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
 from src.DAJIN2.core.clustering.return_labels import return_labels
