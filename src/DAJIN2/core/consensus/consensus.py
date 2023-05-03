@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from itertools import groupby
 from collections import defaultdict
+from itertools import groupby
 
 
 def _call_percentage(cssplits: list[str]) -> list[dict[str, float]]:

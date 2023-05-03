@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Generator
 
+
 def _call_count(cssplits_sample: Generator[list[str]], mutation_loci: dict[int, set(str)]) -> list[dict[str, int]]:
     count_kmer = []
     for i, cssplits_transposed in enumerate(zip(*cssplits_sample)):

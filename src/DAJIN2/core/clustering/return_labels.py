@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import warnings
 from collections import Counter
+from typing import Generator
 
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.mixture import GaussianMixture
-from typing import Generator
 
 from DAJIN2.core.clustering.merge_clusters import merge_clusters
 

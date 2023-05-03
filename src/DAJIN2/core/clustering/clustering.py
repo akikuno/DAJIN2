@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from itertools import groupby
 from typing import Generator
+
 from DAJIN2.core.clustering.make_score import make_score
 from DAJIN2.core.clustering.return_labels import return_labels
 

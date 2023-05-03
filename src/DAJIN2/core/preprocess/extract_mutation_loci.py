@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-
+import json
 import numpy as np
+from pathlib import Path
+from typing import Generator
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
@@ -91,21 +93,39 @@ def _transpose_mutation_loci(mutation_loci, len_sequence):
 ###########################################################
 
 
-def extract_mutation_loci(midsv_sample_alleles: dict[list[dict[str, str]]], midsv_control_alleles: dict[list[dict[str, str]]]) -> dict[str, list[set[str]]]:
+def read_midsv(filepath) -> Generator[dict[str, str]]:
+    with open(filepath, 'r') as f:
+        for line in f:
+            yield json.loads(line)
+
+
+def count_newlines(filepath):
+    def _make_gen(reader):
+        while True:
+            b = reader(2 ** 16)
+            if not b: break
+            yield b
+    with open(filepath, "rb") as f:
+        count = sum(buf.count(b"\n") for buf in _make_gen(f.raw.read))
+    return count
+
+
+def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME:str) -> dict[str, list[set[str]]]:
     MUTATION_LOCI_ALLELES = dict()
-    for allele in midsv_sample_alleles:
-        midsv_sample = midsv_sample_alleles[allele]
-        midsv_control = midsv_control_alleles[allele]
-        len_sequence = len(midsv_sample_alleles[allele][0]["CSSPLIT"].split(","))
-        indels_sample = _count_indels(midsv_sample, len_sequence)
-        indels_control = _count_indels(midsv_control, len_sequence)
+    for allele, sequence in FASTA_ALLELES.items():
+        filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
+        filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
+        covarage_sample = count_newlines(filepath_sample)
+        covarage_control = count_newlines(filepath_control)
+        indels_sample = _count_indels(read_midsv(filepath_sample), len(sequence))
+        indels_control = _count_indels(read_midsv(filepath_control), len(sequence))
         indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
         indels_kmer_control = _split_kmer(indels_control, kmer = 10)
-        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, len(midsv_sample), len(midsv_control))
+        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, covarage_sample, covarage_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         mutation_loci = dict()
         for mut in anomaly_loci:
             mutation_loci.update({mut: anomaly_loci[mut] & dissimilar_loci[mut]})
-        mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, len_sequence)
+        mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, len(sequence))
         MUTATION_LOCI_ALLELES.update({allele: mutation_loci_transposed})
     return MUTATION_LOCI_ALLELES

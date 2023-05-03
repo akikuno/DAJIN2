@@ -119,7 +119,8 @@ CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 THREADS = preprocess.format_inputs.update_threads(THREADS)
 
-preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
+SUBDIRS = ["cache", "fasta", "sam", "midsv", "report", "result", "mutation_loci"]
+preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SAMPLE_NAME, CONTROL_NAME)
 
 if GENOME:
     GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, FASTA_ALLELES["control"])

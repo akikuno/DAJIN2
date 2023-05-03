@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import midsv
-from pathlib import Path
+import gzip
+import json
 import re
-from itertools import groupby
-from itertools import chain
-import pickle
+from itertools import chain, groupby
+from pathlib import Path
 from typing import Generator
+
+import midsv
 
 
 def _load_sam(path_sam: str | Path) -> Generator[list[str]]:
@@ -92,8 +93,7 @@ def _midsv_transform(sam: Generator[list[str]]) -> Generator[list[str]]:
         yield midsv_sample
 
 
-def _replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> list[dict[str, str]]:
-    midsv_replaced = []
+def _replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> Generator[dict[str, str]]:
     for samp in midsv_sample:
         qname = samp["QNAME"]
         cssplits = samp["CSSPLIT"].split(",")
@@ -113,32 +113,20 @@ def _replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> list[dict
         for j, (cs, seq) in enumerate(zip(cssplits, sequence)):
             if left_idx_n <= j <= right_idx_n and cs == "N":
                 cssplits[j] = f"-{seq}"
-        midsv_replaced.append({"QNAME": qname, "CSSPLIT": ",".join(cssplits)})
-    return midsv_replaced
-
-# def _select_columns(midsv_sample: Generator[list[str]], columns: list[str]) -> list[dict[str, str]]:
-#     midsv_replaced = []
-#     for samp in midsv_sample:
-#         midsv_replaced.append({col: samp[col] for col in columns})
-#     return midsv_replaced
-
-# def _replace_midsv_cssplits(midsv_sample: Generator[list[str]], cssplits: Generator[str]) -> Generator[list[str]]:
-#     # Update midsv
-#     for i, samp in enumerate(midsv_sample):
-#         samp["CSSPLIT"] = cssplits_replaced[i]
-#         yield samp
+        yield {"QNAME": qname, "CSSPLIT": ",".join(cssplits)}
 
 
-
-def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> dict[list[list[str]]]:
-    midsv_sample = dict()
+def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
-        path_ont = f"{TEMPDIR}/sam/{SAMPLE_NAME}_map-ont_{allele}.sam"
-        path_splice = f"{TEMPDIR}/sam/{SAMPLE_NAME}_splice_{allele}.sam"
+        path_ont = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_{allele}.sam")
+        path_splice = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_splice_{allele}.sam")
         qname_of_map_ont = _extract_qname_of_map_ont(_load_sam(path_ont), _load_sam(path_splice))
         sam_of_map_ont = _extract_sam(_load_sam(path_ont), qname_of_map_ont, preset="map-ont")
         sam_of_splice = _extract_sam(_load_sam(path_splice), qname_of_map_ont, preset="splice")
         sam_chained = chain(sam_of_map_ont, sam_of_splice)
         midsv_chaind = _midsv_transform(sam_chained)
-        midsv_sample[allele] = _replaceNtoD(midsv_chaind, sequence)
-    return midsv_sample
+        midsv_sample = _replaceNtoD(midsv_chaind, sequence)
+        filepath = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
+        with open(filepath, 'wt', encoding="ascii") as gz:
+            for data in midsv_sample:
+                gz.write(json.dumps(data) + "\n")

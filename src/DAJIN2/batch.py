@@ -7,10 +7,10 @@ from pathlib import Path
 import pandas as pd
 import wslPath
 
-from DAJIN2.preprocess.validate_inputs import validate_files
-from DAJIN2.preprocess.validate_inputs import validate_genome_and_fetch_urls
 from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
+from DAJIN2.preprocess.validate_inputs import (validate_files,
+                                               validate_genome_and_fetch_urls)
 
 
 def execute_batch_mode(arguments: dict[str]):
