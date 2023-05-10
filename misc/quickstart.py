@@ -119,7 +119,7 @@ CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 THREADS = preprocess.format_inputs.update_threads(THREADS)
 
-SUBDIRS = ["cache", "fasta", "sam", "midsv", "report", "result", "mutation_loci"]
+SUBDIRS = ["cache", "fasta", "sam", "midsv", "midsv_corrected", "report", "result", "mutation_loci"]
 preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SAMPLE_NAME, CONTROL_NAME)
 
 if GENOME:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import gzip
 import json
 import re
 from itertools import chain, groupby
@@ -13,7 +12,8 @@ import midsv
 def _load_sam(path_sam: str | Path) -> Generator[list[str]]:
     return midsv.read_sam(path_sam)
 
-def _split_cigar(CIGAR:str) -> list[str]:
+
+def _split_cigar(CIGAR: str) -> list[str]:
     cigar = re.split(r"([MIDNSH=X])", CIGAR)
     n = len(cigar)
     cigar_split = []
@@ -29,7 +29,6 @@ def _call_alignment_length(CIGAR: str) -> int:
         if re.search(r"[MDN=X]", c[-1]):
             alignment_length += int(c[:-1])
     return alignment_length
-
 
 
 def _has_inversion_in_splice(CIGAR: str) -> bool:
@@ -49,9 +48,9 @@ def _has_inversion_in_splice(CIGAR: str) -> bool:
 
 def _extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set():
     """Extract qname of reads from `map-ont` when:
-        - no inversion signal in `splice` alignment (insertion + deletion)
-        - single read
-        - long alignment length
+    - no inversion signal in `splice` alignment (insertion + deletion)
+    - single read
+    - long alignment length
     """
     dict_alignments_splice = {s[0]: s for s in sam_splice if not s[0].startswith("@")}
     alignments_ont = [s for s in sam_ont if not s[0].startswith("@")]
@@ -59,7 +58,7 @@ def _extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generat
     qname_of_map_ont = set()
     for qname_ont, group in groupby(alignments_ont, key=lambda x: x[0]):
         alignment_ont = list(group)
-        if not qname_ont in dict_alignments_splice:
+        if qname_ont not in dict_alignments_splice:
             qname_of_map_ont.add(qname_ont)
             continue
         alignment_splice = dict_alignments_splice[qname_ont]
@@ -76,7 +75,7 @@ def _extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generat
     return qname_of_map_ont
 
 
-def _extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset:str="map-ont") -> Generator[list[str]]:
+def _extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset: str = "map-ont") -> Generator[list[str]]:
     for alignment in sam:
         if alignment[0].startswith("@"):
             yield alignment
@@ -127,6 +126,6 @@ def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> No
         midsv_chaind = _midsv_transform(sam_chained)
         midsv_sample = _replaceNtoD(midsv_chaind, sequence)
         filepath = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
-        with open(filepath, 'wt', encoding="ascii") as gz:
+        with open(filepath, "wt", encoding="utf-8") as f:
             for data in midsv_sample:
-                gz.write(json.dumps(data) + "\n")
+                f.write(json.dumps(data) + "\n")

@@ -12,9 +12,7 @@ from sklearn.neighbors import LocalOutlierFactor
 
 
 def _count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
-    count = {"+": [0] * len_sequence,
-            "-": [0] * len_sequence,
-            "*": [0] * len_sequence}
+    count = {"+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:
         for i, cs in enumerate(samp["CSSPLIT"].split(",")):
             if cs.startswith("=") or cs == "N" or re.search(r"a|c|g|t|n", cs):
@@ -40,13 +38,15 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
                     end = i + center
                 else:
                     end = i + center + 1
-                results[mut].append(value[start : end])
+                results[mut].append(value[start:end])
             else:
-                results[mut].append([0]*kmer)
+                results[mut].append([0] * kmer)
     return results
 
 
-def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int) -> dict[str, set[int]]:
+def _extract_anomaly_loci(
+    indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int
+) -> dict[str, set[int]]:
     anomaly_loci = dict()
     clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
     for key in indels_kmer_sample.keys():
@@ -68,13 +68,19 @@ def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict, c
     return anomaly_loci
 
 
-def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]) -> dict[str, set]:
+def _extract_dissimilar_loci(
+    indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]
+) -> dict[str, set]:
     results = dict()
     for mut in indels_kmer_sample:
         cossim = [distance.cosine(x, y) for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
-        pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
+        pvalues = [
+            stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])
+        ]
         # if pvalue == nan, samples and controls are exactly same.
-        cossim_pval_false = [cossim if pvalue > 0.05 or np.isnan(pvalue) else 1 for cossim, pvalue in zip(cossim, pvalues)]
+        cossim_pval_false = [
+            cossim if pvalue > 0.05 or np.isnan(pvalue) else 1 for cossim, pvalue in zip(cossim, pvalues)
+        ]
         dissimilar_loci = {i for i, x in enumerate(cossim_pval_false) if x > 0.05}
         results.update({mut: dissimilar_loci})
     return results
@@ -88,13 +94,14 @@ def _transpose_mutation_loci(mutation_loci, len_sequence):
                 loci.add(mut)
     return mutation_loci_transposed
 
+
 ###########################################################
 # main
 ###########################################################
 
 
 def read_midsv(filepath) -> Generator[dict[str, str]]:
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f:
             yield json.loads(line)
 
@@ -102,15 +109,19 @@ def read_midsv(filepath) -> Generator[dict[str, str]]:
 def count_newlines(filepath):
     def _make_gen(reader):
         while True:
-            b = reader(2 ** 16)
-            if not b: break
+            b = reader(2**16)
+            if not b:
+                break
             yield b
+
     with open(filepath, "rb") as f:
         count = sum(buf.count(b"\n") for buf in _make_gen(f.raw.read))
     return count
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME:str) -> dict[str, list[set[str]]]:
+def extract_mutation_loci(
+    TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str
+) -> dict[str, list[set[str]]]:
     MUTATION_LOCI_ALLELES = dict()
     for allele, sequence in FASTA_ALLELES.items():
         filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
@@ -119,8 +130,8 @@ def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, 
         covarage_control = count_newlines(filepath_control)
         indels_sample = _count_indels(read_midsv(filepath_sample), len(sequence))
         indels_control = _count_indels(read_midsv(filepath_control), len(sequence))
-        indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
-        indels_kmer_control = _split_kmer(indels_control, kmer = 10)
+        indels_kmer_sample = _split_kmer(indels_sample, kmer=10)
+        indels_kmer_control = _split_kmer(indels_control, kmer=10)
         anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, covarage_sample, covarage_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         mutation_loci = dict()
