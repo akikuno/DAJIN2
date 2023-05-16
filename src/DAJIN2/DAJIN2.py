@@ -3,11 +3,11 @@ from __future__ import annotations
 import os
 
 # prevent BLAS from using all cores
-os.environ['OMP_NUM_THREADS'] = "1"
-os.environ['OPENBLAS_NUM_THREADS'] = "1"
-os.environ['MKL_NUM_THREADS'] = "1"
-os.environ['VECLIB_MAXIMUM_THREADS'] = "1"
-os.environ['NUMEXPR_NUM_THREADS'] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import argparse
 import multiprocessing
@@ -21,10 +21,10 @@ import wslPath
 from DAJIN2 import gui, view
 from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
-from DAJIN2.preprocess.validate_inputs import (validate_files,
-                                               validate_genome_and_fetch_urls)
+from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
 
 _version = "0.1.30"
+
 
 def _execute_single_mode(arguments: dict[str]):
     ################################################################################
@@ -137,9 +137,9 @@ def _execute_batch_mode(arguments: dict[str]):
     contents_sample = []
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
         groups = list(groups)
-        #------------------------------
+        # ------------------------------
         # Handle controls
-        #------------------------------
+        # ------------------------------
         contents_control = []
         for group in groups:
             args = {h: g for h, g in zip(columns, group)}
@@ -154,15 +154,15 @@ def _execute_batch_mode(arguments: dict[str]):
         # with ProcessPoolExecutor(max_workers=threads) as executor:
         #     size = max(1, round(len(contents_control_unique) / executor._max_workers))
         #     list(executor.map(core_execute.execute_control, contents_control_unique, chunksize=size))
-        #------------------------------
+        # ------------------------------
         # Handle samples
-        #------------------------------
+        # ------------------------------
         contents_sample = []
         for group in groups:
             args = {h: g for h, g in zip(columns, group)}
             if args["sample"] == args["control"]:
                 continue
-            if not "threads" in args:
+            if "threads" not in args:
                 args["threads"] = 1
             args.update(URLS_GENOME[args["genome"]])
             contents_sample.append(args)
@@ -190,7 +190,6 @@ def _execute_batch_mode(arguments: dict[str]):
     #         core_execute.execute_sample(args, URLS_GENOME)
     #     report.report(name)
     #     print(f"Finished! Open DAJINResults/{name} to see the report.", file=sys.stderr)
-
 
 
 def main():
