@@ -109,7 +109,7 @@ def _combine_with_qname_cssplits(midsv_sample, cssplits_corrected):
         yield {"QNAME": samp["QNAME"], "CSSPLIT": ",".join(cssplits)}
 
 
-def read_midsv(filepath) -> Generator[dict[str, str]]:
+def read_json(filepath) -> Generator[dict[str, str]]:
     with open(filepath, "r") as f:
         for line in f:
             yield json.loads(line)
@@ -125,7 +125,7 @@ def correct_sequence_error(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, MU
         mutation_loci = MUTATION_LOCI_ALLELES[allele]
         for name in [SAMPLE_NAME, CONTROL_NAME]:
             filepath = Path(TEMPDIR, "midsv", f"{name}_{allele}.json")
-            midsv_3mer = _generate_3mer(read_midsv(filepath))
+            midsv_3mer = _generate_3mer(read_json(filepath))
             path_transposed = _get_path_of_transposed_matrix(TEMPDIR, midsv_3mer, chunksize=1000)
             sampling = _sampling_cssplits(_read_cssplits_as_tsv(path_transposed), mutation_loci)
             cssplits_corrected_ = _correct_errors_cssplits(
@@ -133,7 +133,7 @@ def correct_sequence_error(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, MU
             )
             path_transposed_corrected = _get_path_of_transposed_matrix(TEMPDIR, cssplits_corrected_, chunksize=1000)
             qname_cssplits = _combine_with_qname_cssplits(
-                read_midsv(filepath), _read_cssplits_as_tsv(path_transposed_corrected)
+                read_json(filepath), _read_cssplits_as_tsv(path_transposed_corrected)
             )
             out_filepath = Path(TEMPDIR, "midsv_corrected", f"{name}_{allele}.json")
             with open(out_filepath, "wt", encoding="utf-8") as f:
@@ -205,7 +205,7 @@ def correct_sequence_error(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, MU
 #         yield {"QNAME": qname, "CSSPLIT": cssplits_joined}
 
 
-# def read_midsv(filepath) -> Generator[dict[str, str]]:
+# def read_json(filepath) -> Generator[dict[str, str]]:
 #     with open(filepath, "r") as f:
 #         for line in f:
 #             yield json.loads(line)
@@ -229,10 +229,10 @@ def correct_sequence_error(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, MU
 #         # Extract mutation loci
 #         mutation_loci = MUTATION_LOCI_ALLELES[allele]
 #         # Correct sequence errors
-#         sampling_sample = _sampling_cssplits(read_midsv(filepath_sample), mutation_loci)
-#         sampling_control = _sampling_cssplits(read_midsv(filepath_control), mutation_loci)
-#         midsv_corected_sample = _correct_errors(read_midsv(filepath_sample), mutation_loci, sampling_sample)
-#         midsv_corected_control = _correct_errors(read_midsv(filepath_control), mutation_loci, sampling_control)
+#         sampling_sample = _sampling_cssplits(read_json(filepath_sample), mutation_loci)
+#         sampling_control = _sampling_cssplits(read_json(filepath_control), mutation_loci)
+#         midsv_corected_sample = _correct_errors(read_json(filepath_sample), mutation_loci, sampling_sample)
+#         midsv_corected_control = _correct_errors(read_json(filepath_control), mutation_loci, sampling_control)
 #         # Output corrected midsv
 #         filepath_sample = Path(TEMPDIR, "midsv_corrected", f"{SAMPLE_NAME}_{allele}.json")
 #         filepath_control = Path(TEMPDIR, "midsv_corrected", f"{CONTROL_NAME}_{allele}.json")

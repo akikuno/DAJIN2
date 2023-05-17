@@ -38,9 +38,7 @@ def _execute_single_mode(arguments: dict[str]):
     ##############################################################################
     # Perform DAJIN2
     ##############################################################################
-    # print(f"{arguments['control']} is now processing...", file=sys.stderr)
     core_execute.execute_control(arguments)
-    # print(f"{arguments['sample']} is now processing...", file=sys.stderr)
     core_execute.execute_sample(arguments)
     name = arguments["name"]
     report.report(name)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 
-# limit max memory usage
 import os
 import pickle
 import resource
@@ -15,6 +14,7 @@ import midsv
 
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 
+# limit max memory usage
 mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
 resource.setrlimit(resource.RLIMIT_DATA, (int(mem_bytes * 9 / 10), -1))
 
@@ -78,10 +78,8 @@ def execute_control(arguments: dict):
     ###########################################################
     # Save Caches
     ###########################################################
-    done_midsv = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}.plk").exists()
-    done_bam = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam").exists()
-    if done_midsv and done_bam:
-        print(f"{arguments['control']} is finished...")
+    if Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam").exists():
+        print(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
         return
     print(f"{_dtnow()}: Preprocess {CONTROL_NAME}...")
     # ============================================================
@@ -129,7 +127,6 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Mapping with mappy
     # ============================================================
-    print(f"{_dtnow()}: Mapping {SAMPLE_NAME}...")  # !====================
     for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
         name_fasta = path_fasta.stem
         preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
@@ -139,49 +136,30 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    print(f"{_dtnow()}: Call MIDSV {SAMPLE_NAME}...")  # !====================
     preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
-    # with open(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}.plk"), 'wb') as p:
-    #     pickle.dump(midsv_sample_alleles, p)
-    # with open(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}.plk"), 'rb') as p:
-    #     midsv_control_alleles = pickle.load(p)
+    # ============================================================
+    # Extract mutation loci
+    # ============================================================
+    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+    with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
+        pickle.dump(MUTATION_LOCI_ALLELES, p)
+    KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
     # ============================================================
     # CSSPLITS Error Correction
     # ============================================================
-    print(f"{_dtnow()}: extract_mutation_loci {SAMPLE_NAME}...")  # !====================
-    try:
-        MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
-        # MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(midsv_sample_alleles, midsv_control_alleles)
-    except Exception as e:
-        print(f"{SAMPLE_NAME} is failed at extract mutation loci.")
-        print(type(e), e)
-        exit(1)
-    with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
-        pickle.dump(MUTATION_LOCI_ALLELES, p)
-
-    print(f"{_dtnow()}: correct_sequence_error {SAMPLE_NAME}...")  # !====================
-    try:
-        preprocess.correct_sequence_error(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, MUTATION_LOCI_ALLELES)
-    except Exception as e:
-        print(f"{SAMPLE_NAME} is failed at `correct_sequence_error`.")
-        print(type(e), e)
-        exit(1)
-    print(f"{SAMPLE_NAME} is finished by correct_sequence_error.")
-    exit(0)  # !====================
-    KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
     # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
     print(f"{_dtnow()}: Classify {SAMPLE_NAME}...")
-    # classif_sample = classification.classify_alleles(midsv_alleles_corrected["sample"], TEMPDIR)
+    classif_sample = classification.classify_alleles(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
     ########################################################################
     # Clustering
     ########################################################################
     print(f"{_dtnow()}: Clustering {SAMPLE_NAME}...")
-    # clust_sample = clustering.add_labels(
-    #     classif_sample, midsv_alleles_corrected["control"], MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
-    # )
+    clust_sample = clustering.add_labels(
+        classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
+    )
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)

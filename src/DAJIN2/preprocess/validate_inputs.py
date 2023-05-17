@@ -24,14 +24,14 @@ def _fastq_extension(fastq_path: str):
         raise AttributeError(f"{fastq_path} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
 
 
-# Varidate if the file is in the proper format. See top 1000 lines
+# Varidate if the file is in the proper format. See top 100 lines
 def _fastq_content(fastq_path: str):
     name, seq, qual = [], [], []
     for i, (n, s, q) in enumerate(mappy.fastx_read(fastq_path)):
         name.append(n)
         seq.append(s)
         qual.append(q)
-        if i == 1000:
+        if i == 100:
             break
     if not (len(name) == len(seq) == len(qual) > 0):
         raise AttributeError(f"{fastq_path} is not a FASTQ format")

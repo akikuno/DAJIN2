@@ -56,7 +56,7 @@ def return_labels(scores_sample: Generator[list[float]], scores_control: Generat
     X_control = reduce_dimension([], scores_control)
     labels = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)
     label_most = Counter(labels).most_common()[0][0]
-    scores_control_subset = [s for l, s in zip(labels, scores_control) if l == label_most][:1000]
+    scores_control_subset = [s for label, s in zip(labels, scores_control) if label == label_most][:1000]
     X = reduce_dimension(scores_sample, scores_control_subset)
     labels = optimize_labels(X, scores_sample, scores_control_subset)
     return labels
