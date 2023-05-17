@@ -167,11 +167,13 @@ def execute_sample(arguments: dict):
     # Consensus call
     ########################################################################
     print(f"{_dtnow()}: Consensus calling {SAMPLE_NAME}......")
-    cons_percentage, cons_sequence = consensus.call_consensus(clust_sample)
+    # downsampling to 1000 reads in each LABEL
+    clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
+    cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_ALLELES)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_subset_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM/VCF

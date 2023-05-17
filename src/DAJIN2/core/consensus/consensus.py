@@ -5,21 +5,43 @@ from collections import defaultdict
 from itertools import groupby
 
 
-def _call_percentage(cssplits: list[str]) -> list[dict[str, float]]:
-    """
-    Call position weight matrix in defferent loci.
-    Non defferent loci are annotated to "Match" or "Unknown(N)"
+def _call_percentage(cssplits: list[str], mutation_loci) -> list[dict[str, float]]:
+    """call position weight matrix in defferent loci.
+    - non defferent loci are annotated to "Match" or "Unknown(N)"
+    - sequence errors are annotated to "SEQERROR"
     """
     cssplits_transposed = [list(cs) for cs in zip(*cssplits)]
     coverage = len(cssplits)
     cons_percentage = []
-    for cs_transposed in cssplits_transposed:
+    for cs_transposed, mut_loci in zip(cssplits_transposed, mutation_loci):
         count_cs = defaultdict(float)
         for cs in cs_transposed:
+            if cs[0] in {"+", "-", "*"} and cs[0] not in mut_loci:
+                cs = "SEQERROR"
             count_cs[cs] += 1 / coverage * 100
         count_cs_sorted = dict(sorted(count_cs.items(), key=lambda x: x[1], reverse=True))
         cons_percentage.append(count_cs_sorted)
     return cons_percentage
+
+
+def _replace_percentage(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    """replace sequence error as distributing according to proportion of cs tags"""
+    cons_percentage_updated = []
+    for dict_percentage in cons_percentage:
+        if "SEQERROR" not in dict_percentage:
+            cons_percentage_updated.append(dict_percentage)
+            continue
+        if len(dict_percentage) == 1 and dict_percentage["SEQERROR"]:
+            cons_percentage_updated.append({"N": 100})
+            continue
+        dict_percentage_update = dict()
+        div = 100 / (100 - dict_percentage["SEQERROR"])
+        for key, val in dict_percentage.items():
+            if key == "SEQERROR":
+                continue
+            dict_percentage_update[key] = round(val * div, 5)
+        cons_percentage_updated.append(dict_percentage_update)
+    return cons_percentage_updated
 
 
 def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
@@ -46,25 +68,6 @@ def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     return "".join(consensus_sequence)
 
 
-def call_consensus(clust_sample: list[dict]) -> tuple[defaultdict[list], defaultdict[str]]:
-    cons_percentage = defaultdict(list)
-    cons_sequence = defaultdict(str)
-    clust_sample.sort(key=lambda x: x["LABEL"])
-    for _, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
-        clust = list(group)
-        keys = (
-            clust[0]["ALLELE"],
-            clust[0]["LABEL"],
-            clust[0]["PERCENT"],
-        )
-        cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
-        cons_per = _call_percentage(cssplits)
-        cons_seq = _call_sequence(cons_per)
-        cons_percentage[keys] = cons_per
-        cons_sequence[keys] = cons_seq
-    return cons_percentage, cons_sequence
-
-
 def _detect_sv(cons_percentage: defaultdict[list], threshold: int = 50) -> list[bool]:
     exists_sv = []
     for cons_per in cons_percentage.values():
@@ -86,6 +89,32 @@ def _detect_sv(cons_percentage: defaultdict[list], threshold: int = 50) -> list[
         else:
             exists_sv.append(False)
     return exists_sv
+
+
+###########################################################
+# main
+###########################################################
+
+
+def call_consensus(clust_sample: list[dict], MUTATION_LOCI_ALLELES) -> tuple[defaultdict[list], defaultdict[str]]:
+    cons_percentage = defaultdict(list)
+    cons_sequence = defaultdict(str)
+    clust_sample.sort(key=lambda x: x["LABEL"])
+    for _, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
+        clust = list(group)
+        keys = (
+            clust[0]["ALLELE"],
+            clust[0]["LABEL"],
+            clust[0]["PERCENT"],
+        )
+        mutation_loci = MUTATION_LOCI_ALLELES[clust[0]["ALLELE"]]
+        cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
+        cons_per = _call_percentage(cssplits, mutation_loci)
+        cons_per = _replace_percentage(cons_per)
+        cons_seq = _call_sequence(cons_per)
+        cons_percentage[keys] = cons_per
+        cons_sequence[keys] = cons_seq
+    return cons_percentage, cons_sequence
 
 
 def call_allele_name(

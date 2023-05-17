@@ -83,7 +83,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "test-ayabe-task1",
+#     "single-ayabetask1",
 #     "mm10",
 #     True,
 #     14,
