@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections import Counter
+from typing import Generator
 
 
-def _call_count(cssplits: list[list[str]]) -> list[dict[str, int]]:
+def _call_count(cssplits_sample: Generator[list[str]], mutation_loci) -> list[dict[str, int]]:
     count_kmer = []
-    for cs in list(zip(*cssplits)):
-        count_kmer.append(dict(Counter(cs)))
+    for i, cssplits_transposed in enumerate(zip(*cssplits_sample)):
+        count_kmer.append(dict(Counter(cssplits_transposed)))
     return count_kmer
 
 
@@ -57,9 +58,11 @@ def _discard_match_and_n(percent_discarded) -> list[dict]:
 ###############################################################################
 
 
-def make_score(cssplits_sample, cssplits_control, knockin_loci: set(int)) -> list[dict[str, float]]:
-    counts_sample = _call_count(cssplits_sample)
-    counts_control = _call_count(cssplits_control)
+def make_score(
+    cssplits_sample, cssplits_control, mutation_loci: dict[str, set[int]], knockin_loci: set(int)
+) -> list[dict[str, float]]:
+    counts_sample = _call_count(cssplits_sample, mutation_loci)
+    counts_control = _call_count(cssplits_control, mutation_loci)
     percent_sample = _call_percent(counts_sample)
     percent_control = _call_percent(counts_control)
     percent_subtraction = _subtract_percentage(percent_control, percent_sample, knockin_loci)

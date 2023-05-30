@@ -4,7 +4,9 @@ from itertools import permutations
 from pathlib import Path
 
 import midsv
+
 from DAJIN2.core.preprocess import mappy_align
+
 
 def extract_knockin_loci(TEMPDIR: str | Path) -> dict(set(int)):
     """

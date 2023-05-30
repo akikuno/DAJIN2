@@ -5,6 +5,7 @@ tmp*
 .tmp*
 DAJIN_results/*
 DAJINResults/*
+mprofile*
 # Nanosim
 *aligned_reads*
 *error_profile*

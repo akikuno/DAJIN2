@@ -2,31 +2,28 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from pathlib import Path
-
-import midsv
+import json
 import numpy as np
+from pathlib import Path
+from typing import Generator
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
 
 
-def _count_indels(cssplits: list[list[str]]) -> dict[str, list[int]]:
-    transposed_cssplits = [list(t) for t in zip(*cssplits)]
-    count = {"ins": [0] * len(transposed_cssplits),
-            "del": [0] * len(transposed_cssplits),
-            "sub": [0] * len(transposed_cssplits)}
-    for i, transposed_cssplit in enumerate(transposed_cssplits):
-        for cs in transposed_cssplit:
+def _count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
+    count = {"+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
+    for samp in midsv_sample:
+        for i, cs in enumerate(samp["CSSPLIT"].split(",")):
             if cs.startswith("=") or cs == "N" or re.search(r"a|c|g|t|n", cs):
                 continue
             if cs.startswith("+"):
-                # count["ins"][i] += len(cs.split("|"))
-                count["ins"][i] += 1
+                # count["+"][i] += len(cs.split("|"))
+                count["+"][i] += 1
             elif cs.startswith("-"):
-                count["del"][i] += 1
+                count["-"][i] += 1
             elif cs.startswith("*"):
-                count["sub"][i] += 1
+                count["*"][i] += 1
     return count
 
 
@@ -41,13 +38,15 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
                     end = i + center
                 else:
                     end = i + center + 1
-                results[mut].append(value[start : end])
+                results[mut].append(value[start:end])
             else:
-                results[mut].append([0]*kmer)
+                results[mut].append([0] * kmer)
     return results
 
 
-def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int) -> dict[str, set[int]]:
+def _extract_anomaly_loci(
+    indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int
+) -> dict[str, set[int]]:
     anomaly_loci = dict()
     clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
     for key in indels_kmer_sample.keys():
@@ -69,16 +68,31 @@ def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict, c
     return anomaly_loci
 
 
-def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]) -> dict[str, set]:
+def _extract_dissimilar_loci(
+    indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]
+) -> dict[str, set]:
     results = dict()
     for mut in indels_kmer_sample:
         cossim = [distance.cosine(x, y) for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
-        pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
+        pvalues = [
+            stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])
+        ]
         # if pvalue == nan, samples and controls are exactly same.
-        cossim_pval_false = [cossim if pvalue > 0.05 or np.isnan(pvalue) else 1 for cossim, pvalue in zip(cossim, pvalues)]
+        cossim_pval_false = [
+            cossim if pvalue > 0.05 or np.isnan(pvalue) else 1 for cossim, pvalue in zip(cossim, pvalues)
+        ]
         dissimilar_loci = {i for i, x in enumerate(cossim_pval_false) if x > 0.05}
         results.update({mut: dissimilar_loci})
     return results
+
+
+def _transpose_mutation_loci(mutation_loci, len_sequence):
+    mutation_loci_transposed = [set() for _ in range(len_sequence)]
+    for mut, idx_mutation in mutation_loci.items():
+        for i, loci in enumerate(mutation_loci_transposed):
+            if i in idx_mutation:
+                loci.add(mut)
+    return mutation_loci_transposed
 
 
 ###########################################################
@@ -86,21 +100,43 @@ def _extract_dissimilar_loci(indels_kmer_sample: dict[str, list[list[int]]], ind
 ###########################################################
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict[str, str], CONTROL_NAME: str, SAMPLE_NAME: str) -> dict[str, dict[str, set[int]]]:
+def read_midsv(filepath) -> Generator[dict[str, str]]:
+    with open(filepath, "r") as f:
+        for line in f:
+            yield json.loads(line)
+
+
+def count_newlines(filepath):
+    def _make_gen(reader):
+        while True:
+            b = reader(2**16)
+            if not b:
+                break
+            yield b
+
+    with open(filepath, "rb") as f:
+        count = sum(buf.count(b"\n") for buf in _make_gen(f.raw.read))
+    return count
+
+
+def extract_mutation_loci(
+    TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str
+) -> dict[str, list[set[str]]]:
     MUTATION_LOCI_ALLELES = dict()
-    for allele in FASTA_ALLELES:
-        midsv_sample = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.jsonl")))
-        midsv_control = midsv.read_jsonl((Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.jsonl")))
-        cssplits_sample = [cs["CSSPLIT"].split(",") for cs in midsv_sample]
-        cssplits_control = [cs["CSSPLIT"].split(",") for cs in midsv_control]
-        indels_sample = _count_indels(cssplits_sample)
-        indels_control = _count_indels(cssplits_control)
-        indels_kmer_sample = _split_kmer(indels_sample, kmer = 10)
-        indels_kmer_control = _split_kmer(indels_control, kmer = 10)
-        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, len(cssplits_sample), len(cssplits_control))
+    for allele, sequence in FASTA_ALLELES.items():
+        filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
+        filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
+        covarage_sample = count_newlines(filepath_sample)
+        covarage_control = count_newlines(filepath_control)
+        indels_sample = _count_indels(read_midsv(filepath_sample), len(sequence))
+        indels_control = _count_indels(read_midsv(filepath_control), len(sequence))
+        indels_kmer_sample = _split_kmer(indels_sample, kmer=10)
+        indels_kmer_control = _split_kmer(indels_control, kmer=10)
+        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, covarage_sample, covarage_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         mutation_loci = dict()
         for mut in anomaly_loci:
             mutation_loci.update({mut: anomaly_loci[mut] & dissimilar_loci[mut]})
-        MUTATION_LOCI_ALLELES.update({allele: mutation_loci})
+        mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, len(sequence))
+        MUTATION_LOCI_ALLELES.update({allele: mutation_loci_transposed})
     return MUTATION_LOCI_ALLELES

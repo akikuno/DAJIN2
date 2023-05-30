@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import midsv
-from DAJIN2.core.clustering.preprocess import replace_both_ends_n
+from DAJIN2.core.clustering.past.preprocess import replace_both_ends_n
 from src.DAJIN2.core.clustering.make_score import make_score
 from src.DAJIN2.core.clustering.annotate_score import annotate_score
 from src.DAJIN2.core.clustering.reorder_labels import reorder_labels

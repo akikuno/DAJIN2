@@ -5,7 +5,8 @@ from itertools import groupby, permutations
 from pathlib import Path
 
 import midsv
-
+import json
+from typing import Generator
 from DAJIN2.core.preprocess import mappy_align
 
 
@@ -46,19 +47,27 @@ def _calc_match(CSSPLIT: str, mutations: dict) -> float:
     return match_score / len(cssplit)
 
 
-def classify_alleles(TEMPDIR: Path, SAMPLE_NAME: str) -> list[dict]:
-    paths_midsv = list(Path(TEMPDIR, "midsv").glob(f"{SAMPLE_NAME}*.jsonl"))
+def read_json(filepath) -> Generator[dict[str, str]]:
+    with open(filepath, "r") as f:
+        for line in f:
+            yield json.loads(line)
+
+
+###########################################################
+# main
+###########################################################
+
+
+def classify_alleles(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> list[dict]:
     mutations = _extract_diff_loci(TEMPDIR)
     # Scoring
     score_of_each_alleles = []
-    for path_midsv in paths_midsv:
-        allele = path_midsv.stem.split("_")[-1]
-        preset = path_midsv.stem.split("_")[-2]
-        for dict_midsv in midsv.read_jsonl(path_midsv):
+    for allele in FASTA_ALLELES:
+        midsv_sample = read_json(Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json"))
+        for dict_midsv in midsv_sample:
             score = _calc_match(dict_midsv["CSSPLIT"], mutations[allele])
             dict_midsv.update({"SCORE": score})
             dict_midsv.update({"ALLELE": allele})
-            dict_midsv.update({"PRESET": preset})
             score_of_each_alleles.append(dict_midsv)
     score_of_each_alleles.sort(key=lambda x: x["QNAME"])
     # Extract alleles with max scores

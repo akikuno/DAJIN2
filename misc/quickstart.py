@@ -83,7 +83,7 @@ SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
 #     "examples/flox-cables2/AyabeTask1/barcode31.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/barcode42.fq.gz",
 #     "examples/flox-cables2/AyabeTask1/design_cables2.fa",
-#     "test-ayabe-task1",
+#     "single-ayabetask1",
 #     "mm10",
 #     True,
 #     14,
@@ -119,7 +119,8 @@ CONTROL_NAME = preprocess.format_inputs.extract_basename(CONTROL)
 FASTA_ALLELES = preprocess.format_inputs.dictionize_allele(ALLELE)
 THREADS = preprocess.format_inputs.update_threads(THREADS)
 
-preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME, CONTROL_NAME)
+SUBDIRS = ["cache", "fasta", "sam", "midsv", "midsv_corrected", "report", "result", "mutation_loci"]
+preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SAMPLE_NAME, CONTROL_NAME)
 
 if GENOME:
     GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, UCSC_URL, FASTA_ALLELES["control"])

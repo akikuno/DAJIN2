@@ -9,14 +9,16 @@ import wslPath
 
 from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
+from DAJIN2.preprocess.validate_inputs import (validate_files,
+                                               validate_genome_and_fetch_urls)
 
 
-def batch_execute(arguments: dict[str]):
+def execute_batch_mode(arguments: dict[str]):
     threads = int(arguments["threads"])
     path_batchfile = arguments["file"]
 
     ###############################################################################
-    # Validate arguments
+    # Validate batch file
     ###############################################################################
     try:
         path_batchfile = wslPath.toPosix(path_batchfile)
@@ -40,9 +42,9 @@ def batch_execute(arguments: dict[str]):
     except ValueError:
         inputs = [s.split(",") for s in Path(path_batchfile).read_text().strip().split("\n")]
 
-    # ----------------------------------------------------------
-    # Check Column
-    # ----------------------------------------------------------
+    ################################################################################
+    # Validate Column of the batch file
+    ################################################################################
     columns = inputs[0]
     columns_set = set(columns)
     columns_required = set(["sample", "control", "allele", "name"])
@@ -56,23 +58,34 @@ def batch_execute(arguments: dict[str]):
             f"Accepted header names of {path_batchfile} are 'sample', 'control', 'allele', 'name', and 'genome'."
         )
 
-    ##############################################################################
-    # Perform DAJIN
-    ##############################################################################
+    ################################################################################
+    # Validate contents in the batch file
+    ################################################################################
     index_name = columns.index("name")
-
     contents = inputs[1:]
     contents.sort(key=lambda x: x[index_name])
 
     for name, groups in groupby(contents, key=lambda x: x[index_name]):
-        control_done = False
+        for group in groups:
+            args = {h: g for h, g in zip(columns, group)}
+            validate_files(args["sample"], args["control"], args["allele"])
+            if "genome" in args:
+                UCSC_URL, GOLDENPATH_URL = validate_genome_and_fetch_urls(args["genome"])
+            else:
+                UCSC_URL, GOLDENPATH_URL = None, None
+    ##############################################################################
+    # Perform DAJIN
+    ##############################################################################
+
+    for name, groups in groupby(contents, key=lambda x: x[index_name]):
+        done_controle = False
         for group in groups:
             args = {h: g for h, g in zip(columns, group)}
             args["threads"] = threads
-            if control_done == False:
+            if done_controle == False:
                 print(f"{args['control']} is now processing...", file=sys.stderr)
                 core_execute.execute_control(args)
-                control_done = True
+                done_controle = True
             print(f"{args['sample']} is now processing...", file=sys.stderr)
             core_execute.execute_sample(args)
         report.report(name)
