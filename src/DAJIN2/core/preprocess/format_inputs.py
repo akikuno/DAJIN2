@@ -14,11 +14,10 @@ import wslPath
 ########################################################################
 
 
-def make_directories(TEMPDIR: Path, SUBDIRS: list[str], SAMPLE_NAME: str, CONTROL_NAME: str):
+def make_directories(TEMPDIR: Path, SUBDIRS: list[str], SUBDIRS_REPORT: list[str], SAMPLE_NAME: str, CONTROL_NAME: str):
     for subdir in SUBDIRS:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
-    reportdirectories = ["HTML", "FASTA", "VCF", "BAM", ".igvjs"]
-    for reportdir in reportdirectories:
+    for reportdir in SUBDIRS_REPORT:
         Path(TEMPDIR, "report", reportdir, SAMPLE_NAME).mkdir(parents=True, exist_ok=True)
     Path(TEMPDIR, "report", "BAM", CONTROL_NAME).mkdir(parents=True, exist_ok=True)
     Path(TEMPDIR, "cache", ".igvjs").mkdir(parents=True, exist_ok=True)

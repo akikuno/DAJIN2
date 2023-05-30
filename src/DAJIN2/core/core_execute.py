@@ -47,8 +47,9 @@ def _format_inputs(arguments: dict):
     FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    SUBDIRS = ["cache", "fasta", "sam", "midsv", "midsv_corrected", "mutation_loci", "report", "result"]
-    preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SAMPLE_NAME, CONTROL_NAME)
+    SUBDIRS = ["cache", "fasta", "sam", "midsv", "midsv_corrected", "clustering", "report", "result", "mutation_loci"]
+    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
+    preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
     IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
     IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
@@ -158,7 +159,7 @@ def execute_sample(arguments: dict):
     ########################################################################
     print(f"{_dtnow()}: Clustering {SAMPLE_NAME}...")
     clust_sample = clustering.add_labels(
-        classif_sample, TEMPDIR, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
+        classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
     )
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
