@@ -11,6 +11,26 @@ from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
 
 
+def read_midsv(filepath) -> Generator[dict[str, str]]:
+    with open(filepath, "r") as f:
+        for line in f:
+            yield json.loads(line)
+
+
+def _make_gen(reader):
+    while True:
+        b = reader(2**16)
+        if not b:
+            break
+        yield b
+
+
+def count_newlines(filepath):
+    with open(filepath, "rb") as f:
+        count = sum(buf.count(b"\n") for buf in _make_gen(f.raw.read))
+    return count
+
+
 def _count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
     count = {"+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:
@@ -49,10 +69,10 @@ def _extract_anomaly_loci(
 ) -> dict[str, set[int]]:
     anomaly_loci = dict()
     clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
-    for key in indels_kmer_sample.keys():
+    for mut in indels_kmer_sample.keys():
         loci = set()
-        values_control = np.array(indels_kmer_control[key]) / coverage_control
-        values_sample = np.array(indels_kmer_sample[key]) / coverage_sample
+        values_control = np.array(indels_kmer_control[mut]) / coverage_control
+        values_sample = np.array(indels_kmer_sample[mut]) / coverage_sample
         index = -1
         for i, (value_control, value_sample) in enumerate(zip(values_control, values_sample)):
             if i == index:
@@ -64,24 +84,32 @@ def _extract_anomaly_loci(
             # If the next base is not -1, do not validate the next base because the next base is not an outlier.
             if pred[6] == 1:
                 index = i + 1
-        anomaly_loci.update({key: loci})
+        anomaly_loci.update({mut: loci})
     return anomaly_loci
 
 
 def _extract_dissimilar_loci(
     indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]
 ) -> dict[str, set]:
+    """
+    類似度が高くて平均値も分散も有意差がないものはシークエンスエラー
+    """
     results = dict()
     for mut in indels_kmer_sample:
-        cossim = [distance.cosine(x, y) for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])]
-        pvalues = [
-            stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(indels_kmer_sample[mut], indels_kmer_control[mut])
+        kmer_sample = indels_kmer_sample[mut]
+        kmer_control = indels_kmer_control[mut]
+        # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
+        cossim = [1 - distance.cosine(x, y) for x, y in zip(kmer_sample, kmer_control)]
+        # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
+        t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(kmer_sample, kmer_control)]
+        # Perform F-test: p > 0.05 means similar in variance.
+        f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(kmer_sample, kmer_control)]
+        # if pvalue == nan or pval > 0.05, samples and controls are similar.
+        cossim_pval_filter = [
+            1 if (t_pval > 0.05 or np.isnan(t_pval)) and f_pval > 0.05 else cossim
+            for cossim, t_pval, f_pval in zip(cossim, t_pvalues, f_pvalues)
         ]
-        # if pvalue == nan, samples and controls are exactly same.
-        cossim_pval_false = [
-            cossim if pvalue > 0.05 or np.isnan(pvalue) else 1 for cossim, pvalue in zip(cossim, pvalues)
-        ]
-        dissimilar_loci = {i for i, x in enumerate(cossim_pval_false) if x > 0.05}
+        dissimilar_loci = {i for i, x in enumerate(cossim_pval_filter) if x < 0.90}
         results.update({mut: dissimilar_loci})
     return results
 
@@ -100,25 +128,6 @@ def _transpose_mutation_loci(mutation_loci, len_sequence):
 ###########################################################
 
 
-def read_midsv(filepath) -> Generator[dict[str, str]]:
-    with open(filepath, "r") as f:
-        for line in f:
-            yield json.loads(line)
-
-
-def count_newlines(filepath):
-    def _make_gen(reader):
-        while True:
-            b = reader(2**16)
-            if not b:
-                break
-            yield b
-
-    with open(filepath, "rb") as f:
-        count = sum(buf.count(b"\n") for buf in _make_gen(f.raw.read))
-    return count
-
-
 def extract_mutation_loci(
     TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str
 ) -> dict[str, list[set[str]]]:
@@ -126,13 +135,13 @@ def extract_mutation_loci(
     for allele, sequence in FASTA_ALLELES.items():
         filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
         filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
-        covarage_sample = count_newlines(filepath_sample)
-        covarage_control = count_newlines(filepath_control)
+        coverage_sample = count_newlines(filepath_sample)
+        coverage_control = count_newlines(filepath_control)
         indels_sample = _count_indels(read_midsv(filepath_sample), len(sequence))
         indels_control = _count_indels(read_midsv(filepath_control), len(sequence))
         indels_kmer_sample = _split_kmer(indels_sample, kmer=10)
         indels_kmer_control = _split_kmer(indels_control, kmer=10)
-        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, covarage_sample, covarage_control)
+        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, coverage_sample, coverage_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         mutation_loci = dict()
         for mut in anomaly_loci:
