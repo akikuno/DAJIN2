@@ -123,6 +123,10 @@ def add_labels(
         labels_reorder = _reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
         labels_all.extend(labels_reorder)
+        # Remove temporary files
+        path_sample.unlink()
+        path_score_sample.unlink()
+        path_score_control.unlink()
     clust_sample = classif_sample.copy()
     for clust, label in zip(clust_sample, labels_all):
         clust["LABEL"] = label

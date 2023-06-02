@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
-
 import os
+import sys
+import json
 import pickle
 import resource
 import shutil
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -47,7 +46,7 @@ def _format_inputs(arguments: dict):
     FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    SUBDIRS = ["cache", "fasta", "sam", "midsv", "midsv_corrected", "clustering", "report", "result", "mutation_loci"]
+    SUBDIRS = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result", "mutation_loci"]
     SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
@@ -69,7 +68,7 @@ def _dtnow() -> str:
 
 
 def execute_control(arguments: dict):
-    print(f"{arguments['control']} is now processing...")
+    print(f"{_dtnow()}: {arguments['control']} is now processing...", file=sys.stderr)
     ###########################################################
     # Preprocess
     ###########################################################
@@ -80,9 +79,12 @@ def execute_control(arguments: dict):
     # Save Caches
     ###########################################################
     if Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam").exists():
-        print(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
+        print(
+            f"{arguments['control']} is already preprocessed and reuse the results for the current run...",
+            file=sys.stderr,
+        )
         return
-    print(f"{_dtnow()}: Preprocess {CONTROL_NAME}...")
+    print(f"{_dtnow()}: Preprocess {arguments['control']}...", file=sys.stderr)
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
@@ -90,7 +92,7 @@ def execute_control(arguments: dict):
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
-    print(f"{_dtnow()}: Mapping {CONTROL_NAME}...")
+    print(f"{_dtnow()}: Mapping {arguments['control']}...", file=sys.stderr)
     # ============================================================
     # Mapping using mappy
     # ============================================================
@@ -103,19 +105,19 @@ def execute_control(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    print(f"{_dtnow()}: Call MIDSV {CONTROL_NAME}...")
+    print(f"{_dtnow()}: Call MIDSV {arguments['control']}...", file=sys.stderr)
     preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     ###########################################################
     # Save MIDSV and BAM
     ###########################################################
-    # with open(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}.plk"), 'wb') as p:
+    # with open(Path(TEMPDIR, "midsv", f"{arguments['control']}.plk"), 'wb') as p:
     #     pickle.dump(midsv_control_alleles, p)
     report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
-    print(f"{arguments['control']} is finished!")
+    print(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!", file=sys.stderr)
 
 
 def execute_sample(arguments: dict):
-    print(f"{arguments['sample']} is now processing...")
+    print(f"{_dtnow()}: {arguments['sample']} is now processing...", file=sys.stderr)
     ###########################################################
     # Preprocess
     ###########################################################
@@ -124,7 +126,7 @@ def execute_sample(arguments: dict):
     SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
         arguments
     )
-    print(f"{_dtnow()}: Preprocess {SAMPLE_NAME}...")
+    print(f"{_dtnow()}: Preprocess {arguments['sample']}...", file=sys.stderr)
     # ============================================================
     # Mapping with mappy
     # ============================================================
@@ -152,12 +154,12 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Classify alleles
     ########################################################################
-    print(f"{_dtnow()}: Classify {SAMPLE_NAME}...")
+    print(f"{_dtnow()}: Classify {arguments['sample']}...", file=sys.stderr)
     classif_sample = classification.classify_alleles(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
     ########################################################################
     # Clustering
     ########################################################################
-    print(f"{_dtnow()}: Clustering {SAMPLE_NAME}...")
+    print(f"{_dtnow()}: Clustering {arguments['sample']}...", file=sys.stderr)
     clust_sample = clustering.add_labels(
         classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
     )
@@ -167,14 +169,14 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Consensus call
     ########################################################################
-    print(f"{_dtnow()}: Consensus calling {SAMPLE_NAME}......")
-    # downsampling to 1000 reads in each LABEL
+    print(f"{_dtnow()}: Consensus calling {arguments['sample']}...", file=sys.stderr)
+    # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
     cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_ALLELES)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_subset_sample, allele_names)
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM/VCF
@@ -197,4 +199,4 @@ def execute_sample(arguments: dict):
         shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
     # VCF
     # working in progress
-    print(f"{arguments['sample']} is finished...")
+    print(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!", file=sys.stderr)
