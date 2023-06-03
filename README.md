@@ -1,4 +1,7 @@
-# DAJIN2 is now under development👷
+[![License](https://img.shields.io/badge/License-MIT-9cf.svg?style=flat-square)](https://choosealicense.com/licenses/mit/)
+[![PyPI](https://img.shields.io/pypi/v/midsv.svg?label=PyPI&color=orange&style=flat-square)](https://pypi.org/project/DAJIN2/)
+
+# DAJIN2 is now under development (alpha version)👷
 
 I aim to release a stable version of DAJIN2 by ~~March~~ August 2023:crossed_fingers:
 

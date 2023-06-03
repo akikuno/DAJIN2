@@ -2,7 +2,7 @@
 
 python -m pip install --upgrade pip pyOpenSSL
 
-python pip uninstall DAJIN2 --yes
+python -m pip uninstall DAJIN2 --yes
 rm -rf dist build src/DAJIN2.egg-info
 python -m pip install --upgrade pip setuptools wheel twine build
 python setup.py sdist bdist_wheel

@@ -9,7 +9,7 @@ with open("requirements.txt") as requirements_file:
 
 setuptools.setup(
     name="DAJIN2",
-    version="0.1.33-alpha",
+    version="0.1.33",
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
     description="One-step genotyping tools for Nanopore amplicon sequencing",
@@ -27,6 +27,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX",
+        "Development Status :: 3 - Alpha",
     ],
     python_requires=">=3.7",
 )
