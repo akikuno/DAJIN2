@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import sys, os
+import sys
+import os
 from pathlib import Path
 
 HOMEDIR_DAJIN2 = __file__.replace("misc/quickstart.py", "")
@@ -9,7 +10,6 @@ os.chdir(HOMEDIR_DAJIN2)
 
 import hashlib
 from collections import defaultdict
-from pathlib import Path
 from importlib import reload
 
 from src.DAJIN2.core import preprocess, classification, clustering, consensus, report
@@ -67,7 +67,7 @@ reload(report)
 #     30,
 # )
 
-#### #* 2-cut deletion
+# #### #* 2-cut deletion
 SAMPLE, CONTROL, ALLELE, NAME, GENOME, DEBUG, THREADS = (
     "examples/del-stx2/barcode25.fq.gz",
     "examples/del-stx2/barcode30.fq.gz",
