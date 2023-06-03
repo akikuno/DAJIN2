@@ -47,6 +47,13 @@ def _count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
     return count
 
 
+def _normalize_indels(count: dict[str, list[int]], coverage: int) -> dict[str, list[int]]:
+    count_normalized = dict()
+    for mut in count:
+        count_normalized[mut] = [x / coverage for x in count[mut]]
+    return count_normalized
+
+
 def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[list[int]]]:
     results = defaultdict(list)
     center = kmer // 2
@@ -64,15 +71,13 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
     return results
 
 
-def _extract_anomaly_loci(
-    indels_kmer_sample: dict, indels_kmer_control: dict, coverage_sample: int, coverage_control: int
-) -> dict[str, set[int]]:
+def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set[int]]:
     anomaly_loci = dict()
     clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
     for mut in indels_kmer_sample.keys():
         loci = set()
-        values_control = np.array(indels_kmer_control[mut]) / coverage_control
-        values_sample = np.array(indels_kmer_sample[mut]) / coverage_sample
+        values_control = np.array(indels_kmer_control[mut])
+        values_sample = np.array(indels_kmer_sample[mut])
         index = -1
         for i, (value_control, value_sample) in enumerate(zip(values_control, values_sample)):
             if i == index:
@@ -88,28 +93,30 @@ def _extract_anomaly_loci(
     return anomaly_loci
 
 
-def _extract_dissimilar_loci(
-    indels_kmer_sample: dict[str, list[list[int]]], indels_kmer_control: dict[str, list[list[int]]]
-) -> dict[str, set]:
+def _extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set]:
     """
-    類似度が高くて平均値も分散も有意差がないものはシークエンスエラー
+    Comparing Sample and Control, the 1. 'high similarity',  2. 'similar mean' and
+    3. 'similar variance' are considered as sequence errors.
     """
     results = dict()
     for mut in indels_kmer_sample:
-        kmer_sample = indels_kmer_sample[mut]
-        kmer_control = indels_kmer_control[mut]
+        values_sample = indels_kmer_sample[mut]
+        values_control = indels_kmer_control[mut]
         # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
-        cossim = [1 - distance.cosine(x, y) for x, y in zip(kmer_sample, kmer_control)]
+        cossim = [1 - distance.cosine(x, y) for x, y in zip(values_sample, values_control)]
         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
-        t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(kmer_sample, kmer_control)]
+        t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
+        t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
         # Perform F-test: p > 0.05 means similar in variance.
-        f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(kmer_sample, kmer_control)]
+        f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(values_sample, values_control)]
         # if pvalue == nan or pval > 0.05, samples and controls are similar.
-        cossim_pval_filter = [
-            1 if (t_pval > 0.05 or np.isnan(t_pval)) and f_pval > 0.05 else cossim
-            for cossim, t_pval, f_pval in zip(cossim, t_pvalues, f_pvalues)
-        ]
-        dissimilar_loci = {i for i, x in enumerate(cossim_pval_filter) if x < 0.90}
+        dissimilar_loci = set()
+        for i, (sim, t_pval, f_pval) in enumerate(zip(cossim, t_pvalues, f_pvalues)):
+            flag_seqerror = False
+            if sim > 0.90 and t_pval > 0.05 and f_pval > 0.05:
+                flag_seqerror = True
+            if flag_seqerror is False:
+                dissimilar_loci.add(i)
         results.update({mut: dissimilar_loci})
     return results
 
@@ -139,9 +146,11 @@ def extract_mutation_loci(
         coverage_control = count_newlines(filepath_control)
         indels_sample = _count_indels(read_midsv(filepath_sample), len(sequence))
         indels_control = _count_indels(read_midsv(filepath_control), len(sequence))
-        indels_kmer_sample = _split_kmer(indels_sample, kmer=10)
-        indels_kmer_control = _split_kmer(indels_control, kmer=10)
-        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control, coverage_sample, coverage_control)
+        indels_sample_normalized = _normalize_indels(indels_sample, coverage_sample)
+        indels_control_normalized = _normalize_indels(indels_control, coverage_control)
+        indels_kmer_sample = _split_kmer(indels_sample_normalized, kmer=10)
+        indels_kmer_control = _split_kmer(indels_control_normalized, kmer=10)
+        anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         mutation_loci = dict()
         for mut in anomaly_loci:
