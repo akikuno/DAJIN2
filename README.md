@@ -3,6 +3,13 @@
 
 # DAJIN2 is now under development (alpha version)👷
 
+## Installation
+
+```bash
+pip install DAJIN2
+```
+
+
 I aim to release a stable version of DAJIN2 by ~~March~~ August 2023:crossed_fingers:
 
 ## New planned features
