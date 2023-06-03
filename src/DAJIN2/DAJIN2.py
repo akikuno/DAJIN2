@@ -23,7 +23,7 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
 
-_version = "0.1.30"
+VERSION = "0.1.32.alpha"
 
 
 def _execute_single_mode(arguments: dict[str]):
@@ -42,7 +42,10 @@ def _execute_single_mode(arguments: dict[str]):
     core_execute.execute_sample(arguments)
     name = arguments["name"]
     report.report(name)
-    print(f"Finished! Open DAJINResults/{name} to see the report.", file=sys.stderr)
+    print(
+        f"\N{party popper} Finished! Open DAJINResults/{name} to see the report.",
+        file=sys.stderr,
+    )
 
 
 def _update_threads(threads) -> int:
@@ -67,7 +70,7 @@ def _batched(iterable, chunk_size):
         chunk = tuple(islice(iterator, chunk_size))
 
 
-def _run_multiprocess(function, arguments: list, num_workers: int = 1):
+def _run_multiprocess(function, arguments: list, num_workers: int = 1) -> None:
     arguments_batched = _batched(arguments, num_workers)
     for args in arguments_batched:
         jobs = []
@@ -76,7 +79,10 @@ def _run_multiprocess(function, arguments: list, num_workers: int = 1):
             jobs.append(p)
             p.start()
         for job in jobs:
+            if job.exitcode == 1:
+                sys.exit(1)
             job.join()
+    return
 
 
 def _execute_batch_mode(arguments: dict[str]):
@@ -149,9 +155,6 @@ def _execute_batch_mode(arguments: dict[str]):
             contents_control.append(args)
         contents_control_unique = _extract_unique_contents(contents_control)
         _run_multiprocess(core_execute.execute_control, contents_control_unique, num_workers)
-        # with ProcessPoolExecutor(max_workers=threads) as executor:
-        #     size = max(1, round(len(contents_control_unique) / executor._max_workers))
-        #     list(executor.map(core_execute.execute_control, contents_control_unique, chunksize=size))
         # ------------------------------
         # Handle samples
         # ------------------------------
@@ -166,28 +169,11 @@ def _execute_batch_mode(arguments: dict[str]):
             contents_sample.append(args)
         contents_sample_unique = _extract_unique_contents(contents_sample)
         _run_multiprocess(core_execute.execute_sample, contents_sample_unique, num_workers)
-        # for sample in contents_sample_unique:
-        #     core_execute.execute_sample(sample)
-        # # list(map(core_execute.execute_sample, contents_sample_unique))
-        # with ProcessPoolExecutor(max_workers=threads) as executor:
-        #     size = max(1, round(len(contents_sample_unique) / executor._max_workers))
-        #     list(executor.map(core_execute.execute_sample, contents_sample_unique, chunksize=size))
         report.report(name)
-        print(f"Finished! Open DAJINResults/{name} to see the report.", file=sys.stderr)
-
-    # for name, groups in groupby(contents, key=lambda x: x[index_name]):
-    #     done_controle = False
-    #     for group in groups:
-    #         args = {h: g for h, g in zip(columns, group)}
-    #         args["threads"] = _update_threads(arguments["threads"])
-    #         if done_controle == False:
-    #             print(f"{args['control']} is now processing...", file=sys.stderr)
-    #             core_execute.execute_control(args, URLS_GENOME)
-    #             done_controle = True
-    #         print(f"{args['sample']} is now processing...", file=sys.stderr)
-    #         core_execute.execute_sample(args, URLS_GENOME)
-    #     report.report(name)
-    #     print(f"Finished! Open DAJINResults/{name} to see the report.", file=sys.stderr)
+        print(
+            f"\N{party popper} Finished! Open DAJINResults/{name} to see the report.",
+            file=sys.stderr,
+        )
 
 
 def main():
@@ -205,7 +191,7 @@ def main():
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm10) [default: '']"
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {_version}")
+    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
     ###############################################################################
