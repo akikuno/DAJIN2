@@ -51,8 +51,8 @@ def _normalize_indels(count: dict[str, list[int]], coverage: int) -> dict[str, n
     count_normalized = dict()
     for mut in count:
         counts = np.array(count[mut])
-        counts_norm = (counts / coverage) * 10 ** 6
-        count_normalized[mut] = counts_norm.astype('uint32') 
+        counts_norm = (counts / coverage) * 10**6
+        count_normalized[mut] = counts_norm.astype("uint32")
     return count_normalized
 
 
@@ -69,7 +69,7 @@ def _split_kmer(indels: dict[str, np.array], kmer: int = 10) -> dict[str, np.arr
                     end = i + center + 1
                 results[mut].append(value[start:end])
             else:
-                results[mut].append(np.array([0] * kmer, dtype = "uint32"))
+                results[mut].append(np.array([0] * kmer, dtype="uint32"))
     return results
 
 
@@ -106,7 +106,9 @@ def _extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict
         values_control = indels_kmer_control[mut]
         # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
         # When calculating cossim, uint32 returns inaccurate results so convert to float64
-        cossim = [1 - distance.cosine(x.astype("float64"), y.astype("float64")) for x, y in zip(values_sample, values_control)]
+        cossim = [
+            1 - distance.cosine(x.astype("float64"), y.astype("float64")) for x, y in zip(values_sample, values_control)
+        ]
         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
         t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
