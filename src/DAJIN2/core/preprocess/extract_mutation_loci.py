@@ -47,14 +47,16 @@ def _count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
     return count
 
 
-def _normalize_indels(count: dict[str, list[int]], coverage: int) -> dict[str, list[int]]:
+def _normalize_indels(count: dict[str, list[int]], coverage: int) -> dict[str, np.array]:
     count_normalized = dict()
     for mut in count:
-        count_normalized[mut] = [x / coverage for x in count[mut]]
+        counts = np.array(count[mut])
+        counts_norm = (counts / coverage) * 10 ** 6
+        count_normalized[mut] = counts_norm.astype('uint32') 
     return count_normalized
 
 
-def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[list[int]]]:
+def _split_kmer(indels: dict[str, np.array], kmer: int = 10) -> dict[str, np.array]:
     results = defaultdict(list)
     center = kmer // 2
     for mut, value in indels.items():
@@ -67,7 +69,7 @@ def _split_kmer(indels: dict[str, list[int]], kmer: int = 10) -> dict[str, list[
                     end = i + center + 1
                 results[mut].append(value[start:end])
             else:
-                results[mut].append([0] * kmer)
+                results[mut].append(np.array([0] * kmer, dtype = "uint32"))
     return results
 
 
@@ -76,8 +78,8 @@ def _extract_anomaly_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -
     clf = LocalOutlierFactor(novelty=True, n_neighbors=5)
     for mut in indels_kmer_sample.keys():
         loci = set()
-        values_control = np.array(indels_kmer_control[mut])
-        values_sample = np.array(indels_kmer_sample[mut])
+        values_control = indels_kmer_control[mut]
+        values_sample = indels_kmer_sample[mut]
         index = -1
         for i, (value_control, value_sample) in enumerate(zip(values_control, values_sample)):
             if i == index:
@@ -103,7 +105,8 @@ def _extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict
         values_sample = indels_kmer_sample[mut]
         values_control = indels_kmer_control[mut]
         # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
-        cossim = [1 - distance.cosine(x, y) for x, y in zip(values_sample, values_control)]
+        # When calculating cossim, uint32 returns inaccurate results so convert to float64
+        cossim = [1 - distance.cosine(x.astype("float64"), y.astype("float64")) for x, y in zip(values_sample, values_control)]
         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
         t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
