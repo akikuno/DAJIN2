@@ -5,7 +5,7 @@
 
 Expected to be available the stable version in August 2023 🤞
 
-## Installation
+## Installation (alpha-version)
 
 ```bash
 pip install DAJIN2
