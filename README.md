@@ -5,14 +5,6 @@
 
 Expected to be available the stable version in August 2023 🤞
 
-## Installation (alpha-version)
-
-```bash
-pip install DAJIN2
-```
-
-## Usage
-
 ## Installation
 
 ```bash
@@ -21,7 +13,7 @@ pip install DAJIN2
 
 ## Usage
 
-### Single mode
+### Single-mode
 
 ```bash
 DAJIN2 [-h] [-s SAMPLE] [-c CONTROL] [-a ALLELE] [-n NAME] [-g GENOME] [-t THREADS] [-v]
@@ -71,9 +63,9 @@ DAJIN2 \
 # 🎉 Finished! Open DAJINResults/stx2-deletion to see the report.
 ```
 
-### Batch mode
+### Batch-mode
 
-DAJIN2 can handle multiple fastq files via `batch` subcommand.
+DAJIN2 can handle multiple FASTQ files via `batch` subcommand.
 
 ```bash
 DAJIN2 batch [-h] -f FILE [-t THREADS]
