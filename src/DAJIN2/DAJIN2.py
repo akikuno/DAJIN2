@@ -206,7 +206,7 @@ def main():
 
     subparser = parser.add_subparsers()
     parser_batch = subparser.add_parser("batch", help="DAIJN2 batch mode")
-    parser_batch.add_argument("-f", "--file", required=True, type=str, help="The comma-separated batch file.")
+    parser_batch.add_argument("-f", "--file", required=True, type=str, help="CSV or Excel file.")
     parser_batch.add_argument("-t", "--threads", default=1, type=int, help="Number of threads [default: 1]")
     parser_batch.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
     parser_batch.set_defaults(handler=batchmode)
