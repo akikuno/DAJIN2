@@ -4,9 +4,17 @@ import sys
 import os
 from pathlib import Path
 
-HOMEDIR_DAJIN2 = __file__.replace("misc/quickstart.py", "")
-sys.path.append(HOMEDIR_DAJIN2)
-os.chdir(HOMEDIR_DAJIN2)
+# 初期は必ずDAJIN2-experiments/以下の階層にあるので、DAJIN2-experimentsまで戻る
+path_parent = Path.cwd()
+while path_parent.stem != "DAJIN2-experiments":
+    path_parent = path_parent.parent
+
+# DAJIN2-experiments/DAJIN2のディレクトリに移動し、PATHを通す
+PATH_DAJIN2 = Path.joinpath(path_parent, "DAJIN2")
+os.chdir(PATH_DAJIN2)
+sys.path.append(PATH_DAJIN2)
+sys.path.append(Path.joinpath(PATH_DAJIN2, "src"))
+
 
 import hashlib
 from collections import defaultdict
