@@ -158,10 +158,20 @@ def extract_mutation_loci(
         indels_kmer_control = _split_kmer(indels_control_normalized, kmer=10)
         anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
-        errors_in_homopolymer = extract_errors_in_homopolymer(indels_sample, indels_control, sequence)
+        # Extract error loci in homopolymer regions
+        error_loci_homopolymer = dict()
+        for mut in ["+", "-", "*"]:
+            candidate_loci = anomaly_loci[mut] & dissimilar_loci[mut]
+            indels_sample_mut = indels_sample[mut]
+            indels_control_mut = indels_control[mut]
+            error_loci = extract_errors_in_homopolymer(indels_sample_mut, indels_control_mut, sequence, candidate_loci)
+            error_loci_homopolymer.update({mut: error_loci})
         mutation_loci = dict()
-        for mut in anomaly_loci:
-            mutation_loci.update({mut: (anomaly_loci[mut] & dissimilar_loci[mut]) - errors_in_homopolymer})
+        for mut in ["+", "-", "*"]:
+            candidate_loci = anomaly_loci[mut] & dissimilar_loci[mut]
+            error_loci = error_loci_homopolymer[mut]
+            # Discard error loci in homopolymer regions
+            mutation_loci.update({mut: candidate_loci - error_loci})
         mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, len(sequence))
         MUTATION_LOCI_ALLELES.update({allele: mutation_loci_transposed})
     return MUTATION_LOCI_ALLELES
