@@ -4,26 +4,34 @@ import re
 from collections import defaultdict
 import numpy as np
 import scipy
-from statsmodels.nonparametric.smoothers_lowess import lowess as  sm_lowess
+from statsmodels.nonparametric.smoothers_lowess import lowess as sm_lowess
 
-def get_counts_homopolymer(indels_sample, indels_control, sequence):
-    # Define a regular expression pattern for repeat regions
-    repeat_pattern = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
-    # Find all match of repeat pattern in the sequence
-    repeat_regions = list(match.span() for match in re.finditer(repeat_pattern, sequence))
+
+def get_repeat_regions(sequence: str, candidates: set(int)) -> list[tuple[int, int]]:
+    """
+    Find homopolymers in the sequence but discard them that
+    are adjacent to candidate mutation loci because they are
+    likely to be covered by the real mutations
+    """
+    pattern = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
+    repeat_regions = []
+    for start, end in (match.span() for match in re.finditer(pattern, sequence)):
+        if not (start - 1 in candidates and end + 1 in candidates):
+            repeat_regions.append((start, end))
+    return repeat_regions
+
+
+def get_counts_homopolymer(indels_sample_mut, indels_control_mut, repeat_regions):
     # Initialize default dictionaries to hold counts
     mutation_counts = defaultdict(list)
     mutation_counts_regions = []
     # Iterate through each repeat region
     for start, end in repeat_regions:
         # Calculate mutations for each sample and control
-        sample_mutations = [indels_sample[mutation_type][start:end] for mutation_type in ["+", "-", "*"]]
-        control_mutations = [indels_control[mutation_type][start:end] for mutation_type in ["+", "-", "*"]]
-        # Sum up the mutations for each sample and control
-        sample_sum = np.sum(sample_mutations, axis=0)
-        control_sum = np.sum(control_mutations, axis=0)
+        sample_mutations = np.array(indels_sample_mut[start:end])
+        control_mutations = np.array(indels_control_mut[start:end])
         # Total mutations is the sum of sample and control
-        total_mutations = sample_sum + control_sum
+        total_mutations = sample_mutations + control_mutations
         # If the total number of mutations is greater in the last position, reverse the order
         if total_mutations[0] > total_mutations[-1]:
             total_mutations = total_mutations[::-1]
@@ -37,16 +45,18 @@ def get_counts_homopolymer(indels_sample, indels_control, sequence):
             mutation_counts[position].append(value)
     return mutation_counts, mutation_counts_regions
 
+
 def _smooth_data(input_x, input_y, input_xgrid):
     # Sample 50 data points from the input x and y
     sampled_indices = np.random.choice(len(input_x), 50, replace=True)
     sampled_y = input_y[sampled_indices]
     sampled_x = input_x[sampled_indices]
     # Apply lowess smoothing to the sampled data
-    smoothed_y = sm_lowess(sampled_y, sampled_x, frac=1./5., it=5, return_sorted = False)
+    smoothed_y = sm_lowess(sampled_y, sampled_x, frac=1.0 / 5.0, it=5, return_sorted=False)
     # Interpolate the smoothed data onto the input grid
-    interpolated_y_grid = scipy.interpolate.interp1d(sampled_x, smoothed_y, fill_value='extrapolate')(input_xgrid)
+    interpolated_y_grid = scipy.interpolate.interp1d(sampled_x, smoothed_y, fill_value="extrapolate")(input_xgrid)
     return interpolated_y_grid
+
 
 def return_thresholds(mutation_counts) -> list(float):
     # Initialize empty lists to hold x and y data
@@ -64,17 +74,19 @@ def return_thresholds(mutation_counts) -> list(float):
     x_grid = np.linspace(mutation_positions.min(), mutation_positions.max(), mutation_positions.max() + 1)
     # Smooth the y data K times and stack the results
     num_smoothings = 100
-    smoothed_data = np.stack([_smooth_data(mutation_positions, mutation_counts_log, x_grid) for _ in range(num_smoothings)]).T
+    smoothed_data = np.stack(
+        [_smooth_data(mutation_positions, mutation_counts_log, x_grid) for _ in range(num_smoothings)]
+    ).T
     # Calculate the mean and standard error of the smoothed data
     mean_smoothed_data = np.nanmean(smoothed_data, axis=1)
     stderr_smoothed_data = scipy.stats.sem(smoothed_data, axis=1)
     stderr_smoothed_data = np.nanstd(smoothed_data, axis=1, ddof=0)
-    # Define the thresholds as the mean plus 1.95 times the standard error
-    thresholds = mean_smoothed_data + 1.95 * stderr_smoothed_data
+    # Define the thresholds
+    thresholds = mean_smoothed_data + 1.90 * stderr_smoothed_data
     return thresholds
 
 
-def get_errors_in_homopolyer(mutation_counts_regions, thresholds) ->set(int):
+def get_errors_in_homopolyer(mutation_counts_regions, thresholds) -> set(int):
     # Initialize a set to hold the locations of mutations
     sequence_error_loci = set()
     # Iterate through each region and its associated mutation counts
@@ -104,13 +116,17 @@ def get_errors_in_homopolyer(mutation_counts_regions, thresholds) ->set(int):
         sequence_error_loci |= region - mutations
     return sequence_error_loci
 
+
 ###########################################################
 # main
 ###########################################################
 
-def extract_errors_in_homopolymer(indels_sample, indels_control, sequence) -> set(int):
-    mutation_counts, mutation_counts_regions = get_counts_homopolymer(indels_sample, indels_control, sequence)
+
+def extract_errors_in_homopolymer(indels_sample_mut, indels_control_mut, sequence, candidate_loci) -> set(int):
+    repeat_regions = get_repeat_regions(sequence, candidate_loci)
+    mutation_counts, mutation_counts_regions = get_counts_homopolymer(
+        indels_sample_mut, indels_control_mut, repeat_regions
+    )
     thresholds = return_thresholds(mutation_counts)
     errors_in_homopolyer = get_errors_in_homopolyer(mutation_counts_regions, thresholds)
     return errors_in_homopolyer
-    
