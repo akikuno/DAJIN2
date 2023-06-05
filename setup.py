@@ -9,7 +9,7 @@ with open("requirements.txt") as requirements_file:
 
 setuptools.setup(
     name="DAJIN2",
-    version="0.2.0",
+    version="0.2.1",
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
     description="One-step genotyping tools for Nanopore amplicon sequencing",

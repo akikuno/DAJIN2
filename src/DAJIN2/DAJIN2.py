@@ -15,7 +15,7 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 # prevent BLAS from using all cores
 os.environ["OMP_NUM_THREADS"] = "1"
