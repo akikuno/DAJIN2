@@ -1,6 +1,5 @@
 from DAJIN2.core.preprocess import (
     correct_knockin,
-    correct_revititive_deletions,
     format_inputs,
     mappy_align,
     validate_inputs,

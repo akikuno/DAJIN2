@@ -9,6 +9,7 @@ from typing import Generator
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.neighbors import LocalOutlierFactor
+from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
 
 
 def read_midsv(filepath) -> Generator[dict[str, str]]:
@@ -157,9 +158,10 @@ def extract_mutation_loci(
         indels_kmer_control = _split_kmer(indels_control_normalized, kmer=10)
         anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control)
         dissimilar_loci = _extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
+        errors_in_homopolymer = extract_errors_in_homopolymer(indels_sample, indels_control, sequence)
         mutation_loci = dict()
         for mut in anomaly_loci:
-            mutation_loci.update({mut: anomaly_loci[mut] & dissimilar_loci[mut]})
+            mutation_loci.update({mut: (anomaly_loci[mut] & dissimilar_loci[mut]) - errors_in_homopolymer})
         mutation_loci_transposed = _transpose_mutation_loci(mutation_loci, len(sequence))
         MUTATION_LOCI_ALLELES.update({allele: mutation_loci_transposed})
     return MUTATION_LOCI_ALLELES
