@@ -1,4 +1,5 @@
 import os
+import shutil
 import socket
 import webbrowser
 from contextlib import closing, redirect_stderr
@@ -10,7 +11,7 @@ from flask import Flask, render_template, request
 from waitress import serve
 from werkzeug.utils import secure_filename
 
-from DAJIN2 import batch
+from DAJIN2 import main
 
 
 def find_free_port():
@@ -45,7 +46,10 @@ def root_page():
 @app.route("/submit", methods=["POST"])
 def submit():
     name = request.form.get("name")
-    UPLOAD_FOLDER = Path("DAJINResults", ".tempdir", name, "upload")
+    TEMPDIR = Path("DAJINResults", ".tempdir", name)
+    if TEMPDIR.exists():
+        shutil.rmtree(TEMPDIR)
+    UPLOAD_FOLDER = Path(TEMPDIR, "upload")
     UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -72,13 +76,13 @@ def submit():
     df["allele"] = PATH_ALLELE[0]
     if genome:
         df["genome"] = genome
-    df.to_csv(Path("DAJINResults", ".tempdir", name, "upload", "batch.csv"), index=False)
+    df.to_csv(Path(TEMPDIR, "upload", "batch.csv"), index=False)
 
     arguments = dict()
-    arguments["file"] = str(Path("DAJINResults", ".tempdir", name, "upload", "batch.csv"))
+    arguments["file"] = str(Path(TEMPDIR, "upload", "batch.csv"))
     arguments["threads"] = threads
     arguments["debug"] = False
-    batch.execute(arguments)
+    main.execute_batch_mode(arguments)
 
     return f"""
     name={name}
@@ -92,12 +96,12 @@ def submit():
 
 
 def open_browser(PORT):
-    webbrowser.open_new(f"http://127.0.0.1:{PORT}/")
+    webbrowser.open_new(f"http://localhost:{PORT}/")
 
 
 def execute():
     PORT = find_free_port()
-    print(f"Assess 'http://127.0.0.1:{PORT}/' if a browser does not automatically open.")
+    print(f"Assess 'http://localhost:{PORT}/' if a browser does not automatically open.")
     Timer(1, open_browser, [PORT]).start()
     with redirect_stderr(open(os.devnull, "w")):
         serve(app, host="0.0.0.0", port=PORT)

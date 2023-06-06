@@ -9,7 +9,7 @@ with open("requirements.txt") as requirements_file:
 
 setuptools.setup(
     name="DAJIN2",
-    version="0.2.1",
+    version="0.2.3",
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
     description="One-step genotyping tools for Nanopore amplicon sequencing",
@@ -21,7 +21,7 @@ setuptools.setup(
         where="src",
     ),
     package_dir={"": "src"},
-    entry_points={"console_scripts": ["DAJIN2=DAJIN2.DAJIN2:main"]},
+    entry_points={"console_scripts": ["DAJIN2=DAJIN2.main:execute"]},
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",

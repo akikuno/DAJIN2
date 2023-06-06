@@ -15,7 +15,7 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
 
-VERSION = "0.2.1"
+VERSION = "0.2.3"
 
 # prevent BLAS from using all cores
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -25,7 +25,7 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 
-def _execute_single_mode(arguments: dict[str]):
+def execute_single_mode(arguments: dict[str]):
     ################################################################################
     # Validate contents
     ################################################################################
@@ -84,7 +84,7 @@ def _run_multiprocess(function, arguments: list, num_workers: int = 1) -> None:
     return
 
 
-def _execute_batch_mode(arguments: dict[str]):
+def execute_batch_mode(arguments: dict[str]):
     path_batchfile = arguments["file"]
     ###############################################################################
     # Validate batch file
@@ -175,7 +175,7 @@ def _execute_batch_mode(arguments: dict[str]):
         )
 
 
-def main():
+def execute():
     parser = argparse.ArgumentParser()
 
     ###############################################################################
@@ -202,7 +202,7 @@ def main():
         arguments["file"] = args.file
         arguments["threads"] = int(args.threads)
         arguments["debug"] = args.debug
-        _execute_batch_mode(arguments)
+        execute_batch_mode(arguments)
 
     subparser = parser.add_subparsers()
     parser_batch = subparser.add_parser("batch", help="DAIJN2 batch mode")
@@ -258,8 +258,8 @@ def main():
             arguments["genome"] = args.genome
         arguments["threads"] = int(args.threads)
         arguments["debug"] = args.debug
-        _execute_single_mode(arguments)
+        execute_single_mode(arguments)
 
 
 if __name__ == "__main__":
-    main()
+    execute()
