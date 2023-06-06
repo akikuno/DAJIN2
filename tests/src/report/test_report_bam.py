@@ -4,8 +4,6 @@ from importlib import reload
 from src.DAJIN2.core.report import report_bam
 from src.DAJIN2.core.report.remove_microhomology import remove_microhomology
 
-reload(report_bam)
-
 
 def test_remove_overlapped_reads():
     """

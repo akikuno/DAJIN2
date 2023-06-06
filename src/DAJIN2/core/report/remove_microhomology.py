@@ -32,7 +32,7 @@ def split_contents(sam):
 def check_microhomology(current_seq_trimmed, next_seq_trimmed):
     len_microhomology = 0
     for i in range(1, min(len(current_seq_trimmed), len(next_seq_trimmed))):
-        if current_seq_trimmed[-i:] == next_seq_trimmed[:i][::-1]:
+        if current_seq_trimmed[-i:] == next_seq_trimmed[:i]:
             len_microhomology = i
     return len_microhomology
 
