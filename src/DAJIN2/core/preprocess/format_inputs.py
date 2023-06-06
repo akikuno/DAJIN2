@@ -32,6 +32,7 @@ def convert_to_posix_path(path: str) -> str:
     try:
         path = wslPath.toPosix(path)
     except ValueError:
+        # This is already a posix path, so just pass
         pass
     return str(path)
 
@@ -69,31 +70,28 @@ def dictionize_allele(path_fasta: str) -> dict:
 
 
 ########################################################################
-# Update threads
-########################################################################
-
-
-def update_threads(threads):
-    threads_updated = min(int(threads), os.cpu_count() - 1)
-    threads_updated = max(1, threads_updated)
-    return threads_updated
-
-
-########################################################################
 # Fetch genome coodinate and chrom size
 ########################################################################
 
 
-# TODO TEST
-def fetch_coodinate(genome: str, ucsc_url: str, seq: str) -> dict:
-    ucsc_blat = f"{ucsc_url}/cgi-bin/hgBlat?db={genome}&type=BLAT&userSeq={seq}"
-    request = urlopen(ucsc_blat).read().decode("utf8").split("\n")
-    coodinate = [x for x in request if x.count("100.0%")]
-    if not coodinate:
-        raise AttributeError(f"{seq} is not found in {genome}")
-    else:
-        coodinate = coodinate[0].split()
-        return {"chr": coodinate[-5], "start": int(coodinate[-3]), "end": int(coodinate[-2]), "strand": coodinate[-4]}
+def fetch_coordinate(genome: str, ucsc_url: str, seq: str) -> dict:
+    def _fetch_seq(seq: str):
+        url_blat = f"{ucsc_url}/cgi-bin/hgBlat?db={genome}&type=BLAT&userSeq={seq}"
+        request = urlopen(url_blat).read().decode("utf8").split("\n")
+        matches = [x for x in request if "100.0%" in x]
+        if not matches:
+            raise AttributeError(f"{seq} is not found in {genome}")
+        return matches[0].split()[-5:-1]
+
+    seq_start, seq_end = seq[:1000], seq[-1000:]
+    coordinate_start, coordinate_end = _fetch_seq(seq_start), _fetch_seq(seq_end)
+
+    chromosome, strand = coordinate_start[0], coordinate_start[1]
+    start, end = int(coordinate_start[2]), int(coordinate_end[3])
+    if start > end:
+        start, end = end, start
+
+    return {"chr": chromosome, "start": start, "end": end, "strand": strand}
 
 
 def fetch_chrom_size(chrom: str, genome: str, goldenpath_url: str) -> int:
@@ -106,7 +104,7 @@ def fetch_chrom_size(chrom: str, genome: str, goldenpath_url: str) -> int:
     return chrom_size
 
 
-def cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE):
+def cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE) -> None:
     """
     Save (1) genome_symbol.txt, (2) genome_coodinates.jsonl, (3) chrome_size.txt
     """
