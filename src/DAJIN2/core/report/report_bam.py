@@ -10,6 +10,8 @@ from typing import Union
 import midsv
 import pysam
 
+from DAJIN2.core.report.remove_microhomology import remove_microhomology
+
 
 def revcomp(sequence: str) -> str:
     complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
@@ -79,74 +81,6 @@ def trim_softclip(CIGAR: str, SEQ: str) -> str:
     if cigar_split[-1].endswith("S"):
         SEQ = SEQ[: -int(cigar_split[-1][:-1])]
     return SEQ
-
-
-def remove_microhomology(sam: list[list[str]]) -> list[list[str]]:
-    sam_headers = [s for s in sam if s[0].startswith("@")]
-    sam_contents = [s for s in sam if not s[0].startswith("@") and s[9] != "*"]
-    sam_contents.sort(key=lambda x: [x[0], int(x[3])])
-    sam_trimmed = sam_headers.copy()
-    for _, group in groupby(sam_contents, key=lambda x: x[0]):
-        alignments = list(group)
-        if len(alignments) == 1:
-            sam_trimmed.append(alignments[0])
-            continue
-        idx = 0
-        while idx < len(alignments) - 1:
-            prev_align = alignments[idx]
-            next_align = alignments[idx + 1]
-            prev_cigar = prev_align[5]
-            next_cigar = next_align[5]
-            prev_seq = prev_align[9]
-            next_seq = next_align[9]
-            prev_qual = prev_align[10]
-            next_qual = next_align[10]
-            # trim softclips of sequence
-            prev_seq_trimmed = trim_softclip(prev_cigar, prev_seq)
-            next_seq_trimmed = trim_softclip(next_cigar, next_seq)
-            # trim softclips of quality
-            prev_qual_trimmed = trim_softclip(prev_cigar, prev_qual)
-            next_qual_trimmed = trim_softclip(next_cigar, next_qual)
-            if prev_seq_trimmed == next_seq_trimmed:
-                sam_trimmed.append(prev_align)
-                sam_trimmed.append(next_align)
-                idx += 1
-                continue
-            i = 1
-            len_microhomology = 0
-            while i < min(len(prev_seq_trimmed), len(next_seq_trimmed)):
-                if prev_seq_trimmed[-i:] == next_seq_trimmed[:i] and prev_qual_trimmed[-i:] == next_qual_trimmed[:i]:
-                    len_microhomology = i
-                i += 1
-            if len_microhomology == 0:
-                sam_trimmed.append(prev_align)
-                sam_trimmed.append(next_align)
-                idx += 1
-                continue
-            # ----------------------
-            # format
-            # ----------------------
-            # start
-            next_align[3] = str(int(next_align[3]) + len_microhomology)
-            # cigar
-            next_cigar_split = [c for c in split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
-            next_cigar_split[0] = str(int(next_cigar_split[0][:-1]) - len_microhomology) + next_cigar_split[0][-1]
-            # remove reads with overlapped at softclip region
-            if "-" in next_cigar_split[0]:
-                idx += 1
-                continue
-            next_align[5] = "".join(next_cigar_split)
-            # sequence
-            next_align[9] = next_seq_trimmed[len_microhomology:]
-            # quality
-            next_align[10] = next_qual_trimmed[len_microhomology:]
-            # ----------------------
-            # finish
-            # ----------------------
-            sam_trimmed.append(prev_align)
-            sam_trimmed.append(next_align)
-            idx += 1
-    return sam_trimmed
 
 
 def reverse_sam(sam_contents: list[list[str]], genome_end: int) -> list[str]:

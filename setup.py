@@ -9,7 +9,7 @@ with open("requirements.txt") as requirements_file:
 
 setuptools.setup(
     name="DAJIN2",
-    version="0.2.4.a1",
+    version="0.2.4.a4",
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
     description="One-step genotyping tools for Targeted long-read sequencing",
@@ -31,5 +31,4 @@ setuptools.setup(
         "Operating System :: POSIX",
         "Development Status :: 3 - Alpha",
     ],
-    python_requires=">=3.7",
 )
