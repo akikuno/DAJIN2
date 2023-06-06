@@ -54,7 +54,7 @@ def _format_inputs(arguments: dict):
     IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
     if GENOME:
         if not IS_CACHE_GENOME:
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
+            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
             CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, URL_GOLDENPATH)
             preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
         else:
