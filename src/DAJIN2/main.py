@@ -6,6 +6,7 @@ import multiprocessing
 import sys
 from itertools import groupby, islice
 from pathlib import Path
+import csv
 
 import pandas as pd
 import wslPath
@@ -15,7 +16,7 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
 
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 # prevent BLAS from using all cores
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -47,7 +48,7 @@ def execute_single_mode(arguments: dict[str]):
     )
 
 
-def _update_threads(threads) -> int:
+def _update_threads(threads: int) -> int:
     threads_updated = min(int(threads), os.cpu_count() - 1)
     threads_updated = max(1, threads_updated)
     return threads_updated
@@ -101,13 +102,17 @@ def execute_batch_mode(arguments: dict[str]):
     # ----------------------------------------------------------
     # Load the file
     # ----------------------------------------------------------
+    # From Excel file
     try:
         df_batchfile = pd.read_excel(path_batchfile)
         inputs = []
         inputs.append(df_batchfile.columns.to_list())
         inputs += df_batchfile.values.tolist()
     except ValueError:
-        inputs = [s.split(",") for s in Path(path_batchfile).read_text().strip().split("\n")]
+    # From CSV file
+        with open(path_batchfile) as f:
+            inputs = [row for row in csv.reader(f, skipinitialspace=True, delimiter=',')]
+
     ################################################################################
     # Validate Column of the batch file
     ################################################################################
