@@ -11,6 +11,6 @@ waitress >= 2.1.0
 Jinja2 >= 3.1.0
 plotly >= 5.0.0
 kaleido >= 0.2.0
-cstag >= 0.3.0
+cstag >= 0.4.0
 midsv >= 0.9.0
 wslPath >=0.3.0
