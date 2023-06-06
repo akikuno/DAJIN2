@@ -1,5 +1,6 @@
 [![License](https://img.shields.io/badge/License-MIT-9cf.svg?style=flat-square)](https://choosealicense.com/licenses/mit/)
 [![PyPI](https://img.shields.io/pypi/v/DAJIN2.svg?label=PyPI&color=orange&style=flat-square)](https://pypi.org/project/DAJIN2/)
+[![Python](https://img.shields.io/pypi/pyversions/DAJIN2.svg?label=Python&color=blue&style=flat-square)](https://pypi.org/project/DAJIN2/)
 
 ⚠️ DAJIN2 is currently under development ⚠️
 
@@ -83,4 +84,6 @@ options:
 
 ## Reference
 
+```text
 Kuno A, Ikeda Y, Ayabe S, Kato K, Sakamoto K, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. PLOS Biology 20(1): e3001507. https://doi.org/10.1371/journal.pbio.3001507
+```
