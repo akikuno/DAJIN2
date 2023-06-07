@@ -109,9 +109,9 @@ def execute_batch_mode(arguments: dict[str]):
         inputs.append(df_batchfile.columns.to_list())
         inputs += df_batchfile.values.tolist()
     except ValueError:
-    # From CSV file
+        # From CSV file
         with open(path_batchfile) as f:
-            inputs = [row for row in csv.reader(f, skipinitialspace=True, delimiter=',')]
+            inputs = [row for row in csv.reader(f, skipinitialspace=True, delimiter=",")]
 
     ################################################################################
     # Validate Column of the batch file

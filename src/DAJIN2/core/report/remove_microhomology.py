@@ -41,9 +41,9 @@ def format_next_align(next_align, len_microhomology, next_cigar, next_seq_trimme
     next_align[3] = str(int(next_align[3]) + len_microhomology)
     next_cigar_split = [c for c in split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
     next_cigar_split[0] = str(int(next_cigar_split[0][:-1]) - len_microhomology) + next_cigar_split[0][-1]
-    # TODO Check the condition when the beggining of CIGAR < 0
-    if "-" in next_cigar_split[0]:
-        return None
+    # # TODO Check the condition when the beggining of CIGAR < 0
+    # if "-" in next_cigar_split[0]:
+    #     return None
     next_align[5] = "".join(next_cigar_split)
     next_align[9] = next_seq_trimmed[len_microhomology:]
     next_align[10] = next_qual_trimmed[len_microhomology:]
@@ -54,10 +54,9 @@ def process_alignments(alignments):
     idx = 0
     while idx < len(alignments) - 1:
         current_align, next_align = alignments[idx], alignments[idx + 1]
-        #
         current_cigar, next_cigar = current_align[5], next_align[5]
         current_seq, next_seq = current_align[9], next_align[9]
-        current_qual, next_qual = current_align[10], next_align[10]
+        next_qual = next_align[10]
         # trim softclip
         current_seq_trimmed = trim_softclip(current_cigar, current_seq)
         next_seq_trimmed = trim_softclip(next_cigar, next_seq)

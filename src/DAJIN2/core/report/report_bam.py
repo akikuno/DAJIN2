@@ -5,17 +5,17 @@ import re
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
-from typing import Union
 
 import midsv
 import pysam
 
+from DAJIN2.core.report.reverse_sam import reverse_sam
 from DAJIN2.core.report.remove_microhomology import remove_microhomology
 
 
-def revcomp(sequence: str) -> str:
-    complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-    return "".join(complement[nt] for nt in sequence[::-1])
+# def revcomp(sequence: str) -> str:
+#     complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
+#     return "".join(complement[nt] for nt in sequence[::-1])
 
 
 def split_cigar(CIGAR: str) -> list[str]:
@@ -34,13 +34,6 @@ def calc_length(CIGAR: str) -> int:
         if re.search(r"[MD=X]", c[-1]):
             seq_length += int(c[:-1])
     return seq_length
-
-
-def write_sam(sam: list[list[str]], path_sam: Union[str, Path]):
-    path_sam = str(path_sam)
-    sam = ["\t".join(s) for s in sam]
-    sam = "\n".join(sam)
-    Path(path_sam).write_text(sam + "\n")
 
 
 def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
@@ -74,40 +67,31 @@ def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
     return sam_trimmed
 
 
-def trim_softclip(CIGAR: str, SEQ: str) -> str:
-    cigar_split = split_cigar(CIGAR)
-    if cigar_split[0].endswith("S"):
-        SEQ = SEQ[int(cigar_split[0][:-1]) :]
-    if cigar_split[-1].endswith("S"):
-        SEQ = SEQ[: -int(cigar_split[-1][:-1])]
-    return SEQ
-
-
-def reverse_sam(sam_contents: list[list[str]], genome_end: int) -> list[str]:
-    sam_flags = [str(s) for s in [0, 16, 2048, 2064]]
-    sam_reversed = []
-    for sam_content in sam_contents:
-        sam_update = sam_content.copy()
-        sam_flag = sam_content[1]
-        if sam_flag == sam_flags[0]:
-            sam_flag = sam_flags[1]
-        elif sam_flag == sam_flags[1]:
-            sam_flag = sam_flags[0]
-        elif sam_flag == sam_flags[2]:
-            sam_flag = sam_flags[3]
-        else:
-            sam_flag = sam_flags[2]
-        sam_update[1] = sam_flag
-        sam_cigar = sam_content[5]
-        sam_cigar = "".join(split_cigar(sam_cigar)[::-1])
-        sam_update[5] = sam_cigar
-        sam_start = int(sam_content[3])
-        sam_length = calc_length(sam_cigar)
-        sam_update[3] = str(genome_end - (sam_start + sam_length) + 2)
-        sam_update[9] = revcomp(sam_content[9])
-        sam_update[10] = sam_content[10][::-1]
-        sam_reversed.append(sam_update)
-    return sam_reversed
+# def reverse_sam(sam_contents: list[list[str]], genome_end: int) -> list[str]:
+#     sam_flags = [str(s) for s in [0, 16, 2048, 2064]]
+#     sam_reversed = []
+#     for sam_content in sam_contents:
+#         sam_update = sam_content.copy()
+#         sam_flag = sam_content[1]
+#         if sam_flag == sam_flags[0]:
+#             sam_flag = sam_flags[1]
+#         elif sam_flag == sam_flags[1]:
+#             sam_flag = sam_flags[0]
+#         elif sam_flag == sam_flags[2]:
+#             sam_flag = sam_flags[3]
+#         else:
+#             sam_flag = sam_flags[2]
+#         sam_update[1] = sam_flag
+#         sam_cigar = sam_content[5]
+#         sam_cigar = "".join(split_cigar(sam_cigar)[::-1])
+#         sam_update[5] = sam_cigar
+#         sam_start = int(sam_content[3])
+#         sam_length = calc_length(sam_cigar)
+#         sam_update[3] = str(genome_end - (sam_start + sam_length) + 2)
+#         sam_update[9] = revcomp(sam_content[9])
+#         sam_update[10] = sam_content[10][::-1]
+#         sam_reversed.append(sam_update)
+#     return sam_reversed
 
 
 def realign(sam: list[list[str]], GENOME_COODINATES: dict, CHROME_SIZE: int) -> list[str]:
@@ -180,10 +164,17 @@ def subset_reads(name, sam_content, qnames_by_name):
 ###############################################################################
 
 
+def output_sorted_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str | Path, threads: int = 1) -> None:
+    formatted_sam = "\n".join("\t".join(s) for s in sam)
+    Path(path_sam).write_text(formatted_sam + "\n")
+    pysam.sort("-@", f"{threads}", "-o", str(path_bam), str(path_sam))
+    pysam.index("-@", f"{threads}", str(path_bam))
+
+
 def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
-    intput_path_sam = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
-    sam = list(midsv.read_sam(intput_path_sam))
+    path_sam_input = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
+    sam = list(midsv.read_sam(path_sam_input))
     # Update sam
     sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)
@@ -191,22 +182,18 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
     # Output SAM/BAM
-    output_path_sam = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
-    output_path_bam = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
-    write_sam(sam_update, output_path_sam)
-    pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
-    pysam.index("-@", f"{THREADS}", str(output_path_bam))
+    path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
+    path_bam_output = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
+    output_sorted_bam(sam_update, path_sam_output, path_bam_output, THREADS)
     # igvjs
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
     qnames = [s[0] for s in sam_contents[:10000]]
     qnames = set(list(set(qnames))[:100])
     sam_subset = [s for s in sam_update if s[0] in qnames]
-    output_path_sam = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control_cache.sam")
-    write_sam(sam_headers + sam_subset, output_path_sam)
-    path_bam = Path(TEMPDIR, "cache", ".igvjs", f"{CONTROL_NAME}_control.bam")
-    pysam.sort("-@", f"{THREADS}", "-o", str(path_bam), str(output_path_sam))
-    pysam.index("-@", f"{THREADS}", str(path_bam))
+    path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control_cache.sam")
+    path_bam_output = Path(TEMPDIR, "cache", ".igvjs", f"{CONTROL_NAME}_control.bam")
+    output_sorted_bam(sam_headers + sam_subset, path_sam_output, path_bam_output, THREADS)
     # Remove temporary files
     sam_temp = Path(TEMPDIR, "report", "BAM").glob(f"tmp{randomnum}*.sam")
     [s.unlink() for s in sam_temp]
@@ -214,8 +201,8 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
 
 def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS):
     randomnum = random.randint(100_000, 999_999)
-    input_path_sam = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
-    sam = list(midsv.read_sam(input_path_sam))
+    path_sam_input = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
+    sam = list(midsv.read_sam(path_sam_input))
     # Update sam
     sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)
@@ -223,11 +210,9 @@ def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODIN
     if GENOME:
         sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
     # Output SAM/BAM
-    output_path_sam = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
-    output_path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")
-    write_sam(sam_update, output_path_sam)
-    pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
-    pysam.index("-@", f"{THREADS}", str(output_path_bam))
+    path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
+    path_bam_output = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")
+    output_sorted_bam(sam_update, path_sam_output, path_bam_output, THREADS)
     # Prepare SAM according to LABEL
     sam_headers = [s for s in sam_update if s[0].startswith("@")]
     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
@@ -236,18 +221,14 @@ def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODIN
     # Output SAM/BAM
     for name, sam_content in sam_groups.items():
         # BAM
-        output_path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
-        output_path_bam = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}_{name}.bam")
-        write_sam(sam_headers + sam_content, output_path_sam)
-        pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
-        pysam.index("-@", f"{THREADS}", str(output_path_bam))
+        path_sam_output = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
+        path_bam_output = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}_{name}.bam")
+        output_sorted_bam(sam_headers + sam_content, path_sam_output, path_bam_output, THREADS)
         # igvjs
         sam_subset = subset_reads(name, sam_content, qnames_by_name)
-        output_path_sam = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
-        write_sam(sam_headers + sam_subset, output_path_sam)
-        output_path_bam = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{name}.bam")
-        pysam.sort("-@", f"{THREADS}", "-o", str(output_path_bam), str(output_path_sam))
-        pysam.index("-@", f"{THREADS}", str(output_path_bam))
+        path_sam_output = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
+        path_bam_output = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{name}.bam")
+        output_sorted_bam(sam_headers + sam_subset, path_sam_output, path_bam_output, THREADS)
     # Remove temporary files
     sam_temp = Path(TEMPDIR, "report", "bam").glob(f"tmp{randomnum}*.sam")
     [s.unlink() for s in sam_temp]
