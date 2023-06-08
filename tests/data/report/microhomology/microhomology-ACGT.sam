@@ -1,0 +1,3 @@
+@SQ	SN:microhomology-ACGT	LN:608
+microhomology-ACGT	0	microhomology-ACGT	555	20	50S54M	*	0	0	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCACGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@!!!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	NM:i:0	ms:i:108	AS:i:108	nn:i:0	tp:A:P	cm:i:39	s1:i:53	s2:i:0	de:f:0	SA:Z:microhomology-ACGT,1,+,54M50S,29,0;	rl:i:0
+microhomology-ACGT	2048	microhomology-ACGT	1	29	54M50H	*	0	0	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCACGT	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@!!!!	NM:i:0	ms:i:108	AS:i:108	nn:i:0	tp:A:P	cm:i:36	s1:i:53	s2:i:48	de:f:0	SA:Z:microhomology-ACGT,555,+,50S54M,20,0;	rl:i:0

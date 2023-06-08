@@ -20,11 +20,29 @@ def test_remove_overlapped_reads():
     assert test == answer
 
 
-def test_remove_microhomology():
-    sam = midsv.read_sam("tests/data/report/report_bam/microhomology-deletion.sam")
+def test_remove_microhomology_ACGT():
+    sam = midsv.read_sam("tests/data/report/microhomology/microhomology-ACGT.sam")
     sam = list(sam)
     test = remove_microhomology(sam)
-    answer = Path("tests/data/report/report_bam/answer.txt").read_text()
+    answer = Path("tests/data/report/microhomology/microhomology-ACGT-answer.txt").read_text()
+    answer = eval(answer)
+    assert test == answer
+
+
+def test_remove_microhomology_insertion():
+    sam = midsv.read_sam("tests/data/report/microhomology/microhomology-insertion.sam")
+    sam = list(sam)
+    test = remove_microhomology(sam)
+    answer = Path("tests/data/report/microhomology/microhomology-insertion-answer.txt").read_text()
+    answer = eval(answer)
+    assert test == answer
+
+
+def test_remove_microhomology_deletion():
+    sam = midsv.read_sam("tests/data/report/microhomology/microhomology-deletion.sam")
+    sam = list(sam)
+    test = remove_microhomology(sam)
+    answer = Path("tests/data/report/microhomology/microhomology-deletion-answer.txt").read_text()
     answer = eval(answer)
     assert test == answer
 
