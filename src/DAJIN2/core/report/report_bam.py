@@ -13,11 +13,6 @@ from DAJIN2.core.report.reverse_sam import reverse_sam
 from DAJIN2.core.report.remove_microhomology import remove_microhomology
 
 
-# def revcomp(sequence: str) -> str:
-#     complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-#     return "".join(complement[nt] for nt in sequence[::-1])
-
-
 def split_cigar(CIGAR: str) -> list[str]:
     cigar = re.split(r"([MDISH=X])", CIGAR)
     n = len(cigar)
@@ -65,33 +60,6 @@ def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
         else:
             sam_trimmed += alignments
     return sam_trimmed
-
-
-# def reverse_sam(sam_contents: list[list[str]], genome_end: int) -> list[str]:
-#     sam_flags = [str(s) for s in [0, 16, 2048, 2064]]
-#     sam_reversed = []
-#     for sam_content in sam_contents:
-#         sam_update = sam_content.copy()
-#         sam_flag = sam_content[1]
-#         if sam_flag == sam_flags[0]:
-#             sam_flag = sam_flags[1]
-#         elif sam_flag == sam_flags[1]:
-#             sam_flag = sam_flags[0]
-#         elif sam_flag == sam_flags[2]:
-#             sam_flag = sam_flags[3]
-#         else:
-#             sam_flag = sam_flags[2]
-#         sam_update[1] = sam_flag
-#         sam_cigar = sam_content[5]
-#         sam_cigar = "".join(split_cigar(sam_cigar)[::-1])
-#         sam_update[5] = sam_cigar
-#         sam_start = int(sam_content[3])
-#         sam_length = calc_length(sam_cigar)
-#         sam_update[3] = str(genome_end - (sam_start + sam_length) + 2)
-#         sam_update[9] = revcomp(sam_content[9])
-#         sam_update[10] = sam_content[10][::-1]
-#         sam_reversed.append(sam_update)
-#     return sam_reversed
 
 
 def realign(sam: list[list[str]], GENOME_COODINATES: dict, CHROME_SIZE: int) -> list[str]:
