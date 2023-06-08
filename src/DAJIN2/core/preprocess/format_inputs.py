@@ -87,9 +87,10 @@ def fetch_coordinate(genome: str, ucsc_url: str, seq: str) -> dict:
     coordinate_start, coordinate_end = _fetch_seq(seq_start), _fetch_seq(seq_end)
 
     chromosome, strand = coordinate_start[0], coordinate_start[1]
-    start, end = int(coordinate_start[2]), int(coordinate_end[3])
-    if start > end:
-        start, end = end, start
+    if strand == "+":
+        start, end = int(coordinate_start[2]), int(coordinate_end[3])
+    else:
+        start, end = int(coordinate_end[2]), int(coordinate_start[3])
 
     return {"chr": chromosome, "start": start, "end": end, "strand": strand}
 
