@@ -22,59 +22,94 @@ def trim_softclip(CIGAR: str, SEQ: str) -> str:
     return SEQ
 
 
-def split_contents(sam):
+def split_contents(sam: list[list[str]]) -> list[list[str]]:
     sam_headers = [s for s in sam if s[0].startswith("@")]
     sam_contents = [s for s in sam if not s[0].startswith("@") and s[9] != "*"]
     sam_contents.sort(key=lambda x: [x[0], int(x[3])])
     return sam_headers, sam_contents
 
 
-def check_microhomology(current_seq_trimmed, next_seq_trimmed):
+def check_microhomology(curr_seq_trimmed: str, next_seq_trimmed: str) -> int:
     len_microhomology = 0
-    for i in range(1, min(len(current_seq_trimmed), len(next_seq_trimmed))):
-        if current_seq_trimmed[-i:] == next_seq_trimmed[:i]:
+    for i in range(1, min(len(curr_seq_trimmed), len(next_seq_trimmed))):
+        if curr_seq_trimmed[-i:] == next_seq_trimmed[:i]:
             len_microhomology = i
     return len_microhomology
 
 
-def format_next_align(next_align, len_microhomology, next_cigar, next_seq_trimmed, next_qual_trimmed):
-    next_align[3] = str(int(next_align[3]) + len_microhomology)
-    next_cigar_split = [c for c in split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
-    next_cigar_split[0] = str(int(next_cigar_split[0][:-1]) - len_microhomology) + next_cigar_split[0][-1]
-    # # TODO Check the condition when the beggining of CIGAR < 0
-    # if "-" in next_cigar_split[0]:
-    #     return None
-    next_align[5] = "".join(next_cigar_split)
-    next_align[9] = next_seq_trimmed[len_microhomology:]
-    next_align[10] = next_qual_trimmed[len_microhomology:]
-    return next_align
+def count_mutations_in_microhomology(cigar_split: list, len_microhomology: int) -> int:
+    """Count the number of mutations within the microhomology based on a CIGAR list."""
+    total_num = 0
+    count_mutation = 0
+    for cigar in cigar_split:
+        num, op = int(cigar[:-1]), cigar[-1]
+        total_num += num
+        # Stop counting when total_num reaches the length of microhomology
+        if total_num >= len_microhomology:
+            break
+        # Increment mutation count for non-match operations
+        if op != "M":
+            count_mutation += num
+    return count_mutation
 
 
-def process_alignments(alignments):
+def trim_cigar_on_microhomology(cigar_split: list, len_microhomology: int) -> tuple(str, int):
+    """Trim CIGAR based on the length of the microhomology."""
+    cigar_trimmed = cigar_split[::-1]
+    total_num = 0
+    num_deleletion = 0
+    while total_num < len_microhomology:
+        cigar = cigar_trimmed.pop()
+        num, op = int(cigar[:-1]), cigar[-1]
+        # Skip deletion operations
+        if op == "D":
+            num_deleletion += num
+            continue
+        total_num += num
+        # Only append to the list when total_num is greater or equal to len_microhomology
+        if total_num > len_microhomology:
+            num = total_num - len_microhomology
+            cigar_trimmed.append(f"{num}{op}")
+    return "".join(cigar_trimmed[::-1]), num_deleletion
+
+
+def process_alignments(alignments: list[list[str]]) -> list[list[str]]:
     idx = 0
     while idx < len(alignments) - 1:
-        current_align, next_align = alignments[idx], alignments[idx + 1]
-        current_cigar, next_cigar = current_align[5], next_align[5]
-        current_seq, next_seq = current_align[9], next_align[9]
+        curr_align, next_align = alignments[idx], alignments[idx + 1]
+        curr_cigar, next_cigar = curr_align[5], next_align[5]
+        curr_seq, next_seq = curr_align[9], next_align[9]
         next_qual = next_align[10]
         # trim softclip
-        current_seq_trimmed = trim_softclip(current_cigar, current_seq)
+        curr_seq_trimmed = trim_softclip(curr_cigar, curr_seq)
         next_seq_trimmed = trim_softclip(next_cigar, next_seq)
         next_qual_trimmed = trim_softclip(next_cigar, next_qual)
         # Check the length of microhomology
-        len_microhomology = check_microhomology(current_seq_trimmed, next_seq_trimmed)
+        len_microhomology = check_microhomology(curr_seq_trimmed, next_seq_trimmed)
         # Continue if no microhomology exists
         if len_microhomology == 0:
             idx += 1
             continue
-        # Correct start, cigar, seq, qual if microhomology exists
-        next_align = format_next_align(next_align, len_microhomology, next_cigar, next_seq_trimmed, next_qual_trimmed)
-        if next_align is not None:
-            alignments[idx + 1] = next_align
+        # Update CIGAR
+        curr_cigar_splitted = [c for c in split_cigar(curr_cigar) if not re.search(r"[SH]$", c)]
+        next_cigar_splitted = [c for c in split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
+        mutations_in_curr = count_mutations_in_microhomology(curr_cigar_splitted[::-1], len_microhomology)
+        mutations_in_next = count_mutations_in_microhomology(next_cigar_splitted, len_microhomology)
+        # Update START, CIGAR, SEQ, QUAL to the more mismatched alignment within microhomology
+        if mutations_in_next >= mutations_in_curr:
+            alignments[idx + 1][5], num_del = trim_cigar_on_microhomology(next_cigar_splitted, len_microhomology)
+            alignments[idx + 1][3] = str(int(next_align[3]) + len_microhomology + num_del)
+            alignments[idx + 1][9] = next_seq_trimmed[len_microhomology:]
+            alignments[idx + 1][10] = next_qual_trimmed[len_microhomology:]
+        else:
+            alignments[idx][5], num_del = trim_cigar_on_microhomology(next_cigar_splitted, len_microhomology)
+            alignments[idx][3] = str(int(alignments[idx][3]) + num_del)
+            alignments[idx][9] = next_seq_trimmed[:-len_microhomology]
+            alignments[idx][10] = next_qual_trimmed[:-len_microhomology:]
         idx += 1
 
 
-def remove_microhomology(sam):
+def remove_microhomology(sam: list[list[str]]) -> list[list[str]]:
     sam_headers, sam_contents = split_contents(sam)
     sam_trimmed = sam_headers.copy()
     for _, group in groupby(sam_contents, key=lambda x: x[0]):
