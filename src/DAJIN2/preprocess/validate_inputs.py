@@ -99,7 +99,7 @@ def _check_url_availabilities(urls: list[str]) -> list[bool]:
     for url in urls:
         try:
             _ = urlopen(url, timeout=10)
-        except URLError:
+        except TimeoutError:
             availabilities.append(False)
         else:
             availabilities.append(True)

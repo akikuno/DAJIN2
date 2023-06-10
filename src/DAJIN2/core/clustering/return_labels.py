@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 def reduce_dimension(scores_sample: Generator[list], scores_control: Generator[list]) -> np.array:
     scores = list(chain(scores_sample, scores_control))
-    pca = PCA(n_components=20).fit(scores)
+    pca = PCA(n_components=min(20, len(scores))).fit(scores)
     return pca.transform(scores)
 
 
@@ -73,34 +73,24 @@ def count_newlines(filepath: Path | str) -> int:
 ###############################################################################
 
 
+def get_label_most(labels: list[int]) -> int:
+    return Counter(labels).most_common()[0][0]
+
+
+def subset_scores(labels: list[int], scores: list[int], label_most: int, length: int = 1000) -> list[int]:
+    subset = [score for label, score in zip(labels, scores) if label == label_most]
+    return subset[:length]
+
+
 def return_labels(path_score_sample: Path | str, path_score_control: Path | str) -> list[int]:
     np.random.seed(seed=1)
-    # Remove abnormal minor reads from control
     X_control = reduce_dimension([], read_json(path_score_control))
+    # subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
     labels = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)
-    label_most = Counter(labels).most_common()[0][0]
-    # Subset control to 1000 reads
-    scores_control_subset = []
-    count = 0
-    for label, score in zip(labels, read_json(path_score_control)):
-        if label == label_most:
-            scores_control_subset.append(score)
-            count += 1
-        if count == 1000:
-            break
+    label_most = get_label_most(labels)
+    scores_control_subset = subset_scores(labels, read_json(path_score_control), label_most, 1000)
     X = reduce_dimension(read_json(path_score_sample), scores_control_subset)
     coverage_sample = count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
     labels = optimize_labels(X, coverage_sample, coverage_control)
     return labels
-
-
-# def return_labels(scores_sample: Generator[list[float]], scores_control: Generator[list[float]]) -> list[int]:
-#     np.random.seed(seed=1)
-#     X_control = reduce_dimension([], scores_control)
-#     labels = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)
-#     label_most = Counter(labels).most_common()[0][0]
-#     scores_control_subset = [s for label, s in zip(labels, scores_control) if label == label_most][:1000]
-#     X = reduce_dimension(scores_sample, scores_control_subset)
-#     labels = optimize_labels(X, scores_sample, scores_control_subset)
-#     return labels
