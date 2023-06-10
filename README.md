@@ -97,6 +97,4 @@ DAJIN2 gui
 
 ## References
 
-```text
-Kuno A, Ikeda Y, Ayabe S, Kato K, Sakamoto K, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. PLOS Biology 20(1): e3001507. https://doi.org/10.1371/journal.pbio.3001507
-```
+[Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
