@@ -84,6 +84,9 @@ def execute_control(arguments: dict):
         )
         return
     print(f"{_dtnow()}: Preprocess {arguments['control']}...", file=sys.stderr)
+    ###########################################################
+    # Mapping
+    ###########################################################
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
@@ -91,7 +94,6 @@ def execute_control(arguments: dict):
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
-    print(f"{_dtnow()}: Mapping {arguments['control']}...", file=sys.stderr)
     # ============================================================
     # Mapping using mappy
     # ============================================================
@@ -101,17 +103,18 @@ def execute_control(arguments: dict):
         preprocess.mappy_align.output_sam(
             TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS
         )
-    # ============================================================
+    ###########################################################
     # MIDSV conversion
-    # ============================================================
-    print(f"{_dtnow()}: Call MIDSV {arguments['control']}...", file=sys.stderr)
+    ###########################################################
     preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     ###########################################################
-    # Save MIDSV and BAM
+    # Output BAM
     ###########################################################
-    # with open(Path(TEMPDIR, "midsv", f"{arguments['control']}.plk"), 'wb') as p:
-    #     pickle.dump(midsv_control_alleles, p)
+    print(f"{_dtnow()}: Output BAM files of {arguments['control']}...", file=sys.stderr)
     report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    ###########################################################
+    # Finish call
+    ###########################################################
     print(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!", file=sys.stderr)
 
 
@@ -145,10 +148,6 @@ def execute_sample(arguments: dict):
     KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
     with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
         pickle.dump(MUTATION_LOCI_ALLELES, p)
-    # ============================================================
-    # CSSPLITS Error Correction
-    # ============================================================
-    # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
@@ -169,7 +168,7 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Consensus call
     ########################################################################
-    print(f"{_dtnow()}: Consensus calling {arguments['sample']}...", file=sys.stderr)
+    print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
     MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
@@ -180,8 +179,9 @@ def execute_sample(arguments: dict):
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
     ########################################################################
-    # Output Report：RESULT/FASTA/HTML/BAM/VCF
+    # Output Report：RESULT/FASTA/HTML/BAM
     ########################################################################
+    print(f"{_dtnow()}: Output reports of {arguments['sample']}...", file=sys.stderr)
     # RESULT
     midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
     # FASTA
@@ -200,4 +200,7 @@ def execute_sample(arguments: dict):
         shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
     # VCF
     # working in progress
+    ###########################################################
+    # Finish call
+    ###########################################################
     print(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!", file=sys.stderr)

@@ -8,9 +8,7 @@ from typing import Generator
 
 import midsv
 
-
-def _load_sam(path_sam: str | Path) -> Generator[list[str]]:
-    return midsv.read_sam(path_sam)
+from DAJIN2.core.report.report_bam import remove_overlapped_reads
 
 
 def _split_cigar(CIGAR: str) -> list[str]:
@@ -46,7 +44,7 @@ def _has_inversion_in_splice(CIGAR: str) -> bool:
     return is_splice
 
 
-def _extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set():
+def extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set():
     """Extract qname of reads from `map-ont` when:
     - no inversion signal in `splice` alignment (insertion + deletion)
     - single read
@@ -75,7 +73,7 @@ def _extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generat
     return qname_of_map_ont
 
 
-def _extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset: str = "map-ont") -> Generator[list[str]]:
+def extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset: str = "map-ont") -> Generator[list[str]]:
     for alignment in sam:
         if alignment[0].startswith("@"):
             yield alignment
@@ -87,12 +85,12 @@ def _extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset: str =
                 yield alignment
 
 
-def _midsv_transform(sam: Generator[list[str]]) -> Generator[list[str]]:
+def midsv_transform(sam: Generator[list[str]]) -> Generator[list[str]]:
     for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False):
         yield midsv_sample
 
 
-def _replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> Generator[dict[str, str]]:
+def replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> Generator[dict[str, str]]:
     for samp in midsv_sample:
         qname = samp["QNAME"]
         cssplits = samp["CSSPLIT"].split(",")
@@ -115,16 +113,26 @@ def _replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> Generator
         yield {"QNAME": qname, "CSSPLIT": ",".join(cssplits)}
 
 
+###########################################################
+# main
+###########################################################
+
+
 def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
         path_ont = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_{allele}.sam")
         path_splice = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_splice_{allele}.sam")
-        qname_of_map_ont = _extract_qname_of_map_ont(_load_sam(path_ont), _load_sam(path_splice))
-        sam_of_map_ont = _extract_sam(_load_sam(path_ont), qname_of_map_ont, preset="map-ont")
-        sam_of_splice = _extract_sam(_load_sam(path_splice), qname_of_map_ont, preset="splice")
+        sam_ont = remove_overlapped_reads(list(midsv.read_sam(path_ont)))
+        sam_splice = remove_overlapped_reads(list(midsv.read_sam(path_splice)))
+        qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
+        sam_of_map_ont = extract_sam(sam_ont, qname_of_map_ont, preset="map-ont")
+        sam_of_splice = extract_sam(sam_splice, qname_of_map_ont, preset="splice")
+        # qname_of_map_ont = extract_qname_of_map_ont(midsv.read_sam(path_ont), midsv.read_sam(path_splice))
+        # sam_of_map_ont = extract_sam(midsv.read_sam(path_ont), qname_of_map_ont, preset="map-ont")
+        # sam_of_splice = extract_sam(midsv.read_sam(path_splice), qname_of_map_ont, preset="splice")
         sam_chained = chain(sam_of_map_ont, sam_of_splice)
-        midsv_chaind = _midsv_transform(sam_chained)
-        midsv_sample = _replaceNtoD(midsv_chaind, sequence)
+        midsv_chaind = midsv_transform(sam_chained)
+        midsv_sample = replaceNtoD(midsv_chaind, sequence)
         filepath = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
         with open(filepath, "wt", encoding="utf-8") as f:
             for data in midsv_sample:
