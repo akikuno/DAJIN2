@@ -50,8 +50,8 @@ def _format_inputs(arguments: dict):
     SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
-    IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
-    IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+    IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)
+    IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
     if GENOME:
         if not IS_CACHE_GENOME:
             GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
@@ -73,10 +73,9 @@ def execute_control(arguments: dict):
     # Preprocess
     ###########################################################
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    # preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
     _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(arguments)
     ###########################################################
-    # Save Caches
+    # Check caches
     ###########################################################
     if Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam").exists():
         print(
@@ -122,7 +121,6 @@ def execute_sample(arguments: dict):
     # Preprocess
     ###########################################################
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    # preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
     SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
         arguments
     )

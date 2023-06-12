@@ -33,7 +33,7 @@ def execute_single_mode(arguments: dict[str]):
     validate_files(arguments["sample"], arguments["control"], arguments["allele"])
     URLS_GENOME: dict[str, dict[str, str]] = dict()
     if "genome" in arguments:
-        URLS_GENOME.update({arguments["genome"]: validate_genome_and_fetch_urls(arguments["genome"])})
+        URLS_GENOME[arguments["genome"]] = validate_genome_and_fetch_urls(arguments["genome"])
         arguments.update(URLS_GENOME[arguments["genome"]])
     ##############################################################################
     # Perform DAJIN2
@@ -135,7 +135,7 @@ def execute_batch_mode(arguments: dict[str]):
             validate_files(args["sample"], args["control"], args["allele"])
             URLS_GENOME: dict[str, dict[str, str]] = dict()
             if "genome" in args and not args["genome"] in URLS_GENOME:
-                URLS_GENOME.update({args["genome"]: validate_genome_and_fetch_urls(args["genome"])})
+                URLS_GENOME[args["genome"]] = validate_genome_and_fetch_urls(args["genome"])
     ##############################################################################
     # Perform DAJIN2
     ##############################################################################
