@@ -9,7 +9,7 @@ with open("requirements.txt") as requirements_file:
 
 setuptools.setup(
     name="DAJIN2",
-    version="0.2.4",
+    version="0.2.5a1",
     author="Akihiro Kuno",
     author_email="akuno@md.tsukuba.ac.jp",
     description="One-step genotyping tools for Targeted long-read sequencing",
@@ -24,11 +24,13 @@ setuptools.setup(
     entry_points={"console_scripts": ["DAJIN2=DAJIN2.main:execute"]},
     include_package_data=True,
     classifiers=[
+        "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX",
-        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
 )
