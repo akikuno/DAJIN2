@@ -1,5 +1,6 @@
 [![License](https://img.shields.io/badge/License-MIT-9cf.svg?style=flat-square)](https://choosealicense.com/licenses/mit/)
 [![PyPI](https://img.shields.io/pypi/v/DAJIN2.svg?label=PyPI&color=orange&style=flat-square)](https://pypi.org/project/DAJIN2/)
+[![Python](https://img.shields.io/pypi/pyversions/DAJIN2.svg?label=Python&color=blue&style=flat-square)](https://pypi.org/project/DAJIN2/)
 
 ⚠️ DAJIN2 is currently under development ⚠️
 
@@ -65,7 +66,7 @@ DAJIN2 \
 
 ### Batch-mode
 
-DAJIN2 can handle multiple FASTQ files via `batch` subcommand.
+DAJIN2 can handle multiple FASTQ files using the `batch' subcommand.
 
 ```bash
 DAJIN2 batch [-h] -f FILE [-t THREADS]
@@ -81,6 +82,19 @@ options:
 
 🚧 Working in progress 🚧
 
-## Reference
+### GUI-mode
 
-Kuno A, Ikeda Y, Ayabe S, Kato K, Sakamoto K, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. PLOS Biology 20(1): e3001507. https://doi.org/10.1371/journal.pbio.3001507
+You can use DAJIN2 with a graphical user interface (GUI) via the `gui` subcommand.
+
+```bash
+DAJIN2 gui
+```
+
+#### Example
+
+🚧 Working in progress 🚧
+
+
+## References
+
+[Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)

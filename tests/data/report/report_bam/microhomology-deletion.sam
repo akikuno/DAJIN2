@@ -1,9 +1,0 @@
-@SQ	SN:microhomology-deletion	LN:608
-@PG	ID:minimap2	PN:minimap2	VN:2.24-r1122	CL:minimap2 -ax map-ont tests/data/mappy/microhomology-deletion.fa tests/data/mappy/microhomology-deletion.fq
-microhomology-deletion	0	microhomology-deletion	555	20	50S54M	*	0	0	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCACGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@!!!!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@	NM:i:0	ms:i:108	AS:i:108	nn:i:0	tp:A:P	cm:i:39	s1:i:53	s2:i:0	de:f:0	SA:Z:microhomology-deletion,1,+,54M50S,29,0;	rl:i:0
-microhomology-deletion	2048	microhomology-deletion	1	29	54M50H	*	0	0	CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCACGT	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@!!!!	NM:i:0	ms:i:108	AS:i:108	nn:i:0	tp:A:P	cm:i:36	s1:i:53	s2:i:48	de:f:0	SA:Z:microhomology-deletion,555,+,50S54M,20,0;	rl:i:0
-microhomology-deletion	256	microhomology-deletion	1	0	2S48M54S	*	0	0	*	*	NM:i:0	ms:i:96	AS:i:90	nn:i:0	tp:A:S	cm:i:33	s1:i:48	de:f:0	rl:i:0
-microhomology-deletion	256	microhomology-deletion	3	0	48M56S	*	0	0	*	*	NM:i:0	ms:i:96	AS:i:90	nn:i:0	tp:A:S	cm:i:33	s1:i:48	de:f:0	rl:i:0
-microhomology-deletion	256	microhomology-deletion	4	0	47M57S	*	0	0	*	*	NM:i:0	ms:i:94	AS:i:88	nn:i:0	tp:A:S	cm:i:32	s1:i:47	de:f:0	rl:i:0
-microhomology-deletion	256	microhomology-deletion	1	0	3S47M54S	*	0	0	*	*	NM:i:0	ms:i:94	AS:i:88	nn:i:0	tp:A:S	cm:i:32	s1:i:47	de:f:0	rl:i:0
-microhomology-deletion	256	microhomology-deletion	5	0	46M58S	*	0	0	*	*	NM:i:0	ms:i:92	AS:i:86	nn:i:0	tp:A:S	cm:i:31	s1:i:46	de:f:0	rl:i:0

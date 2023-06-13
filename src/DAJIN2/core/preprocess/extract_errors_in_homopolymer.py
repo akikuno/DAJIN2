@@ -7,7 +7,7 @@ import scipy
 from statsmodels.nonparametric.smoothers_lowess import lowess as sm_lowess
 
 
-def get_repeat_regions(sequence: str, candidates: set(int)) -> list[tuple[int, int]]:
+def get_repeat_regions(sequence: str, candidate_loci: set(int)) -> list[tuple[int, int]]:
     """
     Find homopolymers in the sequence but discard them that
     are adjacent to candidate mutation loci because they are
@@ -16,7 +16,7 @@ def get_repeat_regions(sequence: str, candidates: set(int)) -> list[tuple[int, i
     pattern = r"A{4,}|C{4,}|G{4,}|T{4,}|N{4,}"
     repeat_regions = []
     for start, end in (match.span() for match in re.finditer(pattern, sequence)):
-        if not (start - 1 in candidates and end + 1 in candidates):
+        if not (start - 1 in candidate_loci and end + 1 in candidate_loci):
             repeat_regions.append((start, end))
     return repeat_regions
 
@@ -124,6 +124,8 @@ def get_errors_in_homopolyer(mutation_counts_regions, thresholds) -> set(int):
 
 def extract_errors_in_homopolymer(indels_sample_mut, indels_control_mut, sequence, candidate_loci) -> set(int):
     repeat_regions = get_repeat_regions(sequence, candidate_loci)
+    if repeat_regions == []:
+        return set()
     mutation_counts, mutation_counts_regions = get_counts_homopolymer(
         indels_sample_mut, indels_control_mut, repeat_regions
     )

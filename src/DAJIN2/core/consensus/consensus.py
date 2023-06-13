@@ -96,18 +96,19 @@ def _detect_sv(cons_percentage: defaultdict[list], threshold: int = 50) -> list[
 ###########################################################
 
 
-def call_consensus(clust_sample: list[dict], MUTATION_LOCI_ALLELES) -> tuple[defaultdict[list], defaultdict[str]]:
+def call_consensus(clust_sample: list[dict], MUTATION_LOCI_LABELS) -> tuple[defaultdict[list], defaultdict[str]]:
     cons_percentage = defaultdict(list)
     cons_sequence = defaultdict(str)
     clust_sample.sort(key=lambda x: x["LABEL"])
-    for _, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
+    for label, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
         clust = list(group)
         keys = (
             clust[0]["ALLELE"],
             clust[0]["LABEL"],
             clust[0]["PERCENT"],
         )
-        mutation_loci = MUTATION_LOCI_ALLELES[clust[0]["ALLELE"]]
+        # mutation_loci = MUTATION_LOCI_ALLELES[clust[0]["ALLELE"]]
+        mutation_loci = MUTATION_LOCI_LABELS[label]
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
         cons_per = _call_percentage(cssplits, mutation_loci)
         cons_per = _replace_percentage(cons_per)

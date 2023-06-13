@@ -50,11 +50,11 @@ def _format_inputs(arguments: dict):
     SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
-    IS_CACHE_CONTROL = preprocess.validate_inputs.exists_cached_control(CONTROL, TEMPDIR)
-    IS_CACHE_GENOME = preprocess.validate_inputs.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+    IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)
+    IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
     if GENOME:
         if not IS_CACHE_GENOME:
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coodinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
+            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
             CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, URL_GOLDENPATH)
             preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
         else:
@@ -73,10 +73,9 @@ def execute_control(arguments: dict):
     # Preprocess
     ###########################################################
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    # preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
     _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(arguments)
     ###########################################################
-    # Save Caches
+    # Check caches
     ###########################################################
     if Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam").exists():
         print(
@@ -85,6 +84,9 @@ def execute_control(arguments: dict):
         )
         return
     print(f"{_dtnow()}: Preprocess {arguments['control']}...", file=sys.stderr)
+    ###########################################################
+    # Mapping
+    ###########################################################
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
@@ -92,7 +94,6 @@ def execute_control(arguments: dict):
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
         output_fasta.write_text(contents)
-    print(f"{_dtnow()}: Mapping {arguments['control']}...", file=sys.stderr)
     # ============================================================
     # Mapping using mappy
     # ============================================================
@@ -102,17 +103,18 @@ def execute_control(arguments: dict):
         preprocess.mappy_align.output_sam(
             TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS
         )
-    # ============================================================
+    ###########################################################
     # MIDSV conversion
-    # ============================================================
-    print(f"{_dtnow()}: Call MIDSV {arguments['control']}...", file=sys.stderr)
+    ###########################################################
     preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     ###########################################################
-    # Save MIDSV and BAM
+    # Output BAM
     ###########################################################
-    # with open(Path(TEMPDIR, "midsv", f"{arguments['control']}.plk"), 'wb') as p:
-    #     pickle.dump(midsv_control_alleles, p)
+    print(f"{_dtnow()}: Output BAM files of {arguments['control']}...", file=sys.stderr)
     report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    ###########################################################
+    # Finish call
+    ###########################################################
     print(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!", file=sys.stderr)
 
 
@@ -122,7 +124,6 @@ def execute_sample(arguments: dict):
     # Preprocess
     ###########################################################
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    # preprocess.validate_inputs.check_files(SAMPLE, CONTROL, ALLELE)
     SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
         arguments
     )
@@ -144,13 +145,9 @@ def execute_sample(arguments: dict):
     # Extract mutation loci
     # ============================================================
     MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+    KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
     with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
         pickle.dump(MUTATION_LOCI_ALLELES, p)
-    KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
-    # ============================================================
-    # CSSPLITS Error Correction
-    # ============================================================
-    # preprocess.correct_knockin.execute(TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
@@ -166,21 +163,25 @@ def execute_sample(arguments: dict):
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
+    with open(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.plk"), "wb") as p:
+        pickle.dump(clust_sample, p)
     ########################################################################
     # Consensus call
     ########################################################################
-    print(f"{_dtnow()}: Consensus calling {arguments['sample']}...", file=sys.stderr)
+    print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
-    cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_ALLELES)
+    MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
     ########################################################################
-    # Output Report：RESULT/FASTA/HTML/BAM/VCF
+    # Output Report：RESULT/FASTA/HTML/BAM
     ########################################################################
+    print(f"{_dtnow()}: Output reports of {arguments['sample']}...", file=sys.stderr)
     # RESULT
     midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
     # FASTA
@@ -199,4 +200,7 @@ def execute_sample(arguments: dict):
         shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
     # VCF
     # working in progress
+    ###########################################################
+    # Finish call
+    ###########################################################
     print(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!", file=sys.stderr)
