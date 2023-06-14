@@ -8,7 +8,7 @@ import json
 from itertools import chain
 
 import numpy as np
-from sklearn.decomposition import PCA, NMF
+from sklearn.decomposition import PCA
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.mixture import GaussianMixture
 
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 def reduce_dimension(scores_sample: Generator[list], scores_control: Generator[list]) -> np.array:
     scores = list(chain(scores_sample, scores_control))
-    model = NMF(n_components=min(20, len(scores)))
+    model = PCA(n_components=min(20, len(scores)))
     return model.fit_transform(scores)
 
 
@@ -32,10 +32,9 @@ def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]
     n_components = min(20, coverage_sample + coverage_control)
     for i in range(1, n_components):
         np.random.seed(seed=1)
-        labels = GaussianMixture(n_components=i, random_state=1).fit_predict(X)
-        labels = labels.tolist()
-        labels_sample = labels[:coverage_sample]
-        labels_control = labels[coverage_sample:]
+        labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).to_list()
+        labels_sample = labels_all[:coverage_sample]
+        labels_control = labels_all[coverage_sample:]
         labels_merged = merge_clusters(labels_control, labels_sample)
         # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_merged))  # ! DEBUG
         # Reads < 1% in the control are considered clustering errors and are not counted
