@@ -14,7 +14,10 @@ pip install DAJIN2
 
 ## Usage
 
-### Single-mode
+You can run DAJIN2 for a single sample (one sample vs one control)
++ `batch`: analyzing and comparing multiple experimental conditions at the same site
++ `gui`: submitting data using graphical user interface (GUI)
+
 
 ```bash
 DAJIN2 [-h] [-s SAMPLE] [-c CONTROL] [-a ALLELE] [-n NAME] [-g GENOME] [-t THREADS] [-v]
@@ -64,9 +67,11 @@ DAJIN2 \
 # 🎉 Finished! Open DAJINResults/stx2-deletion to see the report.
 ```
 
-### Batch-mode
+## Alternate running modes
 
-DAJIN2 can handle multiple FASTQ files using the `batch' subcommand.
+### `batch` mode
+
+DAJIN2 can handle many FASTQ files using the `batch' subcommand.
 
 ```bash
 DAJIN2 batch [-h] -f FILE [-t THREADS]
@@ -82,9 +87,9 @@ options:
 
 🚧 Working in progress 🚧
 
-### GUI-mode
+### `gui` mode
 
-You can use DAJIN2 with a graphical user interface (GUI) via the `gui` subcommand.
+DAJIN2 can be run with a graphical user interface (GUI) via the `gui` subcommand.
 
 ```bash
 DAJIN2 gui
