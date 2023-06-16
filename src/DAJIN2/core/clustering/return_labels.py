@@ -32,7 +32,7 @@ def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]
     n_components = min(20, coverage_sample + coverage_control)
     for i in range(1, n_components):
         np.random.seed(seed=1)
-        labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).to_list()
+        labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).tolist()
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
         labels_merged = merge_clusters(labels_control, labels_sample)
