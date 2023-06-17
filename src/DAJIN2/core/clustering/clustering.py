@@ -5,44 +5,24 @@ from itertools import groupby
 from typing import Generator
 import json
 from pathlib import Path
+from DAJIN2.core.clustering.make_kmer import generate_mutation_kmers
 from DAJIN2.core.clustering.make_score import make_score
 from DAJIN2.core.clustering.return_labels import return_labels
 import random
 
 
-def generate_mutation_kmers(midsv_sample: Generator[list[str]], mutation_loci: list[set[str]]) -> Generator[list[str]]:
-    for cssplit in (cs["CSSPLIT"].split(",") for cs in midsv_sample):
-        cs_mutation = ["N,N,N"]
-        for i in range(1, len(cssplit) - 1):
-            if mutation_loci[i] == set():
-                cs_mutation.append("N,N,N")
+def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
+    for cssplit_kmer in generate_mutation_kmers(path_sample, mutation_loci):
+        score = [0 for _ in range(len(cssplit_kmer))]
+        for i, (cs_kmer, mut_score) in enumerate(zip(cssplit_kmer, mutation_score)):
+            if mut_score == {}:
                 continue
-            mutation = cssplit[i][0]  # +, - , *, =, N
-            """Insertion will be subdivided by sequence error in the its sequence,
-            so it is compressed as a '+I' to eliminate mutations.
-            #TODO ただ、これでは、insertion配列の中に真のmutationがある場合に
-            #TODO そのmutationを抽出できないので**insertion配列の中にmutationがある場合は
-            #TODO insertion配列をそのまま残す**必要がある。
-            """
-            if mutation == "+":
-                cssplit[i] = "+I" + cssplit[i].split("|")[-1]
-            if mutation in mutation_loci[i]:
-                kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
-                cs_mutation.append(kmer)
-            else:
-                cs_mutation.append("N,N,N")
-        cs_mutation.append("N,N,N")
-        yield cs_mutation
-
-
-def annotate_score(cssplits: Generator[list[str]], mutation_score: list[dict[str:float]]) -> Generator[list[float]]:
-    for cssplit in cssplits:
-        score = [0 for _ in range(len(cssplit))]
-        for i, (cs, mutscore) in enumerate(zip(cssplit, mutation_score)):
-            if mutscore == {}:
+            # Mutation sites are not considered in controls
+            # because they should be sample-specific.
+            if is_control and cs_kmer.split(",")[1][0] in mutation_loci[i]:
                 continue
-            if cs in mutscore:
-                score[i] = mutscore[cs]
+            if cs_kmer in mut_score:
+                score[i] = mut_score[cs_kmer]
         yield score
 
 
@@ -56,12 +36,6 @@ def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
             d[l] = num
         labels_ordered[i] = d[l]
     return labels_ordered
-
-
-def read_json(filepath: Path | str) -> Generator[dict[str, str]]:
-    with open(filepath, "r") as f:
-        for line in f:
-            yield json.loads(line)
 
 
 def write_json(filepath: Path | str, data: Generator) -> None:
@@ -97,14 +71,9 @@ def add_labels(
         path_sample = Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}_{allele}_{RANDOM_NUM}.json")
         path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
         write_json(path_sample, group)
-        mutation_score = make_score(
-            generate_mutation_kmers(read_json(path_sample), mutation_loci),
-            generate_mutation_kmers(read_json(path_control), mutation_loci),
-            mutation_loci,
-            knockin_loci,
-        )
-        scores_sample = annotate_score(generate_mutation_kmers(read_json(path_sample), mutation_loci), mutation_score)
-        scores_control = annotate_score(generate_mutation_kmers(read_json(path_control), mutation_loci), mutation_score)
+        mutation_score: list[dict[str, float]] = make_score(path_sample, path_control, mutation_loci, knockin_loci)
+        scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
+        scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
         path_score_sample = Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}_{allele}_score_{RANDOM_NUM}.json")
         path_score_control = Path(TEMPDIR, "clustering", f"{CONTROL_NAME}_{allele}_score_{RANDOM_NUM}.json")
         write_json(path_score_sample, scores_sample)
