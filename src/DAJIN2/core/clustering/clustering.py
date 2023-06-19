@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from collections import defaultdict
+import json
+import random
+from pathlib import Path
 from itertools import groupby
 from typing import Generator
-import json
-from pathlib import Path
+from collections import defaultdict
+
 from DAJIN2.core.clustering.make_kmer import generate_mutation_kmers
 from DAJIN2.core.clustering.make_score import make_score
 from DAJIN2.core.clustering.return_labels import return_labels
-import random
 
 
 def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
