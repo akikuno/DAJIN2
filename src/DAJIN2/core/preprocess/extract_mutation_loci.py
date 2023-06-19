@@ -75,16 +75,13 @@ def split_kmer(indels: dict[str, np.array], kmer: int = 10) -> dict[str, np.arra
 
 def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set]:
     """
-    Comparing Sample and Control, the 1. 'high similarity',  2. 'similar mean' and
-    3. 'similar variance' are considered as sequence errors.
+    Comparing Sample and Control, the 'similar mean' and
+    'similar variance' are considered as sequence errors.
     """
     results = dict()
     for mut in indels_kmer_sample:
         values_sample = indels_kmer_sample[mut]
         values_control = indels_kmer_control[mut]
-        # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
-        # When calculating cossim, uint32 returns inaccurate results so convert to float64
-        cossim = [1 - distance.cosine(x, y) for x, y in zip(values_sample, values_control)]
         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
         t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
@@ -92,11 +89,37 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
         f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(values_sample, values_control)]
         # if pvalue == nan or pval > 0.05, samples and controls are similar.
         dissimilar_loci = set()
-        for i, (sim, t_pval, f_pval) in enumerate(zip(cossim, t_pvalues, f_pvalues)):
-            if not (sim > 0.90 and t_pval > 0.05 and f_pval > 0.05):
+        for i, (t_pval, f_pval) in enumerate(zip(t_pvalues, f_pvalues)):
+            if t_pval < 0.05 or f_pval < 0.05:
                 dissimilar_loci.add(i)
         results[mut] = dissimilar_loci
     return results
+
+# def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set]:
+#     """
+#     Comparing Sample and Control, the 1. 'high similarity',  2. 'similar mean' and
+#     3. 'similar variance' are considered as sequence errors.
+#     """
+#     results = dict()
+#     for mut in indels_kmer_sample:
+#         values_sample = indels_kmer_sample[mut]
+#         values_control = indels_kmer_control[mut]
+#         # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
+#         # Zero vector does not return correct value, so add 1e-10.
+#         ## example: distance.cosine([0,0,0], [1,2,3]) retuns 0...
+#         cossim = [1 - distance.cosine(x+1e-10, y+1e-10) for x, y in zip(values_sample, values_control)]
+#         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
+#         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
+#         t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
+#         # Perform F-test: p > 0.05 means similar in variance.
+#         f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(values_sample, values_control)]
+#         # if pvalue == nan or pval > 0.05, samples and controls are similar.
+#         dissimilar_loci = set()
+#         for i, (sim, t_pval, f_pval) in enumerate(zip(cossim, t_pvalues, f_pvalues)):
+#             if not (sim > 0.90 and t_pval > 0.05 and f_pval > 0.05):
+#                 dissimilar_loci.add(i)
+#         results[mut] = dissimilar_loci
+#     return results
 
 
 def discard_errors_in_homopolymer(dissimilar_loci, errors_in_homopolymer) -> dict[str, set]:
@@ -120,23 +143,34 @@ def transpose_mutation_loci(mutation_loci: set[int], len_sequence: int) -> list[
 # main
 ###########################################################
 
+def process_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> None:
+    for allele, sequence in FASTA_ALLELES.items():
+        filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
+        indels_control = count_indels(read_midsv(filepath_control), len(sequence))
+        coverages_control = call_coverage_on_each_base(read_midsv(filepath_control), sequence)
+        indels_control_normalized = normalize_indels(indels_control, coverages_control)
+        indels_kmer_control = split_kmer(indels_control_normalized, kmer=10)
+        # Save indels_control_normalized and indels_kmer_control as pickle to reuse in consensus calling
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "wb") as f:
+            pickle.dump(indels_control_normalized, f)
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "wb") as f:
+            pickle.dump(indels_kmer_control, f)
 
-def extract_mutation_loci(
-    TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str
-) -> dict[str, list[set[str]]]:
+
+def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> dict[str, list]:
     MUTATION_LOCI_ALLELES = dict()
     for allele, sequence in FASTA_ALLELES.items():
         filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
-        filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
         indels_sample = count_indels(read_midsv(filepath_sample), len(sequence))
-        indels_control = count_indels(read_midsv(filepath_control), len(sequence))
         coverages_sample = call_coverage_on_each_base(read_midsv(filepath_sample), sequence)
-        coverages_control = call_coverage_on_each_base(read_midsv(filepath_control), sequence)
         indels_sample_normalized = normalize_indels(indels_sample, coverages_sample)
-        indels_control_normalized = normalize_indels(indels_control, coverages_control)
         indels_kmer_sample = split_kmer(indels_sample_normalized, kmer=10)
-        indels_kmer_control = split_kmer(indels_control_normalized, kmer=10)
-        # anomaly_loci = _extract_anomaly_loci(indels_kmer_sample, indels_kmer_control)
+        # Load indels_control_normalized and indels_kmer_control
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "rb") as f:
+            indels_control_normalized = pickle.load(f)
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "rb") as f:
+            indels_kmer_control = pickle.load(f)
+        # Calculate dissimilar loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         # Extract error loci in homopolymer regions
         errors_in_homopolymer = dict()
@@ -151,9 +185,4 @@ def extract_mutation_loci(
         mutation_loci = discard_errors_in_homopolymer(dissimilar_loci, errors_in_homopolymer)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, len(sequence))
         MUTATION_LOCI_ALLELES[allele] = mutation_loci_transposed
-        # Save indels_control_normalized and indels_kmer_control as pickle to reuse in consensus calling
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "wb") as f:
-            pickle.dump(indels_control_normalized, f)
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "wb") as f:
-            pickle.dump(indels_kmer_control, f)
     return MUTATION_LOCI_ALLELES

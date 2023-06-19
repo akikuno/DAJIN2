@@ -108,6 +108,10 @@ def execute_control(arguments: dict):
     ###########################################################
     preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     ###########################################################
+    # Prepare data to `extract mutaion loci`
+    ###########################################################
+    preprocess.process_mutation_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    ###########################################################
     # Output BAM
     ###########################################################
     print(f"{_dtnow()}: Output BAM files of {arguments['control']}...", file=sys.stderr)
