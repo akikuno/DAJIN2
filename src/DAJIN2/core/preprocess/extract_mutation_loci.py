@@ -9,6 +9,7 @@ from typing import Generator
 from scipy import stats
 from scipy.spatial import distance
 import pickle
+from sklearn import linear_model
 
 # from sklearn.neighbors import LocalOutlierFactor
 from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
@@ -31,7 +32,8 @@ def call_coverage_on_each_base(midsv_sample: Generator[dict], sequence: str) -> 
     return coverages
 
 
-def count_indels(midsv_sample, len_sequence: int) -> dict[str, list[int]]:
+def count_indels(midsv_sample, sequence: str) -> dict[str, list[int]]:
+    len_sequence = len(sequence)
     count = {"+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:
         for i, cs in enumerate(samp["CSSPLIT"].split(",")):
@@ -56,7 +58,7 @@ def normalize_indels(count: dict[str, list[int]], coverages: list[int]) -> dict[
     return count_normalized
 
 
-def split_kmer(indels: dict[str, np.array], kmer: int = 10) -> dict[str, np.array]:
+def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.array]:
     results = defaultdict(list)
     center = kmer // 2
     for mut, value in indels.items():
@@ -95,6 +97,7 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
         results[mut] = dissimilar_loci
     return results
 
+
 # def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set]:
 #     """
 #     Comparing Sample and Control, the 1. 'high similarity',  2. 'similar mean' and
@@ -122,6 +125,75 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
 #     return results
 
 
+###########################################################
+# Extract dissimilar loci using OneClassSVM
+# `extract_different_loci` does not consider the mutation rate in each kmer.
+# Thus we got many false positive of kmer with the low percentage of mutation rate
+# Consider the mutation rate in the sequence
+###########################################################
+
+
+def _transform_log2(values: np.array) -> np.array:
+    values = np.where(values <= 0, 1e-10, values)
+    return np.log2(values).reshape(-1, 1)
+
+
+def _get_divisor(set1, set2) -> int:
+    return len(set(set1) & set(set2)) or -1
+
+
+def _merge_peaks(log2_sample, log2_control, peaks) -> set:
+    """Values higher than 75% quantile of the control values and the surrouings are peaks, merge it as a peak"""
+    threshold = np.quantile(log2_control, 0.75)
+    for i, value in enumerate(log2_sample):
+        if i not in peaks and value > threshold:
+            for j in range(i - 5, i + 6):
+                if j in peaks:
+                    peaks.add(i)
+                    break
+    return peaks
+
+
+def extract_upper_loci(indels_sample_normalized, indels_control_normalized) -> dict[str, set]:
+    results = dict()
+    for mut in ["+", "-", "*"]:
+        # preprocess
+        values_sample = indels_sample_normalized[mut]
+        values_control = indels_control_normalized[mut]
+        # values_sample = np.array(indels_sample_normalized[mut])
+        # values_control = np.array(indels_control_normalized[mut])
+        values_subtract = _transform_log2(values_sample - values_control)
+        log2_control = _transform_log2(values_control)
+        log2_sample = _transform_log2(values_sample)
+        # anomaly detection
+        clf = linear_model.SGDOneClassSVM(random_state=0)
+        clf.fit(log2_control)
+        predicts = clf.predict(log2_sample)
+        idx_outliers = np.where(predicts == -1)[0]
+        idx_outliers_reverse = np.where(predicts == 1)[0]
+        # anomaly detection by quantile
+        idx_upper = np.where(values_subtract > np.quantile(log2_control, 0.75))[0]
+        # determine which is the correct outliers that is the percentage of outliers is large
+        idx1 = len(idx_outliers) / _get_divisor(idx_outliers, idx_upper)
+        idx2 = len(idx_outliers_reverse) / _get_divisor(idx_outliers_reverse, idx_upper)
+        if idx1 < idx2:
+            idx_outliers = idx_outliers_reverse
+        results[mut] = _merge_peaks(log2_sample, log2_control, set(idx_outliers) & set(idx_upper))
+    return results
+
+
+def merge_loci(dissimilar_loci, upper_loci) -> dict[str, set]:
+    mutation_loci = dict()
+    for mut in ["+", "-", "*"]:
+        mutation_loci[mut] = dissimilar_loci[mut] & upper_loci[mut]
+    return mutation_loci
+
+
+###########################################################
+# Homolopolymer region
+###########################################################
+
+
 def discard_errors_in_homopolymer(dissimilar_loci, errors_in_homopolymer) -> dict[str, set]:
     mutation_loci = dict()
     for mut in ["+", "-", "*"]:
@@ -130,7 +202,8 @@ def discard_errors_in_homopolymer(dissimilar_loci, errors_in_homopolymer) -> dic
     return mutation_loci
 
 
-def transpose_mutation_loci(mutation_loci: set[int], len_sequence: int) -> list[set]:
+def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]:
+    len_sequence = len(sequence)
     mutation_loci_transposed = [set() for _ in range(len_sequence)]
     for mut, idx_mutation in mutation_loci.items():
         for i, loci in enumerate(mutation_loci_transposed):
@@ -143,13 +216,14 @@ def transpose_mutation_loci(mutation_loci: set[int], len_sequence: int) -> list[
 # main
 ###########################################################
 
+
 def process_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
         filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
-        indels_control = count_indels(read_midsv(filepath_control), len(sequence))
+        indels_control = count_indels(read_midsv(filepath_control), sequence)
         coverages_control = call_coverage_on_each_base(read_midsv(filepath_control), sequence)
         indels_control_normalized = normalize_indels(indels_control, coverages_control)
-        indels_kmer_control = split_kmer(indels_control_normalized, kmer=10)
+        indels_kmer_control = split_kmer(indels_control_normalized, kmer=11)
         # Save indels_control_normalized and indels_kmer_control as pickle to reuse in consensus calling
         with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "wb") as f:
             pickle.dump(indels_control_normalized, f)
@@ -161,10 +235,10 @@ def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, 
     MUTATION_LOCI_ALLELES = dict()
     for allele, sequence in FASTA_ALLELES.items():
         filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
-        indels_sample = count_indels(read_midsv(filepath_sample), len(sequence))
+        indels_sample = count_indels(read_midsv(filepath_sample), sequence)
         coverages_sample = call_coverage_on_each_base(read_midsv(filepath_sample), sequence)
         indels_sample_normalized = normalize_indels(indels_sample, coverages_sample)
-        indels_kmer_sample = split_kmer(indels_sample_normalized, kmer=10)
+        indels_kmer_sample = split_kmer(indels_sample_normalized, kmer=11)
         # Load indels_control_normalized and indels_kmer_control
         with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "rb") as f:
             indels_control_normalized = pickle.load(f)
@@ -172,17 +246,18 @@ def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, 
             indels_kmer_control = pickle.load(f)
         # Calculate dissimilar loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
+        upper_loci = extract_upper_loci(indels_sample_normalized, indels_control_normalized)
+        candidate_loci = merge_loci(dissimilar_loci, upper_loci)
         # Extract error loci in homopolymer regions
         errors_in_homopolymer = dict()
         for mut in ["+", "-", "*"]:
             indels_sample_mut = indels_sample_normalized[mut]
             indels_control_mut = indels_control_normalized[mut]
-            candidate_loci = dissimilar_loci[mut]
             # candidate_loci = anomaly_loci[mut] & dissimilar_loci[mut]
             errors_in_homopolymer[mut] = extract_errors_in_homopolymer(
-                indels_sample_mut, indels_control_mut, sequence, candidate_loci
+                indels_sample_mut, indels_control_mut, sequence, candidate_loci[mut]
             )
-        mutation_loci = discard_errors_in_homopolymer(dissimilar_loci, errors_in_homopolymer)
-        mutation_loci_transposed = transpose_mutation_loci(mutation_loci, len(sequence))
+        mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
+        mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         MUTATION_LOCI_ALLELES[allele] = mutation_loci_transposed
     return MUTATION_LOCI_ALLELES

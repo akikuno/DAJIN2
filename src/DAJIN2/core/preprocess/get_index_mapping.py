@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import midsv
+import pickle
 from pathlib import Path
 from DAJIN2.core.preprocess import mappy_align
 
@@ -77,7 +78,9 @@ def calculate_index_mapping(cssplits: list[str]) -> dict[int, int]:
 def get_index_mapping(TEMPDIR: str | Path) -> dict[str, dict[int, int]]:
     """
     Returns:
-        dict(set): loci of knockin in each fasta pairs
+        dict(set): corresponding index of each allele based on control allele
+        key: index of control allele
+        value: index of other allele
     """
     path_fasta = [f for f in Path(TEMPDIR, "fasta").iterdir() if f.suffix != ".fai"]
     reference = select_control(path_fasta)
@@ -87,3 +90,9 @@ def get_index_mapping(TEMPDIR: str | Path) -> dict[str, dict[int, int]]:
         allele = query.stem
         INDEX_MAPPING[allele] = calculate_index_mapping(cssplits)
     return INDEX_MAPPING
+
+
+def save_index_mapping(TEMPDIR: str | Path) -> None:
+    INDEX_MAPPING = get_index_mapping(TEMPDIR)
+    with open(Path(TEMPDIR, "mutation_loci", "index_mapping.pkl"), "wb") as f:
+        pickle.dump(INDEX_MAPPING, f)

@@ -110,6 +110,7 @@ def execute_control(arguments: dict):
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
+    preprocess.save_index_mapping(TEMPDIR)
     preprocess.process_mutation_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     ###########################################################
     # Output BAM
