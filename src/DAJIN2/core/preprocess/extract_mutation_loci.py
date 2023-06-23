@@ -15,7 +15,7 @@ from sklearn import linear_model
 from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
 
 
-def read_midsv(filepath) -> Generator[dict[str, str]]:
+def read_midsv(filepath: str | Path) -> Generator[dict[str, str]]:
     with open(filepath, "r") as f:
         for line in f:
             yield json.loads(line)
@@ -84,9 +84,10 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
     for mut in ["+", "-", "*"]:
         values_sample = indels_kmer_sample[mut]
         values_control = indels_kmer_control[mut]
-        # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
-        # Zero vector does not return correct value, so add 1e-10.
-        # example: distance.cosine([0,0,0], [1,2,3]) retuns 0...
+        """Calculate cosine similarity: 1 means exactly same, 0 means completely different.
+        - Zero vector does not return correct value, so add 1e-10.
+            - example: distance.cosine([0,0,0], [1,2,3]) == 0
+        """
         cossims = [1 - distance.cosine(x + 1e-10, y + 1e-10) for x, y in zip(values_sample, values_control)]
         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
@@ -117,7 +118,8 @@ def _get_divisor(set1, set2) -> int:
 
 
 def _merge_peaks(log2_sample, log2_control, peaks) -> set:
-    """Values higher than 75% quantile of the control values and the surrouings are peaks, merge it as a peak"""
+    """Values higher than 75% quantile of the control values and
+    the surrouings are peaks, merge it as a peak"""
     threshold = np.quantile(log2_control, 0.75)
     for i, value in enumerate(log2_sample):
         if i not in peaks and value > threshold:
@@ -161,22 +163,12 @@ def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> 
 ###########################################################
 
 
-def discard_errors_in_homopolymer(dissimilar_loci, errors_in_homopolymer) -> dict[str, set]:
+def discard_errors_in_homopolymer(dissimilar_loci: dict[str, set], errors_in_homopolymer: dict[str, set]) -> dict[str, set]:
     mutation_loci = dict()
     for mut in ["+", "-", "*"]:
         error_loci = errors_in_homopolymer[mut]
         mutation_loci[mut] = dissimilar_loci[mut] - error_loci
     return mutation_loci
-
-
-def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]:
-    len_sequence = len(sequence)
-    mutation_loci_transposed = [set() for _ in range(len_sequence)]
-    for mut, idx_mutation in mutation_loci.items():
-        for i, loci in enumerate(mutation_loci_transposed):
-            if i in idx_mutation:
-                loci.add(mut)
-    return mutation_loci_transposed
 
 
 ###########################################################
@@ -236,11 +228,21 @@ def is_strand_bias(midsv_control) -> bool:
         return True
 
 
-def merge_loci(dissimilar_loci, anomal_loci) -> dict[str, set]:
+def merge_loci(dissimilar_loci: dict[str, set], anomal_loci: dict[str, set]) -> dict[str, set]:
     mutation_loci = dict()
     for mut in ["+", "-", "*"]:
         mutation_loci[mut] = dissimilar_loci[mut] & anomal_loci[mut]
     return mutation_loci
+
+
+def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]:
+    len_sequence = len(sequence)
+    mutation_loci_transposed = [set() for _ in range(len_sequence)]
+    for mut, idx_mutation in mutation_loci.items():
+        for i, loci in enumerate(mutation_loci_transposed):
+            if i in idx_mutation:
+                loci.add(mut)
+    return mutation_loci_transposed
 
 
 def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> dict[str, list]:
