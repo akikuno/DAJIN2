@@ -183,26 +183,24 @@ def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]
 # Biased strand
 ###########################################################
 
-def discard_errors_on_biased_strand(midsv_sample, candidate_loci) -> dict[str, set]:
+def discard_errors_on_biased_strand(midsv_sample, mutation_loci) -> dict[str, set]:
     results = dict()
-    for mutation, loci in candidate_loci.items():
+    for mutation, loci in mutation_loci.items():
         mutation_loci_non_biased = set()
         count_plus = defaultdict(int)
         count_total = defaultdict(int)
+        midsv_sample = list(midsv_sample)
         for samp in midsv_sample:
             cssplits = samp["CSSPLIT"].split(",")
             for i, cs in enumerate(cssplits):
                 if i not in loci:
                     continue
-                if cs[0] != mutation:
+                if not cs.startswith(mutation):
                     continue
                 count_total[i] += 1
                 if samp["STRAND"] == "+":
                     count_plus[i] += 1
-        for i, total in count_total.items():
-            plus = count_plus[i]
-            if 0.25 < plus / total < 0.75:
-                mutation_loci_non_biased.add(i)
+        mutation_loci_non_biased = {i for i, total in count_total.items() if 0.25 < (count_plus[i] / total) < 0.75}
         results[mutation] = mutation_loci_non_biased
     return results
 
@@ -263,10 +261,10 @@ def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, 
         # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         anomal_loci = extract_anomal_loci(indels_sample_normalized, indels_control_normalized)
-        candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
+        mutation_loci = merge_loci(dissimilar_loci, anomal_loci)
         # Extract error loci in homopolymer regions
-        errors_in_homopolymer = extract_errors_in_homopolymer(sequence, indels_sample_normalized, indels_control_normalized, candidate_loci)
-        mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
+        errors_in_homopolymer = extract_errors_in_homopolymer(sequence, indels_sample_normalized, indels_control_normalized, mutation_loci)
+        mutation_loci = discard_errors_in_homopolymer(mutation_loci, errors_in_homopolymer)
         if strand_bias is False:
             mutation_loci = discard_errors_on_biased_strand(read_midsv(filepath_sample), mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
