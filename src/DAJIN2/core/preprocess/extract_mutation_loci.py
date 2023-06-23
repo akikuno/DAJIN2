@@ -81,49 +81,23 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
     'similar variance' are considered as sequence errors.
     """
     results = dict()
-    for mut in indels_kmer_sample:
+    for mut in ["+", "-", "*"]:
         values_sample = indels_kmer_sample[mut]
         values_control = indels_kmer_control[mut]
+        # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
+        # Zero vector does not return correct value, so add 1e-10.
+        # example: distance.cosine([0,0,0], [1,2,3]) retuns 0...
+        cossims = [1 - distance.cosine(x + 1e-10, y + 1e-10) for x, y in zip(values_sample, values_control)]
         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
         t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
-        # Perform F-test: p > 0.05 means similar in variance.
-        f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(values_sample, values_control)]
         # if pvalue == nan or pval > 0.05, samples and controls are similar.
         dissimilar_loci = set()
-        for i, (t_pval, f_pval) in enumerate(zip(t_pvalues, f_pvalues)):
-            if t_pval < 0.05 or f_pval < 0.05:
+        for i, (cossim, t_pval) in enumerate(zip(cossims, t_pvalues)):
+            if (cossim >= 0.8 and t_pval < 0.05) or cossim < 0.8:
                 dissimilar_loci.add(i)
         results[mut] = dissimilar_loci
     return results
-
-
-# def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set]:
-#     """
-#     Comparing Sample and Control, the 1. 'high similarity',  2. 'similar mean' and
-#     3. 'similar variance' are considered as sequence errors.
-#     """
-#     results = dict()
-#     for mut in indels_kmer_sample:
-#         values_sample = indels_kmer_sample[mut]
-#         values_control = indels_kmer_control[mut]
-#         # Calculate cosine similarity: 1 means exactly same, 0 means completely different.
-#         # Zero vector does not return correct value, so add 1e-10.
-#         ## example: distance.cosine([0,0,0], [1,2,3]) retuns 0...
-#         cossim = [1 - distance.cosine(x+1e-10, y+1e-10) for x, y in zip(values_sample, values_control)]
-#         # Perform T-test: nan means exactly same, p > 0.05 means similar in average.
-#         t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
-#         t_pvalues = [1 if np.isnan(t) else t for t in t_pvalues]
-#         # Perform F-test: p > 0.05 means similar in variance.
-#         f_pvalues = [stats.bartlett(x, y)[1] for x, y in zip(values_sample, values_control)]
-#         # if pvalue == nan or pval > 0.05, samples and controls are similar.
-#         dissimilar_loci = set()
-#         for i, (sim, t_pval, f_pval) in enumerate(zip(cossim, t_pvalues, f_pvalues)):
-#             if not (sim > 0.90 and t_pval > 0.05 and f_pval > 0.05):
-#                 dissimilar_loci.add(i)
-#         results[mut] = dissimilar_loci
-#     return results
-
 
 ###########################################################
 # Extract dissimilar loci using OneClassSVM
@@ -154,7 +128,7 @@ def _merge_peaks(log2_sample, log2_control, peaks) -> set:
     return peaks
 
 
-def extract_upper_loci(indels_sample_normalized, indels_control_normalized) -> dict[str, set]:
+def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> dict[str, set]:
     results = dict()
     for mut in ["+", "-", "*"]:
         # preprocess
@@ -182,13 +156,6 @@ def extract_upper_loci(indels_sample_normalized, indels_control_normalized) -> d
     return results
 
 
-def merge_loci(dissimilar_loci, upper_loci) -> dict[str, set]:
-    mutation_loci = dict()
-    for mut in ["+", "-", "*"]:
-        mutation_loci[mut] = dissimilar_loci[mut] & upper_loci[mut]
-    return mutation_loci
-
-
 ###########################################################
 # Homolopolymer region
 ###########################################################
@@ -213,6 +180,33 @@ def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]
 
 
 ###########################################################
+# Biased strand
+###########################################################
+
+def discard_errors_on_biased_strand(midsv_sample, candidate_loci) -> dict[str, set]:
+    results = dict()
+    for mutation, loci in candidate_loci.items():
+        mutation_loci_non_biased = set()
+        count_plus = defaultdict(int)
+        count_total = defaultdict(int)
+        for samp in midsv_sample:
+            cssplits = samp["CSSPLIT"].split(",")
+            for i, cs in enumerate(cssplits):
+                if i not in loci:
+                    continue
+                if cs[0] != mutation:
+                    continue
+                count_total[i] += 1
+                if samp["STRAND"] == "+":
+                    count_plus[i] += 1
+        for i, total in count_total.items():
+            plus = count_plus[i]
+            if 0.25 < plus / total < 0.75:
+                mutation_loci_non_biased.add(i)
+        results[mutation] = mutation_loci_non_biased
+    return results
+
+###########################################################
 # main
 ###########################################################
 
@@ -225,14 +219,36 @@ def process_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str)
         indels_control_normalized = normalize_indels(indels_control, coverages_control)
         indels_kmer_control = split_kmer(indels_control_normalized, kmer=11)
         # Save indels_control_normalized and indels_kmer_control as pickle to reuse in consensus calling
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}.pkl"), "wb") as f:
+            pickle.dump(indels_control, f)
         with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "wb") as f:
             pickle.dump(indels_control_normalized, f)
         with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "wb") as f:
             pickle.dump(indels_kmer_control, f)
 
 
+def is_strand_bias(midsv_control) -> bool:
+    count_strand = defaultdict(int)
+    for m in midsv_control:
+        count_strand[m["STRAND"]] += 1
+    percentage_plus = count_strand["+"] / (count_strand["+"] + count_strand["-"])
+    if 0.25 < percentage_plus < 0.75:
+        return False
+    else:
+        return True
+
+
+def merge_loci(dissimilar_loci, anomal_loci) -> dict[str, set]:
+    mutation_loci = dict()
+    for mut in ["+", "-", "*"]:
+        mutation_loci[mut] = dissimilar_loci[mut] & anomal_loci[mut]
+    return mutation_loci
+
+
 def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> dict[str, list]:
     MUTATION_LOCI_ALLELES = dict()
+    filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.json")
+    strand_bias = is_strand_bias(read_midsv(filepath_control))
     for allele, sequence in FASTA_ALLELES.items():
         filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
         indels_sample = count_indels(read_midsv(filepath_sample), sequence)
@@ -244,20 +260,15 @@ def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, 
             indels_control_normalized = pickle.load(f)
         with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "rb") as f:
             indels_kmer_control = pickle.load(f)
-        # Calculate dissimilar loci
+        # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
-        upper_loci = extract_upper_loci(indels_sample_normalized, indels_control_normalized)
-        candidate_loci = merge_loci(dissimilar_loci, upper_loci)
+        anomal_loci = extract_anomal_loci(indels_sample_normalized, indels_control_normalized)
+        candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
         # Extract error loci in homopolymer regions
-        errors_in_homopolymer = dict()
-        for mut in ["+", "-", "*"]:
-            indels_sample_mut = indels_sample_normalized[mut]
-            indels_control_mut = indels_control_normalized[mut]
-            # candidate_loci = anomaly_loci[mut] & dissimilar_loci[mut]
-            errors_in_homopolymer[mut] = extract_errors_in_homopolymer(
-                indels_sample_mut, indels_control_mut, sequence, candidate_loci[mut]
-            )
+        errors_in_homopolymer = extract_errors_in_homopolymer(sequence, indels_sample_normalized, indels_control_normalized, candidate_loci)
         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
+        if strand_bias is False:
+            mutation_loci = discard_errors_on_biased_strand(read_midsv(filepath_sample), mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         MUTATION_LOCI_ALLELES[allele] = mutation_loci_transposed
     return MUTATION_LOCI_ALLELES

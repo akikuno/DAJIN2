@@ -85,14 +85,14 @@ def extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset: str = 
                 yield alignment
 
 
-def midsv_transform(sam: Generator[list[str]]) -> Generator[list[str]]:
-    for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False):
+def midsv_transform(sam: Generator[list[str]]) -> Generator[list[dict]]:
+    for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep=set(["FLAG"])):
         yield midsv_sample
 
 
-def replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> Generator[dict[str, str]]:
+def replace_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
+    """Replace contiguous N with D, but not contiguous from both ends"""
     for samp in midsv_sample:
-        qname = samp["QNAME"]
         cssplits = samp["CSSPLIT"].split(",")
         # extract right/left index of the end of sequential Ns
         left_idx_n = 0
@@ -110,8 +110,18 @@ def replaceNtoD(midsv_sample: Generator[list[str]], sequence: str) -> Generator[
         for j, (cs, seq) in enumerate(zip(cssplits, sequence)):
             if left_idx_n <= j <= right_idx_n and cs == "N":
                 cssplits[j] = f"-{seq}"
-        yield {"QNAME": qname, "CSSPLIT": ",".join(cssplits)}
+        samp["CSSPLIT"] = ",".join(cssplits)
+        yield samp
 
+
+def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list[dict]]:
+    """Convert FLAG to STRAND (+ or -)"""
+    for samp in midsv_sample:
+        flag = samp["FLAG"]
+        strand = "-" if flag & 16 else "+"
+        samp["STRAND"] = strand
+        del samp["FLAG"]
+        yield samp
 
 ###########################################################
 # main
@@ -127,12 +137,10 @@ def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> No
         qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
         sam_of_map_ont = extract_sam(sam_ont, qname_of_map_ont, preset="map-ont")
         sam_of_splice = extract_sam(sam_splice, qname_of_map_ont, preset="splice")
-        # qname_of_map_ont = extract_qname_of_map_ont(midsv.read_sam(path_ont), midsv.read_sam(path_splice))
-        # sam_of_map_ont = extract_sam(midsv.read_sam(path_ont), qname_of_map_ont, preset="map-ont")
-        # sam_of_splice = extract_sam(midsv.read_sam(path_splice), qname_of_map_ont, preset="splice")
         sam_chained = chain(sam_of_map_ont, sam_of_splice)
         midsv_chaind = midsv_transform(sam_chained)
-        midsv_sample = replaceNtoD(midsv_chaind, sequence)
+        midsv_sample = replace_n_to_d(midsv_chaind, sequence)
+        midsv_sample = convert_flag_to_strand(midsv_sample)
         filepath = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
         with open(filepath, "wt", encoding="utf-8") as f:
             for data in midsv_sample:
