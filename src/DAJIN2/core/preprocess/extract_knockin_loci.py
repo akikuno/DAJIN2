@@ -8,6 +8,10 @@ import midsv
 from DAJIN2.core.preprocess import mappy_align
 
 
+###########################################################
+# Consider all mutations are possible in the knockin region
+###########################################################
+
 def extract_knockin_loci(TEMPDIR: str | Path) -> dict(set(int)):
     """
     Returns:
@@ -27,5 +31,5 @@ def extract_knockin_loci(TEMPDIR: str | Path) -> dict(set(int)):
         for i, cs in enumerate(cssplits):
             if cs == "N" or cs.startswith("-"):
                 knockin_loci.add(i)
-        KNOCKIN_LOCI_ALLELES.update({ref_allele: knockin_loci})
+        KNOCKIN_LOCI_ALLELES[ref_allele] = knockin_loci
     return KNOCKIN_LOCI_ALLELES

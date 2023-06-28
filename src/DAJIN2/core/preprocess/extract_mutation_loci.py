@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 import json
+import pickle
 import numpy as np
 from pathlib import Path
 from typing import Generator
+from collections import defaultdict
 from scipy import stats
 from scipy.spatial import distance
-import pickle
 from sklearn import linear_model
 
-# from sklearn.neighbors import LocalOutlierFactor
 from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
 
 
@@ -101,7 +100,7 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
     return results
 
 ###########################################################
-# Extract dissimilar loci using OneClassSVM
+# Extract anomaly loci using OneClassSVM
 # `extract_different_loci` does not consider the mutation rate in each kmer.
 # Thus we got many false positive of kmer with the low percentage of mutation rate
 # Consider the mutation rate in the sequence
@@ -119,7 +118,7 @@ def _get_divisor(set1, set2) -> int:
 
 def _merge_peaks(log2_sample, log2_control, peaks) -> set:
     """Values higher than 75% quantile of the control values and
-    the surrouings are peaks, merge it as a peak"""
+    the surrouings are peaks, so merge it as a peak"""
     threshold = np.quantile(log2_control, 0.75)
     for i, value in enumerate(log2_sample):
         if i not in peaks and value > threshold:
@@ -136,8 +135,6 @@ def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> 
         # preprocess
         values_sample = indels_sample_normalized[mut]
         values_control = indels_control_normalized[mut]
-        # values_sample = np.array(indels_sample_normalized[mut])
-        # values_control = np.array(indels_control_normalized[mut])
         values_subtract = _transform_log2(values_sample - values_control)
         log2_control = _transform_log2(values_control)
         log2_sample = _transform_log2(values_sample)
@@ -196,6 +193,34 @@ def discard_errors_on_biased_strand(midsv_sample, mutation_loci) -> dict[str, se
         results[mutation] = mutation_loci_non_biased
     return results
 
+
+# ###########################################################
+# # Consider all mutations are possible in the knockin region
+# ###########################################################
+
+
+# def extract_knockin_loci(TEMPDIR: str | Path) -> dict(set(int)):
+#     """
+#     Returns:
+#         dict(set): loci of knockin in each fasta pairs
+#     """
+#     fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
+#     fasta_alleles = [f for f in fasta_alleles if f.suffix != ".fai"]
+#     KNOCKIN_LOCI_ALLELES = dict()
+#     for pair in permutations(fasta_alleles, 2):
+#         ref, query = pair
+#         ref_allele = ref.stem
+#         alignments = mappy_align.to_sam(ref, query, preset="splice")
+#         alignments = [a.split("\t") for a in alignments]
+#         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
+#         cssplits = alignments_midsv["CSSPLIT"].split(",")
+#         knockin_loci = set()
+#         for i, cs in enumerate(cssplits):
+#             if cs == "N" or cs.startswith("-"):
+#                 knockin_loci.add(i)
+#         KNOCKIN_LOCI_ALLELES[ref_allele] =  knockin_loci
+#     return KNOCKIN_LOCI_ALLELES
+
 ###########################################################
 # main
 ###########################################################
@@ -235,6 +260,13 @@ def merge_loci(dissimilar_loci: dict[str, set], anomal_loci: dict[str, set]) -> 
     return mutation_loci
 
 
+def add_knockin_loci(candidate_loci: dict[str, set], knockin_loci: set):
+    mutation_loci = dict()
+    for mut in ["+", "-", "*"]:
+        mutation_loci[mut] = candidate_loci[mut] | knockin_loci
+    return mutation_loci
+
+
 def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]:
     len_sequence = len(sequence)
     mutation_loci_transposed = [set() for _ in range(len_sequence)]
@@ -245,7 +277,7 @@ def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]
     return mutation_loci_transposed
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> dict[str, list]:
+def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str, KNOCKIN_LOCI_ALLELES: dict) -> dict[str, list]:
     MUTATION_LOCI_ALLELES = dict()
     filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.json")
     strand_bias = is_strand_bias(read_midsv(filepath_control))
@@ -269,6 +301,7 @@ def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, 
         mutation_loci = discard_errors_in_homopolymer(mutation_loci, errors_in_homopolymer)
         if strand_bias is False:
             mutation_loci = discard_errors_on_biased_strand(read_midsv(filepath_sample), mutation_loci)
+        mutation_loci = add_knockin_loci(mutation_loci, KNOCKIN_LOCI_ALLELES[allele])
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         MUTATION_LOCI_ALLELES[allele] = mutation_loci_transposed
     return MUTATION_LOCI_ALLELES

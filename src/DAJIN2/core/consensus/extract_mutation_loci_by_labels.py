@@ -13,6 +13,7 @@ from DAJIN2.core.preprocess.extract_mutation_loci import (
     extract_dissimilar_loci,
     extract_anomal_loci,
     merge_loci,
+    add_knockin_loci,
     transpose_mutation_loci,
 )
 from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
@@ -26,7 +27,7 @@ from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_
 #     return errors_in_homopolymer
 
 
-def extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME):
+def extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME, KNOCKIN_LOCI_ALLELES):
     MUTATION_LOCI_LABELS = dict()
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
@@ -42,14 +43,15 @@ def extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTRO
             indels_kmer_control = pickle.load(f)
         # Calculate dissimilar loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
-        upper_loci = extract_anomal_loci(indels_sample_normalized, indels_control_normalized)
-        candidate_loci = merge_loci(dissimilar_loci, upper_loci)
+        anomal_loci = extract_anomal_loci(indels_sample_normalized, indels_control_normalized)
+        candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
         # Extract error loci in homopolymer regions
         errors_in_homopolymer = extract_errors_in_homopolymer(sequence, indels_sample_normalized, indels_control_normalized, candidate_loci)
         # errors_in_homopolymer = _extract_errors_in_homopolymer(
         #     indels_sample_normalized, indels_control_normalized, sequence, candidate_loci
         # )
         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
+        mutation_loci = add_knockin_loci(mutation_loci, KNOCKIN_LOCI_ALLELES[allele])
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         MUTATION_LOCI_LABELS[label] = mutation_loci_transposed
     return MUTATION_LOCI_LABELS

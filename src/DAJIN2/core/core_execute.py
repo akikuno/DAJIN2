@@ -149,8 +149,8 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Extract mutation loci
     # ============================================================
-    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
     KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
+    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, KNOCKIN_LOCI_ALLELES)
     with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
         pickle.dump(MUTATION_LOCI_ALLELES, p)
     ########################################################################
@@ -176,7 +176,7 @@ def execute_sample(arguments: dict):
     print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
-    MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+    MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME, KNOCKIN_LOCI_ALLELES)
     cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
