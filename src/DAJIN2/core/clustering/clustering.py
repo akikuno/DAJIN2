@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import pickle
+import midsv
 import random
 from pathlib import Path
 from itertools import groupby
@@ -50,25 +52,37 @@ def write_json(filepath: Path | str, data: Generator) -> None:
 ###########################################################
 
 
-def add_labels(
-    classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS: int = 1
-) -> list[dict[str]]:
+def is_strand_bias(path_control) -> bool:
+    count_strand = defaultdict(int)
+    for m in midsv.read_jsonl(path_control):
+        count_strand[m["STRAND"]] += 1
+    percentage_plus = count_strand["+"] / (count_strand["+"] + count_strand["-"])
+    if 0.25 < percentage_plus < 0.75:
+        return False
+    else:
+        return True
+
+
+def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS: int = 1) -> list[dict[str]]:
     labels_all = []
     max_label = 0
+    strand_bias = is_strand_bias(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.json"))
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         RANDOM_NUM = random.randint(0, 10**10)
-        mutation_loci: dict[str, set[str]] = MUTATION_LOCI_ALLELES[allele]
+        if Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle").exists():
+            with open(Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "rb") as p:
+                knockin_loci = pickle.load(p)
+        else:
+            knockin_loci = set()
+        with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "rb") as p:
+            mutation_loci: dict[str, set[str]] = pickle.load(p)
         if all(m == set() for m in mutation_loci):
             labels = [1] * len(classif_sample)
             labels_reorder = reorder_labels(labels, start=max_label)
             max_label = max(labels_reorder)
             labels_all.extend(labels_reorder)
             continue
-        if allele in KNOCKIN_LOCI_ALLELES:
-            knockin_loci = KNOCKIN_LOCI_ALLELES[allele]
-        else:
-            knockin_loci = set()
         path_sample = Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}_{allele}_{RANDOM_NUM}.json")
         path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
         write_json(path_sample, group)
@@ -79,7 +93,7 @@ def add_labels(
         path_score_control = Path(TEMPDIR, "clustering", f"{CONTROL_NAME}_{allele}_score_{RANDOM_NUM}.json")
         write_json(path_score_sample, scores_sample)
         write_json(path_score_control, scores_control)
-        labels = return_labels(path_score_sample, path_score_control)
+        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
         labels_reorder = reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
         labels_all.extend(labels_reorder)
