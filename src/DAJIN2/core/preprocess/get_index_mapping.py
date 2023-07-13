@@ -94,5 +94,5 @@ def get_index_mapping(TEMPDIR: str | Path) -> dict[str, dict[int, int]]:
 
 def save_index_mapping(TEMPDIR: str | Path) -> None:
     INDEX_MAPPING = get_index_mapping(TEMPDIR)
-    with open(Path(TEMPDIR, "mutation_loci", "index_mapping.pkl"), "wb") as f:
+    with open(Path(TEMPDIR, "mutation_loci", "index_mapping.pickle"), "wb") as f:
         pickle.dump(INDEX_MAPPING, f)

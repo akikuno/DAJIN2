@@ -123,6 +123,7 @@ def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list
         del samp["FLAG"]
         yield samp
 
+
 ###########################################################
 # main
 ###########################################################
@@ -130,6 +131,8 @@ def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list
 
 def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
+        if Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json").exists():
+            continue
         path_ont = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_{allele}.sam")
         path_splice = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_splice_{allele}.sam")
         sam_ont = remove_overlapped_reads(list(midsv.read_sam(path_ont)))
