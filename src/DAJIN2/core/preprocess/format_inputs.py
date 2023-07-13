@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 from urllib.request import urlopen
@@ -74,9 +73,9 @@ def dictionize_allele(path_fasta: str) -> dict:
 ########################################################################
 
 
-def fetch_coordinate(genome: str, ucsc_url: str, seq: str) -> dict:
+def fetch_coordinate(genome: str, blat: str, seq: str) -> dict:
     def _fetch_seq(seq: str):
-        url_blat = f"{ucsc_url}/cgi-bin/hgBlat?db={genome}&type=BLAT&userSeq={seq}"
+        url_blat = f"{blat}?db={genome}&type=BLAT&userSeq={seq}"
         request = urlopen(url_blat).read().decode("utf8").split("\n")
         matches = [x for x in request if "100.0%" in x]
         if not matches:

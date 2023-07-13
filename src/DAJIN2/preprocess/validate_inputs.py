@@ -114,29 +114,36 @@ def is_genome_listed_in_UCSC(genome: str, ucsc_url: str) -> bool:
 
 
 def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
-    ucsc_servers = [
-        "https://genome.ucsc.edu/",
-        "https://genome-asia.ucsc.edu/",
-        "https://genome-euro.ucsc.edu/",
+    ucsc_blat_servers = [
+        "https://genome.ucsc.edu/cgi-bin/hgBlat",
+        "https://genome-asia.ucsc.edu/cgi-bin/hgBlat",
+        "https://genome-euro.ucsc.edu/cgi-bin/hgBlat",
+    ]
+    ucsc_das_servers = [
+        "https://genome.ucsc.edu/cgi-bin/das/dsn/",
+        "https://genome-asia.ucsc.edu/cgi-bin/das/dsn/",
+        "https://genome-euro.ucsc.edu/cgi-bin/das/dsn",
     ]
     goldenpath_servers = [
         "https://hgdownload.cse.ucsc.edu/goldenPath",
         "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
     ]
     available_servers = {
-        "ucsc": get_first_available_url(ucsc_servers),
+        "blat": get_first_available_url(ucsc_blat_servers),
+        "das": get_first_available_url(ucsc_das_servers),
         "goldenpath": get_first_available_url(goldenpath_servers),
     }
 
-    if not available_servers["ucsc"]:
-        raise URLError("All servers of UCSC Genome Browsers are currently down. Please wait for a while and try again.")
+    if not available_servers["blat"]:
+        raise URLError("All UCSC blat servers are currently down. Please wait for a while and try again.")
 
     if not available_servers["goldenpath"]:
-        raise URLError("All servers of UCSC GoldenPath are currently down. Please wait for a while and try again.")
+        raise URLError("All UCSC GoldenPath servers are currently down. Please wait for a while and try again.")
 
-    if not is_genome_listed_in_UCSC(genome, available_servers["ucsc"]):
-        raise AttributeError(
-            f"{genome} is not listed. Available genomes are in {available_servers['ucsc']}/cgi-bin/das/dsn"
-        )
+    if not available_servers["das"]:
+        raise URLError("All UCSC DAS servers are currently down. Please wait for a while and try again.")
+
+    if not is_genome_listed_in_UCSC(genome, available_servers["das"]):
+        raise AttributeError(f"{genome} is not listed. Available genomes are in {available_servers['das']}")
 
     return available_servers
