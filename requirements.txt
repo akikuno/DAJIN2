@@ -14,3 +14,4 @@ kaleido >= 0.2.0
 cstag == 0.4.1
 midsv >= 0.10.1
 wslPath >=0.3.0
+rapidfuzz >=3.0.0

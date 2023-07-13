@@ -26,7 +26,7 @@ def _parse_arguments(arguments: dict):
     THREADS: int = arguments["threads"]
     if "genome" in arguments:
         GENOME: str = arguments["genome"]
-        URL_UCSC = arguments["ucsc"]
+        URL_UCSC = arguments["blat"]
         URL_GOLDENPATH = arguments["goldenpath"]
     else:
         GENOME = ""
@@ -46,7 +46,7 @@ def _format_inputs(arguments: dict):
     FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    SUBDIRS = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result", "mutation_loci"]
+    SUBDIRS = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result", "mutation_loci", "knockin_loci"]
     SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
@@ -149,10 +149,36 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Extract mutation loci
     # ============================================================
-    KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
-    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, KNOCKIN_LOCI_ALLELES)
-    with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
-        pickle.dump(MUTATION_LOCI_ALLELES, p)
+    preprocess.extract_knockin_loci(TEMPDIR, SAMPLE_NAME)
+    preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+    # ============================================================
+    # Detect and align insertion alleles
+    # ============================================================
+    preprocess.generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES)
+    if list(Path(TEMPDIR, "fasta").glob("insertion*.fasta")):
+        # mapping to insertion alleles
+        for path_fasta in Path(TEMPDIR, "fasta").glob("insertion*.fasta"):
+            name_fasta = path_fasta.stem
+            preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, threads=THREADS)
+            preprocess.mappy_align.output_sam(
+                TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS
+            )
+            preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
+            preprocess.mappy_align.output_sam(
+                TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, preset="splice", threads=THREADS
+            )
+        # add insertions to FASTA_ALLELES
+        for path_fasta in Path(TEMPDIR, "fasta").glob("insertion*.fasta"):
+            allele, seq = Path(path_fasta).read_text().strip().split("\n")
+            allele = allele.replace(">", "")
+            FASTA_ALLELES[allele] = seq
+        # MIDSV conversion
+        preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+        preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+        # Reculculate mutation loci
+        preprocess.process_mutation_loci(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+        preprocess.extract_knockin_loci(TEMPDIR, SAMPLE_NAME)
+        preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
@@ -162,21 +188,21 @@ def execute_sample(arguments: dict):
     # Clustering
     ########################################################################
     print(f"{_dtnow()}: Clustering {arguments['sample']}...", file=sys.stderr)
-    clust_sample = clustering.add_labels(
-        classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
-    )
+    clust_sample = clustering.add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
-    with open(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.plk"), "wb") as p:
+    with open(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.pickle"), "wb") as p:
         pickle.dump(clust_sample, p)
     ########################################################################
     # Consensus call
     ########################################################################
     print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
     # Downsampling to 1000 reads in each LABEL
+    MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(
+        clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME
+    )
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
-    MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME, KNOCKIN_LOCI_ALLELES)
     cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)

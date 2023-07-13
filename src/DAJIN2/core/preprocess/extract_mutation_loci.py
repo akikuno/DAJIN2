@@ -99,11 +99,12 @@ def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict)
         results[mut] = dissimilar_loci
     return results
 
+
 ###########################################################
 # Extract anomaly loci using OneClassSVM
 # `extract_different_loci` does not consider the mutation rate in each kmer.
-# Thus we got many false positive of kmer with the low percentage of mutation rate
-# Consider the mutation rate in the sequence
+# Thus we got many false positives of kmer with the very low percentage of mutation rate
+# Consider the mutation rate in the whole sequence
 ###########################################################
 
 
@@ -112,8 +113,17 @@ def _transform_log2(values: np.array) -> np.array:
     return np.log2(values).reshape(-1, 1)
 
 
-def _get_divisor(set1, set2) -> int:
-    return len(set(set1) & set(set2)) or -1
+def _ratio_of_outliers(idx_outliers, idx_upper) -> int:
+    """
+    Determine which is the correct outliers (1 or -1) by the ratio of outliers
+    """
+    if len(idx_outliers) == 0:
+        return -1
+    return len(set(idx_outliers) & set(idx_upper)) / len(idx_outliers)
+
+
+# def _get_divisor(set1, set2) -> int:
+#     return len(set(set1) & set(set2)) or -1
 
 
 def _merge_peaks(log2_sample, log2_control, peaks) -> set:
@@ -147,9 +157,10 @@ def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> 
         # anomaly detection by quantile
         idx_upper = np.where(values_subtract > np.quantile(log2_control, 0.75))[0]
         # determine which is the correct outliers that is the percentage of outliers is large
-        idx1 = len(idx_outliers) / _get_divisor(idx_outliers, idx_upper)
-        idx2 = len(idx_outliers_reverse) / _get_divisor(idx_outliers_reverse, idx_upper)
-        if idx1 < idx2:
+        # idx1 = len(idx_outliers) / _get_divisor(idx_outliers, idx_upper)
+        # idx2 = len(idx_outliers_reverse) / _get_divisor(idx_outliers_reverse, idx_upper)
+        # if idx1 < idx2:
+        if _ratio_of_outliers(idx_outliers, idx_upper) < _ratio_of_outliers(idx_outliers_reverse, idx_upper):
             idx_outliers = idx_outliers_reverse
         results[mut] = _merge_peaks(log2_sample, log2_control, set(idx_outliers) & set(idx_upper))
     return results
@@ -160,11 +171,10 @@ def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> 
 ###########################################################
 
 
-def discard_errors_in_homopolymer(dissimilar_loci: dict[str, set], errors_in_homopolymer: dict[str, set]) -> dict[str, set]:
+def discard_errors_in_homopolymer(candidate_loci: dict[str, set], errors: dict[str, set]) -> dict[str, set]:
     mutation_loci = dict()
     for mut in ["+", "-", "*"]:
-        error_loci = errors_in_homopolymer[mut]
-        mutation_loci[mut] = dissimilar_loci[mut] - error_loci
+        mutation_loci[mut] = candidate_loci[mut] - errors[mut]
     return mutation_loci
 
 
@@ -172,54 +182,64 @@ def discard_errors_in_homopolymer(dissimilar_loci: dict[str, set], errors_in_hom
 # Biased strand
 ###########################################################
 
-def discard_errors_on_biased_strand(midsv_sample, mutation_loci) -> dict[str, set]:
-    results = dict()
-    for mutation, loci in mutation_loci.items():
-        mutation_loci_non_biased = set()
-        count_plus = defaultdict(int)
-        count_total = defaultdict(int)
-        midsv_sample = list(midsv_sample)
-        for samp in midsv_sample:
-            cssplits = samp["CSSPLIT"].split(",")
-            for i, cs in enumerate(cssplits):
-                if i not in loci:
-                    continue
-                if not cs.startswith(mutation):
-                    continue
-                count_total[i] += 1
-                if samp["STRAND"] == "+":
-                    count_plus[i] += 1
-        mutation_loci_non_biased = {i for i, total in count_total.items() if 0.25 < (count_plus[i] / total) < 0.75}
-        results[mutation] = mutation_loci_non_biased
-    return results
+
+# def is_strand_bias(midsv_control) -> bool:
+#     count_strand = defaultdict(int)
+#     for m in midsv_control:
+#         count_strand[m["STRAND"]] += 1
+#     percentage_plus = count_strand["+"] / (count_strand["+"] + count_strand["-"])
+#     if 0.25 < percentage_plus < 0.75:
+#         return False
+#     else:
+#         return True
 
 
-# ###########################################################
-# # Consider all mutations are possible in the knockin region
-# ###########################################################
+# def discard_errors_on_biased_strand(midsv_sample, mutation_loci) -> dict[str, set]:
+#     """Discard substitutions on biased strand"""
+#     results = dict()
+#     for mutation, loci in mutation_loci.items():
+#         if mutation != "*":
+#             results[mutation] = loci
+#             continue
+#         mutation_loci_non_biased = set()
+#         count_plus = defaultdict(int)
+#         count_total = defaultdict(int)
+#         midsv_sample = list(midsv_sample)
+#         for samp in midsv_sample:
+#             cssplits = samp["CSSPLIT"].split(",")
+#             for i, cs in enumerate(cssplits):
+#                 if i not in loci:
+#                     continue
+#                 if not cs.startswith(mutation):
+#                     continue
+#                 count_total[i] += 1
+#                 if samp["STRAND"] == "+":
+#                     count_plus[i] += 1
+#         mutation_loci_non_biased = {i for i, total in count_total.items() if 0.25 < (count_plus[i] / total) < 0.75}
+#         results[mutation] = mutation_loci_non_biased
+#     return results
 
 
-# def extract_knockin_loci(TEMPDIR: str | Path) -> dict(set(int)):
-#     """
-#     Returns:
-#         dict(set): loci of knockin in each fasta pairs
-#     """
-#     fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
-#     fasta_alleles = [f for f in fasta_alleles if f.suffix != ".fai"]
-#     KNOCKIN_LOCI_ALLELES = dict()
-#     for pair in permutations(fasta_alleles, 2):
-#         ref, query = pair
-#         ref_allele = ref.stem
-#         alignments = mappy_align.to_sam(ref, query, preset="splice")
-#         alignments = [a.split("\t") for a in alignments]
-#         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
-#         cssplits = alignments_midsv["CSSPLIT"].split(",")
-#         knockin_loci = set()
-#         for i, cs in enumerate(cssplits):
-#             if cs == "N" or cs.startswith("-"):
-#                 knockin_loci.add(i)
-#         KNOCKIN_LOCI_ALLELES[ref_allele] =  knockin_loci
-#     return KNOCKIN_LOCI_ALLELES
+###########################################################
+# Merge non-contiguous insertions
+###########################################################
+
+
+def merge_index_of_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> dict[str, set[int]]:
+    """Treat as contiguous insertions if there are insertions within five bases of each other"""
+    idx_ins_merged = set()
+    idx_ins = sorted(mutation_loci["+"])
+    for i in range(len(idx_ins) - 1):
+        idx_1 = idx_ins[i]
+        idx_2 = idx_ins[i + 1]
+        if idx_1 + 5 > idx_2:
+            for i in range(idx_1, idx_2 + 1):
+                idx_ins_merged.add(i)
+        else:
+            idx_ins_merged.add(idx_1)
+    mutation_loci["+"] = idx_ins_merged
+    return mutation_loci
+
 
 ###########################################################
 # main
@@ -228,29 +248,20 @@ def discard_errors_on_biased_strand(midsv_sample, mutation_loci) -> dict[str, se
 
 def process_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
+        if Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}.pickle").exists():
+            continue
         filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
         indels_control = count_indels(read_midsv(filepath_control), sequence)
         coverages_control = call_coverage_on_each_base(read_midsv(filepath_control), sequence)
         indels_control_normalized = normalize_indels(indels_control, coverages_control)
         indels_kmer_control = split_kmer(indels_control_normalized, kmer=11)
         # Save indels_control_normalized and indels_kmer_control as pickle to reuse in consensus calling
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}.pkl"), "wb") as f:
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_count.pickle"), "wb") as f:
             pickle.dump(indels_control, f)
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "wb") as f:
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pickle"), "wb") as f:
             pickle.dump(indels_control_normalized, f)
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "wb") as f:
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pickle"), "wb") as f:
             pickle.dump(indels_kmer_control, f)
-
-
-def is_strand_bias(midsv_control) -> bool:
-    count_strand = defaultdict(int)
-    for m in midsv_control:
-        count_strand[m["STRAND"]] += 1
-    percentage_plus = count_strand["+"] / (count_strand["+"] + count_strand["-"])
-    if 0.25 < percentage_plus < 0.75:
-        return False
-    else:
-        return True
 
 
 def merge_loci(dissimilar_loci: dict[str, set], anomal_loci: dict[str, set]) -> dict[str, set]:
@@ -277,31 +288,36 @@ def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]
     return mutation_loci_transposed
 
 
-def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str, KNOCKIN_LOCI_ALLELES: dict) -> dict[str, list]:
-    MUTATION_LOCI_ALLELES = dict()
-    filepath_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.json")
-    strand_bias = is_strand_bias(read_midsv(filepath_control))
+def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> None:
+    # MUTATION_LOCI_ALLELES = dict()
     for allele, sequence in FASTA_ALLELES.items():
+        if Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}_{allele}.pickle").exists():
+            continue
         filepath_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
         indels_sample = count_indels(read_midsv(filepath_sample), sequence)
         coverages_sample = call_coverage_on_each_base(read_midsv(filepath_sample), sequence)
         indels_sample_normalized = normalize_indels(indels_sample, coverages_sample)
         indels_kmer_sample = split_kmer(indels_sample_normalized, kmer=11)
         # Load indels_control_normalized and indels_kmer_control
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pkl"), "rb") as f:
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pickle"), "rb") as f:
             indels_control_normalized = pickle.load(f)
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pkl"), "rb") as f:
+        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pickle"), "rb") as f:
             indels_kmer_control = pickle.load(f)
         # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         anomal_loci = extract_anomal_loci(indels_sample_normalized, indels_control_normalized)
-        mutation_loci = merge_loci(dissimilar_loci, anomal_loci)
+        candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
         # Extract error loci in homopolymer regions
-        errors_in_homopolymer = extract_errors_in_homopolymer(sequence, indels_sample_normalized, indels_control_normalized, mutation_loci)
-        mutation_loci = discard_errors_in_homopolymer(mutation_loci, errors_in_homopolymer)
-        if strand_bias is False:
-            mutation_loci = discard_errors_on_biased_strand(read_midsv(filepath_sample), mutation_loci)
-        mutation_loci = add_knockin_loci(mutation_loci, KNOCKIN_LOCI_ALLELES[allele])
+        errors_in_homopolymer = extract_errors_in_homopolymer(
+            sequence, indels_sample_normalized, indels_control_normalized, candidate_loci
+        )
+        mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
+        # Add all mutations into knockin loci
+        if Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle").exists():
+            with open(Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "rb") as p:
+                knockin_loci = pickle.load(p)
+            mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
+        mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
-        MUTATION_LOCI_ALLELES[allele] = mutation_loci_transposed
-    return MUTATION_LOCI_ALLELES
+        with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "wb") as p:
+            pickle.dump(mutation_loci_transposed, p)
