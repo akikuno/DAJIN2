@@ -54,8 +54,7 @@ def output_plot(df_summary: pd.DataFrame, report_directory: Path):
 def report(name: str):
     report_directory = Path("DAJINResults", name)
     report_directory.mkdir(exist_ok=True, parents=True)
-    for directory in Path("DAJINResults", ".tempdir", name, "report").iterdir():
-        shutil.copytree(directory, Path(report_directory, directory.stem), dirs_exist_ok=True)
+    shutil.copytree(Path("DAJINResults", ".tempdir", name, "report"), report_directory, dirs_exist_ok=True)
     df_all = extract_all_info(Path("DAJINResults", ".tempdir", name, "result"))
     df_all.to_csv(Path(report_directory, "read_all.csv"), index=False)
     df_summary = summarize_info(df_all)
