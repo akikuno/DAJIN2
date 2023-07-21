@@ -17,7 +17,10 @@ def make_directories(TEMPDIR: Path, SUBDIRS: list[str], SUBDIRS_REPORT: list[str
     for subdir in SUBDIRS:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
     for reportdir in SUBDIRS_REPORT:
-        Path(TEMPDIR, "report", reportdir, SAMPLE_NAME).mkdir(parents=True, exist_ok=True)
+        if reportdir == "ALLELE_INFO":
+            Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
+        else:
+            Path(TEMPDIR, "report", reportdir, SAMPLE_NAME).mkdir(parents=True, exist_ok=True)
     Path(TEMPDIR, "report", "BAM", CONTROL_NAME).mkdir(parents=True, exist_ok=True)
     Path(TEMPDIR, "cache", ".igvjs").mkdir(parents=True, exist_ok=True)
 

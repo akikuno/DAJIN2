@@ -47,11 +47,14 @@ def _format_inputs(arguments: dict):
 
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
     SUBDIRS = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result", "mutation_loci", "knockin_loci"]
-    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
+    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", "ALLELE_INFO", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
     IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)
     IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
+
+    GENOME_COODINATES = {"chr": "control", "start": 0, "end": len(FASTA_ALLELES["control"]) - 1, "strand": "+"}
+    CHROME_SIZE = 0
     if GENOME:
         if not IS_CACHE_GENOME:
             GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
@@ -216,13 +219,17 @@ def execute_sample(arguments: dict):
     # RESULT
     midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
     # FASTA
-    for header, cons_seq in cons_sequence.items():
-        cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+    report.report_files.to_fasta(TEMPDIR, SAMPLE_NAME, cons_sequence)
+    # for header, cons_seq in cons_sequence.items():
+    #     cons_fasta = report.report_files.to_fasta(header, cons_seq)
+    #     Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
     # HTML
-    for header, cons_per in cons_percentage.items():
-        cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+    report.report_files.to_html(TEMPDIR, SAMPLE_NAME, cons_percentage)
+    # for header, cons_per in cons_percentage.items():
+    #     cons_html = report.report_files.to_html(header, cons_per)
+    #     Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+    # CSV (Allele Info)
+    report.report_mutation.to_csv(TEMPDIR, SAMPLE_NAME, GENOME_COODINATES, cons_percentage)
     # BAM
     report.report_bam.output_bam_sample(
         TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
