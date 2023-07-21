@@ -220,14 +220,8 @@ def execute_sample(arguments: dict):
     midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
     # FASTA
     report.report_files.to_fasta(TEMPDIR, SAMPLE_NAME, cons_sequence)
-    # for header, cons_seq in cons_sequence.items():
-    #     cons_fasta = report.report_files.to_fasta(header, cons_seq)
-    #     Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
     # HTML
     report.report_files.to_html(TEMPDIR, SAMPLE_NAME, cons_percentage)
-    # for header, cons_per in cons_percentage.items():
-    #     cons_html = report.report_files.to_html(header, cons_per)
-    #     Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
     # CSV (Allele Info)
     report.report_mutation.to_csv(TEMPDIR, SAMPLE_NAME, GENOME_COODINATES, cons_percentage)
     # BAM
