@@ -60,14 +60,14 @@ def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
     return sam_trimmed
 
 
-def realign(sam: list[list[str]], GENOME_COODINATES: dict, CHROME_SIZE: int) -> list[str]:
+def realign(sam: list[list[str]], GENOME_COODINATES: dict) -> list[str]:
     sam_headers = [s for s in sam if s[0].startswith("@")]
     sam_contents = [s for s in sam if not s[0].startswith("@")]
     for s in sam_headers:
         if s[0] != "@SQ":
             continue
         s[1] = f'SN:{GENOME_COODINATES["chr"]}'
-        s[2] = f"LN:{CHROME_SIZE}"
+        s[2] = f'LN:{GENOME_COODINATES["chrom_size"]}'
     for s in sam_contents:
         s[2] = GENOME_COODINATES["chr"]
     if GENOME_COODINATES["strand"] == "-":
@@ -137,21 +137,21 @@ def write_sam_to_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str |
     pysam.index("-@", f"{threads}", str(path_bam))
 
 
-def update_sam(sam: list, GENOME: str = "", GENOME_COODINATES: dict = None, CHROME_SIZE: int = None) -> list:
+def update_sam(sam: list, GENOME: str = "", GENOME_COODINATES: dict = None) -> list:
     sam_update = sam.copy()
     sam_update = remove_overlapped_reads(sam_update)
     sam_update = remove_microhomology(sam_update)
     if GENOME:
-        sam_update = realign(sam_update, GENOME_COODINATES, CHROME_SIZE)
+        sam_update = realign(sam_update, GENOME_COODINATES)
     return sam_update
 
 
-def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS) -> None:
+def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, THREADS) -> None:
     randomnum = random.randint(100_000, 999_999)
     path_sam_input = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
     sam = list(midsv.read_sam(path_sam_input))
     # Update sam
-    sam_update = update_sam(sam, GENOME, GENOME_COODINATES, CHROME_SIZE)
+    sam_update = update_sam(sam, GENOME, GENOME_COODINATES)
     # Output SAM and BAM
     path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
     path_bam_output = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
@@ -169,12 +169,12 @@ def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_
     [s.unlink() for s in sam_temp]
 
 
-def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS) -> None:
+def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, THREADS) -> None:
     randomnum = random.randint(100_000, 999_999)
     path_sam_input = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
     sam = list(midsv.read_sam(path_sam_input))
     # Update sam
-    sam_update = update_sam(sam, GENOME, GENOME_COODINATES, CHROME_SIZE)
+    sam_update = update_sam(sam, GENOME, GENOME_COODINATES)
     # Output SAM and BAM
     path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
     path_bam_output = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")

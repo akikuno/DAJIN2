@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-import json
 import pickle
 import resource
 import shutil
@@ -26,17 +25,19 @@ def _parse_arguments(arguments: dict):
     THREADS: int = arguments["threads"]
     if "genome" in arguments:
         GENOME: str = arguments["genome"]
-        URL_UCSC = arguments["blat"]
-        URL_GOLDENPATH = arguments["goldenpath"]
+        GENOME_URLS = dict()
+        GENOME_URLS["blat"] = arguments["blat"]
+        GENOME_URLS["goldenpath"] = arguments["goldenpath"]
     else:
         GENOME = ""
-        URL_UCSC = ""
-        URL_GOLDENPATH = ""
-    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, URL_UCSC, URL_GOLDENPATH
+        GENOME_URLS = dict()
+        GENOME_URLS["blat"] = ""
+        GENOME_URLS["goldenpath"] = ""
+    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, GENOME_URLS
 
 
 def _format_inputs(arguments: dict):
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, URL_UCSC, URL_GOLDENPATH = _parse_arguments(arguments)
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, GENOME_URLS = _parse_arguments(arguments)
     SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
     CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
     ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
@@ -53,17 +54,24 @@ def _format_inputs(arguments: dict):
     IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)
     IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
 
-    GENOME_COODINATES = {"chr": "control", "start": 0, "end": len(FASTA_ALLELES["control"]) - 1, "strand": "+"}
-    CHROME_SIZE = 0
+    GENOME_COODINATES = {
+        "genome": GENOME,
+        "chrom_size": 0,
+        "chr": "control",
+        "start": 0,
+        "end": len(FASTA_ALLELES["control"]) - 1,
+        "strand": "+",
+    }
     if GENOME:
         if not IS_CACHE_GENOME:
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
-            CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, URL_GOLDENPATH)
-            preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
+            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(
+                GENOME_COODINATES, GENOME_URLS, FASTA_ALLELES["control"]
+            )
+            GENOME_COODINATES = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES, GENOME_URLS)
+            midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
         else:
-            GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
-            CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
-    return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS
+            GENOME_COODINATES = midsv.read_jsonl(Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
+    return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS
 
 
 def _dtnow() -> str:
@@ -75,8 +83,8 @@ def execute_control(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(arguments)
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, GENOME_URLS = _parse_arguments(arguments)
+    _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = _format_inputs(arguments)
     ###########################################################
     # Check caches
     ###########################################################
@@ -119,7 +127,7 @@ def execute_control(arguments: dict):
     # Output BAM
     ###########################################################
     print(f"{_dtnow()}: Output BAM files of {arguments['control']}...", file=sys.stderr)
-    report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, THREADS)
     ###########################################################
     # Finish call
     ###########################################################
@@ -131,10 +139,8 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
-        arguments
-    )
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, GENOME_URLS = _parse_arguments(arguments)
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = _format_inputs(arguments)
     print(f"{_dtnow()}: Preprocess {arguments['sample']}...", file=sys.stderr)
     # ============================================================
     # Mapping with mappy
@@ -225,9 +231,7 @@ def execute_sample(arguments: dict):
     # CSV (Allele Info)
     report.report_mutation.to_csv(TEMPDIR, SAMPLE_NAME, GENOME_COODINATES, cons_percentage)
     # BAM
-    report.report_bam.output_bam_sample(
-        TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
-    )
+    report.report_bam.output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, THREADS)
     for path_bam_igvjs in Path(TEMPDIR, "cache", ".igvjs").glob(f"{CONTROL_NAME}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
     # VCF
