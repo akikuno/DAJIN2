@@ -2,96 +2,191 @@ from __future__ import annotations
 
 from pathlib import Path
 from itertools import groupby
-
+from DAJIN2.core import preprocess
+import midsv
 
 ###########################################################
-# Report mutation size in CSV format
+# reverse complement to cssplits
 ###########################################################
 
 
-def _revcomp_cssplits(cssplits: list[str]) -> list[str]:
-    comp = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N"}
+def _reverse_cssplits(cssplits: list) -> list:
+    for i, cs in enumerate(cssplits):
+        if cs.startswith("+"):
+            cssplits[i] = "+" + "|".join(cs.split("|")[::-1])
+    return cssplits[::-1]
+
+
+def _realign_insertion(cssplits: list) -> list:
+    for i, cs in enumerate(cssplits):
+        if cs.startswith("+") and i + 1 < len(cssplits):
+            cs_current = cs.split("|")
+            cssplits[i] = cs_current[0].replace("+", "")
+            cssplits[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + cssplits[i + 1]
+    return cssplits
+
+
+def _complement_cssplit(cssplits: list) -> list:
+    comp = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N", "a": "t", "c": "g", "g": "c", "t": "a", "n": "n"}
     for i, cs in enumerate(cssplits):
         op = cs[0]
         if op == "*":
             cssplits[i] = op + comp[cs[1]] + comp[cs[2]]
         elif op == "+":
-            cssplits[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|")[:-1])
+            cssplits[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|"))
         else:  # Match or Deletion or N
             cssplits[i] = op + comp[cs[-1]]
-    return cssplits[::-1]
+        cssplits[i] = cssplits[i].replace("NN", "N")
+        cssplits[i] = cssplits[i].replace("nn", "n")
+    return cssplits
 
 
-def _group_by_mutation(cssplits: list[str]) -> list[tuple[str]]:
-    return [tuple(group) for _, group in groupby(cssplits, key=lambda x: x[0])]
+def revcomp_cssplits(cssplits: list[str]) -> list[str]:
+    cssplits_reversed = _reverse_cssplits(cssplits)
+    cssplits_realigned = _realign_insertion(cssplits_reversed)
+    cssplits_revcomped = _complement_cssplit(cssplits_realigned)
+    return cssplits_revcomped
 
 
-def _report_mutations(cssplits_grouped, GENOME_COODINATES, header):
+###########################################################
+# group by mutation
+###########################################################
+
+
+def annotate_inversion(cssplits: list[str]) -> list[str]:
+    return ["@" + cs if cs[-1].islower() else cs for cs in cssplits]
+
+
+def group_by_mutation(cssplits: list[str]) -> list[list[str]]:
+    return [list(group) for _, group in groupby(cssplits, key=lambda x: x[0])]
+
+
+def flatten(lst: list[list]) -> list:
+    results_flattend = []
+    for result in lst:
+        if isinstance(result[0], list):
+            for res in result:
+                results_flattend.append(res)
+        else:
+            results_flattend.append(result)
+    return results_flattend
+
+
+###########################################################
+# report mutations
+###########################################################
+
+
+def _handle_match(group, genome, start, end, header, chr_genome):
+    end += len(group)
+    start = end
+    return None, start, end
+
+
+def _handle_substitution(group, genome, start, end, header, chr_genome):
+    result = []
+    for g in group:
+        ref = g[1]
+        mut = g[2]
+        result.append([header, genome, chr_genome, start, end, f"substitution: {ref}>{mut}"])
+        end += 1
+        start = end
+    if len(result) == 1:
+        result = result[0]
+    return result, start, end
+
+
+def _handle_deletion(group, genome, start, end, header, chr_genome):
+    end += len(group) - 1
+    size = len(group)
+    seq = "".join([g[-1] for g in group])
+    result = [header, genome, chr_genome, start, end, f"{size}bp deletion: {seq}"]
+    end += 1
+    start = end
+    return result, start, end
+
+
+def _handle_insertion(group, genome, start, end, header, chr_genome):
+    group = group[0]
+    size = group.count("|")
+    seq_insertion = "".join([g[-1] for g in group.split("|")[:-1]])
+    seq_last = group.split("|")[-1]
+    result = []
+    result.append([header, genome, chr_genome, start, end, f"{size}bp insertion: {seq_insertion}"])
+    if seq_last.startswith("="):
+        pass
+    elif seq_last.startswith("-"):
+        result.append([header, genome, chr_genome, start, end, f"1bp deletion: {seq_last[-1]}"])
+    if len(result) == 1:
+        result = result[0]
+    end += 1
+    start = end
+    return result, start, end
+
+
+def _handle_inversion(group, genome, start, end, header, chr_genome):
+    end += len(group) - 1
+    size = len(group)
+    seq = "".join([g[-1].upper() for g in group])
+    result = [header, genome, chr_genome, start, end, f"{size}bp inversion: {seq}"]
+    end += 1
+    start = end
+    return result, start, end
+
+
+def _handle_unknown(group, genome, start, end, header, chr_genome):
+    end += len(group) - 1
+    size = len(group)
+    result = [header, genome, chr_genome, start, end, f"{size}bp unknown bases"]
+    end += 1
+    start = end
+    return result, start, end
+
+
+def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
+    genome = GENOME_COODINATES["genome"]
     chr_genome = GENOME_COODINATES["chr"]
     start = end = GENOME_COODINATES["start"]
+    handlers = {
+        "=": _handle_match,
+        "*": _handle_substitution,
+        "-": _handle_deletion,
+        "+": _handle_insertion,
+        "@": _handle_inversion,
+        "N": _handle_unknown,
+    }
     results = []
-
-    def handle_match(group, start, end, header):
-        end += len(group)
-        start = end + 1
-        return None, start, end
-
-    def handle_substitution(group, start, end, header):
-        end += 1
-        ref = group[0][1]
-        mut = group[0][2]
-        result = [header, chr_genome, start, end, f"substitution: {ref}>{mut} "]
-        start = end + 1
-        return result, start, end
-
-    def handle_deletion(group, start, end, header):
-        end += len(group) - 1
-        size = len(group)
-        if size < 50:
-            seq = "".join([g[-1] for g in group])
-            result = [header, chr_genome, start, end, f"{size}bp deletion: {seq}"]
-        else:
-            result = [header, chr_genome, start, end, f"{size}bp deletion"]
-        start = end + 1
-        return result, start, end
-
-    def handle_insertion(group, start, end, header):
-        end += 1
-        group = group[0]
-        size = group.count("|")
-        if size < 50:
-            seq = "".join([g[-1] for g in group.split("|")[:-1]])
-            result = [header, chr_genome, start, end, f"{size}bp insertion: {seq}"]
-        else:
-            result = [header, chr_genome, start, end, f"{size}bp insertion"]
-        start = end + 1
-        return result, start, end
-
-    handlers = {"=": handle_match, "*": handle_substitution, "-": handle_deletion, "+": handle_insertion}
-
     for group in cssplits_grouped:
         for prefix, handler in handlers.items():
             if group[0].startswith(prefix):
-                result, start, end = handler(group, start, end, header)
-                if result:
-                    results.append(result)
-                break
+                result, start, end = handler(group, genome, start, end, header, chr_genome)
+                if prefix == "=":
+                    continue
+                results.append(result)
+    return flatten(results)
 
-    return results
 
-
-def _to_csv(header: str, cons_per: list[dict], GENOME_COODINATES: dict) -> str:
-    cons_cssplits = [max(cons, key=cons.get) for cons in cons_per]
-    if GENOME_COODINATES["strand"] == "-":
-        cons_cssplits = _revcomp_cssplits(cons_cssplits)
-    cssplits_grouped = _group_by_mutation(cons_cssplits)
-    return _report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+###########################################################
+# main
+###########################################################
 
 
 def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict, cons_percentage: dict) -> None:
-    results = [["Allele ID", "Chromosome", "Start", "End", "Mutation"]]
-    for header, cons_per in cons_percentage.items():
-        result = _to_csv(header, cons_per, GENOME_COODINATES)
+    results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
+    ref = Path(TEMPDIR, "fasta", "control.fasta")
+    for query in Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME).iterdir():
+        sam = preprocess.mappy_align.to_sam(ref, query)
+        sam = [s.split("\t") for s in sam]
+        midsv_sample = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)[0]
+        header = midsv_sample["QNAME"]
+        cssplits = midsv_sample["CSSPLIT"].split(",")
+        # for header, cons_per in cons_percentage.items():
+        #     cssplits = [max(cons, key=cons.get) for cons in cons_per]
+        if GENOME_COODINATES["strand"] == "-":
+            cssplits = revcomp_cssplits(cssplits)
+        cssplits_inversion = annotate_inversion(cssplits)
+        cssplits_grouped = group_by_mutation(cssplits_inversion)
+        result = report_mutations(cssplits_grouped, GENOME_COODINATES, header)
         results.extend(result)
     results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
     path_output = Path(TEMPDIR, "report", "ALLELE_INFO", f"{SAMPLE_NAME}.csv")
