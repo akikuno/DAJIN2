@@ -47,7 +47,18 @@ def _format_inputs(arguments: dict):
     FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    SUBDIRS = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result", "mutation_loci", "knockin_loci"]
+    SUBDIRS = [
+        "cache",
+        "fasta",
+        "sam",
+        "midsv",
+        "classification",
+        "clustering",
+        "report",
+        "result",
+        "mutation_loci",
+        "knockin_loci",
+    ]
     SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", "ALLELE_INFO", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
@@ -193,6 +204,8 @@ def execute_sample(arguments: dict):
     ########################################################################
     print(f"{_dtnow()}: Classify {arguments['sample']}...", file=sys.stderr)
     classif_sample = classification.classify_alleles(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    with open(Path(TEMPDIR, "classification", f"{SAMPLE_NAME}.pickle"), "wb") as p:
+        pickle.dump(classif_sample, p)
     ########################################################################
     # Clustering
     ########################################################################
