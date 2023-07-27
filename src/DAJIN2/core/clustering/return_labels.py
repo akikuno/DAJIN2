@@ -10,6 +10,7 @@ from typing import Generator
 from collections import Counter
 from collections import defaultdict
 
+from sklearn import metrics
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.tree import DecisionTreeClassifier
@@ -63,6 +64,7 @@ def reduce_dimension(scores_sample: Generator[list], scores_control: Generator[l
 
 def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]:
     n_components = min(20, coverage_sample + coverage_control)
+    labels_prev = list(range(coverage_sample))
     for i in range(1, n_components):
         np.random.seed(seed=1)
         labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).tolist()
@@ -73,11 +75,13 @@ def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]
         # Reads < 1% in the control are considered clustering errors and are not counted
         count_control = Counter(labels_control)
         num_labels_control = sum(1 for reads in count_control.values() if reads / coverage_control > 0.01)
+        mutual_info = metrics.adjusted_mutual_info_score(labels_prev, labels_merged)
         # Report the number of clusters in SAMPLE when the number of clusters in CONTROL is split into more than one.
-        if num_labels_control > 1:
+        if num_labels_control > 1 or 0.95 < mutual_info < 1.0:
             return labels_merged
         else:
             labels_results = labels_merged
+        labels_prev = labels_merged
     return labels_results
 
 
