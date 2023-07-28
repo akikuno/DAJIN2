@@ -27,5 +27,5 @@ def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:
         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
         cssplits = alignments_midsv["CSSPLIT"].split(",")
         knockin_loci = {i for i, cs in enumerate(cssplits) if cs == "N" or cs.startswith("-")}
-    with open(Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "wb") as p:
-        pickle.dump(knockin_loci, p)
+        with open(Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "wb") as p:
+            pickle.dump(knockin_loci, p)

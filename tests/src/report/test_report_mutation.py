@@ -26,6 +26,13 @@ def test_revcomp_cssplits_insertion():
     assert test == answer
 
 
+def test_revcomp_cssplits_insertion_long():
+    cssplits = ["=A", "=A", "+A|+A|+T|+G|=A", "=G", "=G"]
+    test = report.report_mutation.revcomp_cssplits(cssplits)
+    answer = ["=C", "=C", "=T", "+C|+A|+T|+T|=T", "=T"]
+    assert test == answer
+
+
 def test_revcomp_cssplits_insertion_with_substitution():
     cssplits = ["=A", "+A|+A|+T|+G|*AG", "=G"]
     test = report.report_mutation.revcomp_cssplits(cssplits)

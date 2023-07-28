@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
+import midsv
 from pathlib import Path
 from itertools import groupby
 from DAJIN2.core import preprocess
-import midsv
 
 ###########################################################
 # reverse complement to cssplits
@@ -19,10 +20,15 @@ def _reverse_cssplits(cssplits: list) -> list:
 
 def _realign_insertion(cssplits: list) -> list:
     for i, cs in enumerate(cssplits):
-        if cs.startswith("+") and i + 1 < len(cssplits):
-            cs_current = cs.split("|")
-            cssplits[i] = cs_current[0].replace("+", "")
-            cssplits[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + cssplits[i + 1]
+        if not cs.startswith("+"):
+            continue
+        if re.search(rf"[{cs[1]}]", "[ACGTacgt]"):
+            continue
+        if i + 1 == len(cssplits):
+            continue
+        cs_current = cs.split("|")
+        cssplits[i] = cs_current[0].replace("+", "")
+        cssplits[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + cssplits[i + 1]
     return cssplits
 
 
