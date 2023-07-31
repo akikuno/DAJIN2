@@ -113,30 +113,45 @@ def _transform_log2(values: np.array) -> np.array:
     return np.log2(values).reshape(-1, 1)
 
 
-def _ratio_of_outliers(idx_outliers, idx_upper) -> int:
-    """
-    Determine which is the correct outliers (1 or -1) by the ratio of outliers
-    """
-    if len(idx_outliers) == 0:
-        return -1
-    return len(set(idx_outliers) & set(idx_upper)) / len(idx_outliers)
+# def _ratio_of_outliers(idx_outliers, idx_upper) -> int:
+#     """
+#     Determine which is the correct outliers (1 or -1) by the ratio of outliers
+#     """
+#     if len(idx_outliers) == 0:
+#         return -1
+#     return len(set(idx_outliers) & set(idx_upper)) / len(idx_outliers)
 
 
 # def _get_divisor(set1, set2) -> int:
 #     return len(set(set1) & set(set2)) or -1
 
 
-def _merge_peaks(log2_sample, log2_control, peaks) -> set:
-    """Values higher than 75% quantile of the control values and
-    the surrouings are peaks, so merge it as a peak"""
-    threshold = np.quantile(log2_control, 0.75)
-    for i, value in enumerate(log2_sample):
-        if i not in peaks and value > threshold:
-            for j in range(i - 5, i + 6):
-                if j in peaks:
-                    peaks.add(i)
-                    break
-    return peaks
+def _merge_surrounding_index(idx_outliers: list) -> set:
+    """If an outlier is found in an adjacent 5-mer, the area is also judged as an outlier."""
+    idx_merged = set()
+    for i, idx_curr in enumerate(idx_outliers):
+        if i + 1 == len(idx_outliers):
+            break
+        idx_next = idx_outliers[i + 1]
+        if idx_next - idx_curr <= 5:
+            for j in range(idx_curr, idx_next + 1):
+                idx_merged.add(j)
+        else:
+            idx_merged.add(idx_curr)
+    return idx_merged
+
+
+# def _merge_peaks(log2_sample, log2_control, peaks) -> set:
+#     """Values higher than 75% quantile of the control values and
+#     the surrouings are peaks, merge it as a peak"""
+#     threshold = np.quantile(log2_control, 0.75)
+#     for i, value in enumerate(log2_sample):
+#         if i not in peaks and value > threshold:
+#             for j in range(i - 5, i + 6):
+#                 if j in peaks:
+#                     peaks.add(i)
+#                     break
+#     return peaks
 
 
 def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> dict[str, set]:
@@ -145,24 +160,28 @@ def extract_anomal_loci(indels_sample_normalized, indels_control_normalized) -> 
         # preprocess
         values_sample = indels_sample_normalized[mut]
         values_control = indels_control_normalized[mut]
-        values_subtract = _transform_log2(values_sample - values_control)
-        log2_control = _transform_log2(values_control)
-        log2_sample = _transform_log2(values_sample)
+        log2_subtract = _transform_log2(values_sample - values_control)
+        # log2_control = _transform_log2(values_control)
+        # log2_sample = _transform_log2(values_sample)
         # anomaly detection
         clf = linear_model.SGDOneClassSVM(random_state=0)
-        clf.fit(log2_control)
-        predicts = clf.predict(log2_sample)
-        idx_outliers = np.where(predicts == -1)[0]
-        idx_outliers_reverse = np.where(predicts == 1)[0]
-        # anomaly detection by quantile
-        idx_upper = np.where(values_subtract > np.quantile(log2_control, 0.75))[0]
-        # determine which is the correct outliers that is the percentage of outliers is large
-        # idx1 = len(idx_outliers) / _get_divisor(idx_outliers, idx_upper)
-        # idx2 = len(idx_outliers_reverse) / _get_divisor(idx_outliers_reverse, idx_upper)
-        # if idx1 < idx2:
-        if _ratio_of_outliers(idx_outliers, idx_upper) < _ratio_of_outliers(idx_outliers_reverse, idx_upper):
-            idx_outliers = idx_outliers_reverse
-        results[mut] = _merge_peaks(log2_sample, log2_control, set(idx_outliers) & set(idx_upper))
+        predicts = clf.fit_predict(log2_subtract)
+        # clf.fit(log2_control)
+        # predicts = clf.predict(log2_sample)
+        p1 = [i for i, p in enumerate(predicts) if p == -1]
+        p2 = [i for i, p in enumerate(predicts) if p == 1]
+        if np.mean(log2_subtract[p1]) > np.mean(log2_subtract[p2]):
+            idx_outliers = p1
+        else:
+            idx_outliers = p2
+        results[mut] = _merge_surrounding_index(idx_outliers)
+        # # anomaly detection by quantile
+        # threshold = np.median(np.concatenate([log2_control[:100], log2_control[-100:]]))
+        # idx_upper = [i for i, s in enumerate(log2_sample) if s > threshold]
+        # # determine which is the correct outliers that is the percentage of outliers is large
+        # if _ratio_of_outliers(idx_outliers, idx_upper) < _ratio_of_outliers(idx_outliers_reverse, idx_upper):
+        #     idx_outliers = idx_outliers_reverse
+        # results[mut] = _merge_peaks(log2_sample, log2_control, set(idx_outliers) & set(idx_upper))
     return results
 
 
@@ -176,48 +195,6 @@ def discard_errors_in_homopolymer(candidate_loci: dict[str, set], errors: dict[s
     for mut in ["+", "-", "*"]:
         mutation_loci[mut] = candidate_loci[mut] - errors[mut]
     return mutation_loci
-
-
-###########################################################
-# Biased strand
-###########################################################
-
-
-# def is_strand_bias(midsv_control) -> bool:
-#     count_strand = defaultdict(int)
-#     for m in midsv_control:
-#         count_strand[m["STRAND"]] += 1
-#     percentage_plus = count_strand["+"] / (count_strand["+"] + count_strand["-"])
-#     if 0.25 < percentage_plus < 0.75:
-#         return False
-#     else:
-#         return True
-
-
-# def discard_errors_on_biased_strand(midsv_sample, mutation_loci) -> dict[str, set]:
-#     """Discard substitutions on biased strand"""
-#     results = dict()
-#     for mutation, loci in mutation_loci.items():
-#         if mutation != "*":
-#             results[mutation] = loci
-#             continue
-#         mutation_loci_non_biased = set()
-#         count_plus = defaultdict(int)
-#         count_total = defaultdict(int)
-#         midsv_sample = list(midsv_sample)
-#         for samp in midsv_sample:
-#             cssplits = samp["CSSPLIT"].split(",")
-#             for i, cs in enumerate(cssplits):
-#                 if i not in loci:
-#                     continue
-#                 if not cs.startswith(mutation):
-#                     continue
-#                 count_total[i] += 1
-#                 if samp["STRAND"] == "+":
-#                     count_plus[i] += 1
-#         mutation_loci_non_biased = {i for i, total in count_total.items() if 0.25 < (count_plus[i] / total) < 0.75}
-#         results[mutation] = mutation_loci_non_biased
-#     return results
 
 
 ###########################################################
@@ -289,7 +266,6 @@ def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]
 
 
 def extract_mutation_loci(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str) -> None:
-    # MUTATION_LOCI_ALLELES = dict()
     for allele, sequence in FASTA_ALLELES.items():
         if Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}_{allele}.pickle").exists():
             continue

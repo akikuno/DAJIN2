@@ -1,28 +1,35 @@
 from __future__ import annotations
 
+import pickle
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
-import pickle
+
 import midsv
 import numpy as np
-import rapidfuzz
+from rapidfuzz import process
+from rapidfuzz.distance import DamerauLevenshtein
+from sklearn import metrics
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
+###########################################################
+# Detect insertion sequences
+###########################################################
 
-def extract_insertions(path_sample: str, path_control: str, mutation_loci: dict) -> defaultdict[dict[dict]]:
-    insertion_sample = defaultdict(int)
-    insertion_control = defaultdict(int)
-    for m in midsv.read_jsonl(path_sample):
+
+def count_insertions(path: Path | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
+    insertion_counts = defaultdict(int)
+    for m in midsv.read_jsonl(path):
         cssplits = m["CSSPLIT"].split(",")
         for idx in (i for i, m in enumerate(mutation_loci) if "+" in m):
             if cssplits[idx].startswith("+"):
-                insertion_sample[frozenset((idx, cssplits[idx]))] += 1
-    for m in midsv.read_jsonl(path_control):
-        cssplits = m["CSSPLIT"].split(",")
-        for idx in (i for i, m in enumerate(mutation_loci) if "+" in m):
-            if cssplits[idx].startswith("+"):
-                insertion_control[frozenset((idx, cssplits[idx]))] += 1
+                insertion_counts[(idx, cssplits[idx])] += 1
+    return insertion_counts
+
+
+def create_insertions_dict(
+    insertion_sample: dict[tuple[int, str], int], insertion_control: dict[tuple[int, str], int]
+) -> defaultdict[dict[str, int]]:
     insertions = defaultdict(dict)
     for key in insertion_sample.keys() - insertion_control.keys():
         score = insertion_sample[key]
@@ -33,7 +40,15 @@ def extract_insertions(path_sample: str, path_control: str, mutation_loci: dict)
     return insertions
 
 
-def group_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> list[tuple[int]]:
+def extract_insertions(
+    path_sample: Path | str, path_control: Path | str, mutation_loci: dict
+) -> defaultdict[dict[str, int]]:
+    insertion_sample = count_insertions(path_sample, mutation_loci)
+    insertion_control = count_insertions(path_control, mutation_loci)
+    return create_insertions_dict(insertion_sample, insertion_control)
+
+
+def group_index_by_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> list[tuple[int]]:
     index = sorted(i for i, m in enumerate(mutation_loci) if "+" in m)
     index_grouped = []
     for _, group in groupby(enumerate(index), lambda i_x: i_x[0] - i_x[1]):
@@ -42,7 +57,10 @@ def group_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> list[tup
     return index_grouped
 
 
-def group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
+# merge_similar_insertions
+
+
+def _group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
     """
     Insertion bases in consecutive insertion base positions are grouped together in mutation_loci,
     as the insertion site may shift by a few bases.
@@ -54,50 +72,65 @@ def group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
     return insertions_grouped
 
 
-def merge_similar_insertions(insertions_grouped) -> dict[dict[frozenset[str], int]]:
-    """
-    Inserted bases with a high degree of similarity in terms of sequence and sequence length are regarded as the same.
-    """
+def _get_normalized_scores(query: str, choices: list[str]) -> np.ndarray:
+    sequences, scores, _ = zip(*process.extract_iter(query, choices, scorer=DamerauLevenshtein.normalized_distance))
+    scores_np = np.array(scores).reshape(-1, 1)
+    normalized_scores = (scores_np - scores_np.min()) / (scores_np.max() - scores_np.min())
+    counts = np.array([s.count("|") for s in sequences]).reshape(-1, 1)
+    X = np.concatenate([normalized_scores, counts], axis=1)
+    return X
+
+
+def _optimize_labels(X: np.array) -> list[int]:
+    sample_size = X.shape[0]
+    labels_prev = list(range(sample_size))
+    for i in range(1, sample_size):
+        np.random.seed(seed=1)
+        labels_current = MiniBatchKMeans(n_clusters=i, random_state=1, n_init="auto").fit_predict(X).tolist()
+        silhuette = metrics.silhouette_score(X, labels_current) if i > 1 else 0
+        mutual_info = metrics.adjusted_mutual_info_score(labels_prev, labels_current)
+        # print(i, Counter(labels_current), round(silhuette, 2), round(mutual_info, 2) ) # ! DEBUG
+        if i == 2 and silhuette < 0:
+            return [1] * len(labels_current)
+        if 0.9 < silhuette or 0.9 < mutual_info:
+            return labels_current
+        labels_prev = labels_current
+    return labels_current
+
+
+def _get_merged_insertion(insertion: dict[str, int], labels: np.ndarray) -> dict[frozenset, int]:
+    insertion_label = [(label, {key: val}) for label, (key, val) in zip(labels, insertion.items())]
+    insertion_label.sort(key=lambda x: x[0])
+    insertion_merged = dict()
+    for _, group in groupby(insertion_label, key=lambda x: x[0]):
+        group = [g[1] for g in group]
+        seq, count = set(), 0
+        for g in group:
+            key, val = list(g.items())[0]
+            seq.add(key)
+            count += val
+        insertion_merged[frozenset(seq)] = count
+    return insertion_merged
+
+
+def merge_similar_insertions(insertions, index_grouped) -> dict[dict[frozenset[str], int]]:
+    insertions_grouped = _group_insertions(insertions, index_grouped)
     insertions_merged = defaultdict(dict)
-    for idx in insertions_grouped:
-        insertion = insertions_grouped[idx]
+    for idx, insertion in insertions_grouped.items():
+        if len(insertion) == 1:
+            key, val = list(insertion.items())[0]
+            insertions_merged[idx][frozenset([key])] = val
+            continue
         query = list(insertion.keys())[0]
-        choices = list(insertion.keys())
-        sequences_insertion = []
-        scores_insertion = []
-        for res in rapidfuzz.process.extract_iter(query, choices):
-            sequences_insertion.append(res[0])
-            scores_insertion.append(res[1])
-        X = np.array(scores_insertion).reshape(-1, 1)
-        X = (X - X.min()) / (X.max() - X.min())
-        # count the base number of insertions
-        counts = np.array([s.count("|") for s in sequences_insertion]).reshape(-1, 1)
-        X = np.concatenate([X, counts], axis=1)
-        clustering = MiniBatchKMeans(n_clusters=2, n_init="auto").fit(X)
-        labels = clustering.labels_
-        # count scores
-        scores_similar = []
-        scores_dissimilar = []
-        label_first = labels[0]
-        for label, val in zip(labels, insertion.values()):
-            if label == label_first:
-                scores_similar.append(val)
-            else:
-                scores_dissimilar.append(val)
-        scores_similar = sum(scores_similar)
-        scores_dissimilar = sum(scores_dissimilar)
-        # combine sequences and scores
-        seq_similar = set()
-        seq_dissimilar = set()
-        for label, seq in zip(labels, insertion.keys()):
-            if label == label_first:
-                seq_similar.add(seq)
-            else:
-                seq_dissimilar.add(seq)
-        seq_similar = frozenset(seq_similar)
-        seq_dissimilar = frozenset(seq_dissimilar)
-        insertions_merged[idx].update({**{seq_similar: scores_similar}, **{seq_dissimilar: scores_dissimilar}})
+        X = _get_normalized_scores(query, list(insertion.keys()))
+        labels = _optimize_labels(X)
+        insertions_merged[idx] = _get_merged_insertion(insertion, labels)
     return insertions_merged
+
+
+###########################################################
+# Detect insertions alleles
+###########################################################
 
 
 def extract_score_and_sequence(path_sample, insertions_merged) -> list[tuple[list[int], str]]:
@@ -130,7 +163,7 @@ def clustering_insertions(scores) -> list[int]:
 
 
 ###########################################################
-# consensus calling
+# Call consensus
 ###########################################################
 
 
@@ -259,9 +292,8 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     insertions = extract_insertions(path_sample, path_control, mutation_loci)
     if not insertions:
         return None
-    index_grouped = group_consecutive_insertions(mutation_loci)
-    insertions_grouped = group_insertions(insertions, index_grouped)
-    insertions_merged = merge_similar_insertions(insertions_grouped)
+    index_grouped = group_index_by_consecutive_insertions(mutation_loci)
+    insertions_merged = merge_similar_insertions(insertions, index_grouped)
     insertions_scores_sequences = extract_score_and_sequence(path_sample, insertions_merged)
     labels = clustering_insertions([score for score, _ in insertions_scores_sequences])
     insertion_sequences_subset = subset_sequences([seq for _, seq in insertions_scores_sequences], labels, num=1000)
