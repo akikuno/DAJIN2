@@ -59,7 +59,7 @@ def _format_inputs(arguments: dict):
         "mutation_loci",
         "knockin_loci",
     ]
-    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", "ALLELE_INFO", ".igvjs"]
+    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", "MUTATION_INFO", ".igvjs"]
     preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
 
     IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)

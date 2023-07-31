@@ -195,5 +195,5 @@ def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict, cons_
         result = report_mutations(cssplits_grouped, GENOME_COODINATES, header)
         results.extend(result)
     results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
-    path_output = Path(TEMPDIR, "report", "ALLELE_INFO", f"{SAMPLE_NAME}.csv")
+    path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")
     path_output.write_text(results_csv)

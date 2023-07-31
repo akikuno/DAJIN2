@@ -16,7 +16,7 @@ def make_directories(TEMPDIR: Path, SUBDIRS: list[str], SUBDIRS_REPORT: list[str
     for subdir in SUBDIRS:
         Path(TEMPDIR, subdir).mkdir(parents=True, exist_ok=True)
     for reportdir in SUBDIRS_REPORT:
-        if reportdir == "ALLELE_INFO":
+        if reportdir == "MUTATION_INFO":
             Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
         else:
             Path(TEMPDIR, "report", reportdir, SAMPLE_NAME).mkdir(parents=True, exist_ok=True)
@@ -115,18 +115,3 @@ def fetch_chrom_size(GENOME_COODINATES: dict, GENOME_URLS: dict) -> int:
             chrom_size = int(req[1])
     GENOME_COODINATES["chrom_size"] = chrom_size
     return GENOME_COODINATES
-
-
-# def save_genone_(TEMPDIR: Path | str, GENOME_COODINATES: dict) -> None:
-#     """
-#     Save (1) genome_symbol.txt, (2) genome_coodinates.jsonl, (3) chrome_size.txt
-#     """
-#     genome = GENOME_COODINATES["genome"]
-#     chrom_size = GENOME_COODINATES["chrom_size"]
-#     # Save info to the cache directory
-#     Path(TEMPDIR, "cache", "genome_symbol.txt").write_text(genome + "\n")
-#     midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
-#     Path(TEMPDIR, "cache", "chrome_size.txt").write_text(str(chrom_size) + "\n")))
-#     # Save info to the .igvjs directory
-#     Path(TEMPDIR, "report", ".igvjs", "genome_symbol.txt").write_text(genome + "\n")
-#     midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "report", ".igvjs", "genome_coodinates.jsonl"))
