@@ -14,6 +14,8 @@ pip install DAJIN2
 
 ## Usage
 
+### Basics
+
 You can run DAJIN2 for a single sample (one sample vs one control)
 + `batch`: analyzing and comparing multiple experimental conditions at the same site
 + `gui`: submitting data using graphical user interface (GUI)
@@ -41,35 +43,34 @@ options:
 #### Example
 
 ```bash
-# donwload example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/single.tar.gz
-tar -xf single.tar.gz
+# Donwload example dataset
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-single.tar.gz
+tar -xf example-single.tar.gz
 
+# Run DAJIN2
 DAJIN2 \
     --name stx2-deletion \
-    --sample "single/barcode25.fq.gz" \
-    --control "single/barcode30.fq.gz" \
-    --allele "single/design_stx2.fa" \
-    --genome mm10 \
+    --sample "example-single/sample.fq.gz" \
+    --control "example-single/control.fq.gz" \
+    --allele "example-single/design.fa" \
+    --genome mm39 \
     --threads 10
 
-# 2023-06-04 11:30:03: single/barcode30.fq.gz is now processing...
-# 2023-06-04 11:30:06: Preprocess single/barcode30.fq.gz...
-# 2023-06-04 11:30:06: Mapping single/barcode30.fq.gz...
-# 2023-06-04 11:30:21: Call MIDSV single/barcode30.fq.gz...
-# 2023-06-04 11:30:31: 🍵 single/barcode30.fq.gz is finished!
-# 2023-06-04 11:30:31: single/barcode25.fq.gz is now processing...
-# 2023-06-04 11:30:35: Preprocess single/barcode25.fq.gz...
-# 2023-06-04 11:34:13: Classify single/barcode25.fq.gz...
-# 2023-06-04 11:34:18: Clustering single/barcode25.fq.gz...
-# 2023-06-04 11:35:01: Consensus calling single/barcode25.fq.gz...
-# 2023-06-04 11:35:08: 🍵 single/barcode25.fq.gz is finished!
+# 2023-06-04 11:30:03: example-single/control.fq.gz is now processing...
+# 2023-06-04 11:30:06: Preprocess example-single/control.fq.gz...
+# 2023-06-04 11:30:06: Mapping example-single/control.fq.gz...
+# 2023-06-04 11:30:21: Call MIDSV example-single/control.fq.gz...
+# 2023-06-04 11:30:31: 🍵 example-single/control.fq.gz is finished!
+# 2023-06-04 11:30:31: example-single/sample.fq.gz is now processing...
+# 2023-06-04 11:30:35: Preprocess example-single/sample.fq.gz...
+# 2023-06-04 11:34:13: Classify example-single/sample.fq.gz...
+# 2023-06-04 11:34:18: Clustering example-single/sample.fq.gz...
+# 2023-06-04 11:35:01: Consensus calling example-single/sample.fq.gz...
+# 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
 # 🎉 Finished! Open DAJINResults/stx2-deletion to see the report.
 ```
 
-## Alternate running modes
-
-### `batch` mode
+### Batch handling
 
 DAJIN2 can handle many FASTQ files using the `batch' subcommand.
 
@@ -85,8 +86,27 @@ options:
 
 #### Example
 
-🚧 Working in progress 🚧
+```bash
+# Donwload example dataset
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-batch.tar.gz
+tar -xf example-batch.tar.gz
 
+# Run DAJIN2
+DAJIN2 --batch example-batch/batch.xlsx --threads 3
+
+# 2023-06-04 11:30:03: example-single/control.fq.gz is now processing...
+# 2023-06-04 11:30:06: Preprocess example-single/control.fq.gz...
+# 2023-06-04 11:30:06: Mapping example-single/control.fq.gz...
+# 2023-06-04 11:30:21: Call MIDSV example-single/control.fq.gz...
+# 2023-06-04 11:30:31: 🍵 example-single/control.fq.gz is finished!
+# 2023-06-04 11:30:31: example-single/sample.fq.gz is now processing...
+# 2023-06-04 11:30:35: Preprocess example-single/sample.fq.gz...
+# 2023-06-04 11:34:13: Classify example-single/sample.fq.gz...
+# 2023-06-04 11:34:18: Clustering example-single/sample.fq.gz...
+# 2023-06-04 11:35:01: Consensus calling example-single/sample.fq.gz...
+# 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
+# 🎉 Finished! Open DAJINResults/stx2-deletion to see the report.
+```
 ### `gui` mode
 
 DAJIN2 can be run with a graphical user interface (GUI) via the `gui` subcommand.
