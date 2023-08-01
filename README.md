@@ -17,8 +17,6 @@ pip install DAJIN2
 ### Basics
 
 You can run DAJIN2 for a single sample (one sample vs one control)
-+ `batch`: analyzing and comparing multiple experimental conditions at the same site
-+ `gui`: submitting data using graphical user interface (GUI)
 
 
 ```bash
@@ -50,9 +48,9 @@ tar -xf example-single.tar.gz
 # Run DAJIN2
 DAJIN2 \
     --name stx2-deletion \
-    --sample "example-single/sample.fq.gz" \
-    --control "example-single/control.fq.gz" \
-    --allele "example-single/design.fa" \
+    --sample example-single/sample.fq.gz \
+    --control example-single/control.fq.gz \
+    --allele example-single/design.fa \
     --genome mm39 \
     --threads 10
 
