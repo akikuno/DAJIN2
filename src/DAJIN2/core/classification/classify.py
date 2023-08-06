@@ -4,42 +4,6 @@ import midsv
 from pathlib import Path
 from itertools import groupby
 
-# import re
-# import json
-# from collections import defaultdict
-# from itertools import permutations
-# from typing import Generator
-# from DAJIN2.core.preprocess import align
-
-
-# def _extract_diff_loci(TEMPDIR: Path) -> defaultdict[dict]:
-#     """
-#     Extract differencial loci between alleles
-#         - The purpose is to lower match_score between very similar alleles such as point mutation.
-#     """
-#     fasta_alleles = list(Path(TEMPDIR, "fasta").iterdir())
-#     fasta_alleles = [f for f in fasta_alleles if f.suffix != ".fai" or not re.search("insertion", f.suffix)]
-#     mutation_alleles = defaultdict(dict)
-#     for pair in list(permutations(fasta_alleles, 2)):
-#         ref, query = pair
-#         ref_allele = ref.stem
-#         alignments = align.to_sam(ref, query, preset="splice")
-#         alignments = list(alignments)
-#         alignments = [a.split("\t") for a in alignments]
-#         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
-#         cssplits = alignments_midsv["CSSPLIT"].split(",")
-#         mutations = dict()
-#         mismatches = 0
-#         for i, cs in enumerate(cssplits):
-#             if cs.startswith("="):
-#                 continue
-#             mutations[i] = cs
-#             mismatches += 1
-#             mismatches += cs.count("|")  # insertion
-#         if mismatches < 10:
-#             mutation_alleles[ref_allele].update(mutations)
-#     return mutation_alleles
-
 
 def _calc_match(CSSPLIT: str) -> float:
     match_score = CSSPLIT.count("=")
