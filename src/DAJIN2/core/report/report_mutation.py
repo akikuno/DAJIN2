@@ -179,9 +179,9 @@ def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
 
 def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict, cons_percentage: dict) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
-    ref = Path(TEMPDIR, "fasta", "control.fasta")
+    ref = Path(TEMPDIR, SAMPLE_NAME, "fasta", "control.fasta")
     for query in Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME).iterdir():
-        sam = preprocess.mappy_align.to_sam(ref, query)
+        sam = preprocess.align.to_sam(ref, query)
         sam = [s.split("\t") for s in sam]
         midsv_sample = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)[0]
         header = midsv_sample["QNAME"]

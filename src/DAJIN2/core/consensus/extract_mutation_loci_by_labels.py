@@ -30,9 +30,9 @@ def extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTRO
         indels_sample = count_indels(group, sequence)
         indels_sample_normalized = normalize_indels(indels_sample, coverages_sample)
         indels_kmer_sample = split_kmer(indels_sample_normalized, kmer=11)
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_normalized.pickle"), "rb") as f:
+        with open(Path(TEMPDIR, CONTROL_NAME, "mutation_loci", f"{allele}_normalized.pickle"), "rb") as f:
             indels_control_normalized = pickle.load(f)
-        with open(Path(TEMPDIR, "mutation_loci", f"{CONTROL_NAME}_{allele}_kmer.pickle"), "rb") as f:
+        with open(Path(TEMPDIR, CONTROL_NAME, "mutation_loci", f"{allele}_kmer.pickle"), "rb") as f:
             indels_kmer_control = pickle.load(f)
         # Calculate dissimilar loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
@@ -44,8 +44,9 @@ def extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTRO
         )
         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
         # Add all mutations into knockin loci
-        if Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle").exists():
-            with open(Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "rb") as p:
+        path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
+        if path_knockin.exists():
+            with open(path_knockin, "rb") as p:
                 knockin_loci = pickle.load(p)
             mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
         mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)

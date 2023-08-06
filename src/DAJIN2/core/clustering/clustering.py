@@ -66,16 +66,17 @@ def is_strand_bias(path_control) -> bool:
 def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS: int = 1) -> list[dict[str]]:
     labels_all = []
     max_label = 0
-    strand_bias = is_strand_bias(Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.json"))
+    strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         RANDOM_NUM = random.randint(0, 10**10)
-        if Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle").exists():
-            with open(Path(TEMPDIR, "knockin_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "rb") as p:
+        path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
+        if path_knockin.exists():
+            with open(path_knockin, "rb") as p:
                 knockin_loci = pickle.load(p)
         else:
             knockin_loci = set()
-        with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}_{allele}.pickle"), "rb") as p:
+        with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle"), "rb") as p:
             mutation_loci: dict[str, set[str]] = pickle.load(p)
         if all(m == set() for m in mutation_loci):
             labels = [1] * len(classif_sample)
@@ -83,14 +84,14 @@ def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS: int 
             max_label = max(labels_reorder)
             labels_all.extend(labels_reorder)
             continue
-        path_sample = Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}_{allele}_{RANDOM_NUM}.json")
-        path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_{allele}.json")
+        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_{RANDOM_NUM}.json")
+        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
         write_json(path_sample, group)
         mutation_score: list[dict[str, float]] = make_score(path_sample, path_control, mutation_loci, knockin_loci)
         scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
         scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
-        path_score_sample = Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}_{allele}_score_{RANDOM_NUM}.json")
-        path_score_control = Path(TEMPDIR, "clustering", f"{CONTROL_NAME}_{allele}_score_{RANDOM_NUM}.json")
+        path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
+        path_score_control = Path(TEMPDIR, CONTROL_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
         write_json(path_score_sample, scores_sample)
         write_json(path_score_control, scores_control)
         labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)

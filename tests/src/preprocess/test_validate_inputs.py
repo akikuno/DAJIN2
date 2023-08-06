@@ -36,7 +36,7 @@ def test_fastq_error_not_fastq_format():
 
 
 def test_fastq_without_error():
-    fasta_path = "examples/nanosim/del-stx2/control.fq.gz"
+    fasta_path = "tests/data/preprocess/validate_inputs/control.fq.gz"
     assert validate_inputs._fastq_content(fasta_path) is None
 
 
@@ -74,7 +74,7 @@ def test_fasta_error_without_control():
 
 
 def test_fasta_without_error():
-    fasta_path = "examples/nanosim/del-stx2/design_stx2.fa"
+    fasta_path = "tests/data/preprocess/validate_inputs/design_stx2.fa"
     assert validate_inputs._fasta_content(fasta_path) is None
 
 

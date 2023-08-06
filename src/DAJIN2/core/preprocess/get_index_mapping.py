@@ -3,7 +3,7 @@ from __future__ import annotations
 import midsv
 import pickle
 from pathlib import Path
-from DAJIN2.core.preprocess import mappy_align
+from DAJIN2.core.preprocess import align
 
 
 def select_control(path_fasta: list[Path]) -> Path:
@@ -32,10 +32,10 @@ def has_splice(alignments_midsv: dict[str]) -> bool:
 
 
 def get_cssplit(reference: Path, query: Path, preset: str = "splice") -> list[str]:
-    alignments = [a.split("\t") for a in mappy_align.to_sam(reference, query, preset=preset)]
+    alignments = [a.split("\t") for a in align.to_sam(reference, query, preset=preset)]
     alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
     if has_splice(alignments_midsv):
-        alignments = [a.split("\t") for a in mappy_align.to_sam(reference, query, preset="map-ont")]
+        alignments = [a.split("\t") for a in align.to_sam(reference, query, preset="map-ont")]
         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
     return alignments_midsv["CSSPLIT"].split(",")
 

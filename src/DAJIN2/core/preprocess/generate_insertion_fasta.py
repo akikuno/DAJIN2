@@ -17,17 +17,21 @@ from sklearn.cluster import MeanShift, MiniBatchKMeans
 ###########################################################
 
 
-def count_insertions(path: Path | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
+def _count_insertions(path: Path | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
     insertion_counts = defaultdict(int)
     for m in midsv.read_jsonl(path):
         cssplits = m["CSSPLIT"].split(",")
         for idx in (i for i, m in enumerate(mutation_loci) if "+" in m):
             if cssplits[idx].startswith("+"):
                 insertion_counts[(idx, cssplits[idx])] += 1
+    # remove low frequency insertions
+    coverage_sample = sum(1 for _ in midsv.read_jsonl(path))
+    threshold = int(coverage_sample * 0.5 / 100)
+    insertion_counts = {k: v for k, v in insertion_counts.items() if v >= threshold}
     return insertion_counts
 
 
-def create_insertions_dict(
+def _create_insertions_dict(
     insertion_sample: dict[tuple[int, str], int], insertion_control: dict[tuple[int, str], int]
 ) -> defaultdict[dict[str, int]]:
     insertions = defaultdict(dict)
@@ -43,21 +47,23 @@ def create_insertions_dict(
 def extract_insertions(
     path_sample: Path | str, path_control: Path | str, mutation_loci: dict
 ) -> defaultdict[dict[str, int]]:
-    insertion_sample = count_insertions(path_sample, mutation_loci)
-    insertion_control = count_insertions(path_control, mutation_loci)
-    return create_insertions_dict(insertion_sample, insertion_control)
+    insertion_sample = _count_insertions(path_sample, mutation_loci)
+    insertion_control = _count_insertions(path_control, mutation_loci)
+    return _create_insertions_dict(insertion_sample, insertion_control)
 
 
-def group_index_by_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> list[tuple[int]]:
+###########################################################
+# Merge similar insertion sequences
+###########################################################
+
+
+def _group_index_by_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> list[tuple[int]]:
     index = sorted(i for i, m in enumerate(mutation_loci) if "+" in m)
     index_grouped = []
     for _, group in groupby(enumerate(index), lambda i_x: i_x[0] - i_x[1]):
         items = [value for _, value in group]
         index_grouped.append(tuple(items))
     return index_grouped
-
-
-# merge_similar_insertions
 
 
 def _group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
@@ -68,15 +74,17 @@ def _group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
     insertions_grouped = defaultdict(dict)
     for idx in index_grouped:
         for i in idx:
+            if i not in insertions:
+                continue
             insertions_grouped[idx].update(insertions[i])
     return insertions_grouped
 
 
 def _get_normalized_scores(query: str, choices: list[str]) -> np.ndarray:
-    sequences, scores, _ = zip(*process.extract_iter(query, choices, scorer=DamerauLevenshtein.normalized_distance))
+    seqs, scores, _ = zip(*process.extract_iter(query, choices, scorer=DamerauLevenshtein.normalized_distance))
     scores_np = np.array(scores).reshape(-1, 1)
     normalized_scores = (scores_np - scores_np.min()) / (scores_np.max() - scores_np.min())
-    counts = np.array([s.count("|") for s in sequences]).reshape(-1, 1)
+    counts = np.array([s.count("|") for s in seqs]).reshape(-1, 1)
     X = np.concatenate([normalized_scores, counts], axis=1)
     return X
 
@@ -113,7 +121,8 @@ def _get_merged_insertion(insertion: dict[str, int], labels: np.ndarray) -> dict
     return insertion_merged
 
 
-def merge_similar_insertions(insertions, index_grouped) -> dict[dict[frozenset[str], int]]:
+def merge_similar_insertions(insertions, mutation_loci) -> dict[dict[frozenset[str], int]]:
+    index_grouped = _group_index_by_consecutive_insertions(mutation_loci)
     insertions_grouped = _group_insertions(insertions, index_grouped)
     insertions_merged = defaultdict(dict)
     for idx, insertion in insertions_grouped.items():
@@ -129,7 +138,7 @@ def merge_similar_insertions(insertions, index_grouped) -> dict[dict[frozenset[s
 
 
 ###########################################################
-# Detect insertions alleles
+# Cluster insertion alleles
 ###########################################################
 
 
@@ -156,6 +165,8 @@ def extract_score_and_sequence(path_sample, insertions_merged) -> list[tuple[lis
 
 def clustering_insertions(scores) -> list[int]:
     X = np.array(scores)
+    if X.max() - X.min() == 0:
+        return [1] * len(X)
     X = (X - X.min()) / (X.max() - X.min())
     clustering = MeanShift().fit(X)
     labels = clustering.labels_
@@ -218,18 +229,7 @@ def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     return ",".join(consensus_sequence)
 
 
-def call_consensus(sequences_subset: list[dict]) -> dict[int, str]:
-    cons_sequence = dict()
-    sequences_subset.sort(key=lambda x: x["LABEL"])
-    for label, group in groupby(sequences_subset, key=lambda x: x["LABEL"]):
-        cssplits = [cs["CSSPLIT"].split(",") for cs in group]
-        cons_per = _call_percentage(cssplits)
-        cons_seq = _call_sequence(cons_per)
-        cons_sequence[label] = cons_seq
-    return cons_sequence
-
-
-def remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
+def _remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
     cons_sequence_removed = dict()
     for label, seq in cons_sequence.items():
         if all(True if s == "N" else False for s in seq.split(",")):
@@ -238,9 +238,20 @@ def remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
     return cons_sequence_removed
 
 
-def extract_index_of_insertions(insertions, index_grouped) -> list[int]:
+def call_consensus(sequences_subset: list[dict]) -> dict[int, str]:
+    cons_sequence = dict()
+    sequences_subset.sort(key=lambda x: x["LABEL"])
+    for label, group in groupby(sequences_subset, key=lambda x: x["LABEL"]):
+        cssplits = [cs["CSSPLIT"].split(",") for cs in group]
+        cons_per = _call_percentage(cssplits)
+        cons_seq = _call_sequence(cons_per)
+        cons_sequence[label] = cons_seq
+    return _remove_all_n(cons_sequence)
+
+
+def extract_index_of_insertions(insertions, insertions_merged) -> list[int]:
     index_of_insertions = []
-    for idx_group in index_grouped:
+    for idx_group in insertions_merged:
         max_val = -1
         for idx in idx_group:
             if max_val < sum(insertions[idx].values()):
@@ -263,19 +274,41 @@ def generate_consensus(cons_sequence, index_of_insertions, sequence) -> dict[int
     return consensus_sequence_insertion
 
 
+def filter_consensus(consensus_sequence_insertion: dict[int, str], FASTA_ALLELES: dict) -> dict[int, str]:
+    """Filter similar insertions compared to control sequence"""
+    unique_insertions = set(consensus_sequence_insertion.values())
+    for query in FASTA_ALLELES.values():
+        seqs, mismatches, _ = zip(*process.extract_iter(query, unique_insertions, scorer=DamerauLevenshtein.distance))
+        for seq, mismatch in zip(seqs, mismatches):
+            if mismatch <= 10:
+                unique_insertions.remove(seq)
+    return {i: seq for i, seq in enumerate(unique_insertions)}
+
+
 ###########################################################
 # generate fasta
 ###########################################################
 
 
-def update_labels(d: dict, prefix: str = "insertion") -> dict:
-    keta = len(str(len(d)))
-    return {f"{prefix}{i+1:0{keta}}": seq for i, seq in enumerate(d.values())}
+def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
+    user_defined_alleles = set(FASTA_ALLELES)
+    d_values = list(d.values())
+    len_d = len(d_values)
+    digits_up = 0
+    # Update labels to avoid duplicating user-specified alleles
+    # (insertion1 -> insertion01 -> insertion001...)
+    while True:
+        digits = len(str(len_d)) + digits_up
+        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
+        if user_defined_alleles.isdisjoint(set(d_updated)):
+            break
+        digits_up += 1
+    return d_updated
 
 
-def save_fasta(TEMPDIR: Path | str, consensus_sequence_insertion: dict) -> None:
+def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, consensus_sequence_insertion: dict) -> None:
     for header, seq in consensus_sequence_insertion.items():
-        Path(TEMPDIR, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}")
+        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}")
 
 
 ###########################################################
@@ -284,22 +317,27 @@ def save_fasta(TEMPDIR: Path | str, consensus_sequence_insertion: dict) -> None:
 
 
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
-    path_sample = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_control.json")
-    path_control = Path(TEMPDIR, "midsv", f"{CONTROL_NAME}_control.json")
-    with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}_control.pickle"), "rb") as p:
+    path_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
+    path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
+    with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"), "rb") as p:
         mutation_loci = pickle.load(p)
     sequence = FASTA_ALLELES["control"]
     insertions = extract_insertions(path_sample, path_control, mutation_loci)
-    if not insertions:
+    index_set = set(i for i, m in enumerate(mutation_loci) if "+" in m)
+    if insertions.keys() & index_set == set():
         return None
-    index_grouped = group_index_by_consecutive_insertions(mutation_loci)
-    insertions_merged = merge_similar_insertions(insertions, index_grouped)
+    insertions_merged = merge_similar_insertions(insertions, mutation_loci)
     insertions_scores_sequences = extract_score_and_sequence(path_sample, insertions_merged)
     labels = clustering_insertions([score for score, _ in insertions_scores_sequences])
     insertion_sequences_subset = subset_sequences([seq for _, seq in insertions_scores_sequences], labels, num=1000)
     cons_sequence = call_consensus(insertion_sequences_subset)
-    cons_sequence_removed = remove_all_n(cons_sequence)
-    index_of_insertions = extract_index_of_insertions(insertions, index_grouped)
-    consensus_sequence_insertion = generate_consensus(cons_sequence_removed, index_of_insertions, sequence)
-    consensus_sequence_insertion = update_labels(consensus_sequence_insertion)
-    save_fasta(TEMPDIR, consensus_sequence_insertion)
+    index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
+    consensus_sequence_insertion = generate_consensus(cons_sequence, index_of_insertions, sequence)
+    if len(consensus_sequence_insertion) == 1:
+        consensus_filtered = consensus_sequence_insertion
+    else:
+        consensus_filtered = filter_consensus(consensus_sequence_insertion, FASTA_ALLELES)
+        if consensus_filtered == dict():
+            return None
+    consensus_labeled = update_labels(consensus_filtered, FASTA_ALLELES)
+    save_fasta(TEMPDIR, SAMPLE_NAME, consensus_labeled)

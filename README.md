@@ -90,7 +90,7 @@ wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-batch.tar.gz
 tar -xf example-batch.tar.gz
 
 # Run DAJIN2
-DAJIN2 batch --file example-batch/batch.xlsx --threads 3
+DAJIN2 batch --file example-batch/batch.csv --threads 3
 
 # 2023-07-31 17:01:10: example-batch/tyr_control.fq.gz is now processing...
 # 2023-07-31 17:01:16: Preprocess example-batch/tyr_control.fq.gz...

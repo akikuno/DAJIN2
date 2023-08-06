@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+# import json
 import re
 from itertools import chain, groupby
 from pathlib import Path
@@ -129,12 +129,13 @@ def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list
 ###########################################################
 
 
-def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> None:
+def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
-        if Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json").exists():
+        path_output = Path(TEMPDIR, NAME, "midsv", f"{allele}.json")
+        if path_output.exists():
             continue
-        path_ont = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_{allele}.sam")
-        path_splice = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_splice_{allele}.sam")
+        path_ont = Path(TEMPDIR, NAME, "sam", f"map-ont_{allele}.sam")
+        path_splice = Path(TEMPDIR, NAME, "sam", f"splice_{allele}.sam")
         sam_ont = remove_overlapped_reads(list(midsv.read_sam(path_ont)))
         sam_splice = remove_overlapped_reads(list(midsv.read_sam(path_splice)))
         qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
@@ -144,7 +145,7 @@ def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> No
         midsv_chaind = midsv_transform(sam_chained)
         midsv_sample = replace_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
-        filepath = Path(TEMPDIR, "midsv", f"{SAMPLE_NAME}_{allele}.json")
-        with open(filepath, "wt", encoding="utf-8") as f:
-            for data in midsv_sample:
-                f.write(json.dumps(data) + "\n")
+        midsv.write_jsonl(midsv_sample, path_output)
+        # with open(path_output, "wt", encoding="utf-8") as f:
+        #     for data in midsv_sample:
+        #         f.write(json.dumps(data) + "\n")
