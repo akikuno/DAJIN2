@@ -16,7 +16,7 @@ from DAJIN2.core import core_execute
 from DAJIN2.postprocess import report
 from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
 
-VERSION = "0.2.4"
+VERSION = "0.3.0"
 
 # prevent BLAS from using all cores
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -70,7 +70,7 @@ def _batched(iterable, chunk_size):
         chunk = tuple(islice(iterator, chunk_size))
 
 
-def _run_multiprocess(function, arguments: list, num_workers: int = 1) -> None:
+def run_multiprocess(function, arguments: list, num_workers: int = 1) -> None:
     arguments_batched = _batched(arguments, num_workers)
     for args in arguments_batched:
         jobs = []
@@ -158,7 +158,7 @@ def execute_batch_mode(arguments: dict[str]):
                 args.update(URLS_GENOME[args["genome"]])
             contents_control.append(args)
         contents_control_unique = _extract_unique_contents(contents_control)
-        _run_multiprocess(core_execute.execute_control, contents_control_unique, num_workers)
+        run_multiprocess(core_execute.execute_control, contents_control_unique, num_workers)
         # ------------------------------
         # Handle samples
         # ------------------------------
@@ -172,7 +172,7 @@ def execute_batch_mode(arguments: dict[str]):
             args.update(URLS_GENOME[args["genome"]])
             contents_sample.append(args)
         contents_sample_unique = _extract_unique_contents(contents_sample)
-        _run_multiprocess(core_execute.execute_sample, contents_sample_unique, num_workers)
+        run_multiprocess(core_execute.execute_sample, contents_sample_unique, num_workers)
         report.report(name)
         print(
             f"\N{party popper} Finished! Open DAJINResults/{name} to see the report.",

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-import json
 import pickle
 import resource
 import shutil
@@ -11,6 +10,7 @@ from pathlib import Path
 
 import midsv
 
+from collections import defaultdict
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 
 # limit max memory usage
@@ -24,19 +24,16 @@ def _parse_arguments(arguments: dict):
     ALLELE: str = arguments["allele"]
     NAME: str = arguments["name"]
     THREADS: int = arguments["threads"]
+    GENOME_URLS = defaultdict(str)
     if "genome" in arguments:
-        GENOME: str = arguments["genome"]
-        URL_UCSC = arguments["ucsc"]
-        URL_GOLDENPATH = arguments["goldenpath"]
-    else:
-        GENOME = ""
-        URL_UCSC = ""
-        URL_GOLDENPATH = ""
-    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, URL_UCSC, URL_GOLDENPATH
+        GENOME_URLS["genome"] = arguments["genome"]
+        GENOME_URLS["blat"] = arguments["blat"]
+        GENOME_URLS["goldenpath"] = arguments["goldenpath"]
+    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS
 
 
 def _format_inputs(arguments: dict):
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, URL_UCSC, URL_GOLDENPATH = _parse_arguments(arguments)
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
     SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
     CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
     ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
@@ -46,21 +43,29 @@ def _format_inputs(arguments: dict):
     FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
     TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    SUBDIRS = ["cache", "fasta", "sam", "midsv", "clustering", "report", "result", "mutation_loci"]
-    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", ".igvjs"]
-    preprocess.format_inputs.make_directories(TEMPDIR, SUBDIRS, SUBDIRS_REPORT, SAMPLE_NAME, CONTROL_NAME)
+    Path(TEMPDIR, "cache", ".igvjs", CONTROL_NAME).mkdir(parents=True, exist_ok=True)
 
     IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)
-    IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME, TEMPDIR, IS_CACHE_CONTROL)
-    if GENOME:
+    IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME_URLS["genome"], TEMPDIR, IS_CACHE_CONTROL)
+
+    GENOME_COODINATES = {
+        "genome": GENOME_URLS["genome"],
+        "chrom_size": 0,
+        "chr": "control",
+        "start": 0,
+        "end": len(FASTA_ALLELES["control"]) - 1,
+        "strand": "+",
+    }
+    if GENOME_URLS["genome"]:
         if not IS_CACHE_GENOME:
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(GENOME, URL_UCSC, FASTA_ALLELES["control"])
-            CHROME_SIZE = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES["chr"], GENOME, URL_GOLDENPATH)
-            preprocess.format_inputs.cache_coodinates_and_chromsize(TEMPDIR, GENOME, GENOME_COODINATES, CHROME_SIZE)
+            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(
+                GENOME_COODINATES, GENOME_URLS, FASTA_ALLELES["control"]
+            )
+            GENOME_COODINATES = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES, GENOME_URLS)
+            midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
         else:
-            GENOME_COODINATES = json.loads(Path(TEMPDIR, "cache", "genome_coodinates.jsonl").read_text())
-            CHROME_SIZE = int(Path(TEMPDIR, "cache", "chrome_size.txt").read_text())
-    return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS
+            GENOME_COODINATES = midsv.read_jsonl(Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
+    return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS
 
 
 def _dtnow() -> str:
@@ -72,8 +77,10 @@ def execute_control(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    _, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(arguments)
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = _format_inputs(arguments)
+    preprocess.format_inputs.make_directories(TEMPDIR, CONTROL_NAME, is_control=True)
+    preprocess.format_inputs.make_report_directories(TEMPDIR, CONTROL_NAME, is_control=True)
     ###########################################################
     # Check caches
     ###########################################################
@@ -90,28 +97,26 @@ def execute_control(arguments: dict):
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
-    for identifier, sequence in FASTA_ALLELES.items():
-        contents = "\n".join([">" + identifier, sequence]) + "\n"
-        output_fasta = Path(TEMPDIR, "fasta", f"{identifier}.fasta")
-        output_fasta.write_text(contents)
+    preprocess.format_inputs.export_fasta_files(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     # ============================================================
     # Mapping using mappy
     # ============================================================
-    for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
-        name_fasta = path_fasta.stem
-        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, threads=THREADS)
-        preprocess.mappy_align.output_sam(
-            TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS
-        )
+    paths_fasta = Path(TEMPDIR, CONTROL_NAME, "fasta").glob("*.fasta")
+    preprocess.align.generate_sam(TEMPDIR, paths_fasta, CONTROL, CONTROL_NAME, THREADS)
     ###########################################################
     # MIDSV conversion
     ###########################################################
     preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
     ###########################################################
+    # Prepare data to `extract mutaion loci`
+    ###########################################################
+    # preprocess.save_index_mapping(TEMPDIR)
+    preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, is_control=True)
+    ###########################################################
     # Output BAM
     ###########################################################
     print(f"{_dtnow()}: Output BAM files of {arguments['control']}...", file=sys.stderr)
-    report.report_bam.output_bam_control(TEMPDIR, CONTROL_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS)
+    report.report_bam.output_bam(TEMPDIR, CONTROL_NAME, GENOME_COODINATES, THREADS, is_control=True)
     ###########################################################
     # Finish call
     ###########################################################
@@ -123,20 +128,20 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME, _, _ = _parse_arguments(arguments)
-    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, CHROME_SIZE, THREADS = _format_inputs(
-        arguments
-    )
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = _format_inputs(arguments)
+    preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME)
+    preprocess.format_inputs.make_report_directories(TEMPDIR, SAMPLE_NAME)
+
     print(f"{_dtnow()}: Preprocess {arguments['sample']}...", file=sys.stderr)
+
+    for path_fasta in Path(TEMPDIR, CONTROL_NAME, "fasta").glob("*.fasta"):
+        shutil.copy(path_fasta, Path(TEMPDIR, SAMPLE_NAME, "fasta"))
     # ============================================================
     # Mapping with mappy
     # ============================================================
-    for path_fasta in Path(TEMPDIR, "fasta").glob("*.fasta"):
-        name_fasta = path_fasta.stem
-        preprocess.mappy_align.output_sam(TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, threads=THREADS)
-        preprocess.mappy_align.output_sam(
-            TEMPDIR, path_fasta, name_fasta, SAMPLE, SAMPLE_NAME, preset="splice", threads=THREADS
-        )
+    paths_fasta = Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("*.fasta")
+    preprocess.align.generate_sam(TEMPDIR, paths_fasta, SAMPLE, SAMPLE_NAME, THREADS)
     # ============================================================
     # MIDSV conversion
     # ============================================================
@@ -144,35 +149,59 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Extract mutation loci
     # ============================================================
-    MUTATION_LOCI_ALLELES = preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
-    KNOCKIN_LOCI_ALLELES = preprocess.extract_knockin_loci(TEMPDIR)
-    with open(Path(TEMPDIR, "mutation_loci", f"{SAMPLE_NAME}.plk"), "wb") as p:
-        pickle.dump(MUTATION_LOCI_ALLELES, p)
+    preprocess.extract_knockin_loci(TEMPDIR, SAMPLE_NAME)
+    preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
+    # ============================================================
+    # Detect and align insertion alleles
+    # ============================================================
+    paths_predifined_allele = {str(p) for p in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("*.fasta")}
+    preprocess.generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES)
+    paths_insertion = {str(p) for p in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("insertion*.fasta")}
+    paths_insertion -= paths_predifined_allele
+    if paths_insertion:
+        # mapping to insertion alleles
+        preprocess.align.generate_sam(TEMPDIR, paths_insertion, CONTROL, CONTROL_NAME, THREADS)
+        preprocess.align.generate_sam(TEMPDIR, paths_insertion, SAMPLE, SAMPLE_NAME, THREADS)
+        # add insertions to FASTA_ALLELES
+        for path_fasta in paths_insertion:
+            allele, seq = Path(path_fasta).read_text().strip().split("\n")
+            allele = allele.replace(">", "")
+            FASTA_ALLELES[allele] = seq
+        # MIDSV conversion
+        preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
+        preprocess.call_midsv(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+        # Reculculate mutation loci
+        preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME, is_control=True)
+        preprocess.extract_knockin_loci(TEMPDIR, SAMPLE_NAME)
+        preprocess.extract_mutation_loci(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME, CONTROL_NAME)
     ########################################################################
     # Classify alleles
     ########################################################################
     print(f"{_dtnow()}: Classify {arguments['sample']}...", file=sys.stderr)
     classif_sample = classification.classify_alleles(TEMPDIR, FASTA_ALLELES, SAMPLE_NAME)
+    with open(Path(TEMPDIR, SAMPLE_NAME, "classif_sample.pickle"), "wb") as p:
+        pickle.dump(classif_sample, p)
     ########################################################################
     # Clustering
     ########################################################################
     print(f"{_dtnow()}: Clustering {arguments['sample']}...", file=sys.stderr)
-    clust_sample = clustering.add_labels(
-        classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, MUTATION_LOCI_ALLELES, KNOCKIN_LOCI_ALLELES, THREADS
-    )
+    clust_sample = clustering.add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
-    with open(Path(TEMPDIR, "clustering", f"{SAMPLE_NAME}.plk"), "wb") as p:
+    with open(Path(TEMPDIR, SAMPLE_NAME, "clust_sample.pickle"), "wb") as p:
         pickle.dump(clust_sample, p)
     ########################################################################
     # Consensus call
     ########################################################################
     print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
     # Downsampling to 1000 reads in each LABEL
+    # MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(
+    #     clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME
+    # )
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
-    MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-    cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)
+    cons_percentage, cons_sequence = consensus.call_consensus(TEMPDIR, SAMPLE_NAME, clust_subset_sample)
+    # cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, FASTA_ALLELES)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
@@ -185,17 +214,13 @@ def execute_sample(arguments: dict):
     # RESULT
     midsv.write_jsonl(RESULT_SAMPLE, Path(TEMPDIR, "result", f"{SAMPLE_NAME}.jsonl"))
     # FASTA
-    for header, cons_seq in cons_sequence.items():
-        cons_fasta = report.report_files.to_fasta(header, cons_seq)
-        Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta").write_text(cons_fasta)
+    report.report_files.to_fasta(TEMPDIR, SAMPLE_NAME, cons_sequence)
     # HTML
-    for header, cons_per in cons_percentage.items():
-        cons_html = report.report_files.to_html(header, cons_per)
-        Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html").write_text(cons_html)
+    report.report_files.to_html(TEMPDIR, SAMPLE_NAME, cons_percentage)
+    # CSV (Allele Info)
+    report.report_mutation.to_csv(TEMPDIR, SAMPLE_NAME, GENOME_COODINATES, cons_percentage)
     # BAM
-    report.report_bam.output_bam_sample(
-        TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME, GENOME_COODINATES, CHROME_SIZE, THREADS
-    )
+    report.report_bam.output_bam(TEMPDIR, SAMPLE_NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE)
     for path_bam_igvjs in Path(TEMPDIR, "cache", ".igvjs").glob(f"{CONTROL_NAME}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME))
     # VCF

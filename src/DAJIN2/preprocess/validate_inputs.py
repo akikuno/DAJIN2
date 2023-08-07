@@ -68,25 +68,23 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 ########################################################################
 
 
-def exists_cached_control(CONTROL: str, TEMPDIR: Path) -> bool:
-    PATH_CACHE_HASH = Path(TEMPDIR, "cache", "control_hash.txt")
-    EXISTS_CACHE_CONTROL = False
-    if PATH_CACHE_HASH.exists():
-        current_hash = hashlib.sha256(Path(CONTROL).read_bytes()).hexdigest()
-        cashed_hash = PATH_CACHE_HASH.read_text()
+def exists_cached_control(control: str, tempdir: Path) -> bool:
+    path_cache_hash = Path(tempdir, "cache", "control_hash.txt")
+    if path_cache_hash.exists():
+        current_hash = hashlib.sha256(Path(control).read_bytes()).hexdigest()
+        cashed_hash = path_cache_hash.read_text()
         if current_hash == cashed_hash:
-            EXISTS_CACHE_CONTROL = True
-    return EXISTS_CACHE_CONTROL
+            return True
+    return False
 
 
-def exists_cached_genome(GENOME: str, TEMPDIR: Path, EXISTS_CACHE_CONTROL: bool) -> bool:
-    PATH_CACHE_GENOME = Path(TEMPDIR, "cache", "genome_symbol.txt")
-    EXISTS_CACHE_GENOME = False
-    if GENOME and EXISTS_CACHE_CONTROL and PATH_CACHE_GENOME.exists():
-        cashed_genome = PATH_CACHE_GENOME.read_text()
-        if GENOME == cashed_genome:
-            EXISTS_CACHE_GENOME = True
-    return EXISTS_CACHE_GENOME
+def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool) -> bool:
+    path_cache_genome = Path(tempdir, "cache", "genome_symbol.txt")
+    if genome and exists_cache_control and path_cache_genome.exists():
+        cashed_genome = path_cache_genome.read_text()
+        if genome == cashed_genome:
+            return True
+    return False
 
 
 ########################################################################
@@ -94,57 +92,58 @@ def exists_cached_genome(GENOME: str, TEMPDIR: Path, EXISTS_CACHE_CONTROL: bool)
 ########################################################################
 
 
-def _check_url_availabilities(urls: list[str]) -> list[bool]:
-    availabilities = []
-    for url in urls:
-        try:
-            _ = urlopen(url, timeout=10)
-        except TimeoutError:
-            availabilities.append(False)
-        else:
-            availabilities.append(True)
-    return availabilities
+def _check_url_availability(url: str) -> bool:
+    try:
+        _ = urlopen(url, timeout=10)
+        return True
+    except (URLError, TimeoutError):
+        return False
 
 
-def _extract_available_urls(urls: list[str], availabilities: list[bool]) -> list[str]:
-    available_urls = []
-    for url, flag in zip(urls, availabilities):
-        if flag:
-            available_urls.append(url)
-    return available_urls
+def get_first_available_url(urls: list[str]) -> str | None:
+    return next((url for url in urls if _check_url_availability(url)), None)
 
 
-def _is_genome_listed_in_UCSC(genome: str, ucsc_url: str) -> None:
+def is_genome_listed_in_UCSC(genome: str, ucsc_url: str) -> bool:
     url = f"{ucsc_url}/cgi-bin/das/{genome}/dna?segment=1:1,10"
-    response = urlopen(url, timeout=10)
-    content = response.read()
-    response.close()
-    if not content:
-        raise AttributeError(
-            f"{genome} is not listed in UCSC genome browser. Available genomes are listed in {ucsc_url}/cgi-bin/das/dsn"
-        )
+    try:
+        response = urlopen(url, timeout=10)
+        return bool(response.read())
+    except (URLError, TimeoutError):
+        return False
 
 
-def validate_genome_and_fetch_urls(GENOME: str) -> dict[str, str]:
-    # Check UCSC Server is available
-    URLS_UCSC = [
-        "https://genome.ucsc.edu/",
-        "https://genome-asia.ucsc.edu/",
-        "https://genome-euro.ucsc.edu/",
+def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
+    ucsc_blat_servers = [
+        "https://genome.ucsc.edu/cgi-bin/hgBlat",
+        "https://genome-asia.ucsc.edu/cgi-bin/hgBlat",
+        "https://genome-euro.ucsc.edu/cgi-bin/hgBlat",
     ]
-    url_availabilities = _check_url_availabilities(URLS_UCSC)
-    if not any(url_availabilities):
-        raise URLError("All servers of UCSC Genome Browsers are currently down. Please wait for a while and try again.")
-    URL_UCSC_AVAILABLE = _extract_available_urls(URLS_UCSC, url_availabilities)[0]
-    # Check UCSC Download Server is available
-    URLS_GOLDENPATH = [
+    ucsc_das_servers = [
+        "https://genome.ucsc.edu/cgi-bin/das/dsn/",
+        "https://genome-asia.ucsc.edu/cgi-bin/das/dsn/",
+        "https://genome-euro.ucsc.edu/cgi-bin/das/dsn",
+    ]
+    goldenpath_servers = [
         "https://hgdownload.cse.ucsc.edu/goldenPath",
         "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
     ]
-    url_availabilities = _check_url_availabilities(URLS_UCSC)
-    if not any(url_availabilities):
-        raise URLError("All servers of UCSC GoldenPath are currently down. Please wait for a while and try again.")
-    URL_GOLDENPATH_AVAILABLE = _extract_available_urls(URLS_GOLDENPATH, url_availabilities)[0]
-    # Check input genome is listed in UCSC
-    _is_genome_listed_in_UCSC(GENOME, URL_UCSC_AVAILABLE)
-    return {"ucsc": URL_UCSC_AVAILABLE, "goldenpath": URL_GOLDENPATH_AVAILABLE}
+    available_servers = {
+        "blat": get_first_available_url(ucsc_blat_servers),
+        "das": get_first_available_url(ucsc_das_servers),
+        "goldenpath": get_first_available_url(goldenpath_servers),
+    }
+
+    if not available_servers["blat"]:
+        raise URLError("All UCSC blat servers are currently down. Please wait for a while and try again.")
+
+    if not available_servers["goldenpath"]:
+        raise URLError("All UCSC GoldenPath servers are currently down. Please wait for a while and try again.")
+
+    if not available_servers["das"]:
+        raise URLError("All UCSC DAS servers are currently down. Please wait for a while and try again.")
+
+    if not is_genome_listed_in_UCSC(genome, available_servers["das"]):
+        raise AttributeError(f"{genome} is not listed. Available genomes are in {available_servers['das']}")
+
+    return available_servers

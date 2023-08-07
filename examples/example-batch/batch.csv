@@ -1,0 +1,4 @@
+name, control, sample, allele, genome
+tyr-substitution, example-batch/tyr_control.fq.gz, example-batch/tyr_c230gt_50%.fq.gz, example-batch/tyr_control.fasta, mm39
+tyr-substitution, example-batch/tyr_control.fq.gz, example-batch/tyr_c230gt_10%.fq.gz, example-batch/tyr_control.fasta, mm39
+tyr-substitution, example-batch/tyr_control.fq.gz, example-batch/tyr_c230gt_01%.fq.gz, example-batch/tyr_control.fasta, mm39
