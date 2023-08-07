@@ -18,7 +18,7 @@ jobs:
       - name: Install xz for macOS to install HTSlib
         run: |
             if [ "$RUNNER_OS" == "macOS" ]; then
-                brew install xz
+                brew install xz htslib
             fi
       - name: Install dependencies via pip
         run: |
