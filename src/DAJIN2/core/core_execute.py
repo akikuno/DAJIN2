@@ -11,6 +11,7 @@ from pathlib import Path
 import midsv
 
 from collections import defaultdict
+from DAJIN2.utils import io
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 
 # limit max memory usage
@@ -34,9 +35,9 @@ def _parse_arguments(arguments: dict):
 
 def _format_inputs(arguments: dict):
     SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
-    SAMPLE = preprocess.format_inputs.convert_to_posix_path(SAMPLE)
-    CONTROL = preprocess.format_inputs.convert_to_posix_path(CONTROL)
-    ALLELE = preprocess.format_inputs.convert_to_posix_path(ALLELE)
+    SAMPLE = io.convert_to_posix(SAMPLE)
+    CONTROL = io.convert_to_posix(CONTROL)
+    ALLELE = io.convert_to_posix(ALLELE)
 
     SAMPLE_NAME: str = preprocess.format_inputs.extract_basename(SAMPLE)
     CONTROL_NAME: str = preprocess.format_inputs.extract_basename(CONTROL)

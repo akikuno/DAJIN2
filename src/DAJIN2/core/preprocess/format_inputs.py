@@ -5,7 +5,6 @@ from pathlib import Path
 from urllib.request import urlopen
 
 import mappy
-import wslPath
 
 ########################################################################
 # Make directories
@@ -41,20 +40,6 @@ def make_report_directories(TEMPDIR: Path, NAME: str, is_control=False) -> None:
             Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)
         else:
             Path(TEMPDIR, "report", reportdir, NAME).mkdir(parents=True, exist_ok=True)
-
-
-########################################################################
-# Convert Path
-########################################################################
-
-
-def convert_to_posix_path(path: str) -> str:
-    try:
-        path = wslPath.toPosix(path)
-    except ValueError:
-        # This is already a posix path, so just pass
-        pass
-    return str(path)
 
 
 ########################################################################

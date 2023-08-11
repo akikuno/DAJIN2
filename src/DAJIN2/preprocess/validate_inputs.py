@@ -157,4 +157,6 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
     if not is_genome_in_ucsc_ids(genome, available_servers["das"]):
         raise ValueError(f"{genome} is not listed. Available genomes are in {available_servers['das']}")
 
+    del available_servers["das"]
+
     return available_servers
