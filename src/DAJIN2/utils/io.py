@@ -7,6 +7,11 @@ import csv
 from typing import Generator
 
 
+###########################################################
+# convert path to POSIX format
+###########################################################
+
+
 def convert_to_posix(path: str) -> str:
     if wslPath.is_windows_path(path):
         path = wslPath.to_posix(path)
@@ -55,13 +60,13 @@ def load_file(path_batchfile: str) -> list:
 ###########################################################
 
 
-def read_json(path: str) -> Generator:
+def read_jsonl(path: str) -> Generator:
     with open(path, "r") as f:
         for line in f:
             yield json.loads(line)
 
 
-def write_json(path: str, data: Generator) -> None:
+def write_jsonl(path: str, data: Generator) -> None:
     with open(path, "w") as f:
         for d in data:
             json_str = json.dumps(d)

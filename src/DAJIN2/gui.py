@@ -11,6 +11,8 @@ from flask import Flask, render_template, request
 from waitress import serve
 from werkzeug.utils import secure_filename
 
+from DAJIN2.utils.config import TEMP_ROOT_DIR
+
 from DAJIN2 import main
 
 
@@ -46,7 +48,7 @@ def root_page():
 @app.route("/submit", methods=["POST"])
 def submit():
     name = request.form.get("name")
-    TEMPDIR = Path("DAJINResults", ".tempdir", name)
+    TEMPDIR = Path(TEMP_ROOT_DIR, name)
     if TEMPDIR.exists():
         shutil.rmtree(TEMPDIR)
     UPLOAD_FOLDER = Path(TEMPDIR, "upload")

@@ -13,64 +13,88 @@ import midsv
 from collections import defaultdict
 from DAJIN2.utils import io
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
+from DAJIN2.utils.config import TEMP_ROOT_DIR
 
 # limit max memory usage
 mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
 resource.setrlimit(resource.RLIMIT_DATA, (int(mem_bytes * 9 / 10), -1))
 
 
-def _parse_arguments(arguments: dict):
-    SAMPLE: str = arguments["sample"]
-    CONTROL: str = arguments["control"]
-    ALLELE: str = arguments["allele"]
-    NAME: str = arguments["name"]
-    THREADS: int = arguments["threads"]
-    GENOME_URLS = defaultdict(str)
+def parse_arguments(arguments: dict):
+    genome_urls = defaultdict(str)
     if "genome" in arguments:
-        GENOME_URLS["genome"] = arguments["genome"]
-        GENOME_URLS["blat"] = arguments["blat"]
-        GENOME_URLS["goldenpath"] = arguments["goldenpath"]
-    return SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS
+        genome_urls.update(
+            {"genome": arguments["genome"], "blat": arguments["blat"], "goldenpath": arguments["goldenpath"]}
+        )
+
+    return (
+        arguments["sample"],
+        arguments["control"],
+        arguments["allele"],
+        arguments["name"],
+        arguments["threads"],
+        genome_urls,
+    )
 
 
-def _format_inputs(arguments: dict):
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
-    SAMPLE = io.convert_to_posix(SAMPLE)
-    CONTROL = io.convert_to_posix(CONTROL)
-    ALLELE = io.convert_to_posix(ALLELE)
+def convert_inputs_to_posix(sample: str, control: str, allele: str) -> tuple:
+    sample = io.convert_to_posix(sample)
+    control = io.convert_to_posix(control)
+    allele = io.convert_to_posix(allele)
+    return sample, control, allele
 
-    SAMPLE_NAME: str = preprocess.format_inputs.extract_basename(SAMPLE)
-    CONTROL_NAME: str = preprocess.format_inputs.extract_basename(CONTROL)
-    FASTA_ALLELES: dict = preprocess.format_inputs.dictionize_allele(ALLELE)
 
-    TEMPDIR = Path("DAJINResults", ".tempdir", NAME)
-    Path(TEMPDIR, "cache", ".igvjs", CONTROL_NAME).mkdir(parents=True, exist_ok=True)
+def create_temporal_directory(name: str, control_name: str) -> Path:
+    tempdir = Path(TEMP_ROOT_DIR, name)
+    Path(tempdir, "cache", ".igvjs", control_name).mkdir(parents=True, exist_ok=True)
+    return tempdir
 
-    IS_CACHE_CONTROL = preprocess.check_caches.exists_cached_control(CONTROL, TEMPDIR)
-    IS_CACHE_GENOME = preprocess.check_caches.exists_cached_genome(GENOME_URLS["genome"], TEMPDIR, IS_CACHE_CONTROL)
 
-    GENOME_COODINATES = {
-        "genome": GENOME_URLS["genome"],
+def check_caches(control: str, tempdir: Path, genome_url: str) -> tuple:
+    is_cache_control = preprocess.check_caches.exists_cached_control(control, tempdir)
+    is_cache_genome = preprocess.check_caches.exists_cached_genome(genome_url, tempdir, is_cache_control)
+    return is_cache_control, is_cache_genome
+
+
+def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_genome: bool, tempdir: Path) -> dict:
+    genome_coordinates = {
+        "genome": genome_urls["genome"],
         "chrom_size": 0,
         "chr": "control",
         "start": 0,
-        "end": len(FASTA_ALLELES["control"]) - 1,
+        "end": len(fasta_alleles["control"]) - 1,
         "strand": "+",
     }
-    if GENOME_URLS["genome"]:
-        if not IS_CACHE_GENOME:
-            GENOME_COODINATES = preprocess.format_inputs.fetch_coordinate(
-                GENOME_COODINATES, GENOME_URLS, FASTA_ALLELES["control"]
-            )
-            GENOME_COODINATES = preprocess.format_inputs.fetch_chrom_size(GENOME_COODINATES, GENOME_URLS)
-            midsv.write_jsonl([GENOME_COODINATES], Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
-        else:
-            GENOME_COODINATES = midsv.read_jsonl(Path(TEMPDIR, "cache", "genome_coodinates.jsonl"))
-    return SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS
+    if genome_urls["genome"] and not is_cache_genome:
+        genome_coordinates = preprocess.format_inputs.fetch_coordinate(
+            genome_coordinates, genome_urls, fasta_alleles["control"]
+        )
+        genome_coordinates = preprocess.format_inputs.fetch_chrom_size(genome_coordinates, genome_urls)
+        midsv.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coodinates.jsonl"))
+    elif genome_urls["genome"]:
+        genome_coordinates = midsv.read_jsonl(Path(tempdir, "cache", "genome_coodinates.jsonl"))
+    return genome_coordinates
+
+
+def format_inputs(arguments: dict) -> tuple:
+    sample, control, allele, name, threads, genome_urls = parse_arguments(arguments)
+    sample, control, allele = convert_inputs_to_posix(sample, control, allele)
+    sample_name = preprocess.format_inputs.extract_basename(sample)
+    control_name = preprocess.format_inputs.extract_basename(control)
+    fasta_alleles = preprocess.format_inputs.dictionize_allele(allele)
+    tempdir = create_temporal_directory(name, control_name)
+    is_cache_control, is_cache_genome = check_caches(control, tempdir, genome_urls["genome"])
+    genome_coordinates = get_genome_coordinates(genome_urls, fasta_alleles, is_cache_genome, tempdir)
+    return sample_name, control_name, fasta_alleles, tempdir, genome_coordinates, threads
 
 
 def _dtnow() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+###########################################################
+# main
+###########################################################
 
 
 def execute_control(arguments: dict):
@@ -78,8 +102,8 @@ def execute_control(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
-    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = _format_inputs(arguments)
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = parse_arguments(arguments)
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = format_inputs(arguments)
     preprocess.format_inputs.make_directories(TEMPDIR, CONTROL_NAME, is_control=True)
     preprocess.format_inputs.make_report_directories(TEMPDIR, CONTROL_NAME, is_control=True)
     ###########################################################
@@ -129,8 +153,8 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
-    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = _parse_arguments(arguments)
-    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = _format_inputs(arguments)
+    SAMPLE, CONTROL, ALLELE, NAME, THREADS, GENOME_URLS = parse_arguments(arguments)
+    SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES, TEMPDIR, GENOME_COODINATES, THREADS = format_inputs(arguments)
     preprocess.format_inputs.make_directories(TEMPDIR, SAMPLE_NAME)
     preprocess.format_inputs.make_report_directories(TEMPDIR, SAMPLE_NAME)
 
@@ -197,9 +221,6 @@ def execute_sample(arguments: dict):
     ########################################################################
     print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
     # Downsampling to 1000 reads in each LABEL
-    # MUTATION_LOCI_LABELS = consensus.extract_mutation_loci_by_labels(
-    #     clust_sample, TEMPDIR, FASTA_ALLELES, CONTROL_NAME, SAMPLE_NAME
-    # )
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
     cons_percentage, cons_sequence = consensus.call_consensus(TEMPDIR, SAMPLE_NAME, clust_subset_sample)
     # cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)

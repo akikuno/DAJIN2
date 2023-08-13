@@ -10,6 +10,8 @@ from threading import Timer
 
 from jinja2 import Environment, FileSystemLoader, Template
 
+from DAJIN2.utils.config import DAJIN_RESULTS_DIR
+
 
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
@@ -23,7 +25,7 @@ def open_browser(PORT):
 
 
 def execute(name: str):
-    DIR_IGVJS = Path("DAJINResults", name, ".igvjs")
+    DIR_IGVJS = Path(DAJIN_RESULTS_DIR, name, ".igvjs")
     if not DIR_IGVJS.exists():
         raise FileNotFoundError(f"BAM files are not found in {DIR_IGVJS.parent}. Please run DAJIN first.")
     path_view = Path(__file__).parent
@@ -43,7 +45,7 @@ def execute(name: str):
     bamnames = []
     bamurls = []
     baiurls = []
-    for bam in Path("DAJINResults", name, ".igvjs").iterdir():
+    for bam in Path(DAJIN_RESULTS_DIR, name, ".igvjs").iterdir():
         if not re.search(r"bam$", str(bam)):
             continue
         bamnames.append(bam.stem)
@@ -69,7 +71,7 @@ def execute(name: str):
     PORT = find_free_port()
     Handler = http.server.SimpleHTTPRequestHandler
 
-    os.chdir(Path("DAJINResults", name, ".igvjs"))
+    os.chdir(Path(DAJIN_RESULTS_DIR, name, ".igvjs"))
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print(f"Assess 'http://127.0.0.1:{PORT}/' if a browser does not automatically open.")
         Timer(1, open_browser, [PORT]).start()

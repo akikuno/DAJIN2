@@ -13,7 +13,8 @@ from typing import Generator
 
 from DAJIN2 import gui, view
 from DAJIN2.utils import io, report_generator, input_validator
-from DAJIN2.core import core_execute
+from DAJIN2.core import core
+from DAJIN2.utils.config import DAJIN_RESULTS_DIR
 
 
 VERSION = "0.3.1"
@@ -35,7 +36,7 @@ def update_threads(threads: int) -> int:
 def generate_report(name: str) -> None:
     report_generator.report(name)
     print(
-        f"\N{party popper} Finished! Open DAJINResults/{name} to see the report.",
+        f"\N{party popper} Finished! Open {DAJIN_RESULTS_DIR}/{name} to see the report.",
         file=sys.stderr,
     )
 
@@ -49,8 +50,8 @@ def execute_single_mode(arguments: dict[str]):
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
     if "genome" in arguments:
         arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
-    core_execute.execute_control(arguments)
-    core_execute.execute_sample(arguments)
+    core.execute_control(arguments)
+    core.execute_sample(arguments)
     generate_report(arguments["name"])
 
 
@@ -168,7 +169,7 @@ def execute_batch_mode(arguments: dict[str]):
                 args.update(cache_urls_genome[args["genome"]])
             contents_control.append(args)
         contents_control_unique = [dict(item) for item in set(frozenset(d.items()) for d in contents_control)]
-        run_multiprocess(core_execute.execute_control, contents_control_unique, arguments["threads"])
+        run_multiprocess(core.execute_control, contents_control_unique, arguments["threads"])
 
         # Handle samples
         contents_sample = []
@@ -181,7 +182,7 @@ def execute_batch_mode(arguments: dict[str]):
                 args.update(cache_urls_genome[args["genome"]])
             contents_sample.append(args)
         contents_sample_unique = [dict(item) for item in set(frozenset(d.items()) for d in contents_sample)]
-        run_multiprocess(core_execute.execute_sample, contents_sample_unique, arguments["threads"])
+        run_multiprocess(core.execute_sample, contents_sample_unique, arguments["threads"])
         # Finish
         generate_report(name)
 
@@ -196,7 +197,7 @@ def execute():
     parser.add_argument("-s", "--sample", type=str, help="Full path to a sample FASTQ file")
     parser.add_argument("-c", "--control", type=str, help="Full path to a control FASTQ file")
     parser.add_argument("-a", "--allele", type=str, help="Full path to a FASTA file")
-    parser.add_argument("-n", "--name", type=str, help="Output directory name")
+    parser.add_argument("-n", "--name", type=str, help="Output directory name", default="DAJIN2-results")
     parser.add_argument(
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )

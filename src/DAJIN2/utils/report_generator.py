@@ -7,6 +7,8 @@ import midsv
 import pandas as pd
 import plotly.express as px
 
+from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
+
 
 def extract_all_info(batch_directory: Path) -> pd.DataFrame:
     df_results = pd.DataFrame()
@@ -52,10 +54,10 @@ def output_plot(df_summary: pd.DataFrame, report_directory: Path):
 
 
 def report(name: str):
-    report_directory = Path("DAJINResults", name)
+    report_directory = Path(DAJIN_RESULTS_DIR, name)
     report_directory.mkdir(exist_ok=True, parents=True)
-    shutil.copytree(Path("DAJINResults", ".tempdir", name, "report"), report_directory, dirs_exist_ok=True)
-    df_all = extract_all_info(Path("DAJINResults", ".tempdir", name, "result"))
+    shutil.copytree(Path(TEMP_ROOT_DIR, name, "report"), report_directory, dirs_exist_ok=True)
+    df_all = extract_all_info(Path(TEMP_ROOT_DIR, name, "result"))
     df_all.to_csv(Path(report_directory, "read_all.csv"), index=False)
     df_summary = summarize_info(df_all)
     df_summary.to_csv(Path(report_directory, "read_summary.csv"), index=False)

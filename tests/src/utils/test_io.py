@@ -33,10 +33,10 @@ def test_convert_to_posix():
 ########################################################################
 
 
-def test_write_json():
+def test_write_jsonl():
     data_list = [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
     test_filename = "test_output.json"
-    io.write_json(test_filename, data_list)
+    io.write_jsonl(test_filename, data_list)
     # Verify if the file has been written correctly
     with open(test_filename, "r") as f:
         lines = f.readlines()
