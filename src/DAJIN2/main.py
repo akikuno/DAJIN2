@@ -12,10 +12,9 @@ from itertools import groupby, islice
 from typing import Generator
 
 from DAJIN2 import gui, view
-from DAJIN2.utils import io
+from DAJIN2.utils import io, report_generator, input_validator
 from DAJIN2.core import core_execute
-from DAJIN2.postprocess import report
-from DAJIN2.preprocess.validate_inputs import validate_files, validate_genome_and_fetch_urls
+
 
 VERSION = "0.3.1"
 
@@ -34,7 +33,7 @@ def update_threads(threads: int) -> int:
 
 
 def generate_report(name: str) -> None:
-    report.report(name)
+    report_generator.report(name)
     print(
         f"\N{party popper} Finished! Open DAJINResults/{name} to see the report.",
         file=sys.stderr,
@@ -47,9 +46,9 @@ def generate_report(name: str) -> None:
 
 
 def execute_single_mode(arguments: dict[str]):
-    validate_files(arguments["sample"], arguments["control"], arguments["allele"])
+    input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
     if "genome" in arguments:
-        arguments.update(validate_genome_and_fetch_urls(arguments["genome"]))
+        arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
     core_execute.execute_control(arguments)
     core_execute.execute_sample(arguments)
     generate_report(arguments["name"])
@@ -143,10 +142,10 @@ def execute_batch_mode(arguments: dict[str]):
         for group in groups:
             args = {h: g for h, g in zip(columns, group)}
             # validate contents in the batch file
-            validate_files(args["sample"], args["control"], args["allele"])
+            input_validator.validate_files(args["sample"], args["control"], args["allele"])
             # validate genome and fetch urls
             if "genome" in args and args["genome"] not in cache_urls_genome:
-                urls_genome = validate_genome_and_fetch_urls(args["genome"])
+                urls_genome = input_validator.validate_genome_and_fetch_urls(args["genome"])
                 cache_urls_genome[args["genome"]] = urls_genome
 
     ##############################################################################
