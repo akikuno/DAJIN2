@@ -1,7 +1,9 @@
 from DAJIN2.core.preprocess import (
-    align,
-    format_inputs,
-    check_caches,
+    fastx_parser,
+    genome_fetcher,
+    cache_checker,
+    directories,
+    mapping,
 )
 from DAJIN2.core.preprocess.call_midsv import call_midsv
 from DAJIN2.core.preprocess.extract_knockin_loci import extract_knockin_loci

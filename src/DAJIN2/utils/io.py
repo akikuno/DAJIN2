@@ -1,9 +1,14 @@
 from __future__ import annotations
+
 import os
-import wslPath
-import json
-import pandas as pd
 import csv
+import json
+import hashlib
+
+import wslPath
+import pandas as pd
+
+from pathlib import Path
 from typing import Generator
 
 
@@ -60,14 +65,39 @@ def load_file(path_batchfile: str) -> list:
 ###########################################################
 
 
-def read_jsonl(path: str) -> Generator:
+def read_jsonl(path: str) -> Generator[dict]:
     with open(path, "r") as f:
         for line in f:
             yield json.loads(line)
 
 
-def write_jsonl(path: str, data: Generator) -> None:
+def write_jsonl(data: list[dict], path: str) -> None:
     with open(path, "w") as f:
         for d in data:
             json_str = json.dumps(d)
             f.write(json_str + "\n")
+
+
+###########################################################
+# Cache control hash
+###########################################################
+
+
+def cache_control_hash(tempdir: Path, path_allele: str | Path) -> None:
+    """
+    Generate a hash value from the content of the provided file and cache it.
+
+    Parameters:
+    - tempdir: Path object, the temporary directory path.
+    - path_allele: Path object, the path to the fasta file.
+    """
+    # Read the content of the file.
+    content = Path(path_allele).read_text()
+    # Calculate the hash of the content.
+    content_hash = hashlib.sha256(content.encode()).hexdigest()
+    # Define the path to save the hash.
+    path_cache_hash = Path(tempdir, "cache", "hash.txt")
+    # Ensure the directory exists.
+    path_cache_hash.parent.mkdir(parents=True, exist_ok=True)
+    # Save the hash to the file.
+    path_cache_hash.write_text(content_hash)

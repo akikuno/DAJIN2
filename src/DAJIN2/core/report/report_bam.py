@@ -66,10 +66,10 @@ def realign(sam: list[list[str]], GENOME_COODINATES: dict) -> list[str]:
     for s in sam_headers:
         if s[0] != "@SQ":
             continue
-        s[1] = f'SN:{GENOME_COODINATES["chr"]}'
+        s[1] = f'SN:{GENOME_COODINATES["chrom"]}'
         s[2] = f'LN:{GENOME_COODINATES["chrom_size"]}'
     for s in sam_contents:
-        s[2] = GENOME_COODINATES["chr"]
+        s[2] = GENOME_COODINATES["chrom"]
     if GENOME_COODINATES["strand"] == "-":
         sam_contents = reverse_sam(sam_contents, GENOME_COODINATES["end"])
     else:

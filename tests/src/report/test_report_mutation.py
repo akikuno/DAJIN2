@@ -113,7 +113,7 @@ def test_group_by_mutation_inversion():
 
 def test_report_mutations_substitution():
     cssplits = ["=A", "*AG", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 2, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 2, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -124,7 +124,7 @@ def test_report_mutations_substitution():
 
 def test_report_mutations_consecutive_substitution():
     cssplits = ["=A", "*AG", "*CT", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 3, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -135,7 +135,7 @@ def test_report_mutations_consecutive_substitution():
 
 def test_report_mutations_deletion():
     cssplits = ["=A", "-G", "-T", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 3, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -146,7 +146,7 @@ def test_report_mutations_deletion():
 
 def test_report_mutations_insertion():
     cssplits = ["=A", "+G|+T|=A", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 3, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -157,7 +157,7 @@ def test_report_mutations_insertion():
 
 def test_report_mutations_insertion_with_substitution():
     cssplits = ["=A", "+G|+T|*GA", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 3, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -168,7 +168,7 @@ def test_report_mutations_insertion_with_substitution():
 
 def test_report_mutations_inversion():
     cssplits = ["=A", "=a", "=t", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 4, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 4, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -179,7 +179,7 @@ def test_report_mutations_inversion():
 
 def test_report_mutations_various():
     cssplits = ["=A", "*AG", "+A|+A|-A", "N", "-G", "*CG", "*AG", "=a", "=t", "=A"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chr1", "start": 0, "end": 4, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 4, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)
@@ -199,7 +199,7 @@ def test_report_mutations_various():
 
 def test_report_mutations_genome_coodinates():
     cssplits = ["=A", "*AG", "=G"]
-    GENOME_COODINATES = {"genome": "mm10", "chr": "chrX", "start": 100, "end": 103, "strand": "+"}
+    GENOME_COODINATES = {"genome": "mm10", "chrom": "chrX", "start": 100, "end": 103, "strand": "+"}
     header = "test"
     cssplits_inversion = report.report_mutation.annotate_inversion(cssplits)
     cssplits_grouped = report.report_mutation.group_by_mutation(cssplits_inversion)

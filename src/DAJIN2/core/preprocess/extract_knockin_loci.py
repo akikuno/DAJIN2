@@ -4,7 +4,7 @@ from pathlib import Path
 import pickle
 import midsv
 
-from DAJIN2.core.preprocess import align
+from DAJIN2.core.preprocess import mapping
 
 
 ###########################################################
@@ -23,7 +23,7 @@ def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:
         path_output = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
         if path_output.exists():
             continue
-        alignments = align.to_sam(reference, query, preset="splice")
+        alignments = mapping.to_sam(reference, query, preset="splice")
         alignments = [a.split("\t") for a in alignments]
         alignments_midsv = midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)[0]
         cssplits = alignments_midsv["CSSPLIT"].split(",")
