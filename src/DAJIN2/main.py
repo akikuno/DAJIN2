@@ -254,13 +254,13 @@ def execute():
         args.handler(args)
     else:
         if args.sample is None:
-            raise AttributeError("the following arguments are required: -s/--sample")
+            raise ValueError("the following arguments are required: -s/--sample")
         if args.control is None:
-            raise AttributeError("the following arguments are required: -c/--control")
+            raise ValueError("the following arguments are required: -c/--control")
         if args.allele is None:
-            raise AttributeError("the following arguments are required: -a/--allele")
+            raise ValueError("the following arguments are required: -a/--allele")
         if args.name is None:
-            raise AttributeError("the following arguments are required: -n/--name")
+            raise ValueError("the following arguments are required: -n/--name")
         arguments = dict()
         arguments["sample"] = args.sample
         arguments["control"] = args.control
