@@ -1,86 +1,88 @@
 from __future__ import annotations
 
-from collections.abc import Generator
-from pathlib import Path
-
 import cstag
 import mappy
 
+from pathlib import Path
+from typing import Generator
+
 
 def revcomp(sequence: str) -> str:
+    """Return the reverse complement of the given DNA sequence."""
     complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
     return "".join(complement[nt] for nt in sequence[::-1])
 
 
 def to_sam(
-    path_reference_fasta: str | Path,
-    path_query_fastx: str | Path,
-    preset: str = "map-ont",
-    threads: int = 1,
-    cslong: bool = True,
+    path_reference_fasta: Path, path_query_fastx: Path, preset: str = "map-ont", threads: int = 1, cslong: bool = True
 ) -> Generator[str]:
-    """Align seqences using mappy and Convert PAF to SAM
+    """Align sequences using mappy and Convert PAF to SAM.
 
     Args:
-        path_reference_fasta (str): Path of reference fasta
-        path_query_fastx (str): Path of query fasta/fastq
-        cslong (bool, optional): long formatted CS tag if True. Defaults to True
+        path_reference_fasta (Path): Path of reference fasta.
+        path_query_fastx (Path): Path of query fasta/fastq.
+        preset (str, optional): Alignment preset. Defaults to "map-ont".
+        threads (int, optional): Number of threads to use. Defaults to 1.
+        cslong (bool, optional): Use long formatted CS tag if True. Defaults to True.
 
-    Returns:
-        list: List of SAM
+    Yields:
+        str: SAM formatted alignment.
     """
-    path_reference_fasta = str(path_reference_fasta)
-    path_query_fastx = str(path_query_fastx)
-    # SQ header
-    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(path_reference_fasta)]
-    # Mappy
-    ref = mappy.Aligner(path_reference_fasta, preset=preset, n_threads=threads)
+    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(str(path_reference_fasta))]
+
+    ref = mappy.Aligner(str(path_reference_fasta), preset=preset, n_threads=threads)
     if not ref:
-        raise AttributeError(f"Failed to load {path_reference_fasta}")
-    for MAPPY_NAME, MAPPY_SEQ, MAPPY_QUAL in mappy.fastx_read(path_query_fastx):
-        for hit in ref.map(MAPPY_SEQ, cs=True):
-            query_seq = MAPPY_SEQ
-            query_qual = MAPPY_QUAL
-            # flag
+        raise ValueError(f"Failed to load {str(path_reference_fasta)}")
+
+    for QUERY_NAME, QUERY_SEQ, QUERY_QUAL in mappy.fastx_read(str(path_query_fastx)):
+        for hit in ref.map(QUERY_SEQ, cs=True):
+            query_seq = QUERY_SEQ.upper()
+            query_qual = QUERY_QUAL
+
+            # Report flag
             if hit.is_primary:
                 flag = 0 if hit.strand == 1 else 16
             else:
                 flag = 2048 if hit.strand == 1 else 2064
-            # Append softclips to CIGAR
-            cigar = hit.cigar_str
-            if hit.q_st > 0:
-                softclip = str(hit.q_st) + "S"
-                cigar = softclip + cigar if hit.strand == 1 else cigar + softclip
-            if len(MAPPY_SEQ) - hit.q_en > 0:
-                softclip = str(len(MAPPY_SEQ) - hit.q_en) + "S"
-                cigar = cigar + softclip if hit.strand == 1 else softclip + cigar
-            # Revcomp
+
+            # Handle reverse complement for negative strand
             if hit.strand == -1:
                 query_seq = revcomp(query_seq)
                 if query_qual:
                     query_qual = query_qual[::-1]
-            query_seq = query_seq.upper()
-            # cslong
+
+            # Append softclips to CIGAR
+            cigar = hit.cigar_str
+            if hit.q_st > 0:
+                softclip = f"{hit.q_st}S"
+                cigar = softclip + cigar if hit.strand == 1 else cigar + softclip
+            if len(query_seq) - hit.q_en > 0:
+                softclip = f"{len(query_seq) - hit.q_en}S"
+                cigar = cigar + softclip if hit.strand == 1 else softclip + cigar
+
+            # Convert to CS tag's long format
             cs = "cs:Z:" + hit.cs
             if cslong:
                 cs = cstag.lengthen(hit.cs, cigar, query_seq)
-            # summarize
+
+            # Summarize
             alignment = [
-                MAPPY_NAME,
-                flag,
+                QUERY_NAME,
+                str(flag),
                 hit.ctg,
-                hit.r_st + 1,
-                hit.mapq,
+                str(hit.r_st + 1),
+                str(hit.mapq),
                 cigar,
                 "*",
-                0,
-                0,
+                "0",
+                "0",
                 query_seq,
-                query_qual,
+                "*" if query_qual is None else query_qual,
                 cs,
             ]
-            alignment = [str(a) for a in alignment]
+
             SAM.append("\t".join(alignment))
+
     for record in SAM:
         yield record
 
@@ -104,18 +106,10 @@ def output_sam(
 ########################################################################
 
 
-def generate_sam(TEMPDIR, paths_fasta, path_fastq, name_fastq, THREADS) -> None:
+def generate_sam(temp_dir: Path, paths_fasta: list[Path], path_fastq: Path, name_fastq: str, threads: int) -> None:
     for path_fasta in paths_fasta:
-        path_fasta = Path(path_fasta)
-        output_sam(TEMPDIR, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="map-ont", threads=THREADS)
-        output_sam(TEMPDIR, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="splice", threads=THREADS)
-
-
-# def generate_sam(TEMPDIR, CONTROL, CONTROL_NAME, THREADS) -> None:
-#     for path_fasta in Path(TEMPDIR, CONTROL_NAME, "fasta").glob("*.fasta"):
-#         name_fasta = path_fasta.stem
-#         output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, threads=THREADS)
-#         output_sam(TEMPDIR, path_fasta, name_fasta, CONTROL, CONTROL_NAME, preset="splice", threads=THREADS)
+        output_sam(temp_dir, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="map-ont", threads=threads)
+        output_sam(temp_dir, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="splice", threads=threads)
 
 
 ########################################################################
@@ -123,13 +117,8 @@ def generate_sam(TEMPDIR, paths_fasta, path_fastq, name_fastq, THREADS) -> None:
 ########################################################################
 
 
-def make_faidx(path_fasta: Path | str) -> str:
+def make_faidx(path_fasta: str | Path) -> str:
     fasta = Path(path_fasta).read_text().split()
-    name = fasta[0].strip(">")
-    length = len("".join(fasta[1:]))
-    offset = len(fasta[0]) + 1
-    linebase = len(fasta[1])
-    linewidth = len(fasta[1]) + 1
-    faidx = list(map(str, [name, length, offset, linebase, linewidth]))
-    faidx = "\t".join(faidx) + "\n"
-    return faidx
+    name, length, offset = fasta[0].strip(">"), len("".join(fasta[1:])), len(fasta[0]) + 1
+    linebase, linewidth = len(fasta[1]), len(fasta[1]) + 1
+    return "\t".join(map(str, [name, length, offset, linebase, linewidth])) + "\n"

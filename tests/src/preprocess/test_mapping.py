@@ -1,8 +1,5 @@
-from importlib import reload
 from pathlib import Path
 from DAJIN2.core.preprocess import mapping
-
-reload(mapping)
 
 
 def test_to_sam_tyr():
