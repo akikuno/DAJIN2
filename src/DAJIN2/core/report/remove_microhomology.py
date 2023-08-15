@@ -2,19 +2,11 @@ from __future__ import annotations
 
 import re
 from itertools import groupby
-
-
-def split_cigar(CIGAR: str) -> list[str]:
-    cigar = re.split(r"([MDISH=X])", CIGAR)
-    n = len(cigar)
-    cigar_split = []
-    for i, j in zip(range(0, n, 2), range(1, n, 2)):
-        cigar_split.append(cigar[i] + cigar[j])
-    return cigar_split
+from DAJIN2.utils import sam_handler
 
 
 def trim_softclip(CIGAR: str, SEQ: str) -> str:
-    cigar_split = split_cigar(CIGAR)
+    cigar_split = sam_handler.split_cigar(CIGAR)
     if cigar_split[0].endswith("S"):
         SEQ = SEQ[int(cigar_split[0][:-1]) :]
     if cigar_split[-1].endswith("S"):
@@ -91,8 +83,8 @@ def process_alignments(alignments: list[list[str]]) -> list[list[str]]:
             idx += 1
             continue
         # Update CIGAR
-        curr_cigar_splitted = [c for c in split_cigar(curr_cigar) if not re.search(r"[SH]$", c)]
-        next_cigar_splitted = [c for c in split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
+        curr_cigar_splitted = [c for c in sam_handler.split_cigar(curr_cigar) if not re.search(r"[SH]$", c)]
+        next_cigar_splitted = [c for c in sam_handler.split_cigar(next_cigar) if not re.search(r"[SH]$", c)]
         mutations_in_curr = count_mutations_in_microhomology(curr_cigar_splitted[::-1], len_microhomology)
         mutations_in_next = count_mutations_in_microhomology(next_cigar_splitted, len_microhomology)
         # Update START, CIGAR, SEQ, QUAL to the more mismatched alignment within microhomology

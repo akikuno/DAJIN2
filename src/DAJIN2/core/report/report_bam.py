@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import random
-import re
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
@@ -9,26 +8,9 @@ from pathlib import Path
 import midsv
 import pysam
 
+from DAJIN2.utils import sam_handler
 from DAJIN2.core.report.reverse_sam import reverse_sam
 from DAJIN2.core.report.remove_microhomology import remove_microhomology
-
-
-def split_cigar(CIGAR: str) -> list[str]:
-    cigar = re.split(r"([MIDNSHPX=])", CIGAR)
-    n = len(cigar)
-    cigar_split = []
-    for i, j in zip(range(0, n, 2), range(1, n, 2)):
-        cigar_split.append(cigar[i] + cigar[j])
-    return cigar_split
-
-
-def calc_length(CIGAR: str) -> int:
-    cigar = split_cigar(CIGAR)
-    seq_length = 0
-    for c in cigar:
-        if re.search(r"[MDNX=]", c[-1]):
-            seq_length += int(c[:-1])
-    return seq_length
 
 
 def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
@@ -48,7 +30,7 @@ def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
             next_alignment = alignments[idx + 1]
             prev_start = int(prev_alignment[3])
             prev_cigar = prev_alignment[5]
-            prev_alignment_len = calc_length(prev_cigar)
+            prev_alignment_len = sam_handler.calculate_alignment_length(prev_cigar)
             prev_end = prev_start + prev_alignment_len
             next_start = int(next_alignment[3])
             if prev_end >= next_start:
