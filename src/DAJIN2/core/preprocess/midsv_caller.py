@@ -1,47 +1,25 @@
 from __future__ import annotations
 
-# import json
-import re
+import midsv
+
 from itertools import chain, groupby
 from pathlib import Path
 from typing import Generator
 
-import midsv
-
+from DAJIN2.utils import sam_handler
 from DAJIN2.core.report.report_bam import remove_overlapped_reads
 
 
-def _split_cigar(CIGAR: str) -> list[str]:
-    cigar = re.split(r"([MIDNSH=X])", CIGAR)
-    n = len(cigar)
-    cigar_split = []
-    for i, j in zip(range(0, n, 2), range(1, n, 2)):
-        cigar_split.append(cigar[i] + cigar[j])
-    return cigar_split
-
-
-def _call_alignment_length(CIGAR: str) -> int:
-    cigar_split = _split_cigar(CIGAR)
-    alignment_length = 0
-    for c in cigar_split:
-        if re.search(r"[MDN=X]", c[-1]):
-            alignment_length += int(c[:-1])
-    return alignment_length
-
-
 def _has_inversion_in_splice(CIGAR: str) -> bool:
-    is_splice = False
     is_insertion = False
-    for cigar in _split_cigar(CIGAR):
+    for cigar in sam_handler.split_cigar(CIGAR):
         if cigar.endswith("I"):
             is_insertion = True
             continue
         if is_insertion and cigar.endswith("N"):
-            is_splice = True
-            break
-        else:
-            is_insertion = False
-    return is_splice
+            return True
+        is_insertion = False
+    return False
 
 
 def extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set():
@@ -66,8 +44,8 @@ def extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generato
         if len(alignment_ont) != 1:
             continue
         alignment_ont = alignment_ont[0]
-        alignment_length_ont = _call_alignment_length(alignment_ont[5])
-        alignment_length_splice = _call_alignment_length(alignment_splice[5])
+        alignment_length_ont = sam_handler.calculate_alignment_length(alignment_ont[5])
+        alignment_length_splice = sam_handler.calculate_alignment_length(alignment_splice[5])
         if alignment_length_ont >= alignment_length_splice:
             qname_of_map_ont.add(qname_ont)
     return qname_of_map_ont
@@ -129,7 +107,7 @@ def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list
 ###########################################################
 
 
-def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
+def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
     for allele, sequence in FASTA_ALLELES.items():
         path_output = Path(TEMPDIR, NAME, "midsv", f"{allele}.json")
         if path_output.exists():
@@ -146,6 +124,3 @@ def call_midsv(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
         midsv_sample = replace_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output)
-        # with open(path_output, "wt", encoding="utf-8") as f:
-        #     for data in midsv_sample:
-        #         f.write(json.dumps(data) + "\n")

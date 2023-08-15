@@ -156,7 +156,7 @@ def execute_control(arguments: dict):
     ###########################################################
     # MIDSV conversion
     ###########################################################
-    preprocess.call_midsv(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+    preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
@@ -197,7 +197,7 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    preprocess.call_midsv(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+    preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
     # ============================================================
     # Extract mutation loci
     # ============================================================
@@ -222,8 +222,8 @@ def execute_sample(arguments: dict):
             allele = allele.replace(">", "")
             ARGS.fasta_alleles[allele] = seq
         # MIDSV conversion
-        preprocess.call_midsv(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
-        preprocess.call_midsv(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+        preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+        preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
         # Reculculate mutation loci
         preprocess.extract_mutation_loci(
             ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name, is_control=True
