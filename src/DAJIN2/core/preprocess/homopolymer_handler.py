@@ -124,9 +124,7 @@ def get_errors_in_homopolyer(mutation_counts_regions, thresholds) -> set(int):
 ###########################################################
 
 
-def extract_errors_in_homopolymer(
-    sequence, indels_sample, indels_control, candidate_loci: dict[set]
-) -> dict[str, set(int)]:
+def extract_errors(sequence, indels_sample, indels_control, candidate_loci: dict[set]) -> dict[str, set(int)]:
     errors_in_homopolymer = dict()
     for mut in ["+", "-", "*"]:
         repeat_regions = get_repeat_regions(sequence, candidate_loci[mut])
@@ -139,23 +137,3 @@ def extract_errors_in_homopolymer(
         thresholds = return_thresholds(mutation_counts)
         errors_in_homopolymer[mut] = get_errors_in_homopolyer(mutation_counts_regions, thresholds)
     return errors_in_homopolymer
-
-
-# def _extract_errors_in_homopolymer(sequence, indels_sample_mut, indels_control_mut, candidate_loci) -> set(int):
-#     repeat_regions = get_repeat_regions(sequence, candidate_loci)
-#     if repeat_regions == []:
-#         return set()
-#     mutation_counts, mutation_counts_regions = get_counts_homopolymer(
-#         indels_sample_mut, indels_control_mut, repeat_regions
-#     )
-#     thresholds = return_thresholds(mutation_counts)
-#     errors_in_homopolyer = get_errors_in_homopolyer(mutation_counts_regions, thresholds)
-#     return errors_in_homopolyer
-
-
-# def extract_errors_in_homopolymer(sequence, indels_sample, indels_control, candidate_loci) -> dict[str, set]:
-#     errors_in_homopolymer = dict()
-#     for mut in ["+", "-", "*"]:
-#         error_loci: set = _extract_errors_in_homopolymer(sequence, indels_sample[mut], indels_control[mut], candidate_loci[mut])
-#         errors_in_homopolymer[mut] = error_loci
-#     return errors_in_homopolymer

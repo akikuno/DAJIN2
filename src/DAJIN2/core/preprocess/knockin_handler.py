@@ -11,6 +11,7 @@ from DAJIN2.core.preprocess import mapping
 ###########################################################
 # Consider all mutations are possible in the knockin region
 # 大型欠失アレルにおいては欠失配列部分がノックイン領域となるため、この領域内にある変異は全て考慮する
+# TODO このknockinの考慮は必要ないかもしれない？
 ###########################################################
 
 
