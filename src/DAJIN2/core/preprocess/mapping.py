@@ -28,13 +28,16 @@ def to_sam(
     Yields:
         str: SAM formatted alignment.
     """
-    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(str(path_reference_fasta))]
+    path_reference_fasta = str(path_reference_fasta)
+    path_query_fastx = str(path_query_fastx)
 
-    ref = mappy.Aligner(str(path_reference_fasta), preset=preset, n_threads=threads)
+    SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(path_reference_fasta)]
+
+    ref = mappy.Aligner(path_reference_fasta, preset=preset, n_threads=threads)
     if not ref:
-        raise ValueError(f"Failed to load {str(path_reference_fasta)}")
+        raise ValueError(f"Failed to load {path_reference_fasta}")
 
-    for QUERY_NAME, QUERY_SEQ, QUERY_QUAL in mappy.fastx_read(str(path_query_fastx)):
+    for QUERY_NAME, QUERY_SEQ, QUERY_QUAL in mappy.fastx_read(path_query_fastx):
         for hit in ref.map(QUERY_SEQ, cs=True):
             query_seq = QUERY_SEQ.upper()
             query_qual = QUERY_QUAL
@@ -106,8 +109,9 @@ def output_sam(
 ########################################################################
 
 
-def generate_sam(temp_dir: Path, paths_fasta: list[Path], path_fastq: Path, name_fastq: str, threads: int) -> None:
+def generate_sam(temp_dir: Path, paths_fasta: list[str], path_fastq: str, name_fastq: str, threads: int) -> None:
     for path_fasta in paths_fasta:
+        path_fasta = Path(path_fasta)
         output_sam(temp_dir, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="map-ont", threads=threads)
         output_sam(temp_dir, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="splice", threads=threads)
 

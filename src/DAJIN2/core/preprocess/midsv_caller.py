@@ -11,93 +11,104 @@ from DAJIN2.core.report.report_bam import remove_overlapped_reads
 
 
 def _has_inversion_in_splice(CIGAR: str) -> bool:
-    is_insertion = False
+    previous_insertion = False
     for cigar in sam_handler.split_cigar(CIGAR):
         if cigar.endswith("I"):
-            is_insertion = True
+            previous_insertion = True
             continue
-        if is_insertion and cigar.endswith("N"):
+        if previous_insertion and cigar.endswith("N"):
             return True
-        is_insertion = False
+        else:
+            previous_insertion = False
     return False
 
 
-def extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set():
+def extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generator[list[str]]) -> set[str]:
     """Extract qname of reads from `map-ont` when:
     - no inversion signal in `splice` alignment (insertion + deletion)
     - single read
     - long alignment length
     """
-    dict_alignments_splice = {s[0]: s for s in sam_splice if not s[0].startswith("@")}
-    alignments_ont = [s for s in sam_ont if not s[0].startswith("@")]
-    alignments_ont.sort(key=lambda x: x[0])
+    alignments_splice = {s[0]: s for s in sam_splice if not s[0].startswith("@")}
+    alignments_ont = sorted([s for s in sam_ont if not s[0].startswith("@")], key=lambda x: x[0])
     qname_of_map_ont = set()
     for qname_ont, group in groupby(alignments_ont, key=lambda x: x[0]):
-        alignment_ont = list(group)
-        if qname_ont not in dict_alignments_splice:
+        group = list(group)
+
+        if qname_ont not in alignments_splice:
             qname_of_map_ont.add(qname_ont)
             continue
-        alignment_splice = dict_alignments_splice[qname_ont]
-        if _has_inversion_in_splice(alignment_splice[5]):
+
+        cigar_splice = alignments_splice[qname_ont][5]
+
+        # If preset=splice and inversion is present, `midsv.transform`` will not work, so use preset=map-ont.
+        if _has_inversion_in_splice(cigar_splice):
             qname_of_map_ont.add(qname_ont)
             continue
-        if len(alignment_ont) != 1:
+
+        # only accept single read or inversion reads
+        # TODO: 逆位のリードは単純に「３つのリードがある」という条件でいいのか？
+        if len(group) == 2 or len(group) >= 4:
             continue
-        alignment_ont = alignment_ont[0]
-        alignment_length_ont = sam_handler.calculate_alignment_length(alignment_ont[5])
-        alignment_length_splice = sam_handler.calculate_alignment_length(alignment_splice[5])
+        cigar_ont = group[0][5]
+
+        alignment_length_ont = sam_handler.calculate_alignment_length(cigar_ont)
+        alignment_length_splice = sam_handler.calculate_alignment_length(cigar_splice)
+
         if alignment_length_ont >= alignment_length_splice:
             qname_of_map_ont.add(qname_ont)
     return qname_of_map_ont
 
 
-def extract_sam(sam: Generator[list[str]], qname_of_map_ont: set, preset: str = "map-ont") -> Generator[list[str]]:
+def filter_sam_by_preset(sam: Generator[list[str]], qname_of_map_ont: set, preset: str = "map-ont") -> Generator:
     for alignment in sam:
         if alignment[0].startswith("@"):
             yield alignment
-        if preset == "map-ont":
-            if alignment[0] in qname_of_map_ont:
-                yield alignment
-        else:
-            if alignment[0] not in qname_of_map_ont:
-                yield alignment
+        elif preset == "map-ont" and alignment[0] in qname_of_map_ont:
+            yield alignment
+        elif preset != "map-ont" and alignment[0] not in qname_of_map_ont:
+            yield alignment
 
 
-def midsv_transform(sam: Generator[list[str]]) -> Generator[list[dict]]:
+def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]]:
     for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep=set(["FLAG"])):
         yield midsv_sample
 
 
+def _find_seq_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
+    """Find the boundaries of contiguous Ns which aren't at the ends."""
+    left_idx_n = 0
+    while left_idx_n < len(cssplits) and cssplits[left_idx_n] == "N":
+        left_idx_n += 1
+
+    right_idx_n = len(cssplits) - 1
+    while right_idx_n >= 0 and cssplits[right_idx_n] == "N":
+        right_idx_n -= 1
+
+    return left_idx_n, right_idx_n
+
+
 def replace_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
-    """Replace contiguous N with D, but not contiguous from both ends"""
+    """Replace N with D, but not contiguous from both ends."""
     for samp in midsv_sample:
         cssplits = samp["CSSPLIT"].split(",")
-        # extract right/left index of the end of sequential Ns
-        left_idx_n = 0
-        for cs in cssplits:
-            if cs != "N":
-                break
-            left_idx_n += 1
-        right_idx_n = 0
-        for cs in cssplits[::-1]:
-            if cs != "N":
-                break
-            right_idx_n += 1
-        right_idx_n = len(cssplits) - right_idx_n - 1
-        # replace sequential Ns within the sequence
-        for j, (cs, seq) in enumerate(zip(cssplits, sequence)):
+
+        left_idx_n, right_idx_n = _find_seq_n_boundaries(cssplits)
+
+        # Replace Ns within the sequence boundaries with the corresponding sequence character
+        for j, (cs, seq_char) in enumerate(zip(cssplits, sequence)):
             if left_idx_n <= j <= right_idx_n and cs == "N":
-                cssplits[j] = f"-{seq}"
+                cssplits[j] = f"-{seq_char}"
+
         samp["CSSPLIT"] = ",".join(cssplits)
         yield samp
 
 
 def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list[dict]]:
     """Convert FLAG to STRAND (+ or -)"""
+    REVERSE_STRAND_FLAG = 16 | 2064
     for samp in midsv_sample:
-        flag = samp["FLAG"]
-        strand = "-" if flag & 16 else "+"
-        samp["STRAND"] = strand
+        samp["STRAND"] = "-" if samp["FLAG"] & REVERSE_STRAND_FLAG else "+"
         del samp["FLAG"]
         yield samp
 
@@ -117,10 +128,9 @@ def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
         sam_ont = remove_overlapped_reads(list(midsv.read_sam(path_ont)))
         sam_splice = remove_overlapped_reads(list(midsv.read_sam(path_splice)))
         qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
-        sam_of_map_ont = extract_sam(sam_ont, qname_of_map_ont, preset="map-ont")
-        sam_of_splice = extract_sam(sam_splice, qname_of_map_ont, preset="splice")
-        sam_chained = chain(sam_of_map_ont, sam_of_splice)
-        midsv_chaind = midsv_transform(sam_chained)
+        sam_of_map_ont = filter_sam_by_preset(sam_ont, qname_of_map_ont, preset="map-ont")
+        sam_of_splice = filter_sam_by_preset(sam_splice, qname_of_map_ont, preset="splice")
+        midsv_chaind = transform_to_midsv_format(chain(sam_of_map_ont, sam_of_splice))
         midsv_sample = replace_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output)
