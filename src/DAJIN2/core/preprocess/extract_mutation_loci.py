@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import json
 import pickle
 import numpy as np
 from pathlib import Path
@@ -11,13 +10,8 @@ from scipy import stats
 from scipy.spatial import distance
 from sklearn import linear_model
 
-from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
-
-
-def read_midsv(filepath: str | Path) -> Generator[dict[str, str]]:
-    with open(filepath, "r") as f:
-        for line in f:
-            yield json.loads(line)
+from DAJIN2.utils import io
+from DAJIN2.core.preprocess import homopolymer_handler
 
 
 def call_coverage_on_each_base(midsv_sample: Generator[dict], sequence: str) -> list[int]:
@@ -194,8 +188,8 @@ def _process_control(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> N
         if Path(path_mutation_loci, f"{allele}_count.pickle").exists():
             continue
         filepath_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        indels_control = count_indels(read_midsv(filepath_control), sequence)
-        coverages_control = call_coverage_on_each_base(read_midsv(filepath_control), sequence)
+        indels_control = count_indels(io.read_jsonl(filepath_control), sequence)
+        coverages_control = call_coverage_on_each_base(io.read_jsonl(filepath_control), sequence)
         indels_normalized_control = normalize_indels(indels_control, coverages_control)
         indels_kmer_control = split_kmer(indels_normalized_control, kmer=11)
         # Save indels_normalized_control and indels_kmer_control as pickle to reuse in consensus calling
@@ -244,8 +238,8 @@ def extract_mutation_loci(
             continue
 
         filepath_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"{allele}.json")
-        indels_sample = count_indels(read_midsv(filepath_sample), sequence)
-        coverages_sample = call_coverage_on_each_base(read_midsv(filepath_sample), sequence)
+        indels_sample = count_indels(io.read_jsonl(filepath_sample), sequence)
+        coverages_sample = call_coverage_on_each_base(io.read_jsonl(filepath_sample), sequence)
         indels_normalized_sample = normalize_indels(indels_sample, coverages_sample)
         indels_kmer_sample = split_kmer(indels_normalized_sample, kmer=11)
         # Load indels_normalized_control and indels_kmer_control
@@ -260,7 +254,7 @@ def extract_mutation_loci(
         candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
 
         # Extract error loci in homopolymer regions
-        errors_in_homopolymer = extract_errors_in_homopolymer(
+        errors_in_homopolymer = homopolymer_handler.extract_errors(
             sequence, indels_normalized_sample, indels_normalized_control, candidate_loci
         )
         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
