@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import pickle
 import midsv
 import random
@@ -12,6 +11,7 @@ from collections import defaultdict
 from DAJIN2.core.clustering.make_kmer import generate_mutation_kmers
 from DAJIN2.core.clustering.make_score import make_score
 from DAJIN2.core.clustering.return_labels import return_labels
+from DAJIN2.utils import io
 
 
 def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
@@ -41,12 +41,6 @@ def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
     return labels_ordered
 
 
-def write_json(filepath: Path | str, data: Generator) -> None:
-    with open(filepath, "w") as f:
-        for line in data:
-            f.write(json.dumps(line) + "\n")
-
-
 ###########################################################
 # main
 ###########################################################
@@ -63,7 +57,7 @@ def is_strand_bias(path_control) -> bool:
         return True
 
 
-def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS: int = 1) -> list[dict[str]]:
+def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
     labels_all = []
     max_label = 0
     strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
@@ -86,14 +80,14 @@ def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME, THREADS: int 
             continue
         path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_{RANDOM_NUM}.json")
         path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        write_json(path_sample, group)
+        io.write_jsonl(path_sample, group)
         mutation_score: list[dict[str, float]] = make_score(path_sample, path_control, mutation_loci, knockin_loci)
         scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
         scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
         path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
         path_score_control = Path(TEMPDIR, CONTROL_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
-        write_json(path_score_sample, scores_sample)
-        write_json(path_score_control, scores_control)
+        io.write_jsonl(path_score_sample, scores_sample)
+        io.write_jsonl(path_score_control, scores_control)
         labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
         labels_reorder = reorder_labels(labels, start=max_label)
         max_label = max(labels_reorder)
