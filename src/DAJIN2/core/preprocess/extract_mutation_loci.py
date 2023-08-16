@@ -237,10 +237,12 @@ def extract_mutation_loci(
     if is_control:
         _process_control(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
         return
+
     for allele, sequence in FASTA_ALLELES.items():
         path_output = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle")
         if path_output.exists():
             continue
+
         filepath_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"{allele}.json")
         indels_sample = count_indels(read_midsv(filepath_sample), sequence)
         coverages_sample = call_coverage_on_each_base(read_midsv(filepath_sample), sequence)
@@ -251,21 +253,25 @@ def extract_mutation_loci(
             indels_normalized_control = pickle.load(f)
         with open(Path(TEMPDIR, CONTROL_NAME, "mutation_loci", f"{allele}_kmer.pickle"), "rb") as f:
             indels_kmer_control = pickle.load(f)
+
         # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_control)
         candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
+
         # Extract error loci in homopolymer regions
         errors_in_homopolymer = extract_errors_in_homopolymer(
             sequence, indels_normalized_sample, indels_normalized_control, candidate_loci
         )
         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
-        # Add all mutations into knockin loci
+
+        # Merge all mutations and knockin loci
         path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
         if path_knockin.exists():
             with open(path_knockin, "rb") as p:
                 knockin_loci = pickle.load(p)
             mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
+
         mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         with open(path_output, "wb") as p:
