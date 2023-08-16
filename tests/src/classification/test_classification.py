@@ -1,31 +1,44 @@
-from src.DAJIN2.core.classification import classify
+import pytest
+from DAJIN2.core.classification import classifier
 
 
-def test_calc_match_perfect():
-    test = classify._calc_match("=A,=C,=G,=T")
-    answer = 1.0
-    assert test == answer
+@pytest.mark.parametrize(
+    "input_str, expected_output",
+    [
+        ("=A,=C,=G,=T", 1.0),  # perfect match
+        ("=A,=C,+T|+T|=G,=T", 0.5),  # insertion
+        ("=A,-C,-G,=T", 0.5),  # deletion
+        ("=A,*CT,=G,=T", 0.75),  # substitution
+        ("=A,N,=G,=T", 0.75),  # unknown
+    ],
+)
+def test_calc_match(input_str, expected_output):
+    result = classifier._calc_match(input_str)
+    assert result == expected_output
 
 
-def test_calc_match_insertion():
-    test = classify._calc_match("=A,=C,+T|+T|=G,=T")
-    answer = 0.5
-    assert test == answer
+def test_extract_alleles_with_max_score():
+    score_of_each_alleles = [
+        {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 1.0, "ALLELE": "allele1"},
+        {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 0.5, "ALLELE": "allele2"},
+    ]
+    result = classifier._extract_alleles_with_max_score(score_of_each_alleles)
+    expected_output = [
+        {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "ALLELE": "allele1"},
+    ]
+    assert result == expected_output
 
 
-def test_calc_match_deletion():
-    test = classify._calc_match("=A,-C,-G,=T")
-    answer = 0.5
-    assert test == answer
-
-
-def test_calc_match_substitution():
-    test = classify._calc_match("=A,*CT,=G,=T")
-    answer = 0.75
-    assert test == answer
-
-
-def test_calc_match_unknown():
-    test = classify._calc_match("=A,N,=G,=T")
-    answer = 0.75
-    assert test == answer
+def test_extract_alleles_with_max_score_multiple_reads():
+    score_of_each_alleles = [
+        {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 1.0, "ALLELE": "allele1"},
+        {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 0.5, "ALLELE": "allele2"},
+        {"QNAME": "read2", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 0.5, "ALLELE": "allele1"},
+        {"QNAME": "read2", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 1.0, "ALLELE": "allele2"},
+    ]
+    result = classifier._extract_alleles_with_max_score(score_of_each_alleles)
+    expected_output = [
+        {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "ALLELE": "allele1"},
+        {"QNAME": "read2", "CSSPLIT": "=A,=C,=G,=T", "ALLELE": "allele2"},
+    ]
+    assert result == expected_output
