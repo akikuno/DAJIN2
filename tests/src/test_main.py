@@ -72,26 +72,27 @@ def test_batched_one():
 ###########################################################
 
 
-def setup_logging(log_file_path):
+def _setup_logging(log_file_path):
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
     logging.basicConfig(filename=log_file_path, level=logging.INFO)
 
 
-def dummy_function(args: dict[str]):
+def _dummy_function(args: dict[str]):
     n = args["value"]
     temp_file_path = args["path"]
-    setup_logging("/tmp/multiprocess.log")  # 各プロセスでのログ設定
+    _setup_logging("/tmp/multiprocess.log")  # 各プロセスでのログ設定
     with open(temp_file_path, "a") as f:
         f.write(str(n) + "\n")
 
 
+@pytest.mark.slow
 def test_run_multiprocess():
     # Use tempfile to create a temporary file
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
         temp_file_path = temp_file.name
 
-        # Arguments to run the dummy_function
+        # Arguments to run the _dummy_function
         arguments = [
             {"value": 1, "path": temp_file_path},
             {"value": 2, "path": temp_file_path},
@@ -106,9 +107,9 @@ def test_run_multiprocess():
         ]
 
         # Use the run_multiprocess function
-        main.run_multiprocess(dummy_function, arguments, num_workers=3)
+        main.run_multiprocess(_dummy_function, arguments, num_workers=3)
 
-        # Check if the dummy_function wrote to the file correctly
+        # Check if the _dummy_function wrote to the file correctly
         with open(temp_file_path, "r") as f:
             lines = f.readlines()
 
@@ -120,27 +121,28 @@ def test_run_multiprocess():
 ###########################################################
 
 
-def dummy_function_logging(args: dict[str]):
+def _dummy_function_logging(args: dict[str]):
     n = args["value"]
     temp_file_path = args["path"]
-    setup_logging("/tmp/multiprocess.log")  # 各プロセスでのログ設定
+    _setup_logging("/tmp/multiprocess.log")  # 各プロセスでのログ設定
     with open(temp_file_path, "a") as f:
         f.write(str(n) + "\n")
 
 
-def dummy_function_that_fails(arg):
+def _dummy_function_that_fails(arg):
     raise ValueError("This is a simulated error!")
 
 
+@pytest.mark.slow
 def test_logging_of_run_multiprocess():
     # ログの設定を一時的に変更
     with tempfile.NamedTemporaryFile(delete=True, mode="w+") as temp_log_file:
         log_file_path = temp_log_file.name
-        setup_logging(log_file_path)  # ログ設定のリセットと再設定
+        _setup_logging(log_file_path)  # ログ設定のリセットと再設定
 
         # run_multiprocess関数を実行
         arguments = [{"value": 1, "path": "/tmp/dummy_path"}, {"value": 2, "path": "/tmp/dummy_path"}]
-        main.run_multiprocess(dummy_function_logging, arguments, num_workers=2)
+        main.run_multiprocess(_dummy_function_logging, arguments, num_workers=2)
 
         # ログファイルから内容を読み込む
         temp_log_file.seek(0)
@@ -150,12 +152,13 @@ def test_logging_of_run_multiprocess():
         assert "Starting process Process-" in logs
 
 
+@pytest.mark.slow
 def test_run_multiprocess_failure():
     arguments = [{"dummy_arg": 1}, {"dummy_arg": 2}]
 
     # run_multiprocess関数がSystemExitを引き起こすことを確認
     with pytest.raises(SystemExit) as exc_info:
-        main.run_multiprocess(dummy_function_that_fails, arguments, num_workers=2)
+        main.run_multiprocess(_dummy_function_that_fails, arguments, num_workers=2)
 
     # exitcode 1が期待される
     assert exc_info.value.code == 1
