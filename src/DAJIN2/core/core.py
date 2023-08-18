@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import sys
 import pickle
+
+# import psutil
 import resource
 import shutil
 
@@ -16,8 +18,14 @@ from DAJIN2.core import classification, clustering, consensus, preprocess, repor
 from DAJIN2.utils.config import TEMP_ROOT_DIR
 
 # limit max memory usage
-mem_bytes = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
-resource.setrlimit(resource.RLIMIT_DATA, (int(mem_bytes * 9 / 10), -1))
+# available_memory = psutil.virtual_memory().available
+available_memory = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+_, hard_limit = resource.getrlimit(resource.RLIMIT_DATA)
+if hard_limit == resource.RLIM_INFINITY:
+    hard_limit = available_memory
+# Ensure that the new limit does not exceed the hard limit
+limit = min(int(available_memory * 0.9), hard_limit)
+resource.setrlimit(resource.RLIMIT_DATA, (limit, limit))
 
 
 def parse_arguments(arguments: dict) -> tuple:
