@@ -116,7 +116,7 @@ def test_extract_qname_of_map_ont_real():
         (["A", "B", "A", "B", "A", "B"], (0, 5)),
     ],
 )
-def test_find_seq_n_boundaries(cssplits: list[str], expected: tuple[int, int]):
+def test_find_seq_n_boundaries(cssplits, expected):
     assert _find_seq_n_boundaries(cssplits) == expected
 
 
@@ -193,6 +193,6 @@ def test_replace_n_to_d_large_n():
         ([{"FLAG": 16}, {"FLAG": 2064}, {"FLAG": 32}], [{"STRAND": "-"}, {"STRAND": "-"}, {"STRAND": "+"}]),
     ],
 )
-def test_convert_flag_to_strand(input_sample: list[dict[str, int]], expected_output: list[dict[str, str]]):
+def test_convert_flag_to_strand(input_sample, expected_output):
     result = list(convert_flag_to_strand(iter(input_sample)))
     assert result == expected_output

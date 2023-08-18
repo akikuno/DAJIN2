@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import midsv
 
-from itertools import chain, groupby
 from pathlib import Path
 from typing import Generator
+from itertools import chain, groupby
 
 from DAJIN2.utils import sam_handler
 from DAJIN2.core.report.report_bam import remove_overlapped_reads
