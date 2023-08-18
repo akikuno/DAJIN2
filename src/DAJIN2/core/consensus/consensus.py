@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import re
 import pickle
+
 from pathlib import Path
-from collections import defaultdict
+from typing import NamedTuple
 from itertools import groupby
+from collections import defaultdict
 
 ###########################################################
 # call position weight matrix (cons_pergentage)
@@ -115,6 +117,12 @@ def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
 ###########################################################
 
 
+class ConsensusKey(NamedTuple):
+    allele: str
+    label: int
+    percent: float
+
+
 def call_consensus(
     TEMPDIR: Path, SAMPLE_NAME: str, clust_sample: list[dict]
 ) -> tuple[defaultdict[list], defaultdict[str]]:
@@ -124,11 +132,11 @@ def call_consensus(
     for label, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
         clust = list(group)
         allele = clust[0]["ALLELE"]
-        keys = (allele, label, clust[0]["PERCENT"])
+        key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle"), "rb") as p:
             mutation_loci = pickle.load(p)
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
         cons_percentage = _call_percentage(cssplits, mutation_loci)
-        cons_percentages[keys] = cons_percentage
-        cons_sequences[keys] = _call_sequence(cons_percentage)
+        cons_percentages[key] = cons_percentage
+        cons_sequences[key] = _call_sequence(cons_percentage)
     return cons_percentages, cons_sequences

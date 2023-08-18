@@ -34,17 +34,16 @@ def call_allele_name(
     label_digits = len(str(len(cons_percentages)))
     allele_names = {}
     for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
-        ALLELE, LABEL, PERCENT = keys
-        label_format = f"{LABEL:0{label_digits}}"
-        allele_name = f"allele{label_format}_{ALLELE}"
-        if cons_seq == FASTA_ALLELES[ALLELE]:
+        label_format = f"{keys.label:0{label_digits}}"
+        allele_name = f"allele{label_format}_{keys.allele}"
+        if cons_seq == FASTA_ALLELES[keys.allele]:
             allele_name += "_intact"
         elif is_sv:
             allele_name += "_sv"
         else:
             allele_name += "_indels"
-        allele_name += f"_{PERCENT}%"
-        allele_names.update({LABEL: allele_name})
+        allele_name += f"_{keys.percent}%"
+        allele_names.update({keys.label: allele_name})
     return allele_names
 
 

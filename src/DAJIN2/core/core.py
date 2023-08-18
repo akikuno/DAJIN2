@@ -241,9 +241,7 @@ def execute_sample(arguments: dict):
     # Clustering
     ########################################################################
     print(f"{_dtnow()}: Clustering {arguments['sample']}...", file=sys.stderr)
-    clust_sample = clustering.add_labels(
-        classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.threads
-    )
+    clust_sample = clustering.add_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
