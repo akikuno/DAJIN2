@@ -10,6 +10,8 @@ from itertools import groupby
 # call position weight matrix (cons_pergentage)
 ###########################################################
 
+# TODO: replace_n_to_dで両端から非連続のNはすでに除去したのでは？？？
+
 
 def _count_consecutive_n(cons_percentage: list[dict[str, float]]) -> tuple(int, int):
     seq = "".join(max(c, key=c.get) for c in cons_percentage)
@@ -108,29 +110,6 @@ def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     return "".join(consensus_sequence)
 
 
-def _detect_sv(cons_percentages: defaultdict[list], threshold: int = 50) -> list[bool]:
-    exists_sv = []
-    for cons_per in cons_percentages.values():
-        cons_cssplits = []
-        for cssplit in cons_per:
-            seq = max(cssplit, key=cssplit.get)
-            cons_cssplits.append(seq)
-        cons_cssplits = "".join(cons_cssplits)
-        if "N" * threshold in cons_cssplits:
-            exists_sv.append(True)
-        elif re.search(rf"(\+[ACGTN]\|){{{threshold}}}", cons_cssplits):
-            exists_sv.append(True)
-        elif re.search(rf"(\-[ACGTN]){{{threshold}}}", cons_cssplits):
-            exists_sv.append(True)
-        elif re.search(rf"(\*[ACGTN][ACGTN]){{{threshold}}}", cons_cssplits):
-            exists_sv.append(True)
-        elif re.search(r"[acgtn]", cons_cssplits):
-            exists_sv.append(True)
-        else:
-            exists_sv.append(False)
-    return exists_sv
-
-
 ###########################################################
 # main
 ###########################################################
@@ -150,61 +129,6 @@ def call_consensus(
             mutation_loci = pickle.load(p)
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
         cons_percentage = _call_percentage(cssplits, mutation_loci)
-        # cons_percentage = _replace_percentage(cons_percentage)
         cons_percentages[keys] = cons_percentage
         cons_sequences[keys] = _call_sequence(cons_percentage)
     return cons_percentages, cons_sequences
-
-
-# def call_consensus(clust_sample: list[dict], MUTATION_LOCI_LABELS) -> tuple[defaultdict[list], defaultdict[str]]:
-#     cons_percentages = defaultdict(list)
-#     cons_sequences = defaultdict(str)
-#     clust_sample.sort(key=lambda x: x["LABEL"])
-#     for label, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
-#         clust = list(group)
-#         keys = (
-#             clust[0]["ALLELE"],
-#             clust[0]["LABEL"],
-#             clust[0]["PERCENT"],
-#         )
-#         mutation_loci = MUTATION_LOCI_LABELS[label]
-#         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
-#         cons_percentage = _call_percentage(cssplits, mutation_loci)
-#         cons_percentage = _replace_percentage(cons_percentage)
-#         cons_percentages[keys] = cons_percentage
-#         cons_sequences[keys] = _call_sequence(cons_percentage)
-#     return cons_percentages, cons_sequences
-
-
-def call_allele_name(
-    cons_sequences: defaultdict[dict], cons_percentages: defaultdict[list], FASTA_ALLELES: dict
-) -> dict[int, str]:
-    exists_sv = _detect_sv(cons_percentages)
-    label_digits = len(str(len(cons_percentages)))
-    allele_names = {}
-    for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
-        ALLELE, LABEL, PERCENT = keys
-        label_format = f"{LABEL:0{label_digits}}"
-        allele_name = f"allele{label_format}_{ALLELE}"
-        if cons_seq == FASTA_ALLELES[ALLELE]:
-            allele_name += "_intact"
-        elif is_sv:
-            allele_name += "_sv"
-        else:
-            allele_name += "_indels"
-        allele_name += f"_{PERCENT}%"
-        allele_names.update({LABEL: allele_name})
-    return allele_names
-
-
-def update_key_by_allele_name(cons: dict, allele_names: dict[int, str]) -> dict:
-    for key, allele_name in zip(list(cons.keys()), allele_names.values()):
-        cons[allele_name] = cons.pop(key)
-    return cons
-
-
-def add_key_by_allele_name(clust_sample: list[dict], allele_names: dict[int, str]) -> list[dict]:
-    for clust in clust_sample:
-        label = clust["LABEL"]
-        clust["NAME"] = allele_names[label]
-    return clust_sample

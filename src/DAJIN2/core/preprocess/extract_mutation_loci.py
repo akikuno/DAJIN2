@@ -6,6 +6,7 @@ import numpy as np
 from pathlib import Path
 from typing import Generator
 from collections import defaultdict
+
 from scipy import stats
 from scipy.spatial import distance
 from sklearn import linear_model
@@ -14,7 +15,7 @@ from DAJIN2.utils import io
 from DAJIN2.core.preprocess import homopolymer_handler
 
 
-def call_coverage_on_each_base(midsv_sample: Generator[dict], sequence: str) -> list[int]:
+def call_coverage_of_each_base(midsv_sample: Generator[dict], sequence: str) -> list[int]:
     coverages = [1] * len(sequence)
     for cont in midsv_sample:
         cssplits = cont["CSSPLIT"].split(",")
@@ -189,7 +190,7 @@ def _process_control(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> N
             continue
         filepath_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
         indels_control = count_indels(io.read_jsonl(filepath_control), sequence)
-        coverages_control = call_coverage_on_each_base(io.read_jsonl(filepath_control), sequence)
+        coverages_control = call_coverage_of_each_base(io.read_jsonl(filepath_control), sequence)
         indels_normalized_control = normalize_indels(indels_control, coverages_control)
         indels_kmer_control = split_kmer(indels_normalized_control, kmer=11)
         # Save indels_normalized_control and indels_kmer_control as pickle to reuse in consensus calling
@@ -239,7 +240,7 @@ def extract_mutation_loci(
 
         filepath_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"{allele}.json")
         indels_sample = count_indels(io.read_jsonl(filepath_sample), sequence)
-        coverages_sample = call_coverage_on_each_base(io.read_jsonl(filepath_sample), sequence)
+        coverages_sample = call_coverage_of_each_base(io.read_jsonl(filepath_sample), sequence)
         indels_normalized_sample = normalize_indels(indels_sample, coverages_sample)
         indels_kmer_sample = split_kmer(indels_normalized_sample, kmer=11)
         # Load indels_normalized_control and indels_kmer_control
