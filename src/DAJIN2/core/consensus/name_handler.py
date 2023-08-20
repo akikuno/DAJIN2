@@ -111,7 +111,7 @@ def update_key_by_allele_name(cons: dict, allele_names: dict[int, str]) -> dict:
     cons_update = dict()
     for key in cons:
         old_allele = cons[key]
-        new_allele = allele_names[key]
+        new_allele = allele_names[key.label]
         cons_update[new_allele] = old_allele
     return cons_update
 
