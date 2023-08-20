@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import os
-import sys
+# import os
 import pickle
 
+import logging
+
 # import psutil
-import resource
+# import resource
 import shutil
 
 from pathlib import Path
@@ -16,6 +17,8 @@ from typing import NamedTuple
 from DAJIN2.utils import io
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.utils.config import TEMP_ROOT_DIR
+
+logger = logging.getLogger(__name__)
 
 # # limit max memory usage
 # # available_memory = psutil.virtual_memory().available
@@ -131,7 +134,7 @@ def _dtnow() -> str:
 
 
 def execute_control(arguments: dict):
-    print(f"{_dtnow()}: {arguments['control']} is now processing...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: {arguments['control']} is now processing...")
     ###########################################################
     # Preprocess
     ###########################################################
@@ -143,12 +146,9 @@ def execute_control(arguments: dict):
     # Check caches
     ###########################################################
     if Path(ARGS.tempdir, "report", "BAM", ARGS.control_name, f"{ARGS.control_name}.bam").exists():
-        print(
-            f"{arguments['control']} is already preprocessed and reuse the results for the current run...",
-            file=sys.stderr,
-        )
+        logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
         return
-    print(f"{_dtnow()}: Preprocess {arguments['control']}...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: Preprocess {arguments['control']}...")
     ###########################################################
     # Mapping
     ###########################################################
@@ -174,18 +174,18 @@ def execute_control(arguments: dict):
     ###########################################################
     # Output BAM
     ###########################################################
-    print(f"{_dtnow()}: Output BAM files of {arguments['control']}...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: Output BAM files of {arguments['control']}...")
     report.report_bam.output_bam(
         ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, is_control=True
     )
     ###########################################################
     # Finish call
     ###########################################################
-    print(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!", file=sys.stderr)
+    logger.info(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!")
 
 
 def execute_sample(arguments: dict):
-    print(f"{_dtnow()}: {arguments['sample']} is now processing...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: {arguments['sample']} is now processing...")
     ###########################################################
     # Preprocess
     ###########################################################
@@ -193,7 +193,7 @@ def execute_sample(arguments: dict):
     preprocess.directories.create_temporal(ARGS.tempdir, ARGS.sample_name)
     preprocess.directories.create_report(ARGS.tempdir, ARGS.sample_name)
 
-    print(f"{_dtnow()}: Preprocess {arguments['sample']}...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: Preprocess {arguments['sample']}...")
 
     for path_fasta in Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta"):
         shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
@@ -241,37 +241,44 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Classify alleles
     ########################################################################
-    print(f"{_dtnow()}: Classify {arguments['sample']}...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: Classify {arguments['sample']}...")
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
     with open(Path(ARGS.tempdir, ARGS.sample_name, "classif_sample.pickle"), "wb") as p:
         pickle.dump(classif_sample, p)
     ########################################################################
     # Clustering
     ########################################################################
-    print(f"{_dtnow()}: Clustering {arguments['sample']}...", file=sys.stderr)
+    logger.info(f"{_dtnow()}: Clustering {arguments['sample']}...")
+
     clust_sample = clustering.add_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
+
     with open(Path(ARGS.tempdir, ARGS.sample_name, "clust_sample.pickle"), "wb") as p:
         pickle.dump(clust_sample, p)
+
     ########################################################################
     # Consensus call
     ########################################################################
-    print(f"{_dtnow()}: Consensus calling of {arguments['sample']}...", file=sys.stderr)
+
+    logger.info(f"{_dtnow()}: Consensus calling of {arguments['sample']}...")
+
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
     cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_subset_sample)
-    # cons_percentage, cons_sequence = consensus.call_consensus(clust_subset_sample, MUTATION_LOCI_LABELS)
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
     ########################################################################
-    print(f"{_dtnow()}: Output reports of {arguments['sample']}...", file=sys.stderr)
+
+    logger.info(f"{_dtnow()}: Output reports of {arguments['sample']}...")
+
     # RESULT
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
     # FASTA
@@ -289,4 +296,4 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Finish call
     ###########################################################
-    print(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!", file=sys.stderr)
+    logger.info(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!")

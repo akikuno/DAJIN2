@@ -5,7 +5,9 @@ import sys
 import logging
 import datetime
 import argparse
-import multiprocessing
+
+import traceback
+from multiprocessing import Process, Queue
 
 from pathlib import Path
 from itertools import groupby, islice
@@ -25,6 +27,24 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+###########################################################
+# Setting logger
+###########################################################
+
+current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+stderr_handler = logging.StreamHandler()
+stderr_handler.setFormatter(logging.Formatter("%(message)s"))
+
+file_handler = logging.FileHandler(f"{current_time}_DAJIN2.log")
+file_handler.setFormatter(logging.Formatter("%(message)s"))
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(levelname)s] [%(processName)s] %(message)s",
+    handlers=[stderr_handler, file_handler],
+)
 
 
 def update_threads(threads: int) -> int:
@@ -81,45 +101,30 @@ def _batched(iterable, chunk_size: int) -> Generator(tuple):
         yield chunk
 
 
-current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] [%(levelname)s] [%(processName)s] %(message)s",
-    handlers=[logging.FileHandler(f"{current_time}_DAJIN2.log")],
-)
-
-
 def run_multiprocess(function, arguments: list[dict], num_workers: int = 1) -> None:
-    arguments_batched = _batched(arguments, num_workers)
+    logger = logging.getLogger(__name__)
 
+    q = Queue()
+
+    def target(arg):
+        try:
+            function(arg)
+        except Exception:
+            q.put(traceback.format_exc())
+            sys.exit(1)
+
+    arguments_batched = _batched(arguments, num_workers)
     for args in arguments_batched:
-        processes = [multiprocessing.Process(target=function, args=(arg,)) for arg in args]
+        processes = [Process(target=target, args=(arg,)) for arg in args]
 
         for p in processes:
             p.start()
-            logging.info(f"Starting process {p.name} with pid {p.pid}")
 
         for p in processes:
             p.join()
-            logging.info(f"Process {p.name} with pid {p.pid} finished with exitcode {p.exitcode}")
             if p.exitcode == 1:
+                logger.error(f"An unexpected error occurred: {q.get()}")
                 sys.exit(1)
-
-
-# def run_multiprocess(function, arguments: set(dict), num_workers: int = 1) -> None:
-#     arguments_batched = _batched(arguments, num_workers)
-#     for args in arguments_batched:
-#         jobs = []
-#         for arg in args:
-#             p = multiprocessing.Process(target=function, args=(arg,))
-#             jobs.append(p)
-#             p.start()
-#         for job in jobs:
-#             if job.exitcode == 1:
-#                 sys.exit(1)
-#             job.join()
-#     return
 
 
 def execute_batch_mode(arguments: dict[str]):
@@ -269,7 +274,13 @@ def execute():
         arguments["genome"] = args.genome
         arguments["threads"] = update_threads(int(args.threads))
         arguments["debug"] = args.debug
-        execute_single_mode(arguments)
+
+        logger = logging.getLogger(__name__)
+        try:
+            execute_single_mode(arguments)
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
