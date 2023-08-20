@@ -9,37 +9,6 @@ import midsv
 import pysam
 
 from DAJIN2.utils import sam_handler
-from DAJIN2.core.report.reverse_sam import reverse_sam
-from DAJIN2.core.report.remove_microhomology import remove_microhomology
-
-
-def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
-    sam_headers = [s for s in sam if s[0].startswith("@")]
-    sam_contents = [s for s in sam if not s[0].startswith("@") and s[9] != "*"]
-    sam_contents.sort(key=lambda x: [x[0], int(x[3])])
-    sam_trimmed = sam_headers.copy()
-    for _, group in groupby(sam_contents, key=lambda x: x[0]):
-        alignments = list(group)
-        if len(alignments) == 1:
-            sam_trimmed.append(alignments[0])
-            continue
-        idx = 0
-        flag_overlap = False
-        while idx < len(alignments) - 1:
-            prev_alignment = alignments[idx]
-            next_alignment = alignments[idx + 1]
-            prev_start = int(prev_alignment[3])
-            prev_cigar = prev_alignment[5]
-            prev_alignment_len = sam_handler.calculate_alignment_length(prev_cigar)
-            prev_end = prev_start + prev_alignment_len
-            next_start = int(next_alignment[3])
-            if prev_end >= next_start:
-                flag_overlap = True
-                break
-            idx += 1
-        if flag_overlap is False:
-            sam_trimmed += alignments
-    return sam_trimmed
 
 
 def realign(sam: list[list[str]], GENOME_COODINATES: dict) -> list[str]:
@@ -53,7 +22,7 @@ def realign(sam: list[list[str]], GENOME_COODINATES: dict) -> list[str]:
     for s in sam_contents:
         s[2] = GENOME_COODINATES["chrom"]
     if GENOME_COODINATES["strand"] == "-":
-        sam_contents = reverse_sam(sam_contents, GENOME_COODINATES["end"])
+        sam_contents = sam_handler.revcomp_sam(sam_contents, GENOME_COODINATES["end"])
     else:
         for s in sam_contents:
             s[3] = str(int(s[3]) + GENOME_COODINATES["start"] - 1)
@@ -121,65 +90,11 @@ def write_sam_to_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str |
 
 def update_sam(sam: list, GENOME_COODINATES: dict = None) -> list:
     sam_update = sam.copy()
-    sam_update = remove_overlapped_reads(sam_update)
-    sam_update = remove_microhomology(sam_update)
+    sam_update = sam_handler.remove_overlapped_reads(sam_update)
+    sam_update = sam_handler.remove_microhomology(sam_update)
     if GENOME_COODINATES["genome"]:
         sam_update = realign(sam_update, GENOME_COODINATES)
     return sam_update
-
-
-# def output_bam_control(TEMPDIR, CONTROL_NAME, GENOME_COODINATES, THREADS) -> None:
-#     randomnum = random.randint(100_000, 999_999)
-#     path_sam_input = Path(TEMPDIR, "sam", f"{CONTROL_NAME}_map-ont_control.sam")
-#     sam = list(midsv.read_sam(path_sam_input))
-#     # Update sam
-#     sam_update = update_sam(sam, GENOME_COODINATES)
-#     # Output SAM and BAM
-#     path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control.sam")
-#     path_bam_output = Path(TEMPDIR, "report", "BAM", CONTROL_NAME, f"{CONTROL_NAME}.bam")
-#     write_sam_to_bam(sam_update, path_sam_output, path_bam_output, THREADS)
-#     # igvjs
-#     sam_headers = [s for s in sam_update if s[0].startswith("@")]
-#     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
-#     qnames = set(list(set(s[0] for s in sam_contents[:10000]))[:100])
-#     sam_subset = [s for s in sam_update if s[0] in qnames]
-#     path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{CONTROL_NAME}_control_cache.sam")
-#     path_bam_output = Path(TEMPDIR, "cache", ".igvjs", f"{CONTROL_NAME}_control.bam")
-#     write_sam_to_bam(sam_headers + sam_subset, path_sam_output, path_bam_output, THREADS)
-#     # Remove temporary files
-#     sam_temp = Path(TEMPDIR, "report", "BAM").glob(f"tmp{randomnum}*.sam")
-#     [s.unlink() for s in sam_temp]
-
-
-# def output_bam_sample(TEMPDIR, RESULT_SAMPLE, SAMPLE_NAME, GENOME_COODINATES, THREADS) -> None:
-#     randomnum = random.randint(100_000, 999_999)
-#     path_sam_input = Path(TEMPDIR, "sam", f"{SAMPLE_NAME}_map-ont_control.sam")
-#     sam = list(midsv.read_sam(path_sam_input))
-#     # Update sam
-#     sam_update = update_sam(sam, GENOME_COODINATES)
-#     # Output SAM and BAM
-#     path_sam_output = Path(TEMPDIR, "report", "BAM", f"tmp{randomnum}_{SAMPLE_NAME}_control.sam")
-#     path_bam_output = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}.bam")
-#     write_sam_to_bam(sam_update, path_sam_output, path_bam_output, THREADS)
-#     # Prepare SAM according to LABEL
-#     sam_headers = [s for s in sam_update if s[0].startswith("@")]
-#     sam_contents = [s for s in sam_update if not s[0].startswith("@")]
-#     sam_groups = group_by_name(sam_contents, RESULT_SAMPLE)
-#     qnames_by_name = subset_qnames(RESULT_SAMPLE)
-#     # Output SAM and BAM
-#     for name, sam_content in sam_groups.items():
-#         # BAM
-#         path_sam_output = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}.sam")
-#         path_bam_output = Path(TEMPDIR, "report", "BAM", SAMPLE_NAME, f"{SAMPLE_NAME}_{name}.bam")
-#         write_sam_to_bam(sam_headers + sam_content, path_sam_output, path_bam_output, THREADS)
-#         # igvjs
-#         sam_subset = subset_reads(name, sam_content, qnames_by_name)
-#         path_sam_output = Path(TEMPDIR, "report", "bam", f"tmp{randomnum}_{name}_subset.sam")
-#         path_bam_output = Path(TEMPDIR, "report", ".igvjs", SAMPLE_NAME, f"{name}.bam")
-#         write_sam_to_bam(sam_headers + sam_subset, path_sam_output, path_bam_output, THREADS)
-#     # Remove temporary files
-#     sam_temp = Path(TEMPDIR, "report", "bam").glob(f"tmp{randomnum}*.sam")
-#     [s.unlink() for s in sam_temp]
 
 
 def output_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
