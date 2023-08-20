@@ -3,6 +3,14 @@
 [![Python](https://img.shields.io/pypi/pyversions/DAJIN2.svg?label=Python&color=blue&style=flat-square)](https://pypi.org/project/DAJIN2/)
 
 
+<p align="center">
+<img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
+</p>
+
+DAJIN2 is a genotyping software designed for organisms that have undergone genome editing, utilizing nanopore sequencing technology.  
+
+The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yī Wǎng **Dǎ jìn**), which signifies capturing everything in a single net.  
+
 ## Disclaimer
 
 DAJIN2 is still in the development phase.  
