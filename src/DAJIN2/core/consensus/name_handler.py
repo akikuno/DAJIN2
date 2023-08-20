@@ -68,45 +68,6 @@ def call_allele_name(
     return allele_names
 
 
-# def construct_allele_name(
-#     cons_sequences: dict[NamedTuple, dict],
-#     cons_percentages: dict[NamedTuple, list],
-#     FASTA_ALLELES: dict[str, str],
-#     threshold: int = 50,
-# ) -> dict[int, str]:
-#     exists_sv = _detect_sv(cons_percentages, threshold)
-#     total_labels = len(cons_percentages)
-#     allele_names = {}
-
-#     for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
-#         allele_name = construct_allele_name(
-#             keys.label, keys.allele, cons_seq, FASTA_ALLELES[keys.allele], keys.percent, is_sv, total_labels
-#         )
-#         allele_names[keys.label] = allele_name
-
-#     return allele_names
-
-
-# def call_allele_name(
-#     cons_sequences: defaultdict[dict], cons_percentages: defaultdict[list], FASTA_ALLELES: dict, threshold: int = 50
-# ) -> dict[int, str]:
-#     exists_sv = _detect_sv(cons_percentages, threshold)
-#     label_digits = len(str(len(cons_percentages)))
-#     allele_names = {}
-#     for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
-#         label_format = f"{keys.label:0{label_digits}}"
-#         allele_name = f"allele{label_format}_{keys.allele}"
-#         if cons_seq == FASTA_ALLELES[keys.allele]:
-#             allele_name += "_intact"
-#         elif is_sv:
-#             allele_name += "_sv"
-#         else:
-#             allele_name += "_indels"
-#         allele_name += f"_{keys.percent}%"
-#         allele_names.update({keys.label: allele_name})
-#     return allele_names
-
-
 def update_key_by_allele_name(cons: dict, allele_names: dict[int, str]) -> dict:
     cons_update = dict()
     for key in cons:
