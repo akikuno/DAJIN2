@@ -9,7 +9,7 @@
 
 DAJIN2 is a genotyping software designed for organisms that have undergone genome editing, utilizing nanopore sequencing technology.  
 
-The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yī Wǎng **Dǎ jìn**), which signifies capturing everything in a single net.  
+The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
 
 ## Disclaimer
 
