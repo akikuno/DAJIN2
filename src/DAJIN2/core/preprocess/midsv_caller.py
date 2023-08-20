@@ -7,7 +7,7 @@ from typing import Generator
 from itertools import chain, groupby
 
 from DAJIN2.utils import sam_handler
-from DAJIN2.core.report.report_bam import remove_overlapped_reads
+from DAJIN2.utils import cssplits_handler
 
 
 def _has_inversion_in_splice(CIGAR: str) -> bool:
@@ -75,29 +75,16 @@ def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]
         yield midsv_sample
 
 
-def _find_seq_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
-    """Find the boundaries of contiguous Ns which aren't at the ends."""
-    left_idx_n = 0
-    while left_idx_n < len(cssplits) and cssplits[left_idx_n] == "N":
-        left_idx_n += 1
-
-    right_idx_n = len(cssplits) - 1
-    while right_idx_n >= 0 and cssplits[right_idx_n] == "N":
-        right_idx_n -= 1
-
-    return left_idx_n, right_idx_n
-
-
 def replace_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
     """Replace N with D, but not contiguous from both ends."""
     for samp in midsv_sample:
         cssplits = samp["CSSPLIT"].split(",")
 
-        left_idx_n, right_idx_n = _find_seq_n_boundaries(cssplits)
+        left_idx_n, right_idx_n = cssplits_handler.find_n_boundaries(cssplits)
 
         # Replace Ns within the sequence boundaries with the corresponding sequence character
         for j, (cs, seq_char) in enumerate(zip(cssplits, sequence)):
-            if left_idx_n <= j <= right_idx_n and cs == "N":
+            if left_idx_n < j < right_idx_n and cs == "N":
                 cssplits[j] = f"-{seq_char}"
 
         samp["CSSPLIT"] = ",".join(cssplits)
@@ -125,8 +112,8 @@ def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
             continue
         path_ont = Path(TEMPDIR, NAME, "sam", f"map-ont_{allele}.sam")
         path_splice = Path(TEMPDIR, NAME, "sam", f"splice_{allele}.sam")
-        sam_ont = remove_overlapped_reads(list(midsv.read_sam(path_ont)))
-        sam_splice = remove_overlapped_reads(list(midsv.read_sam(path_splice)))
+        sam_ont = sam_handler.remove_overlapped_reads(list(midsv.read_sam(path_ont)))
+        sam_splice = sam_handler.remove_overlapped_reads(list(midsv.read_sam(path_splice)))
         qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
         sam_of_map_ont = filter_sam_by_preset(sam_ont, qname_of_map_ont, preset="map-ont")
         sam_of_splice = filter_sam_by_preset(sam_splice, qname_of_map_ont, preset="splice")

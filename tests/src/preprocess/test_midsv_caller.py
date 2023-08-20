@@ -3,7 +3,6 @@ import midsv
 
 from DAJIN2.core.preprocess.midsv_caller import _has_inversion_in_splice
 from DAJIN2.core.preprocess.midsv_caller import extract_qname_of_map_ont
-from DAJIN2.core.preprocess.midsv_caller import _find_seq_n_boundaries
 from DAJIN2.core.preprocess.midsv_caller import replace_n_to_d
 from DAJIN2.core.preprocess.midsv_caller import convert_flag_to_strand
 
@@ -104,20 +103,6 @@ def test_extract_qname_of_map_ont_real():
 ###########################################################
 # replace n to d
 ###########################################################
-
-
-@pytest.mark.parametrize(
-    "cssplits, expected",
-    [
-        (["N", "N", "A", "B", "N", "N"], (2, 3)),
-        (["N", "N", "A", "B", "A", "B"], (2, 5)),
-        (["A", "B", "A", "B", "N", "N"], (0, 3)),
-        (["N", "N", "A", "B", "N", "N"], (2, 3)),
-        (["A", "B", "A", "B", "A", "B"], (0, 5)),
-    ],
-)
-def test_find_seq_n_boundaries(cssplits, expected):
-    assert _find_seq_n_boundaries(cssplits) == expected
 
 
 def test_replace_n_to_d():
