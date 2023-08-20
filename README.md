@@ -2,11 +2,18 @@
 [![PyPI](https://img.shields.io/pypi/v/DAJIN2.svg?label=PyPI&color=orange&style=flat-square)](https://pypi.org/project/DAJIN2/)
 [![Python](https://img.shields.io/pypi/pyversions/DAJIN2.svg?label=Python&color=blue&style=flat-square)](https://pypi.org/project/DAJIN2/)
 
-⚠️ DAJIN2 is currently under development ⚠️
 
-Expected to be available the stable version in August 2023 🤞
+## Disclaimer
 
-## Installation (alpha-version)
+DAJIN2 is still in the development phase.  
+Basic tests covering point mutations, deletions, and insertion designs have been conducted.  
+If you encounter any bugs or issues, please report them via [Issues](https://github.com/akikuno/DAJIN2/issues).  
+
+
+
+## Installation
+
+To install DAJIN2, simply run the following command:
 
 ```bash
 pip install DAJIN2
@@ -14,10 +21,9 @@ pip install DAJIN2
 
 ## Usage
 
-### Basics
+### Single Sample Analysis
 
-You can run DAJIN2 for a single sample (one sample vs one control)
-
+DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
 DAJIN2 [-h] [-s SAMPLE] [-c CONTROL] [-a ALLELE] [-n NAME] [-g GENOME] [-t THREADS] [-v]
@@ -41,7 +47,7 @@ options:
 #### Example
 
 ```bash
-# Donwload example dataset
+# Donwload the example dataset
 wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-single.tar.gz
 tar -xf example-single.tar.gz
 
@@ -68,9 +74,10 @@ DAJIN2 \
 # 🎉 Finished! Open DAJINResults/stx2-deletion to see the report.
 ```
 
-### Batch handling
+### Batch Processing
 
-DAJIN2 can handle many FASTQ files using the `batch' subcommand.
+DAJIN2 can also handle multiple FASTQ files using the `batch` subcommand.
+
 
 ```bash
 DAJIN2 batch [-h] -f FILE [-t THREADS]
@@ -85,7 +92,7 @@ options:
 #### Example
 
 ```bash
-# Donwload example dataset
+# Donwload the example dataset
 wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-batch.tar.gz
 tar -xf example-batch.tar.gz
 
@@ -121,5 +128,7 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 ```
 
 ## References
+
+For more information, please refer to the following publication:
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
