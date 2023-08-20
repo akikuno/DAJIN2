@@ -1,6 +1,12 @@
+import pytest
+
 from collections import defaultdict
+from typing import NamedTuple
+
 from DAJIN2.core.consensus.name_handler import (
     _detect_sv,
+    _format_allele_label,
+    _determine_suffix,
     call_allele_name,
     update_key_by_allele_name,
     add_key_by_allele_name,
@@ -31,44 +37,88 @@ def test_detect_sv_threshold():
 ###########################################################
 
 
-def test_call_allele_name():
-    pass
+@pytest.mark.parametrize(
+    "label, total_labels, expected_output",
+    [
+        (1, 10, "01"),
+        (5, 100, "005"),
+        (10, 10, "10"),
+        (99, 99, "99"),
+        (1, 1000, "0001"),
+    ],
+)
+def test_format_allele_label(label, total_labels, expected_output):
+    result = _format_allele_label(label, total_labels)
+    assert result == expected_output
 
 
-#     cons_sequences = defaultdict(dict)
-#     cons_sequences[(1, 10, 90)] = "ATGC"
-#     cons_sequences[(2, 20, 80)] = "CGTA"
-
-#     cons_percentages = defaultdict(list)
-#     cons_percentages[10] = [{"A": 30, "T": 20}, {"N": 40, "G": 60}]
-#     cons_percentages[20] = [{"A": 40, "T": 60}, {"+G|": 55, "C": 45}]
-
-#     FASTA_ALLELES = {1: "ATGC", 2: "GTCA"}
-
-#     expected = {10: "allele10_1_sv_90%", 20: "allele20_2_sv_80%"}
-#     assert call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES) == expected
-
-
-def test_update_key_by_allele_name():
-    pass
+# Test for determine_suffix function
+@pytest.mark.parametrize(
+    "cons_seq, fasta_allele, is_sv, expected_output",
+    [
+        ("ATCG", "ATCG", False, "_intact"),
+        ("ATCG", "ATCC", True, "_sv"),
+        ("ATCG", "ATCC", False, "_indels"),
+    ],
+)
+def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
+    result = _determine_suffix(cons_seq, fasta_allele, is_sv)
+    assert result == expected_output
 
 
-#     cons = {10: "sample_data_1", 20: "sample_data_2"}
-#     allele_names = {10: "allele10_1_sv_90%", 20: "allele20_2_sv_80%"}
-
-#     expected = {"allele10_1_sv_90%": "sample_data_1", "allele20_2_sv_80%": "sample_data_2"}
-#     assert update_key_by_allele_name(cons, allele_names) == expected
-
-
-def test_add_key_by_allele_name():
-    pass
+class ConsensusKey(NamedTuple):
+    allele: str
+    label: int
+    percent: float
 
 
-#     clust_sample = [{"LABEL": 10, "DATA": "sample1"}, {"LABEL": 20, "DATA": "sample2"}]
-#     allele_names = {10: "allele10_1_sv_90%", 20: "allele20_2_sv_80%"}
+# Example test cases for call_allele_name function
+@pytest.mark.parametrize(
+    "cons_sequences, cons_percentages, FASTA_ALLELES, threshold, expected_output",
+    [
+        # Here, you can add test cases with the corresponding expected output.
+        # (cons_sequences, cons_percentages, FASTA_ALLELES, threshold, expected_output)
+        (
+            {ConsensusKey("control", 1, 100): "ACGT"},
+            {ConsensusKey("control", 1, 100): [{"A": 100}, {"C": 100}, {"G": 100}, {"T": 100}]},
+            {"control": "ACGT"},
+            50,
+            {1: "allele1_control_intact_100%"},
+        ),
+        (
+            {ConsensusKey("control", 10, 100): "ACGT"},
+            {ConsensusKey("control", 10, 100): [{"A": 100}, {"C": 100}, {"G": 100}, {"T": 100}]},
+            {"control": "ACGT"},
+            50,
+            {10: "allele10_control_intact_100%"},
+        ),
+    ],
+)
+def test_call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES, threshold, expected_output):
+    result = call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES, threshold)
+    assert result == expected_output
 
-#     expected = [
-#         {"LABEL": 10, "DATA": "sample1", "NAME": "allele10_1_sv_90%"},
-#         {"LABEL": 20, "DATA": "sample2", "NAME": "allele20_2_sv_80%"},
-#     ]
-#     assert add_key_by_allele_name(clust_sample, allele_names) == expected
+
+# Example test cases for update_key_by_allele_name function
+@pytest.mark.parametrize(
+    "cons, allele_names, expected_output",
+    [
+        ({1: "value1", 2: "value2"}, {1: "name1", 2: "name2"}, {"name1": "value1", "name2": "value2"}),
+    ],
+)
+def test_update_key_by_allele_name(cons, allele_names, expected_output):
+    result = update_key_by_allele_name(cons, allele_names)
+    assert result == expected_output
+
+
+# Example test cases for add_key_by_allele_name function
+@pytest.mark.parametrize(
+    "clust_sample, allele_names, expected_output",
+    [
+        ([{"LABEL": 1}], {1: "name1"}, [{"LABEL": 1, "NAME": "name1"}]),
+        # Add more test cases
+    ],
+)
+def test_add_key_by_allele_name(clust_sample, allele_names, expected_output):
+    result = add_key_by_allele_name(clust_sample, allele_names)
+    assert result == expected_output
