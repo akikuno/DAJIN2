@@ -1,34 +1,18 @@
 from __future__ import annotations
 
-# import os
 import pickle
-
-import logging
-
-# import psutil
-# import resource
 import shutil
+import logging
 
 from pathlib import Path
 from datetime import datetime
-from collections import defaultdict
 from typing import NamedTuple
+from collections import defaultdict
 
-from DAJIN2.utils import io
+from DAJIN2.utils import io, config
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
-from DAJIN2.utils.config import TEMP_ROOT_DIR
 
 logger = logging.getLogger(__name__)
-
-# # limit max memory usage
-# # available_memory = psutil.virtual_memory().available
-# available_memory = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
-# _, hard_limit = resource.getrlimit(resource.RLIMIT_DATA)
-# # if hard_limit == resource.RLIM_INFINITY:
-# #     hard_limit = available_memory
-# # Ensure that the new limit does not exceed the hard limit
-# limit = min(int(available_memory * 0.9), hard_limit)
-# resource.setrlimit(resource.RLIMIT_DATA, (limit, limit))
 
 
 def parse_arguments(arguments: dict) -> tuple:
@@ -56,7 +40,7 @@ def convert_inputs_to_posix(sample: str, control: str, allele: str) -> tuple:
 
 
 def create_temporal_directory(name: str, control_name: str) -> Path:
-    tempdir = Path(TEMP_ROOT_DIR, name)
+    tempdir = Path(config.TEMP_ROOT_DIR, name)
     Path(tempdir, "cache", ".igvjs", control_name).mkdir(parents=True, exist_ok=True)
     return tempdir
 
