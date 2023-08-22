@@ -1,19 +1,22 @@
+from __future__ import annotations
+
 import os
 import shutil
 import socket
 import webbrowser
-from contextlib import closing, redirect_stderr
-from pathlib import Path
-from threading import Timer
 
 import pandas as pd
-from flask import Flask, render_template, request
+
+from pathlib import Path
+from threading import Timer
+from contextlib import closing, redirect_stderr
+
 from waitress import serve
 from werkzeug.utils import secure_filename
-
-from DAJIN2.utils.config import TEMP_ROOT_DIR
+from flask import Flask, render_template, request
 
 from DAJIN2 import main
+from DAJIN2.utils import config
 
 
 def find_free_port():
@@ -48,7 +51,7 @@ def root_page():
 @app.route("/submit", methods=["POST"])
 def submit():
     name = request.form.get("name")
-    TEMPDIR = Path(TEMP_ROOT_DIR, name)
+    TEMPDIR = Path(config.TEMP_ROOT_DIR, name)
     if TEMPDIR.exists():
         shutil.rmtree(TEMPDIR)
     UPLOAD_FOLDER = Path(TEMPDIR, "upload")

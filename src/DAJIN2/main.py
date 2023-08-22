@@ -14,9 +14,8 @@ from itertools import groupby, islice
 from typing import Generator
 
 from DAJIN2 import gui, view
-from DAJIN2.utils import io, report_generator, input_validator
 from DAJIN2.core import core
-from DAJIN2.utils.config import DAJIN_RESULTS_DIR
+from DAJIN2.utils import config, io, report_generator, input_validator
 
 
 VERSION = "0.3.1"
@@ -56,7 +55,7 @@ def update_threads(threads: int) -> int:
 def generate_report(name: str) -> None:
     report_generator.report(name)
     print(
-        f"\N{party popper} Finished! Open {DAJIN_RESULTS_DIR}/{name} to see the report.",
+        f"\N{party popper} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.",
         file=sys.stderr,
     )
 
