@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
+from typing import NamedTuple
 
+class ConsensusKey(NamedTuple):
+    allele: str
+    label: int
+    percent: float
 
-def _detect_sv(cons_percentages: defaultdict[list], threshold: int = 50) -> list[bool]:
+def _detect_sv(cons_percentages: dict[ConsensusKey, list], threshold: int = 50) -> list[bool]:
     exists_sv = []
     for cons_per in cons_percentages.values():
         cons_cssplits = []
@@ -42,7 +46,7 @@ def _determine_suffix(cons_seq: str, fasta_allele: str, is_sv: bool) -> str:
 
 
 def _construct_allele_name(
-    label: int, allele: str, cons_seq: str, fasta_allele: str, percent: int, is_sv: bool, total_labels: int
+    label: int, allele: str, cons_seq: str, fasta_allele: str, percent: float, is_sv: bool, total_labels: int
 ) -> str:
     label_format = _format_allele_label(label, total_labels)
     suffix = _determine_suffix(cons_seq, fasta_allele, is_sv)
@@ -50,8 +54,8 @@ def _construct_allele_name(
 
 
 def call_allele_name(
-    cons_sequences: dict[int, dict],
-    cons_percentages: dict[int, list],
+    cons_sequences: dict[ConsensusKey, str],
+    cons_percentages: dict[ConsensusKey, list],
     FASTA_ALLELES: dict[str, str],
     threshold: int = 50,
 ) -> dict[int, str]:
