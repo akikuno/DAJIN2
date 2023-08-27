@@ -1,3 +1,6 @@
+include requirements.txt
 include src/DAJIN2/template_igvjs.html
+
 graft src/DAJIN2/templates
 graft src/DAJIN2/static
+graft src/DAJIN2/utils

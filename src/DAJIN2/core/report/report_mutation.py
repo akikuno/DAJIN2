@@ -83,18 +83,18 @@ def flatten(lst: list[list]) -> list:
 ###########################################################
 
 
-def _handle_match(group, genome, start, end, header, chr_genome):
+def _handle_match(group, genome, start, end, header, chromosome):
     end += len(group)
     start = end
     return None, start, end
 
 
-def _handle_substitution(group, genome, start, end, header, chr_genome):
+def _handle_substitution(group, genome, start, end, header, chromosome):
     result = []
     for g in group:
         ref = g[1]
         mut = g[2]
-        result.append([header, genome, chr_genome, start, end, f"substitution: {ref}>{mut}"])
+        result.append([header, genome, chromosome, start, end, f"substitution: {ref}>{mut}"])
         end += 1
         start = end
     if len(result) == 1:
@@ -102,27 +102,27 @@ def _handle_substitution(group, genome, start, end, header, chr_genome):
     return result, start, end
 
 
-def _handle_deletion(group, genome, start, end, header, chr_genome):
+def _handle_deletion(group, genome, start, end, header, chromosome):
     end += len(group) - 1
     size = len(group)
     seq = "".join([g[-1] for g in group])
-    result = [header, genome, chr_genome, start, end, f"{size}bp deletion: {seq}"]
+    result = [header, genome, chromosome, start, end, f"{size}bp deletion: {seq}"]
     end += 1
     start = end
     return result, start, end
 
 
-def _handle_insertion(group, genome, start, end, header, chr_genome):
+def _handle_insertion(group, genome, start, end, header, chromosome):
     group = group[0]
     size = group.count("|")
     seq_insertion = "".join([g[-1] for g in group.split("|")[:-1]])
     seq_last = group.split("|")[-1]
     result = []
-    result.append([header, genome, chr_genome, start, end, f"{size}bp insertion: {seq_insertion}"])
+    result.append([header, genome, chromosome, start, end, f"{size}bp insertion: {seq_insertion}"])
     if seq_last.startswith("="):
         pass
     elif seq_last.startswith("-"):
-        result.append([header, genome, chr_genome, start, end, f"1bp deletion: {seq_last[-1]}"])
+        result.append([header, genome, chromosome, start, end, f"1bp deletion: {seq_last[-1]}"])
     if len(result) == 1:
         result = result[0]
     end += 1
@@ -130,20 +130,20 @@ def _handle_insertion(group, genome, start, end, header, chr_genome):
     return result, start, end
 
 
-def _handle_inversion(group, genome, start, end, header, chr_genome):
+def _handle_inversion(group, genome, start, end, header, chromosome):
     end += len(group) - 1
     size = len(group)
     seq = "".join([g[-1].upper() for g in group])
-    result = [header, genome, chr_genome, start, end, f"{size}bp inversion: {seq}"]
+    result = [header, genome, chromosome, start, end, f"{size}bp inversion: {seq}"]
     end += 1
     start = end
     return result, start, end
 
 
-def _handle_unknown(group, genome, start, end, header, chr_genome):
+def _handle_unknown(group, genome, start, end, header, chromosome):
     end += len(group) - 1
     size = len(group)
-    result = [header, genome, chr_genome, start, end, f"{size}bp unknown bases"]
+    result = [header, genome, chromosome, start, end, f"{size}bp unknown bases"]
     end += 1
     start = end
     return result, start, end
@@ -151,7 +151,7 @@ def _handle_unknown(group, genome, start, end, header, chr_genome):
 
 def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
     genome = GENOME_COODINATES["genome"]
-    chr_genome = GENOME_COODINATES["chr"]
+    chromosome = GENOME_COODINATES["chrom"]
     start = end = GENOME_COODINATES["start"]
     handlers = {
         "=": _handle_match,
@@ -165,7 +165,7 @@ def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
     for group in cssplits_grouped:
         for prefix, handler in handlers.items():
             if group[0].startswith(prefix):
-                result, start, end = handler(group, genome, start, end, header, chr_genome)
+                result, start, end = handler(group, genome, start, end, header, chromosome)
                 if prefix == "=":
                     continue
                 results.append(result)
@@ -181,7 +181,7 @@ def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict, cons_
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
     ref = Path(TEMPDIR, SAMPLE_NAME, "fasta", "control.fasta")
     for query in Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME).iterdir():
-        sam = preprocess.align.to_sam(ref, query)
+        sam = preprocess.mapping.to_sam(ref, query)
         sam = [s.split("\t") for s in sam]
         midsv_sample = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)[0]
         header = midsv_sample["QNAME"]

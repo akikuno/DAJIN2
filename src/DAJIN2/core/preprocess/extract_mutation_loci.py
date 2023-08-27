@@ -1,26 +1,21 @@
 from __future__ import annotations
 
 import re
-import json
 import pickle
 import numpy as np
 from pathlib import Path
 from typing import Generator
 from collections import defaultdict
+
 from scipy import stats
 from scipy.spatial import distance
 from sklearn import linear_model
 
-from DAJIN2.core.preprocess.extract_errors_in_homopolymer import extract_errors_in_homopolymer
+from DAJIN2.utils import io
+from DAJIN2.core.preprocess import homopolymer_handler
 
 
-def read_midsv(filepath: str | Path) -> Generator[dict[str, str]]:
-    with open(filepath, "r") as f:
-        for line in f:
-            yield json.loads(line)
-
-
-def call_coverage_on_each_base(midsv_sample: Generator[dict], sequence: str) -> list[int]:
+def call_coverage_of_each_base(midsv_sample: Generator[dict], sequence: str) -> list[int]:
     coverages = [1] * len(sequence)
     for cont in midsv_sample:
         cssplits = cont["CSSPLIT"].split(",")
@@ -194,8 +189,8 @@ def _process_control(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> N
         if Path(path_mutation_loci, f"{allele}_count.pickle").exists():
             continue
         filepath_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        indels_control = count_indels(read_midsv(filepath_control), sequence)
-        coverages_control = call_coverage_on_each_base(read_midsv(filepath_control), sequence)
+        indels_control = count_indels(io.read_jsonl(filepath_control), sequence)
+        coverages_control = call_coverage_of_each_base(io.read_jsonl(filepath_control), sequence)
         indels_normalized_control = normalize_indels(indels_control, coverages_control)
         indels_kmer_control = split_kmer(indels_normalized_control, kmer=11)
         # Save indels_normalized_control and indels_kmer_control as pickle to reuse in consensus calling
@@ -237,13 +232,15 @@ def extract_mutation_loci(
     if is_control:
         _process_control(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
         return
+
     for allele, sequence in FASTA_ALLELES.items():
         path_output = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle")
         if path_output.exists():
             continue
+
         filepath_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"{allele}.json")
-        indels_sample = count_indels(read_midsv(filepath_sample), sequence)
-        coverages_sample = call_coverage_on_each_base(read_midsv(filepath_sample), sequence)
+        indels_sample = count_indels(io.read_jsonl(filepath_sample), sequence)
+        coverages_sample = call_coverage_of_each_base(io.read_jsonl(filepath_sample), sequence)
         indels_normalized_sample = normalize_indels(indels_sample, coverages_sample)
         indels_kmer_sample = split_kmer(indels_normalized_sample, kmer=11)
         # Load indels_normalized_control and indels_kmer_control
@@ -251,21 +248,25 @@ def extract_mutation_loci(
             indels_normalized_control = pickle.load(f)
         with open(Path(TEMPDIR, CONTROL_NAME, "mutation_loci", f"{allele}_kmer.pickle"), "rb") as f:
             indels_kmer_control = pickle.load(f)
+
         # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_control)
         candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
+
         # Extract error loci in homopolymer regions
-        errors_in_homopolymer = extract_errors_in_homopolymer(
+        errors_in_homopolymer = homopolymer_handler.extract_errors(
             sequence, indels_normalized_sample, indels_normalized_control, candidate_loci
         )
         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
-        # Add all mutations into knockin loci
+
+        # Merge all mutations and knockin loci
         path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
         if path_knockin.exists():
             with open(path_knockin, "rb") as p:
                 knockin_loci = pickle.load(p)
             mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
+
         mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         with open(path_output, "wb") as p:
