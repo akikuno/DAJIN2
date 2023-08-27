@@ -99,11 +99,11 @@ def test_call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES, thres
     assert result == expected_output
 
 
-# Example test cases for update_key_by_allele_name function
+# Example test cases for cakey_by_allele_name function
 @pytest.mark.parametrize(
     "cons, allele_names, expected_output",
     [
-        ({1: "value1", 2: "value2"}, {1: "name1", 2: "name2"}, {"name1": "value1", "name2": "value2"}),
+        ({ConsensusKey("control", 1, 100): "value1", ConsensusKey("control", 2, 100): "value2"}, {1: "name1", 2: "name2"}, {"name1": "value1", "name2": "value2"}),
     ],
 )
 def test_update_key_by_allele_name(cons, allele_names, expected_output):
