@@ -43,22 +43,17 @@ conda install -c bioconda DAJIN2
 DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
-DAJIN2 [-h] [-s SAMPLE] [-c CONTROL] [-a ALLELE] [-n NAME] [-g GENOME] [-t THREADS] [-v]
+DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 options:
-  -h, --help            show this help message and exit
-  -s SAMPLE, --sample SAMPLE
-                        Full path to a sample FASTQ file
-  -c CONTROL, --control CONTROL
-                        Full path to a control FASTQ file
-  -a ALLELE, --allele ALLELE
-                        Full path to a FASTA file
-  -n NAME, --name NAME  Output directory name
-  -g GENOME, --genome GENOME
-                        Reference genome ID (e.g hg38, mm10) [default: '']
-  -t THREADS, --threads THREADS
-                        Number of threads [default: 1]
-  -v, --version         show program's version number and exit
+  -s, --sample              Path to a sample FASTQ file
+  -c, --control             Path to a control FASTQ file
+  -a, --allele              Path to a FASTA file
+  -n, --name                Output directory name
+  -g, --genome (Optional)   Reference genome ID (e.g hg38, mm39) [default: '']
+  -t, --threads (Optional)  Number of threads [default: 1]
+  -h, --help                show this help message and exit
+  -v, --version             show the version number and exit
 ```
 
 #### Example
@@ -97,13 +92,12 @@ DAJIN2 can also handle multiple FASTQ files using the `batch` subcommand.
 
 
 ```bash
-DAJIN2 batch [-h] -f FILE [-t THREADS]
+DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 
 options:
-  -h, --help            Show this help message and exit
-  -f FILE, --file FILE  CSV or Excel file
-  -t THREADS, --threads THREADS
-                        Number of threads [default: 1]
+  -f, --file                Path to a CSV or Excel file
+  -t, --threads (Optional)  Number of threads [default: 1]
+  -h, --help                Show this help message and exit
 ```
 
 #### Example
