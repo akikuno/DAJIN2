@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/pypi/pyversions/DAJIN2.svg?label=Python&color=blue&style=flat-square)](https://pypi.org/project/DAJIN2/)
 [![PyPI](https://img.shields.io/pypi/v/DAJIN2.svg?label=PyPI&color=orange&style=flat-square)](https://pypi.org/project/DAJIN2/)
 [![Bioconda](https://img.shields.io/conda/v/bioconda/dajin2?label=Bioconda&color=orange&style=flat-square)](https://anaconda.org/bioconda/dajin2)
+[![DOI](https://zenodo.org/badge/387721337.svg)](https://zenodo.org/badge/latestdoi/387721337)
 
 
 <p align="center">
