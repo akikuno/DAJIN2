@@ -177,7 +177,7 @@ def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
 ###########################################################
 
 
-def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict, cons_percentage: dict) -> None:
+def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
     ref = Path(TEMPDIR, SAMPLE_NAME, "fasta", "control.fasta")
     for query in Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME).iterdir():
@@ -186,8 +186,6 @@ def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict, cons_
         midsv_sample = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)[0]
         header = midsv_sample["QNAME"]
         cssplits = midsv_sample["CSSPLIT"].split(",")
-        # for header, cons_per in cons_percentage.items():
-        #     cssplits = [max(cons, key=cons.get) for cons in cons_per]
         if GENOME_COODINATES["strand"] == "-":
             cssplits = revcomp_cssplits(cssplits)
         cssplits_inversion = annotate_inversion(cssplits)

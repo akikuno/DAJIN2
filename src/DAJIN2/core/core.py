@@ -270,7 +270,7 @@ def execute_sample(arguments: dict):
     # HTML
     report.report_files.to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)
-    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
+    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates)
     # BAM
     report.report_bam.output_bam(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE)
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
