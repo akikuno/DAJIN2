@@ -9,7 +9,7 @@ from itertools import islice
 from multiprocessing import Process, Queue
 
 
-def _batched(iterable, chunk_size: int) -> Generator(tuple):
+def generate_chunks(iterable, chunk_size: int) -> Generator(tuple):
     iterator = iter(iterable)
     while True:
         chunk = tuple(islice(iterator, chunk_size))
@@ -30,8 +30,8 @@ def run(function, arguments: list[dict], num_workers: int = 1) -> None:
             q.put(traceback.format_exc())
             sys.exit(1)
 
-    arguments_batched = _batched(arguments, num_workers)
-    for args in arguments_batched:
+    arguments_chunked = generate_chunks(arguments, num_workers)
+    for args in arguments_chunked:
         processes = [Process(target=target, args=(arg,)) for arg in args]
 
         for p in processes:

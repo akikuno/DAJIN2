@@ -1,4 +1,4 @@
-from src.DAJIN2.core.clustering import make_score
+from DAJIN2.core.clustering import score_handler
 
 # def test_make_score():
 #     cssplits = [["A", "B", "C", "D", "E"]] * 5

@@ -86,7 +86,7 @@ def update_insertion_score(percent_discarded, mutation_loci):
 
 
 ###############################################################################
-# main
+# make_score
 ###############################################################################
 
 
@@ -102,3 +102,23 @@ def make_score(path_sample, path_control, mutation_loci: set[int], knockin_loci:
     percent_discarded = update_insertion_score(percent_discarded, mutation_loci)
     mutation_score = _discard_match_and_n(percent_discarded)
     return mutation_score
+
+
+###############################################################################
+# annotate_score
+###############################################################################
+
+
+def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
+    for cssplit_kmer in generate_mutation_kmers(path_sample, mutation_loci):
+        score = [0 for _ in range(len(cssplit_kmer))]
+        for i, (cs_kmer, mut_score) in enumerate(zip(cssplit_kmer, mutation_score)):
+            if mut_score == {}:
+                continue
+            # Mutation sites are not considered in controls
+            # because they should be sample-specific.
+            if is_control and cs_kmer.split(",")[1][0] in mutation_loci[i]:
+                continue
+            if cs_kmer in mut_score:
+                score[i] = mut_score[cs_kmer]
+        yield score

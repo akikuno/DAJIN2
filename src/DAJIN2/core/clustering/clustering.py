@@ -5,40 +5,12 @@ import midsv
 import random
 from pathlib import Path
 from itertools import groupby
-from typing import Generator
 from collections import defaultdict
 
-from DAJIN2.core.clustering.make_kmer import generate_mutation_kmers
-from DAJIN2.core.clustering.make_score import make_score
+from DAJIN2.core.clustering.score_handler import make_score, annotate_score
 from DAJIN2.core.clustering.return_labels import return_labels
+from DAJIN2.core.clustering.label_handler import relabel_with_consective_order
 from DAJIN2.utils import io
-
-
-def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
-    for cssplit_kmer in generate_mutation_kmers(path_sample, mutation_loci):
-        score = [0 for _ in range(len(cssplit_kmer))]
-        for i, (cs_kmer, mut_score) in enumerate(zip(cssplit_kmer, mutation_score)):
-            if mut_score == {}:
-                continue
-            # Mutation sites are not considered in controls
-            # because they should be sample-specific.
-            if is_control and cs_kmer.split(",")[1][0] in mutation_loci[i]:
-                continue
-            if cs_kmer in mut_score:
-                score[i] = mut_score[cs_kmer]
-        yield score
-
-
-def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
-    labels_ordered = labels.copy()
-    num = start
-    d = defaultdict(int)
-    for i, l in enumerate(labels_ordered):
-        if not d[l]:
-            num += 1
-            d[l] = num
-        labels_ordered[i] = d[l]
-    return labels_ordered
 
 
 ###########################################################
@@ -74,7 +46,7 @@ def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[
             mutation_loci: dict[str, set[str]] = pickle.load(p)
         if all(m == set() for m in mutation_loci):
             labels = [1] * len(classif_sample)
-            labels_reorder = reorder_labels(labels, start=max_label)
+            labels_reorder = relabel_with_consective_order(labels, start=max_label)
             max_label = max(labels_reorder)
             labels_all.extend(labels_reorder)
             continue
@@ -89,7 +61,7 @@ def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[
         io.write_jsonl(data=scores_sample, path=path_score_sample)
         io.write_jsonl(data=scores_control, path=path_score_control)
         labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
-        labels_reorder = reorder_labels(labels, start=max_label)
+        labels_reorder = relabel_with_consective_order(labels, start=max_label)
         max_label = max(labels_reorder)
         labels_all.extend(labels_reorder)
         # Remove temporary files
@@ -100,41 +72,3 @@ def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[
     for clust, label in zip(clust_sample, labels_all):
         clust["LABEL"] = label
     return clust_sample
-
-
-def add_readnum(clust_sample: list[dict]) -> list[dict]:
-    clust_result = clust_sample.copy()
-    readnum = defaultdict(int)
-    for cs in clust_result:
-        readnum[cs["LABEL"]] += 1
-    for cs in clust_result:
-        cs["READNUM"] = readnum[cs["LABEL"]]
-    return clust_result
-
-
-def add_percent(clust_sample: list[dict]) -> list[dict]:
-    clust_result = clust_sample.copy()
-    n_sample = len(clust_result)
-    percent = defaultdict(int)
-    for cs in clust_result:
-        percent[cs["LABEL"]] += 1 / n_sample
-    percent = {key: round(val * 100, 3) for key, val in percent.items()}
-    for cs in clust_result:
-        cs["PERCENT"] = percent[cs["LABEL"]]
-    return clust_result
-
-
-def update_labels(clust_sample: list[dict]) -> list[dict]:
-    """
-    Allocate new labels according to the ranking by PERCENT
-    """
-    clust_result = clust_sample.copy()
-    clust_result.sort(key=lambda x: (-x["PERCENT"], x["LABEL"]))
-    new_label = 1
-    prev_label = clust_result[0]["LABEL"]
-    for cs in clust_result:
-        if prev_label != cs["LABEL"]:
-            new_label += 1
-        prev_label = cs["LABEL"]
-        cs["LABEL"] = new_label
-    return clust_result

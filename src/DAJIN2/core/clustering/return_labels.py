@@ -16,7 +16,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.exceptions import ConvergenceWarning
 
-from DAJIN2.core.clustering.merge_clusters import merge_clusters
+from DAJIN2.core.clustering.label_merger import merge_labels
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
@@ -70,7 +70,7 @@ def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]
         labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).tolist()
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
-        labels_merged = merge_clusters(labels_control, labels_sample)
+        labels_merged = merge_labels(labels_control, labels_sample)
         # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_merged))  # ! DEBUG
         # Reads < 1% in the control are considered clustering errors and are not counted
         count_control = Counter(labels_control)
