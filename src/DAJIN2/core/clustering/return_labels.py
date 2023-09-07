@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import warnings
 import numpy as np
 
@@ -16,33 +15,11 @@ from sklearn.mixture import GaussianMixture
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.exceptions import ConvergenceWarning
 
+from DAJIN2.utils import io
 from DAJIN2.core.clustering.label_merger import merge_labels
 
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
-
-###############################################################################
-# I/O
-###############################################################################
-
-
-def read_json(filepath: Path | str) -> Generator[list[float]]:
-    with open(filepath, "r") as f:
-        for line in f:
-            yield json.loads(line)
-
-
-def count_newlines(filepath: Path | str) -> int:
-    def _make_gen(reader):
-        while True:
-            b = reader(2**16)
-            if not b:
-                break
-            yield b
-
-    with open(filepath, "rb") as f:
-        count = sum(buf.count(b"\n") for buf in _make_gen(f.raw.read))
-    return count
 
 
 ###############################################################################
@@ -111,7 +88,7 @@ def _calculate_strand_biases(count_strand_by_labels, total_count_by_labels) -> d
 
 
 def get_strand_biases(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
-    samples = read_json(path_sample)
+    samples = io.read_jsonl(path_sample)
     count_strand_by_labels, total_count_by_labels = _count_strand(labels, samples)
     return _calculate_strand_biases(count_strand_by_labels, total_count_by_labels)
 
@@ -143,7 +120,7 @@ def _allocate_labels(labels, strand_biases, dtree, x_test):
 
 
 def correct_clusters_with_strand_bias(labels, path_score_sample, strand_biases):
-    scores = read_json(path_score_sample)
+    scores = io.read_jsonl(path_score_sample)
     x_train, y_train, x_test = _prepare_training_testing_sets(labels, scores, strand_biases)
     dtree = _train_decision_tree(x_train, y_train)
     return _allocate_labels(labels, strand_biases, dtree, x_test)
@@ -167,13 +144,13 @@ def return_labels(
     path_score_sample: Path | str, path_score_control: Path | str, path_sample: Path | str, strand_bias: bool
 ) -> list[int]:
     np.random.seed(seed=1)
-    X_control = reduce_dimension([], read_json(path_score_control))
+    X_control = reduce_dimension([], io.read_jsonl(path_score_control))
     # subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
     labels_control = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)
     label_most = get_label_most(labels_control)
-    scores_control_subset = subset_scores(labels_control, read_json(path_score_control), label_most, 1000)
-    X = reduce_dimension(read_json(path_score_sample), scores_control_subset)
-    coverage_sample = count_newlines(path_score_sample)
+    scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most, 1000)
+    X = reduce_dimension(io.read_jsonl(path_score_sample), scores_control_subset)
+    coverage_sample = io.count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
     labels = optimize_labels(X, coverage_sample, coverage_control)
     # correct clusters with strand bias

@@ -72,7 +72,7 @@ def execute_batch_mode(arguments: dict[str]):
     if not Path(path_batchfile).exists():
         raise FileNotFoundError(f"'{path_batchfile}' does not exist.")
 
-    inputs = io.load_file(path_batchfile)
+    inputs = io.load_batchfile(path_batchfile)
 
     # Validate Column of the batch file
     columns = inputs[0]
