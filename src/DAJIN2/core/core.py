@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pickle
 import shutil
 import logging
 
@@ -227,20 +226,19 @@ def execute_sample(arguments: dict):
     ########################################################################
     logger.info(f"{_dtnow()}: Classify {arguments['sample']}...")
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
-    with open(Path(ARGS.tempdir, ARGS.sample_name, "classif_sample.pickle"), "wb") as p:
-        pickle.dump(classif_sample, p)
+    io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classif_sample.pickle"))
     ########################################################################
     # Clustering
     ########################################################################
     logger.info(f"{_dtnow()}: Clustering {arguments['sample']}...")
 
-    clust_sample = clustering.add_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
+    labels = clustering.extract_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
+    clust_sample = clustering.add_labels(classif_sample, labels)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
 
-    with open(Path(ARGS.tempdir, ARGS.sample_name, "clust_sample.pickle"), "wb") as p:
-        pickle.dump(clust_sample, p)
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clust_sample.pickle"))
 
     ########################################################################
     # Consensus call
