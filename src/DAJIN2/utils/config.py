@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import os
 import logging
+import warnings
 import datetime
 
 from pathlib import Path
+
+from sklearn.exceptions import ConvergenceWarning
+
 
 DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
@@ -32,3 +36,9 @@ def set_logging():
         format="[%(asctime)s] [%(levelname)s] [%(processName)s] %(message)s",
         handlers=[stderr_handler, file_handler],
     )
+
+
+def set_warnings():
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=ConvergenceWarning)

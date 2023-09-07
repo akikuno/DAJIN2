@@ -1,76 +1,150 @@
 from __future__ import annotations
 
-import midsv
-import random
+from DAJIN2.utils import io, config
+
+config.set_warnings()
+
+import numpy as np
+
 from pathlib import Path
-from itertools import groupby
+from itertools import chain
+from typing import Generator
+from collections import Counter
 from collections import defaultdict
 
-from DAJIN2.core.clustering.score_handler import make_score, annotate_score
-from DAJIN2.core.clustering.return_labels import return_labels
-from DAJIN2.core.clustering.label_handler import relabel_with_consective_order
+from sklearn import metrics
+from sklearn.decomposition import PCA
+from sklearn.mixture import GaussianMixture
+from sklearn.tree import DecisionTreeClassifier
 
-from DAJIN2.utils import io
-
-
-# Constants
-RANDOM_UPPER_LIMIT = 10**10
-STRAND_BIAS_LOWER_LIMIT = 0.25
-STRAND_BIAS_UPPER_LIMIT = 0.75
+from DAJIN2.core.clustering.label_merger import merge_labels
 
 
-def is_strand_bias(path_control: Path) -> bool:
-    count_strand = defaultdict(int)
-    for m in midsv.read_jsonl(path_control):
-        count_strand[m["STRAND"]] += 1
-
-    total = count_strand["+"] + count_strand["-"]
-    percentage_plus = count_strand["+"] / total if total else 0
-
-    return not (STRAND_BIAS_LOWER_LIMIT < percentage_plus < STRAND_BIAS_UPPER_LIMIT)
+###############################################################################
+# Dimension reduction
+###############################################################################
 
 
-def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
-    labels_all = []
-    max_label = 0
-    strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
-    classif_sample.sort(key=lambda x: x["ALLELE"])
-    for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
-        RANDOM_NUM = random.randint(0, 10**10)
+def reduce_dimension(scores_sample: Generator[list], scores_control: Generator[list]) -> np.array:
+    scores = list(chain(scores_sample, scores_control))
+    model = PCA(n_components=min(20, len(scores)))
+    # return model.fit_transform(scores) * np.nan_to_num(model.explained_variance_ratio_)
+    return model.fit_transform(scores)
 
-        path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
-        path_mutation_loci = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle")
-        knockin_loci: set[int] = io.load_pickle(path_knockin_loci) if path_knockin_loci.exists() else set()
-        mutation_loci: list[set[str]] = io.load_pickle(path_mutation_loci)
-        if all(m == set() for m in mutation_loci):
-            labels = [1] * len(classif_sample)
-            labels_reorder = relabel_with_consective_order(labels, start=max_label)
-            max_label = max(labels_reorder)
-            labels_all.extend(labels_reorder)
-            continue
 
-        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_{RANDOM_NUM}.json")
-        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        io.write_jsonl(data=group, file_path=path_sample)
+###############################################################################
+# Clustering
+###############################################################################
 
-        mutation_score: list[dict[str, float]] = make_score(path_sample, path_control, mutation_loci, knockin_loci)
 
-        scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
-        scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
+def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]:
+    n_components = min(20, coverage_sample + coverage_control)
+    labels_prev = list(range(coverage_sample))
+    for i in range(1, n_components):
+        np.random.seed(seed=1)
+        labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).tolist()
+        labels_sample = labels_all[:coverage_sample]
+        labels_control = labels_all[coverage_sample:]
+        labels_merged = merge_labels(labels_control, labels_sample)
+        # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_merged))  # ! DEBUG
+        # Reads < 1% in the control are considered clustering errors and are not counted
+        count_control = Counter(labels_control)
+        num_labels_control = sum(1 for reads in count_control.values() if reads / coverage_control > 0.01)
+        mutual_info = metrics.adjusted_mutual_info_score(labels_prev, labels_merged)
+        # Report the number of clusters in SAMPLE when the number of clusters in CONTROL is split into more than one.
+        if num_labels_control > 1 or 0.95 < mutual_info < 1.0:
+            return labels_merged
+        else:
+            labels_results = labels_merged
+        labels_prev = labels_merged
+    return labels_results
 
-        path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
-        path_score_control = Path(TEMPDIR, CONTROL_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
-        io.write_jsonl(data=scores_sample, file_path=path_score_sample)
-        io.write_jsonl(data=scores_control, file_path=path_score_control)
 
-        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
-        labels_reordered = relabel_with_consective_order(labels, start=max_label)
+###############################################################################
+# Handle Strand bias
+# # Clusters of reads with mutations with strand bias are merged into similar clusters without strand bias
+###############################################################################
 
-        max_label = max(labels_reordered)
-        labels_all.extend(labels_reordered)
-        # Remove temporary files
-        path_sample.unlink()
-        path_score_sample.unlink()
-        path_score_control.unlink()
 
-    return labels_all
+def _count_strand(labels: list[int], samples: list[dict[str, str]]) -> tuple[defaultdict, defaultdict]:
+    """Count the occurrences of each strand type by label."""
+    count_strand_by_labels = defaultdict(int)
+    total_count_by_labels = defaultdict(int)
+
+    for label, sample in zip(labels, samples):
+        total_count_by_labels[label] += 1
+        if sample["STRAND"] == "+":
+            count_strand_by_labels[label] += 1
+
+    return count_strand_by_labels, total_count_by_labels
+
+
+def _calculate_strand_biases(
+    count_strand_by_labels: defaultdict, total_count_by_labels: defaultdict
+) -> dict[int, bool]:
+    """Calculate strand biases based on strand counts."""
+    strand_biases = {}
+    for label, total in total_count_by_labels.items():
+        strand_count = count_strand_by_labels[label]
+        strand_ratio = strand_count / total
+        strand_biases[label] = not (0.25 < strand_ratio < 0.75)
+
+    return strand_biases
+
+
+def get_strand_biases_on_each_label(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
+    """Get strand biases for given labels and samples.
+    Args:
+        labels: A list of integer labels.
+        path_sample: The path to the sample file.
+    Returns:
+        A dictionary containing strand biases by label.
+    """
+    samples = io.read_jsonl(path_sample)
+    count_strand_by_labels, total_count_by_labels = _count_strand(labels, samples)
+    return _calculate_strand_biases(count_strand_by_labels, total_count_by_labels)
+
+
+def _prepare_training_testing_sets(labels, scores, strand_biases) -> tuple[list, list, list]:
+    x_train, y_train, x_test = [], [], []
+    for label, score in zip(labels, scores):
+        if strand_biases[label]:
+            x_test.append(score)
+        else:
+            x_train.append(score)
+            y_train.append(label)
+    return x_train, y_train, x_test
+
+
+def _train_decision_tree(x_train, y_train) -> DecisionTreeClassifier:
+    dtree = DecisionTreeClassifier(random_state=1)
+    dtree.fit(x_train, y_train)
+    return dtree
+
+
+def _allocate_labels(labels, strand_biases, dtree, x_test) -> list[int]:
+    label_predictions = dtree.predict(x_test)
+    label_predict_iter = iter(label_predictions)
+    for i, label in enumerate(labels):
+        if strand_biases[label]:
+            labels[i] = next(label_predict_iter)
+    return labels
+
+
+def correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) -> list[int]:
+    scores = io.read_jsonl(path_score_sample)
+    x_train, y_train, x_test = _prepare_training_testing_sets(labels, scores, strand_biases)
+    dtree = _train_decision_tree(x_train, y_train)
+    return _allocate_labels(labels, strand_biases, dtree, x_test)
+
+
+def get_labels_removed_strand_bias(path_sample, path_score_sample, labels) -> list[int]:
+    strand_biases = get_strand_biases_on_each_label(labels, path_sample)
+    # Until there is at least one True and one False or
+    # 1000 iterations (1000 is a suitable number to exit an infinite loop just in case)
+    i = 0
+    while len(Counter(strand_biases.values())) > 1 and i < 1000:
+        labels = correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases)
+        strand_biases = get_strand_biases_on_each_label(labels, path_sample)
+        i += 1
+    return labels
