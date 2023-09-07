@@ -1,6 +1,16 @@
 from __future__ import annotations
 
 
+def add_labels(classif_sample: list[dict], labels: list[int]) -> list[dict]:
+    """Add 'LABEL' key to each sample dict, indicating each clster of allele."""
+    clust_sample = classif_sample.copy()
+
+    for clust, label in zip(clust_sample, labels):
+        clust["LABEL"] = label
+
+    return clust_sample
+
+
 def count_labels(clust_sample: list[dict]) -> dict[int, int]:
     """Count the occurrences of each label in the cluster sample."""
     label_count = {}
