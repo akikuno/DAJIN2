@@ -4,7 +4,7 @@ from typing import Generator
 from itertools import groupby
 from collections import Counter
 
-from DAJIN2.core.clustering.make_kmer import generate_mutation_kmers
+from DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 
 
 def _call_count(cssplits_sample: Generator[list[str]]) -> list[dict[str, int]]:
@@ -90,7 +90,9 @@ def update_insertion_score(percent_discarded, mutation_loci):
 ###############################################################################
 
 
-def make_score(path_sample, path_control, mutation_loci: set[int], knockin_loci: set[int]) -> list[dict[str, float]]:
+def make_score(
+    path_sample, path_control, mutation_loci: list[set[int]], knockin_loci: list[set[int]]
+) -> list[dict[str, float]]:
     cssplits_sample = generate_mutation_kmers(path_sample, mutation_loci, compress_ins=True)
     cssplits_control = generate_mutation_kmers(path_control, mutation_loci, compress_ins=True)
     counts_sample = _call_count(cssplits_sample)
