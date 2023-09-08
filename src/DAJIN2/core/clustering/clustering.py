@@ -92,7 +92,7 @@ def _calculate_strand_biases(
     return strand_biases
 
 
-def get_strand_biases_on_each_label(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
+def _get_strand_biases_on_each_label(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
     """Get strand biases for given labels and samples.
     Args:
         labels: A list of integer labels.
@@ -131,7 +131,7 @@ def _allocate_labels(labels, strand_biases, dtree, x_test) -> list[int]:
     return labels
 
 
-def correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) -> list[int]:
+def _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) -> list[int]:
     scores = io.read_jsonl(path_score_sample)
     x_train, y_train, x_test = _prepare_training_testing_sets(labels, scores, strand_biases)
     dtree = _train_decision_tree(x_train, y_train)
@@ -139,12 +139,12 @@ def correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) 
 
 
 def get_labels_removed_strand_bias(path_sample, path_score_sample, labels) -> list[int]:
-    strand_biases = get_strand_biases_on_each_label(labels, path_sample)
+    strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
     # Until there is at least one True and one False or
     # 1000 iterations (1000 is a suitable number to exit an infinite loop just in case)
     i = 0
     while len(Counter(strand_biases.values())) > 1 and i < 1000:
-        labels = correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases)
-        strand_biases = get_strand_biases_on_each_label(labels, path_sample)
+        labels = _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases)
+        strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
         i += 1
     return labels
