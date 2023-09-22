@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 import logging
 import warnings
 import datetime
@@ -14,7 +15,7 @@ DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
 
 
-def set_single_threaded_blas():
+def set_single_threaded_blas() -> None:
     os.environ["OMP_NUM_THREADS"] = "1"
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
     os.environ["MKL_NUM_THREADS"] = "1"
@@ -22,23 +23,43 @@ def set_single_threaded_blas():
     os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 
-def set_logging():
+class DeferredFileHandler(logging.FileHandler):
+    def __init__(self, filename, mode="a", encoding=None, delay=True):
+        # Setting delay to True to defer the file opening
+        super().__init__(filename, mode, encoding, delay)
+
+    def emit(self, record):
+        # The file is actually opened when a log is emitted
+        if self.stream is None:
+            self.stream = self._open()
+        super().emit(record)
+
+
+def set_logging() -> None:
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    stderr_handler = logging.StreamHandler()
-    stderr_handler.setFormatter(logging.Formatter("%(message)s"))
+    format = "%(asctime)s, %(levelname)s, %(message)s"
+    datefmt = "%Y-%m-%d %H:%M:%S"
 
-    file_handler = logging.FileHandler(f"{current_time}_DAJIN2.log")
-    file_handler.setFormatter(logging.Formatter("%(message)s"))
+    stderr_handler = logging.StreamHandler()
+    stderr_handler.setFormatter(logging.Formatter(format, datefmt=datefmt))
+
+    file_handler = DeferredFileHandler(f"{current_time}_DAJIN2.log")
+    file_handler.setFormatter(logging.Formatter(format, datefmt=datefmt))
 
     logging.basicConfig(
         level=logging.INFO,
-        format="[%(asctime)s] [%(levelname)s] [%(processName)s] %(message)s",
         handlers=[stderr_handler, file_handler],
     )
 
+    # log uncaught exceptions
+    def handle_uncaught_exception(exc_type, exc_value, exc_traceback):
+        logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
 
-def set_warnings():
+    sys.excepthook = handle_uncaught_exception
+
+
+def set_warnings() -> None:
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     warnings.filterwarnings("ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", category=ConvergenceWarning)
