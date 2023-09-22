@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import midsv
+
 from pathlib import Path
 from itertools import groupby
 from DAJIN2.core import preprocess
@@ -186,7 +187,7 @@ def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict) -> No
         midsv_sample = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)[0]
         header = midsv_sample["QNAME"]
         cssplits = midsv_sample["CSSPLIT"].split(",")
-        if GENOME_COODINATES["strand"] == "-":
+        if GENOME_COODINATES.get("strand") == "-":
             cssplits = revcomp_cssplits(cssplits)
         cssplits_inversion = annotate_inversion(cssplits)
         cssplits_grouped = group_by_mutation(cssplits_inversion)
