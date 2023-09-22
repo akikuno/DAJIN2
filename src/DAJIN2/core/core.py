@@ -4,7 +4,6 @@ import shutil
 import logging
 
 from pathlib import Path
-from datetime import datetime
 from typing import NamedTuple
 from collections import defaultdict
 
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def parse_arguments(arguments: dict) -> tuple:
     genome_urls = defaultdict(str)
-    if "genome" in arguments:
+    if arguments.get("genome"):
         genome_urls.update(
             {"genome": arguments["genome"], "blat": arguments["blat"], "goldenpath": arguments["goldenpath"]}
         )
@@ -107,17 +106,13 @@ def format_inputs(arguments: dict) -> FormattedInputs:
     )
 
 
-def _dtnow() -> str:
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
 ###########################################################
 # main
 ###########################################################
 
 
 def execute_control(arguments: dict):
-    logger.info(f"{_dtnow()}: {arguments['control']} is now processing...")
+    logger.info(f"{arguments['control']} is now processing...")
     ###########################################################
     # Preprocess
     ###########################################################
@@ -131,7 +126,7 @@ def execute_control(arguments: dict):
     if Path(ARGS.tempdir, "report", "BAM", ARGS.control_name, f"{ARGS.control_name}.bam").exists():
         logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
         return
-    logger.info(f"{_dtnow()}: Preprocess {arguments['control']}...")
+    logger.info(f"Preprocess {arguments['control']}...")
     ###########################################################
     # Mapping
     ###########################################################
@@ -157,18 +152,18 @@ def execute_control(arguments: dict):
     ###########################################################
     # Output BAM
     ###########################################################
-    logger.info(f"{_dtnow()}: Output BAM files of {arguments['control']}...")
+    logger.info(f"Output BAM files of {arguments['control']}...")
     report.report_bam.output_bam(
         ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, is_control=True
     )
     ###########################################################
     # Finish call
     ###########################################################
-    logger.info(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!")
+    logger.info(f"\N{teacup without handle} {arguments['control']} is finished!")
 
 
 def execute_sample(arguments: dict):
-    logger.info(f"{_dtnow()}: {arguments['sample']} is now processing...")
+    logger.info(f"{arguments['sample']} is now processing...")
     ###########################################################
     # Preprocess
     ###########################################################
@@ -176,7 +171,7 @@ def execute_sample(arguments: dict):
     preprocess.directories.create_temporal(ARGS.tempdir, ARGS.sample_name)
     preprocess.directories.create_report(ARGS.tempdir, ARGS.sample_name)
 
-    logger.info(f"{_dtnow()}: Preprocess {arguments['sample']}...")
+    logger.info(f"Preprocess {arguments['sample']}...")
 
     for path_fasta in Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta"):
         shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
@@ -224,13 +219,13 @@ def execute_sample(arguments: dict):
     ########################################################################
     # Classify alleles
     ########################################################################
-    logger.info(f"{_dtnow()}: Classify {arguments['sample']}...")
+    logger.info(f"Classify {arguments['sample']}...")
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
     io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classif_sample.pickle"))
     ########################################################################
     # Clustering
     ########################################################################
-    logger.info(f"{_dtnow()}: Clustering {arguments['sample']}...")
+    logger.info(f"Clustering {arguments['sample']}...")
 
     labels = clustering.extract_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
     clust_sample = clustering.add_labels(classif_sample, labels)
@@ -244,7 +239,7 @@ def execute_sample(arguments: dict):
     # Consensus call
     ########################################################################
 
-    logger.info(f"{_dtnow()}: Consensus calling of {arguments['sample']}...")
+    logger.info(f"Consensus calling of {arguments['sample']}...")
 
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
@@ -259,7 +254,7 @@ def execute_sample(arguments: dict):
     # Output Report：RESULT/FASTA/HTML/BAM
     ########################################################################
 
-    logger.info(f"{_dtnow()}: Output reports of {arguments['sample']}...")
+    logger.info(f"Output reports of {arguments['sample']}...")
 
     # RESULT
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
@@ -278,4 +273,4 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Finish call
     ###########################################################
-    logger.info(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!")
+    logger.info(f"\N{teacup without handle} {arguments['sample']} is finished!")

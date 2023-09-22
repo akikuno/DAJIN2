@@ -54,7 +54,7 @@ def set_logging() -> None:
 
     # log uncaught exceptions
     def handle_uncaught_exception(exc_type, exc_value, exc_traceback):
-        logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        logging.error("Catch an Exception. Traceback:", exc_info=(exc_type, exc_value, exc_traceback))
 
     sys.excepthook = handle_uncaught_exception
 

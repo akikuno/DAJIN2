@@ -1,8 +1,14 @@
 from __future__ import annotations
 
-import os
+from DAJIN2.utils import config
+
+# prevent BLAS from using all cores
+config.set_single_threaded_blas()
+
+# set logging to export log to stderr and file
+config.set_logging()
+
 import sys
-import logging
 import argparse
 
 from pathlib import Path
@@ -12,19 +18,7 @@ from DAJIN2.core import core
 from DAJIN2.utils import config, io, report_generator, input_validator, multiprocess
 
 
-VERSION = "0.3.2"
-
-# prevent BLAS from using all cores
-config.set_single_threaded_blas()
-
-# set logging to export log to stderr and file
-config.set_logging()
-
-
-def update_threads(threads: int) -> int:
-    available_threads = os.cpu_count() - 1
-    threads_updated = max(1, min(threads, available_threads))
-    return threads_updated
+DAJIN_VERSION = "0.3.2"
 
 
 def generate_report(name: str) -> None:
@@ -42,7 +36,10 @@ def generate_report(name: str) -> None:
 
 def execute_single_mode(arguments: dict[str]):
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
-    if "genome" in arguments:
+    if arguments.get("genome"):
+        print(
+            f'TEST: {arguments["genome"]}'
+        )  # ! DEBUG -----------------------------------------------------------------
         arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
     core.execute_control(arguments)
     core.execute_sample(arguments)
@@ -66,6 +63,43 @@ def validate_columns_of_batch_file(columns: list, filepath: str) -> None:
         raise ValueError(f"Accepted header names of {filepath} are {', '.join(accepted_columns)}.")
 
 
+def create_argument_dict(columns: list, group: list, cache_urls_genome: dict, is_control: bool) -> dict:
+    """Create a dictionary of arguments from the given columns and group."""
+    args = dict(zip(columns, group))
+    args["threads"] = 1  # Set the number of threads to 1 for batch mode
+
+    # Assign the "sample" field depending on whether it's a control or not
+    if is_control:
+        args["sample"] = args["control"]
+    else:
+        if args["sample"] == args["control"]:
+            return {}  # Return an empty dict to indicate a skipped group
+
+    if args.get("genome"):
+        args.update(cache_urls_genome[args["genome"]])
+
+    return args
+
+
+def run_DAJIN2(
+    groups: list, columns: list, cache_urls_genome: dict, is_control: bool = True, num_workers: int = 1
+) -> None:
+    contents = []
+    for group in groups:
+        args = create_argument_dict(columns, group, cache_urls_genome, is_control)
+        if args:  # Add args to contents only if it's not an empty dict
+            contents.append(args)
+
+    # Return a list of unique dictionaries
+    contents_unique = [dict(item) for item in set(frozenset(d.items()) for d in contents)]
+    contents_unique.sort(key=lambda x: x["sample"])
+
+    if is_control:
+        multiprocess.run(core.execute_control, contents_unique, num_workers)
+    else:
+        multiprocess.run(core.execute_sample, contents_unique, num_workers)
+
+
 def execute_batch_mode(arguments: dict[str]):
     path_batchfile = io.convert_to_posix(arguments["file"])
 
@@ -85,41 +119,19 @@ def execute_batch_mode(arguments: dict[str]):
     contents.sort(key=lambda x: x[index_of_name])
     for _, groups in groupby(contents, key=lambda x: x[index_of_name]):
         for group in groups:
-            args = {h: g for h, g in zip(columns, group)}
+            args = dict(zip(columns, group))
             # validate contents in the batch file
             input_validator.validate_files(args["sample"], args["control"], args["allele"])
             # validate genome and fetch urls
-            if "genome" in args and args["genome"] not in cache_urls_genome:
+            if args.get("genome") and args["genome"] not in cache_urls_genome:
                 urls_genome = input_validator.validate_genome_and_fetch_urls(args["genome"])
                 cache_urls_genome[args["genome"]] = urls_genome
-
-    def run_DAJIN2(groups: list, is_control: bool = True, num_workers: int = 1) -> None:
-        contents = []
-        for group in groups:
-            args = {h: g for h, g in zip(columns, group)}
-            # Set the number of threads to 1 for batch mode
-            args["threads"] = 1
-            # Assign the "sample" field depending on whether it's a control or not
-            if is_control:
-                args["sample"] = args["control"]
-            else:
-                if args["sample"] == args["control"]:
-                    continue
-            if "genome" in args:
-                args.update(cache_urls_genome[args["genome"]])
-            contents.append(args)
-        # return a list of unique dictionaries from a list of dictionaries
-        contents_unique = [dict(item) for item in set(frozenset(d.items()) for d in contents)]
-        if is_control:
-            multiprocess.run(core.execute_control, contents_unique, num_workers)
-        else:
-            multiprocess.run(core.execute_sample, contents_unique, num_workers)
 
     for name, groups in groupby(contents, key=lambda x: x[index_of_name]):
         groups = list(groups)
         # Run DAJIN2
-        run_DAJIN2(groups, is_control=True, num_workers=arguments["threads"])
-        run_DAJIN2(groups, is_control=False, num_workers=arguments["threads"])
+        run_DAJIN2(groups, columns, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
+        run_DAJIN2(groups, columns, cache_urls_genome, is_control=False, num_workers=arguments["threads"])
         # Finish
         generate_report(name)
 
@@ -139,7 +151,7 @@ def execute():
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {VERSION}")
+    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
     ###############################################################################
@@ -149,7 +161,7 @@ def execute():
     def batchmode(args):
         arguments = dict()
         arguments["file"] = args.file
-        arguments["threads"] = update_threads(int(args.threads))
+        arguments["threads"] = input_validator.update_threads(int(args.threads))
         arguments["debug"] = args.debug
         execute_batch_mode(arguments)
 
@@ -204,15 +216,10 @@ def execute():
         arguments["allele"] = args.allele
         arguments["name"] = args.name
         arguments["genome"] = args.genome
-        arguments["threads"] = update_threads(int(args.threads))
+        arguments["threads"] = input_validator.update_threads(int(args.threads))
         arguments["debug"] = args.debug
 
-        logger = logging.getLogger(__name__)
-        try:
-            execute_single_mode(arguments)
-        except Exception as e:
-            logger.error(f"An unexpected error occurred: {e}")
-            sys.exit(1)
+        execute_single_mode(arguments)
 
 
 if __name__ == "__main__":
