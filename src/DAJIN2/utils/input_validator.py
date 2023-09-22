@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-import hashlib
+import os
 import re
+import hashlib
+
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -9,6 +11,11 @@ import xml.etree.ElementTree as ET
 
 import mappy
 
+
+def update_threads(threads: int) -> int:
+    available_threads = os.cpu_count() - 1
+    threads_updated = max(1, min(threads, available_threads))
+    return threads_updated
 
 ########################################################################
 # Check if the sample is in the proper format.
