@@ -6,11 +6,7 @@ import mappy
 from pathlib import Path
 from typing import Generator
 
-
-def revcomp(sequence: str) -> str:
-    """Return the reverse complement of the given DNA sequence."""
-    complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-    return "".join(complement[nt] for nt in sequence[::-1])
+from DAJIN2.utils.dna_handler import revcomp
 
 
 def to_sam(
