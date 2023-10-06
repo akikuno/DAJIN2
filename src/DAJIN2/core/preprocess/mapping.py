@@ -60,9 +60,8 @@ def to_sam(
                 cigar = cigar + softclip if hit.strand == 1 else softclip + cigar
 
             # Convert to CS tag's long format
-            cs = "cs:Z:" + hit.cs
             if cslong:
-                cs = cstag.lengthen(hit.cs, cigar, query_seq)
+                cs = cstag.lengthen(hit.cs, cigar, query_seq, prefix=True)
 
             # Summarize
             alignment = [
