@@ -37,9 +37,6 @@ def generate_report(name: str) -> None:
 def execute_single_mode(arguments: dict[str]):
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
     if arguments.get("genome"):
-        print(
-            f'TEST: {arguments["genome"]}'
-        )  # ! DEBUG -----------------------------------------------------------------
         arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
     core.execute_control(arguments)
     core.execute_sample(arguments)
