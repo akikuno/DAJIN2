@@ -24,7 +24,7 @@ If you encounter any bugs or issues, please report them via [Issues](https://git
 
 ## Installation
 
-From [Bioconda](https://anaconda.org/bioconda/DAJIN2):
+[Recommended] From [Bioconda](https://anaconda.org/bioconda/DAJIN2):
 
 ```bash
 conda install -c bioconda DAJIN2
@@ -36,8 +36,8 @@ From [PyPI](https://pypi.org/project/DAJIN2/):
 pip install DAJIN2
 ```
 
-> **Warning**
-> If you encounter the error `Failed to build mappy`` when installing with pip, please install `gcc` and `zlib`.  
+> **Warning**  
+> If you encounter the error `Failed to build mappy` when installing from pip, please install `gcc` and `zlib`.  
 
 ```bash
 # Ubuntu / WSL2
