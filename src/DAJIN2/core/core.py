@@ -113,6 +113,7 @@ def format_inputs(arguments: dict) -> FormattedInputs:
 
 def execute_control(arguments: dict):
     logger.info(f"{arguments['control']} is now processing...")
+
     ###########################################################
     # Preprocess
     ###########################################################
@@ -120,6 +121,7 @@ def execute_control(arguments: dict):
     preprocess.directories.create_temporal(ARGS.tempdir, ARGS.control_name, is_control=True)
     preprocess.directories.create_report(ARGS.tempdir, ARGS.control_name, is_control=True)
     io.cache_control_hash(ARGS.tempdir, ARGS.path_allele)
+
     ###########################################################
     # Check caches
     ###########################################################
@@ -127,22 +129,27 @@ def execute_control(arguments: dict):
         logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
         return
     logger.info(f"Preprocess {arguments['control']}...")
+
     ###########################################################
     # Mapping
     ###########################################################
+
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
     preprocess.fastx_parser.export_fasta_files(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+
     # ============================================================
     # Mapping using mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
     preprocess.mapping.generate_sam(ARGS.tempdir, paths_fasta, ARGS.path_control, ARGS.control_name, ARGS.threads)
+
     ###########################################################
     # MIDSV conversion
     ###########################################################
     preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
@@ -164,6 +171,7 @@ def execute_control(arguments: dict):
 
 def execute_sample(arguments: dict):
     logger.info(f"{arguments['sample']} is now processing...")
+
     ###########################################################
     # Preprocess
     ###########################################################
@@ -175,20 +183,24 @@ def execute_sample(arguments: dict):
 
     for path_fasta in Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta"):
         shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
+
     # ============================================================
     # Mapping with mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")
     preprocess.mapping.generate_sam(ARGS.tempdir, paths_fasta, ARGS.path_sample, ARGS.sample_name, ARGS.threads)
+
     # ============================================================
     # MIDSV conversion
     # ============================================================
     preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+
     # ============================================================
     # Extract mutation loci
     # ============================================================
     preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
     preprocess.extract_mutation_loci(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name)
+
     # ============================================================
     # Detect and align insertion alleles
     # ============================================================
@@ -216,12 +228,14 @@ def execute_sample(arguments: dict):
         )
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
         preprocess.extract_mutation_loci(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name)
+
+    io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
     ########################################################################
     # Classify alleles
     ########################################################################
     logger.info(f"Classify {arguments['sample']}...")
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
-    io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classif_sample.pickle"))
+    io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
     ########################################################################
     # Clustering
     ########################################################################
@@ -233,7 +247,7 @@ def execute_sample(arguments: dict):
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
 
-    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clust_sample.pickle"))
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clustering", "clust_sample.pickle"))
 
     ########################################################################
     # Consensus call
@@ -249,6 +263,9 @@ def execute_sample(arguments: dict):
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "conse_sequence.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
