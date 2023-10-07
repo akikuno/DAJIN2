@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import pickle
 import numpy as np
 from pathlib import Path
 from typing import Generator
@@ -70,12 +69,9 @@ def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.arra
 
 
 def extract_dissimilar_loci(indels_kmer_sample: dict, indels_kmer_control: dict) -> dict[str, set]:
-    """
-    Comparing Sample and Control, the 'similar mean' and
-    'similar variance' are considered as sequence errors.
-    """
+    """Comparing Sample and Control, the 'similar mean' and 'similar variance' are considered as sequence errors."""
     results = dict()
-    for mut in ["+", "-", "*"]:
+    for mut in {"+", "-", "*"}:
         values_sample = indels_kmer_sample[mut]
         values_control = indels_kmer_control[mut]
         """Calculate cosine similarity: 1 means exactly same, 0 means completely different.
@@ -125,7 +121,7 @@ def _merge_surrounding_index(idx_outliers: list) -> set:
 
 def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> dict[str, set]:
     results = dict()
-    for mut in ["+", "-", "*"]:
+    for mut in {"+", "-", "*"}:
         # preprocess
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
@@ -133,8 +129,6 @@ def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> 
         # anomaly detection
         clf = linear_model.SGDOneClassSVM(random_state=0)
         predicts = clf.fit_predict(log2_subtract)
-        # clf.fit(log2_control)
-        # predicts = clf.predict(log2_sample)
         p1 = [i for i, p in enumerate(predicts) if p == -1]
         p2 = [i for i, p in enumerate(predicts) if p == 1]
         if np.mean(log2_subtract[p1]) > np.mean(log2_subtract[p2]):
@@ -152,7 +146,7 @@ def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> 
 
 def discard_errors_in_homopolymer(candidate_loci: dict[str, set], errors: dict[str, set]) -> dict[str, set]:
     mutation_loci = dict()
-    for mut in ["+", "-", "*"]:
+    for mut in {"+", "-", "*"}:
         mutation_loci[mut] = candidate_loci[mut] - errors[mut]
     return mutation_loci
 
@@ -183,35 +177,27 @@ def merge_index_of_consecutive_insertions(mutation_loci: dict[str, set[int]]) ->
 ###########################################################
 
 
-def _process_control(TEMPDIR: Path, FASTA_ALLELES: dict, CONTROL_NAME: str) -> None:
-    for allele, sequence in FASTA_ALLELES.items():
-        path_mutation_loci = Path(TEMPDIR, CONTROL_NAME, "mutation_loci")
-        if Path(path_mutation_loci, f"{allele}_count.pickle").exists():
-            continue
-        filepath_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        indels_control = count_indels(io.read_jsonl(filepath_control), sequence)
-        coverages_control = call_coverage_of_each_base(io.read_jsonl(filepath_control), sequence)
-        indels_normalized_control = normalize_indels(indels_control, coverages_control)
-        indels_kmer_control = split_kmer(indels_normalized_control, kmer=11)
-        # Save indels_normalized_control and indels_kmer_control as pickle to reuse in consensus calling
-        with open(Path(path_mutation_loci, f"{allele}_count.pickle"), "wb") as f:
-            pickle.dump(indels_control, f)
-        with open(Path(path_mutation_loci, f"{allele}_normalized.pickle"), "wb") as f:
-            pickle.dump(indels_normalized_control, f)
-        with open(Path(path_mutation_loci, f"{allele}_kmer.pickle"), "wb") as f:
-            pickle.dump(indels_kmer_control, f)
+def process_data(tempdir: Path, name: str, allele: str, sequence: str) -> tuple:
+    """Returns indels, coverages, normalized indels, and kmer indels."""
+    path_midsv = Path(tempdir, name, "midsv", f"{allele}.json")
+    indels = count_indels(io.read_jsonl(path_midsv), sequence)
+    coverages = call_coverage_of_each_base(io.read_jsonl(path_midsv), sequence)
+    indels_normalized = normalize_indels(indels, coverages)
+    indels_kmer = split_kmer(indels_normalized, kmer=11)
+
+    return indels, indels_normalized, indels_kmer
 
 
 def merge_loci(dissimilar_loci: dict[str, set], anomal_loci: dict[str, set]) -> dict[str, set]:
     mutation_loci = dict()
-    for mut in ["+", "-", "*"]:
+    for mut in {"+", "-", "*"}:
         mutation_loci[mut] = dissimilar_loci[mut] & anomal_loci[mut]
     return mutation_loci
 
 
 def add_knockin_loci(candidate_loci: dict[str, set], knockin_loci: set):
     mutation_loci = dict()
-    for mut in ["+", "-", "*"]:
+    for mut in {"+", "-", "*"}:
         mutation_loci[mut] = candidate_loci[mut] | knockin_loci
     return mutation_loci
 
@@ -229,25 +215,31 @@ def transpose_mutation_loci(mutation_loci: set[int], sequence: str) -> list[set]
 def extract_mutation_loci(
     TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str, is_control=False
 ) -> None:
-    if is_control:
-        _process_control(TEMPDIR, FASTA_ALLELES, CONTROL_NAME)
-        return
 
+    path_mutation_cont = Path(TEMPDIR, CONTROL_NAME, "mutation_loci")
     for allele, sequence in FASTA_ALLELES.items():
+        if is_control:
+            if Path(path_mutation_cont, f"{allele}_count.pickle").exists():
+                continue
+            indels_control, indels_normalized_control, indels_kmer_control = process_data(
+                TEMPDIR, CONTROL_NAME, allele, sequence
+            )
+
+            # Save control data for later use
+            io.save_pickle(indels_control, Path(path_mutation_cont, f"{allele}_count.pickle"))
+            io.save_pickle(indels_normalized_control, Path(path_mutation_cont, f"{allele}_normalized.pickle"))
+            io.save_pickle(indels_kmer_control, Path(path_mutation_cont, f"{allele}_kmer.pickle"))
+            continue
+
         path_output = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle")
         if path_output.exists():
             continue
 
-        filepath_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"{allele}.json")
-        indels_sample = count_indels(io.read_jsonl(filepath_sample), sequence)
-        coverages_sample = call_coverage_of_each_base(io.read_jsonl(filepath_sample), sequence)
-        indels_normalized_sample = normalize_indels(indels_sample, coverages_sample)
-        indels_kmer_sample = split_kmer(indels_normalized_sample, kmer=11)
+        _, indels_normalized_sample, indels_kmer_sample = process_data(TEMPDIR, SAMPLE_NAME, allele, sequence)
+
         # Load indels_normalized_control and indels_kmer_control
-        with open(Path(TEMPDIR, CONTROL_NAME, "mutation_loci", f"{allele}_normalized.pickle"), "rb") as f:
-            indels_normalized_control = pickle.load(f)
-        with open(Path(TEMPDIR, CONTROL_NAME, "mutation_loci", f"{allele}_kmer.pickle"), "rb") as f:
-            indels_kmer_control = pickle.load(f)
+        indels_normalized_control = io.load_pickle(Path(path_mutation_cont, f"{allele}_normalized.pickle"))
+        indels_kmer_control = io.load_pickle(Path(path_mutation_cont, f"{allele}_kmer.pickle"))
 
         # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
@@ -263,11 +255,9 @@ def extract_mutation_loci(
         # Merge all mutations and knockin loci
         path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
         if path_knockin.exists():
-            with open(path_knockin, "rb") as p:
-                knockin_loci = pickle.load(p)
+            knockin_loci = io.load_pickle(path_knockin)
             mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
 
         mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
-        with open(path_output, "wb") as p:
-            pickle.dump(mutation_loci_transposed, p)
+        io.save_pickle(mutation_loci_transposed, path_output)
