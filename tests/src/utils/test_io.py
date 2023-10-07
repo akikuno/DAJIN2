@@ -25,7 +25,7 @@ def test_convert_to_posix():
     path = "example\\Desktop\\test.txt"
     test = io.convert_to_posix(path)
     answer = "example/Desktop/test.txt"
-    return test == answer
+    assert test == answer
 
 
 ########################################################################
