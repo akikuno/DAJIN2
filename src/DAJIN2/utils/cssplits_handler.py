@@ -31,16 +31,33 @@ def add_match_operator_to_n(cssplits: list[str]) -> list[str]:
     return ["=" + seq if seq.startswith("N") else seq for seq in cssplits]
 
 
+def format_insertion(cs: str) -> str:
+    """Reformat insertion sequence by consolidating variants."""
+    # Remove "+" and split by "|"
+    variants = cs.replace("+", "").split("|")
+    # Extract the last character from all but the last variant
+    consolidated_variants = "".join([variant[-1] for variant in variants[:-1]])
+    # Combine consolidated variants with the last variant
+    formatted_insertion = "+" + consolidated_variants + variants[-1]
+
+    return formatted_insertion
+
+
 def concatenate_cssplits(cssplits: list[str]) -> str:
     """Concatenate list of sequences based on certain variants."""
-    concatenated = [cssplits[0]]
-
+    if not cssplits:
+        return ""
+    concatenated = []
+    prev = cssplits[0]
+    if prev[0] == "+":
+        concatenated.append(format_insertion(prev))
+    else:
+        concatenated.append(prev)
     for prev, current in zip(cssplits, cssplits[1:]):
         if prev[0] == current[0] and current[0] in {"=", "-"}:
-            concatenated.append(current[1])
+            concatenated.append(current[1:])
         elif current[0] == "+":
-            cs_ins = current.replace("+", "").split("|")
-            concatenated.append("+" + "".join(cs_ins[:-1]) + cs_ins[-1])
+            concatenated.append(format_insertion(current))
         else:
             concatenated.append(current)
 
