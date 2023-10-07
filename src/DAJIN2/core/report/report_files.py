@@ -3,6 +3,7 @@ from __future__ import annotations
 import textwrap
 import cstag
 from pathlib import Path
+from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
 
 
 def _to_fasta(header: str, cons_seq: str) -> str:
@@ -20,22 +21,7 @@ def to_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, cons_sequence: dict) -> None
 
 def _to_html(header: str, cons_per: list[dict]) -> str:
     cons_cssplit = [max(cons, key=cons.get) for cons in cons_per]
-    prev_cstag = cons_cssplit[0]
-    cons_cstag = []
-    cons_cstag.append(prev_cstag)
-    for current_cstag in cons_cssplit[1:]:
-        if "=" == prev_cstag[0] == current_cstag[0]:
-            cons_cstag.append(current_cstag[1])
-        elif "-" == prev_cstag[0] == current_cstag[0]:
-            cons_cstag.append(current_cstag[1])
-        elif "+" == current_cstag[0]:
-            cs_ins = current_cstag.replace("+", "").split("|")
-            ins = "+" + "".join(cs_ins[:-1]) + cs_ins[-1]
-            cons_cstag.append(ins)
-        else:
-            cons_cstag.append(current_cstag)
-        prev_cstag = current_cstag
-    cons_cstag = "".join(cons_cstag)
+    cons_cstag = convert_cssplits_to_cstag(cons_cssplit)
     return cstag.to_html(cons_cstag, header)
 
 
