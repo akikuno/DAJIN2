@@ -10,4 +10,4 @@ from DAJIN2.core.preprocess import (
 
 from DAJIN2.core.preprocess.knockin_handler import extract_knockin_loci
 from DAJIN2.core.preprocess.mutation_extractor import extract_mutation_loci
-from DAJIN2.core.preprocess.generate_insertion_fasta import generate_insertion_fasta
+from DAJIN2.core.preprocess.insertions_to_fasta import generate_insertion_fasta
