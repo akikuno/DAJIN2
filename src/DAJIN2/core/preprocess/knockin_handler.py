@@ -10,8 +10,8 @@ from DAJIN2.core.preprocess import mapping
 
 ###########################################################
 # Consider all mutations are possible in the knockin region
-# 大型欠失アレルにおいては欠失配列部分がノックイン領域となるため、この領域内にある変異は全て考慮する
-# TODO このknockinの考慮は必要ないかもしれない？
+# For large deletion alleles, the deleted sequence becomes the knock-in region, so all mutations within this region are taken into consideration.
+# TODO: Maybe this knock-in consideration isn't necessary?
 ###########################################################
 
 
