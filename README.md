@@ -14,7 +14,7 @@ DAJIN2 is a genotyping software designed for organisms that have undergone genom
 
 The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
 
-## Disclaimer
+## Feedback
 
 DAJIN2 is still in the development phase.  
 Basic tests covering point mutations, deletions, and insertion designs have been conducted.  
@@ -97,7 +97,7 @@ DAJIN2 \
 # 2023-06-04 11:34:18: Clustering example-single/sample.fq.gz...
 # 2023-06-04 11:35:01: Consensus calling example-single/sample.fq.gz...
 # 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
-# 🎉 Finished! Open DAJINResults/stx2-deletion to see the report.
+# 🎉 Finished! Open DAJIN_Results/stx2-deletion to see the report.
 ```
 
 ### Batch Processing
@@ -149,7 +149,7 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 # 2023-07-31 17:04:08: Consensus calling of example-batch/tyr_c230gt_10%.fq.gz...
 # 2023-07-31 17:04:16: Output reports of example-batch/tyr_c230gt_10%.fq.gz...
 # 2023-07-31 17:04:24: 🍵 example-batch/tyr_c230gt_10%.fq.gz is finished!
-# 🎉 Finished! Open DAJINResults/tyr-substitution to see the report.
+# 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
 ```
 
 ## References
