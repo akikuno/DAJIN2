@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import pickle
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
 
+from typing import Generator
 
 import numpy as np
 from rapidfuzz import process
@@ -19,21 +19,22 @@ from DAJIN2.utils import io
 ###########################################################
 
 
-def _count_insertions(path: Path | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
+def count_insertions(midsv_sample: Generator | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
     insertion_counts = defaultdict(int)
-    for m in io.read_jsonl(path):
-        cssplits = m["CSSPLIT"].split(",")
-        for idx in (i for i, m in enumerate(mutation_loci) if "+" in m):
+    coverage = 0
+    for m_sample in midsv_sample:
+        coverage += 1
+        cssplits = m_sample["CSSPLIT"].split(",")
+        for idx in (i for i, mut in enumerate(mutation_loci) if "+" in mut):
             if cssplits[idx].startswith("+"):
                 insertion_counts[(idx, cssplits[idx])] += 1
 
     # Remove low frequency insertions
-    coverage_sample = sum(1 for _ in io.read_jsonl(path))
-    threshold = int(coverage_sample * 0.5 / 100)
-    return {k: v for k, v in insertion_counts.items() if v >= threshold}
+    threshold = int(coverage * 0.5 / 100)
+    return {key: count for key, count in insertion_counts.items() if count >= threshold}
 
 
-def _create_insertions_dict(
+def create_insertions_dict(
     insertion_sample: dict[tuple[int, str], int], insertion_control: dict[tuple[int, str], int]
 ) -> defaultdict[int, dict[str, int]]:
     """Create a dictionary of insertions that are present in the sample but not in the control."""
@@ -50,9 +51,9 @@ def _create_insertions_dict(
 def extract_insertions(
     path_sample: Path | str, path_control: Path | str, mutation_loci: dict
 ) -> defaultdict[int, dict[str, int]]:
-    insertion_sample = _count_insertions(path_sample, mutation_loci)
-    insertion_control = _count_insertions(path_control, mutation_loci)
-    return _create_insertions_dict(insertion_sample, insertion_control)
+    insertion_sample = count_insertions(io.read_jsonl(path_sample), mutation_loci)
+    insertion_control = count_insertions(io.read_jsonl(path_control), mutation_loci)
+    return create_insertions_dict(insertion_sample, insertion_control)
 
 
 ###########################################################
@@ -322,9 +323,8 @@ def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, consensus_sequence_inserti
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
     path_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
     path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
-    with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"), "rb") as p:
-        mutation_loci = pickle.load(p)
     sequence = FASTA_ALLELES["control"]
+    mutation_loci = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
     insertions = extract_insertions(path_sample, path_control, mutation_loci)
     index_set = set(i for i, m in enumerate(mutation_loci) if "+" in m)
     if insertions.keys() & index_set == set():
