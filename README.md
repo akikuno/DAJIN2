@@ -24,22 +24,24 @@ If you encounter any bugs or issues, please report them via [Issues](https://git
 
 ## 🛠 Installation
 
-[Recommended] From [Bioconda](https://anaconda.org/bioconda/DAJIN2):
+### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
 conda install -c bioconda DAJIN2
 ```
 
-From [PyPI](https://pypi.org/project/DAJIN2/):
+### From [PyPI](https://pypi.org/project/DAJIN2/)
 
 ```bash
 pip install DAJIN2
 ```
 
 > **Warning**  
-> If you encounter the error `Failed to build mappy` when installing from pip, please install `gcc` and `zlib`.  
+> If you encounter the error `Failed to build mappy` when installing DAJIN2 from pip, please install `gcc` and `zlib`.  
+> `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
+> `brew install gcc zlib` (macOS)
 
-```bash
+<!-- ```bash
 # Ubuntu
 sudo apt install gcc zlib1g zlib1g-dev
 ```
@@ -47,7 +49,7 @@ sudo apt install gcc zlib1g zlib1g-dev
 ```bash
 # macOS
 brew install gcc zlib
-```
+``` -->
 
 
 ## 💡 Usage
@@ -184,7 +186,7 @@ DAJIN_Results/tyr-substitution
 └── read_summary.csv
 ```
 
-### 1. `BAM`
+### 1. BAM
 
 The `BAM` directory contains the `BAM` files of reads classified per allele.  
 
@@ -192,7 +194,7 @@ The `BAM` directory contains the `BAM` files of reads classified per allele.
 > Specifying a reference genome using the `genome` option will align the reads to that genome.  
 > Without `genome` options, the reads will align to the `control` allele within the input `FASTA` file.
 
-### 2. `FASTA` and `HTML`
+### 2. FASTA and HTML
 
 The `FASTA` directory stores the FASTA files of each allele.  
 The `HTML` directory contains HTML files for each allele, where mutation sites are color-highlighted.  
@@ -200,14 +202,14 @@ For example, Tyr point mutation is highlighted in **green**.
 
 <img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
 
-### 3. `MUTATION_INFO`
+### 3. MUTATION_INFO
 
 The `MUTATION_INFO` directory saves tables depicting mutation sites for each allele.  
 An example of a Tyr point mutation is described by its position on the chromosome and the type of mutation.  
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-### 4. `read_plot.html` and `read_plot.pdf`
+### 4. read_plot.html and read_plot.pdf
 
 Both `read_plot.html` and `read_plot.pdf` illustrate the proportions of each allele.  
 The chart's `Allele type` indicates the type of allele, and `% of reads` shows the proportion of reads for that allele.  
@@ -223,7 +225,7 @@ Additionally, the types of `Allele type` include:
 > In PCR amplicon sequencing, the `% of reads` might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
-### 5. `read_all.csv` and `read_summary.csv`
+### 5. read_all.csv and read_summary.csv
 
 - `read_all.csv`: Records which allele each read is classified under.  
 - `read_summary.csv`: Describes the number of reads and presence proportion for each allele.  
