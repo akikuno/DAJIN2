@@ -14,7 +14,7 @@ DAJIN2 is a genotyping software designed for organisms that have undergone genom
 
 The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
 
-## Feedback
+## 🙏 Feedbacks
 
 DAJIN2 is still in the development phase.  
 Basic tests covering point mutations, deletions, and insertion designs have been conducted.  
@@ -22,7 +22,7 @@ If you encounter any bugs or issues, please report them via [Issues](https://git
 
 
 
-## Installation
+## 🛠 Installation
 
 [Recommended] From [Bioconda](https://anaconda.org/bioconda/DAJIN2):
 
@@ -40,7 +40,7 @@ pip install DAJIN2
 > If you encounter the error `Failed to build mappy` when installing from pip, please install `gcc` and `zlib`.  
 
 ```bash
-# Ubuntu / WSL2
+# Ubuntu
 sudo apt install gcc zlib1g zlib1g-dev
 ```
 
@@ -50,7 +50,7 @@ brew install gcc zlib
 ```
 
 
-## Usage
+## 💡 Usage
 
 ### Single Sample Analysis
 
@@ -102,7 +102,9 @@ DAJIN2 \
 
 ### Batch Processing
 
-DAJIN2 can also handle multiple FASTQ files using the `batch` subcommand.
+By using the `batch` subcommand, you can process multiple FASTQ files simultaneously.  
+For this purpose, a CSV or Excel file consolidating the sample information is required.  
+For a specific example, please refer to [this link](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv).
 
 
 ```bash
@@ -152,7 +154,82 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 # 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
 ```
 
-## References
+## 📈 Report Contents
+
+Upon completion of DAJIN2 processing, a directory named `DAJIN_Results` is generated.  
+Inside the `DAJIN_Results` directory, the following files can be found:  
+
+```
+DAJIN_Results/tyr-substitution
+├── BAM
+│   ├── tyr_c230gt_01%
+│   ├── tyr_c230gt_10%
+│   ├── tyr_c230gt_50%
+│   └── tyr_control
+├── FASTA
+│   ├── tyr_c230gt_01%
+│   ├── tyr_c230gt_10%
+│   └── tyr_c230gt_50%
+├── HTML
+│   ├── tyr_c230gt_01%
+│   ├── tyr_c230gt_10%
+│   └── tyr_c230gt_50%
+├── MUTATION_INFO
+│   ├── tyr_c230gt_01%.csv
+│   ├── tyr_c230gt_10%.csv
+│   └── tyr_c230gt_50%.csv
+├── read_all.csv
+├── read_plot.html
+├── read_plot.pdf
+└── read_summary.csv
+```
+
+### 1. `BAM`
+
+The `BAM` directory contains the `BAM` files of reads classified per allele.  
+
+> **Note**  
+> Specifying a reference genome using the `genome` option will align the reads to that genome.  
+> Without `genome` options, the reads will align to the `control` allele within the input `FASTA` file.
+
+### 2. `FASTA` and `HTML`
+
+The `FASTA` directory stores the FASTA files of each allele.  
+The `HTML` directory contains HTML files for each allele, where mutation sites are color-highlighted.  
+For example, Tyr point mutation is highlighted in **green**.  
+
+<img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
+
+### 3. `MUTATION_INFO`
+
+The `MUTATION_INFO` directory saves tables depicting mutation sites for each allele.  
+An example of a Tyr point mutation is described by its position on the chromosome and the type of mutation.  
+
+<img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
+
+### 4. `read_plot.html` and `read_plot.pdf`
+
+Both `read_plot.html` and `read_plot.pdf` illustrate the proportions of each allele.  
+The chart's `Allele type` indicates the type of allele, and `% of reads` shows the proportion of reads for that allele.  
+
+Additionally, the types of `Allele type` include:
+- `intact`: Alleles that perfectly match the input FASTA allele.
+- `indels`: Substitutions, deletions, insertions, or inversions within 50 bases.
+- `sv`: Substitutions, deletions, insertions, or inversions beyond 50 bases.
+
+<img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
+
+> **Warning**  
+> In PCR amplicon sequencing, the `% of reads` might not match the actual allele proportions due to amplification bias.  
+> Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
+
+### 5. `read_all.csv` and `read_summary.csv`
+
+- `read_all.csv`: Records which allele each read is classified under.  
+- `read_summary.csv`: Describes the number of reads and presence proportion for each allele.  
+
+
+## 📄 References
 
 For more information, please refer to the following publication:
 
