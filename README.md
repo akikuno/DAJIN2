@@ -37,7 +37,7 @@ pip install DAJIN2
 ```
 
 > **Warning**  
-> If you encounter the error `Failed to build mappy` when installing DAJIN2 from pip, please install `gcc` and `zlib`.  
+> If you encounter the error **Failed to build mappy** when installing DAJIN2 from pip, please install **gcc** and **zlib**.  
 > `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
 > `brew install gcc zlib` (macOS)
 
@@ -158,8 +158,8 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 
 ## 📈 Report Contents
 
-Upon completion of DAJIN2 processing, a directory named `DAJIN_Results` is generated.  
-Inside the `DAJIN_Results` directory, the following files can be found:  
+Upon completion of DAJIN2 processing, a directory named **DAJIN_Results** is generated.  
+Inside the **DAJIN_Results** directory, the following files can be found:  
 
 ```
 DAJIN_Results/tyr-substitution
@@ -188,47 +188,47 @@ DAJIN_Results/tyr-substitution
 
 ### 1. BAM
 
-The `BAM` directory contains the `BAM` files of reads classified per allele.  
+The BAM directory contains the BAM files of reads classified per allele.  
 
 > **Note**  
 > Specifying a reference genome using the `genome` option will align the reads to that genome.  
-> Without `genome` options, the reads will align to the `control` allele within the input `FASTA` file.
+> Without `genome` options, the reads will align to the control allele within the input FASTA file.
 
 ### 2. FASTA and HTML
 
-The `FASTA` directory stores the FASTA files of each allele.  
-The `HTML` directory contains HTML files for each allele, where mutation sites are color-highlighted.  
+The FASTA directory stores the FASTA files of each allele.  
+The HTML directory contains HTML files for each allele, where mutation sites are color-highlighted.  
 For example, Tyr point mutation is highlighted in **green**.  
 
 <img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
 
 ### 3. MUTATION_INFO
 
-The `MUTATION_INFO` directory saves tables depicting mutation sites for each allele.  
+The MUTATION_INFO directory saves tables depicting mutation sites for each allele.  
 An example of a Tyr point mutation is described by its position on the chromosome and the type of mutation.  
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
 ### 4. read_plot.html and read_plot.pdf
 
-Both `read_plot.html` and `read_plot.pdf` illustrate the proportions of each allele.  
-The chart's `Allele type` indicates the type of allele, and `% of reads` shows the proportion of reads for that allele.  
+Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
+The chart's **Allele type** indicates the type of allele, and **% of reads** shows the proportion of reads for that allele.  
 
-Additionally, the types of `Allele type` include:
-- `intact`: Alleles that perfectly match the input FASTA allele.
-- `indels`: Substitutions, deletions, insertions, or inversions within 50 bases.
-- `sv`: Substitutions, deletions, insertions, or inversions beyond 50 bases.
+Additionally, the types of **Allele type** include:
+- **intact**: Alleles that perfectly match the input FASTA allele.
+- **indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
+- **sv**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
 
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
 > **Warning**  
-> In PCR amplicon sequencing, the `% of reads` might not match the actual allele proportions due to amplification bias.  
+> In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
 ### 5. read_all.csv and read_summary.csv
 
-- `read_all.csv`: Records which allele each read is classified under.  
-- `read_summary.csv`: Describes the number of reads and presence proportion for each allele.  
+- read_all.csv: Records which allele each read is classified under.  
+- read_summary.csv: Describes the number of reads and presence proportion for each allele.  
 
 
 ## 📄 References
