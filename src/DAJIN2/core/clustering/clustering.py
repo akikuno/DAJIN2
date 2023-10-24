@@ -1,140 +1,150 @@
 from __future__ import annotations
 
-import pickle
-import midsv
-import random
+from DAJIN2.utils import io, config
+
+config.set_warnings()
+
+import numpy as np
+
 from pathlib import Path
-from itertools import groupby
+from itertools import chain
 from typing import Generator
+from collections import Counter
 from collections import defaultdict
 
-from DAJIN2.core.clustering.make_kmer import generate_mutation_kmers
-from DAJIN2.core.clustering.make_score import make_score
-from DAJIN2.core.clustering.return_labels import return_labels
-from DAJIN2.utils import io
+from sklearn import metrics
+from sklearn.decomposition import PCA
+from sklearn.mixture import GaussianMixture
+from sklearn.tree import DecisionTreeClassifier
+
+from DAJIN2.core.clustering.label_merger import merge_labels
 
 
-def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
-    for cssplit_kmer in generate_mutation_kmers(path_sample, mutation_loci):
-        score = [0 for _ in range(len(cssplit_kmer))]
-        for i, (cs_kmer, mut_score) in enumerate(zip(cssplit_kmer, mutation_score)):
-            if mut_score == {}:
-                continue
-            # Mutation sites are not considered in controls
-            # because they should be sample-specific.
-            if is_control and cs_kmer.split(",")[1][0] in mutation_loci[i]:
-                continue
-            if cs_kmer in mut_score:
-                score[i] = mut_score[cs_kmer]
-        yield score
+###############################################################################
+# Dimension reduction
+###############################################################################
 
 
-def reorder_labels(labels: list[int], start: int = 0) -> list[int]:
-    labels_ordered = labels.copy()
-    num = start
-    d = defaultdict(int)
-    for i, l in enumerate(labels_ordered):
-        if not d[l]:
-            num += 1
-            d[l] = num
-        labels_ordered[i] = d[l]
-    return labels_ordered
+def reduce_dimension(scores_sample: Generator[list], scores_control: Generator[list]) -> np.array:
+    scores = list(chain(scores_sample, scores_control))
+    model = PCA(n_components=min(20, len(scores)))
+    # return model.fit_transform(scores) * np.nan_to_num(model.explained_variance_ratio_)
+    return model.fit_transform(scores)
 
 
-###########################################################
-# main
-###########################################################
+###############################################################################
+# Clustering
+###############################################################################
 
 
-def is_strand_bias(path_control) -> bool:
-    count_strand = defaultdict(int)
-    for m in midsv.read_jsonl(path_control):
-        count_strand[m["STRAND"]] += 1
-    percentage_plus = count_strand["+"] / (count_strand["+"] + count_strand["-"])
-    if 0.25 < percentage_plus < 0.75:
-        return False
-    else:
-        return True
-
-
-def add_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
-    labels_all = []
-    max_label = 0
-    strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
-    classif_sample.sort(key=lambda x: x["ALLELE"])
-    for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
-        RANDOM_NUM = random.randint(0, 10**10)
-        path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
-        if path_knockin.exists():
-            with open(path_knockin, "rb") as p:
-                knockin_loci = pickle.load(p)
+def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]:
+    n_components = min(20, coverage_sample + coverage_control)
+    labels_prev = list(range(coverage_sample))
+    for i in range(1, n_components):
+        np.random.seed(seed=1)
+        labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).tolist()
+        labels_sample = labels_all[:coverage_sample]
+        labels_control = labels_all[coverage_sample:]
+        labels_merged = merge_labels(labels_control, labels_sample)
+        # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_merged))  # ! DEBUG
+        # Reads < 1% in the control are considered clustering errors and are not counted
+        count_control = Counter(labels_control)
+        num_labels_control = sum(1 for reads in count_control.values() if reads / coverage_control > 0.01)
+        mutual_info = metrics.adjusted_mutual_info_score(labels_prev, labels_merged)
+        # Report the number of clusters in SAMPLE when the number of clusters in CONTROL is split into more than one.
+        if num_labels_control > 1 or 0.95 < mutual_info < 1.0:
+            return labels_merged
         else:
-            knockin_loci = set()
-        with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle"), "rb") as p:
-            mutation_loci: dict[str, set[str]] = pickle.load(p)
-        if all(m == set() for m in mutation_loci):
-            labels = [1] * len(classif_sample)
-            labels_reorder = reorder_labels(labels, start=max_label)
-            max_label = max(labels_reorder)
-            labels_all.extend(labels_reorder)
-            continue
-        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_{RANDOM_NUM}.json")
-        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        io.write_jsonl(data=group, path=path_sample)
-        mutation_score: list[dict[str, float]] = make_score(path_sample, path_control, mutation_loci, knockin_loci)
-        scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
-        scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
-        path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
-        path_score_control = Path(TEMPDIR, CONTROL_NAME, "clustering", f"{allele}_score_{RANDOM_NUM}.json")
-        io.write_jsonl(data=scores_sample, path=path_score_sample)
-        io.write_jsonl(data=scores_control, path=path_score_control)
-        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
-        labels_reorder = reorder_labels(labels, start=max_label)
-        max_label = max(labels_reorder)
-        labels_all.extend(labels_reorder)
-        # Remove temporary files
-        path_sample.unlink()
-        path_score_sample.unlink()
-        path_score_control.unlink()
-    clust_sample = classif_sample.copy()
-    for clust, label in zip(clust_sample, labels_all):
-        clust["LABEL"] = label
-    return clust_sample
+            labels_results = labels_merged
+        labels_prev = labels_merged
+    return labels_results
 
 
-def add_readnum(clust_sample: list[dict]) -> list[dict]:
-    clust_result = clust_sample.copy()
-    readnum = defaultdict(int)
-    for cs in clust_result:
-        readnum[cs["LABEL"]] += 1
-    for cs in clust_result:
-        cs["READNUM"] = readnum[cs["LABEL"]]
-    return clust_result
+###############################################################################
+# Handle Strand bias
+# # Clusters of reads with mutations with strand bias are merged into similar clusters without strand bias
+###############################################################################
 
 
-def add_percent(clust_sample: list[dict]) -> list[dict]:
-    clust_result = clust_sample.copy()
-    n_sample = len(clust_result)
-    percent = defaultdict(int)
-    for cs in clust_result:
-        percent[cs["LABEL"]] += 1 / n_sample
-    percent = {key: round(val * 100, 3) for key, val in percent.items()}
-    for cs in clust_result:
-        cs["PERCENT"] = percent[cs["LABEL"]]
-    return clust_result
+def _count_strand(labels: list[int], samples: list[dict[str, str]]) -> tuple[defaultdict, defaultdict]:
+    """Count the occurrences of each strand type by label."""
+    count_strand_by_labels = defaultdict(int)
+    total_count_by_labels = defaultdict(int)
+
+    for label, sample in zip(labels, samples):
+        total_count_by_labels[label] += 1
+        if sample["STRAND"] == "+":
+            count_strand_by_labels[label] += 1
+
+    return count_strand_by_labels, total_count_by_labels
 
 
-def update_labels(clust_sample: list[dict]) -> list[dict]:
+def _calculate_strand_biases(
+    count_strand_by_labels: defaultdict, total_count_by_labels: defaultdict
+) -> dict[int, bool]:
+    """Calculate strand biases based on strand counts."""
+    strand_biases = {}
+    for label, total in total_count_by_labels.items():
+        strand_count = count_strand_by_labels[label]
+        strand_ratio = strand_count / total
+        strand_biases[label] = not (0.25 < strand_ratio < 0.75)
+
+    return strand_biases
+
+
+def _get_strand_biases_on_each_label(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
+    """Get strand biases for given labels and samples.
+    Args:
+        labels: A list of integer labels.
+        path_sample: The path to the sample file.
+    Returns:
+        A dictionary containing strand biases by label.
     """
-    Allocate new labels according to the ranking by PERCENT
-    """
-    clust_result = clust_sample.copy()
-    clust_result.sort(key=lambda x: (-x["PERCENT"], x["LABEL"]))
-    new_label = 1
-    prev_label = clust_result[0]["LABEL"]
-    for cs in clust_result:
-        if prev_label != cs["LABEL"]:
-            new_label += 1
-        prev_label = cs["LABEL"]
-        cs["LABEL"] = new_label
-    return clust_result
+    samples = io.read_jsonl(path_sample)
+    count_strand_by_labels, total_count_by_labels = _count_strand(labels, samples)
+    return _calculate_strand_biases(count_strand_by_labels, total_count_by_labels)
+
+
+def _prepare_training_testing_sets(labels, scores, strand_biases) -> tuple[list, list, list]:
+    x_train, y_train, x_test = [], [], []
+    for label, score in zip(labels, scores):
+        if strand_biases[label]:
+            x_test.append(score)
+        else:
+            x_train.append(score)
+            y_train.append(label)
+    return x_train, y_train, x_test
+
+
+def _train_decision_tree(x_train, y_train) -> DecisionTreeClassifier:
+    dtree = DecisionTreeClassifier(random_state=1)
+    dtree.fit(x_train, y_train)
+    return dtree
+
+
+def _allocate_labels(labels, strand_biases, dtree, x_test) -> list[int]:
+    label_predictions = dtree.predict(x_test)
+    label_predict_iter = iter(label_predictions)
+    for i, label in enumerate(labels):
+        if strand_biases[label]:
+            labels[i] = next(label_predict_iter)
+    return labels
+
+
+def _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) -> list[int]:
+    scores = io.read_jsonl(path_score_sample)
+    x_train, y_train, x_test = _prepare_training_testing_sets(labels, scores, strand_biases)
+    dtree = _train_decision_tree(x_train, y_train)
+    return _allocate_labels(labels, strand_biases, dtree, x_test)
+
+
+def get_labels_removed_strand_bias(path_sample, path_score_sample, labels) -> list[int]:
+    strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
+    # Until there is at least one True and one False or
+    # 1000 iterations (1000 is a suitable number to exit an infinite loop just in case)
+    i = 0
+    while len(Counter(strand_biases.values())) > 1 and i < 1000:
+        labels = _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases)
+        strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
+        i += 1
+    return labels

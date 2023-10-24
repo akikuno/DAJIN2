@@ -6,11 +6,7 @@ import mappy
 from pathlib import Path
 from typing import Generator
 
-
-def revcomp(sequence: str) -> str:
-    """Return the reverse complement of the given DNA sequence."""
-    complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-    return "".join(complement[nt] for nt in sequence[::-1])
+from DAJIN2.utils.dna_handler import revcomp
 
 
 def to_sam(
@@ -64,9 +60,8 @@ def to_sam(
                 cigar = cigar + softclip if hit.strand == 1 else softclip + cigar
 
             # Convert to CS tag's long format
-            cs = "cs:Z:" + hit.cs
             if cslong:
-                cs = cstag.lengthen(hit.cs, cigar, query_seq)
+                cs = cstag.lengthen(hit.cs, cigar, query_seq, prefix=True)
 
             # Summarize
             alignment = [

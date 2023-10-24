@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Generator
 from itertools import chain, groupby
 
+# from collections import Counter
+
 from DAJIN2.utils import sam_handler
 from DAJIN2.utils import cssplits_handler
 
@@ -91,13 +93,25 @@ def replace_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Genera
         yield samp
 
 
-def convert_flag_to_strand(midsv_sample: Generator[list[str]]) -> Generator[list[dict]]:
+def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[list[dict]]:
     """Convert FLAG to STRAND (+ or -)"""
     REVERSE_STRAND_FLAG = 16 | 2064
     for samp in midsv_sample:
         samp["STRAND"] = "-" if samp["FLAG"] & REVERSE_STRAND_FLAG else "+"
         del samp["FLAG"]
         yield samp
+
+
+# def filter_samples_by_n_proportion(midsv_sample: Generator[dict]) -> Generator[list[dict]]:
+#     """Filters out the samples from the input generator where the proportion of 'N' in the 'CSSPLIT' field is 90% or higher."""
+#     for m in midsv_sample:
+#         cssplits = m.get("CSSPLIT", "").split(",")
+#         n_count = Counter(cssplits)["N"]
+#         total_count = len(cssplits)
+#         if total_count == 0 or n_count / total_count > 0.9:
+#             continue
+#         else:
+#             yield m
 
 
 ###########################################################
@@ -120,4 +134,5 @@ def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
         midsv_chaind = transform_to_midsv_format(chain(sam_of_map_ont, sam_of_splice))
         midsv_sample = replace_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
+        # midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output)

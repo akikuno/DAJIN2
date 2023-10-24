@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from itertools import groupby
+from DAJIN2.utils.dna_handler import revcomp
 
 
 def split_cigar(CIGAR: str) -> list[str]:
@@ -168,12 +169,6 @@ def remove_microhomology(sam: list[list[str]]) -> list[list[str]]:
 ###########################################################
 # revcomp_sam
 ###########################################################
-
-
-def revcomp(sequence: str) -> str:
-    """Reverse complement a DNA sequence."""
-    complement = {"A": "T", "C": "G", "G": "C", "T": "A"}
-    return "".join(complement[nt] for nt in sequence[::-1])
 
 
 def reverse_flag(flag: int) -> int:

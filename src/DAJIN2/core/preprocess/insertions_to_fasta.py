@@ -1,55 +1,59 @@
 from __future__ import annotations
 
-import pickle
 from collections import defaultdict
 from itertools import groupby
 from pathlib import Path
 
-import midsv
+from typing import Generator
+
 import numpy as np
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn import metrics
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
+from DAJIN2.utils import io
+
 ###########################################################
 # Detect insertion sequences
 ###########################################################
 
 
-def _count_insertions(path: Path | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
+def count_insertions(midsv_sample: Generator | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
     insertion_counts = defaultdict(int)
-    for m in midsv.read_jsonl(path):
-        cssplits = m["CSSPLIT"].split(",")
-        for idx in (i for i, m in enumerate(mutation_loci) if "+" in m):
+    coverage = 0
+    for m_sample in midsv_sample:
+        coverage += 1
+        cssplits = m_sample["CSSPLIT"].split(",")
+        for idx in (i for i, mut in enumerate(mutation_loci) if "+" in mut):
             if cssplits[idx].startswith("+"):
                 insertion_counts[(idx, cssplits[idx])] += 1
-    # remove low frequency insertions
-    coverage_sample = sum(1 for _ in midsv.read_jsonl(path))
-    threshold = int(coverage_sample * 0.5 / 100)
-    insertion_counts = {k: v for k, v in insertion_counts.items() if v >= threshold}
-    return insertion_counts
+
+    # Remove low frequency insertions
+    threshold = int(coverage * 0.5 / 100)
+    return {key: count for key, count in insertion_counts.items() if count >= threshold}
 
 
-def _create_insertions_dict(
+def create_insertions_dict(
     insertion_sample: dict[tuple[int, str], int], insertion_control: dict[tuple[int, str], int]
-) -> defaultdict[dict[str, int]]:
+) -> defaultdict[int, dict[str, int]]:
+    """Create a dictionary of insertions that are present in the sample but not in the control."""
     insertions = defaultdict(dict)
     for key in insertion_sample.keys() - insertion_control.keys():
         score = insertion_sample[key]
         idx, seq = key
         if isinstance(seq, int):
             idx, seq = seq, idx
-        insertions[idx].update({seq: score})
+        insertions[idx][seq] = score
     return insertions
 
 
 def extract_insertions(
     path_sample: Path | str, path_control: Path | str, mutation_loci: dict
-) -> defaultdict[dict[str, int]]:
-    insertion_sample = _count_insertions(path_sample, mutation_loci)
-    insertion_control = _count_insertions(path_control, mutation_loci)
-    return _create_insertions_dict(insertion_sample, insertion_control)
+) -> defaultdict[int, dict[str, int]]:
+    insertion_sample = count_insertions(io.read_jsonl(path_sample), mutation_loci)
+    insertion_control = count_insertions(io.read_jsonl(path_control), mutation_loci)
+    return create_insertions_dict(insertion_sample, insertion_control)
 
 
 ###########################################################
@@ -145,7 +149,7 @@ def merge_similar_insertions(insertions, mutation_loci) -> dict[dict[frozenset[s
 def extract_score_and_sequence(path_sample, insertions_merged) -> list[tuple[list[int], str]]:
     scores = []
     sequences = []
-    for m in midsv.read_jsonl(path_sample):
+    for m in io.read_jsonl(path_sample):
         score = defaultdict(int)
         seq = defaultdict(lambda: "N")
         cssplits = m["CSSPLIT"].split(",")
@@ -319,9 +323,8 @@ def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, consensus_sequence_inserti
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
     path_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
     path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
-    with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"), "rb") as p:
-        mutation_loci = pickle.load(p)
     sequence = FASTA_ALLELES["control"]
+    mutation_loci = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
     insertions = extract_insertions(path_sample, path_control, mutation_loci)
     index_set = set(i for i, m in enumerate(mutation_loci) if "+" in m)
     if insertions.keys() & index_set == set():

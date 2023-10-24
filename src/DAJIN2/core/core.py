@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import pickle
 import shutil
 import logging
 
 from pathlib import Path
-from datetime import datetime
 from typing import NamedTuple
 from collections import defaultdict
 
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def parse_arguments(arguments: dict) -> tuple:
     genome_urls = defaultdict(str)
-    if "genome" in arguments:
+    if arguments.get("genome"):
         genome_urls.update(
             {"genome": arguments["genome"], "blat": arguments["blat"], "goldenpath": arguments["goldenpath"]}
         )
@@ -108,17 +106,14 @@ def format_inputs(arguments: dict) -> FormattedInputs:
     )
 
 
-def _dtnow() -> str:
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-
 ###########################################################
 # main
 ###########################################################
 
 
 def execute_control(arguments: dict):
-    logger.info(f"{_dtnow()}: {arguments['control']} is now processing...")
+    logger.info(f"{arguments['control']} is now processing...")
+
     ###########################################################
     # Preprocess
     ###########################################################
@@ -126,29 +121,35 @@ def execute_control(arguments: dict):
     preprocess.directories.create_temporal(ARGS.tempdir, ARGS.control_name, is_control=True)
     preprocess.directories.create_report(ARGS.tempdir, ARGS.control_name, is_control=True)
     io.cache_control_hash(ARGS.tempdir, ARGS.path_allele)
+
     ###########################################################
     # Check caches
     ###########################################################
     if Path(ARGS.tempdir, "report", "BAM", ARGS.control_name, f"{ARGS.control_name}.bam").exists():
         logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
         return
-    logger.info(f"{_dtnow()}: Preprocess {arguments['control']}...")
+    logger.info(f"Preprocess {arguments['control']}...")
+
     ###########################################################
     # Mapping
     ###########################################################
+
     # ============================================================
     # Export fasta files as single-FASTA format
     # ============================================================
     preprocess.fastx_parser.export_fasta_files(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+
     # ============================================================
     # Mapping using mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
     preprocess.mapping.generate_sam(ARGS.tempdir, paths_fasta, ARGS.path_control, ARGS.control_name, ARGS.threads)
+
     ###########################################################
     # MIDSV conversion
     ###########################################################
     preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
@@ -158,18 +159,19 @@ def execute_control(arguments: dict):
     ###########################################################
     # Output BAM
     ###########################################################
-    logger.info(f"{_dtnow()}: Output BAM files of {arguments['control']}...")
+    logger.info(f"Output BAM files of {arguments['control']}...")
     report.report_bam.output_bam(
         ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, is_control=True
     )
     ###########################################################
     # Finish call
     ###########################################################
-    logger.info(f"{_dtnow()}: \N{teacup without handle} {arguments['control']} is finished!")
+    logger.info(f"\N{teacup without handle} {arguments['control']} is finished!")
 
 
 def execute_sample(arguments: dict):
-    logger.info(f"{_dtnow()}: {arguments['sample']} is now processing...")
+    logger.info(f"{arguments['sample']} is now processing...")
+
     ###########################################################
     # Preprocess
     ###########################################################
@@ -177,24 +179,28 @@ def execute_sample(arguments: dict):
     preprocess.directories.create_temporal(ARGS.tempdir, ARGS.sample_name)
     preprocess.directories.create_report(ARGS.tempdir, ARGS.sample_name)
 
-    logger.info(f"{_dtnow()}: Preprocess {arguments['sample']}...")
+    logger.info(f"Preprocess {arguments['sample']}...")
 
     for path_fasta in Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta"):
         shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
+
     # ============================================================
     # Mapping with mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")
     preprocess.mapping.generate_sam(ARGS.tempdir, paths_fasta, ARGS.path_sample, ARGS.sample_name, ARGS.threads)
+
     # ============================================================
     # MIDSV conversion
     # ============================================================
     preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+
     # ============================================================
     # Extract mutation loci
     # ============================================================
     preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
     preprocess.extract_mutation_loci(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name)
+
     # ============================================================
     # Detect and align insertion alleles
     # ============================================================
@@ -222,31 +228,32 @@ def execute_sample(arguments: dict):
         )
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
         preprocess.extract_mutation_loci(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name)
+
+    io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
     ########################################################################
     # Classify alleles
     ########################################################################
-    logger.info(f"{_dtnow()}: Classify {arguments['sample']}...")
+    logger.info(f"Classify {arguments['sample']}...")
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
-    with open(Path(ARGS.tempdir, ARGS.sample_name, "classif_sample.pickle"), "wb") as p:
-        pickle.dump(classif_sample, p)
+    io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
     ########################################################################
     # Clustering
     ########################################################################
-    logger.info(f"{_dtnow()}: Clustering {arguments['sample']}...")
+    logger.info(f"Clustering {arguments['sample']}...")
 
-    clust_sample = clustering.add_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
+    labels = clustering.extract_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
+    clust_sample = clustering.add_labels(classif_sample, labels)
     clust_sample = clustering.add_readnum(clust_sample)
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
 
-    with open(Path(ARGS.tempdir, ARGS.sample_name, "clust_sample.pickle"), "wb") as p:
-        pickle.dump(clust_sample, p)
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clustering", "clust_sample.pickle"))
 
     ########################################################################
     # Consensus call
     ########################################################################
 
-    logger.info(f"{_dtnow()}: Consensus calling of {arguments['sample']}...")
+    logger.info(f"Consensus calling of {arguments['sample']}...")
 
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
@@ -257,11 +264,14 @@ def execute_sample(arguments: dict):
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
+    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "conse_sequence.pickle"))
+
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
     ########################################################################
 
-    logger.info(f"{_dtnow()}: Output reports of {arguments['sample']}...")
+    logger.info(f"Output reports of {arguments['sample']}...")
 
     # RESULT
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
@@ -270,7 +280,7 @@ def execute_sample(arguments: dict):
     # HTML
     report.report_files.to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)
-    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
+    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates)
     # BAM
     report.report_bam.output_bam(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE)
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
@@ -280,4 +290,4 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Finish call
     ###########################################################
-    logger.info(f"{_dtnow()}: \N{teacup without handle} {arguments['sample']} is finished!")
+    logger.info(f"\N{teacup without handle} {arguments['sample']} is finished!")

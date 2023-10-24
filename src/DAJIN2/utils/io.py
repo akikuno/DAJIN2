@@ -3,24 +3,43 @@ from __future__ import annotations
 import os
 import csv
 import json
+import pickle
 import hashlib
 
 import wslPath
 import pandas as pd
 
 from pathlib import Path
+
+from io import BufferedReader
 from typing import Generator
 
-
 ###########################################################
-# convert path to POSIX format
+# Input/Output
 ###########################################################
 
 
-def convert_to_posix(path: str) -> str:
-    if wslPath.is_windows_path(path):
-        path = wslPath.to_posix(path)
-    return path
+def load_pickle(file_path: Path):
+    with open(file_path, "rb") as f:
+        return pickle.load(f)
+
+
+def save_pickle(data: object, file_path: Path):
+    with open(file_path, "wb") as f:
+        pickle.dump(data, f)
+
+
+def read_jsonl(file_path: str | Path) -> Generator[dict]:
+    with open(file_path, "r") as f:
+        for line in f:
+            yield json.loads(line)
+
+
+def write_jsonl(data: list[dict], file_path: str | Path) -> None:
+    with open(file_path, "w") as f:
+        for d in data:
+            json_str = json.dumps(d)
+            f.write(json_str + "\n")
 
 
 ###########################################################
@@ -51,7 +70,7 @@ def load_from_csv(path: str) -> list:
         return [row for row in csv.reader(f, skipinitialspace=True, delimiter=",")]
 
 
-def load_file(path_batchfile: str) -> list:
+def load_batchfile(path_batchfile: str) -> list:
     """Load data from either an Excel or CSV file."""
     file_type = check_excel_or_csv(path_batchfile)
     if file_type == "excel":
@@ -61,21 +80,30 @@ def load_file(path_batchfile: str) -> list:
 
 
 ###########################################################
-# Input/Output Json
+# File hander
 ###########################################################
 
 
-def read_jsonl(path: str) -> Generator[dict]:
-    with open(path, "r") as f:
-        for line in f:
-            yield json.loads(line)
+def count_newlines(filepath: str | Path) -> int:
+    def read_in_chunks(file: BufferedReader, chunk_size: int = 2**16) -> Generator[bytes, None, None]:
+        """Get a generator that reads a file in chunks and yields each chunk."""
+        while True:
+            chunk = file.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
+
+    # Open the file in binary mode and count the newline characters
+    with open(filepath, "rb") as file:
+        count = sum(chunk.count(b"\n") for chunk in read_in_chunks(file))
+
+    return count
 
 
-def write_jsonl(data: list[dict], path: str) -> None:
-    with open(path, "w") as f:
-        for d in data:
-            json_str = json.dumps(d)
-            f.write(json_str + "\n")
+def convert_to_posix(path: str) -> str:
+    if wslPath.is_windows_path(path):
+        path = wslPath.to_posix(path)
+    return path
 
 
 ###########################################################

@@ -10,55 +10,49 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[日本語はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
+DAJIN2は、ゲノム編集技術で作製された動物の遺伝型を解析するためのソフトウェアです。
 
-DAJIN2 is a genotyping software designed for organisms that have undergone genome editing, utilizing nanopore sequencing technology.  
+## 🌟 特徴
 
-The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
-
-## 🙏 Feedbacks
-
-DAJIN2 is still in the development phase.  
-Basic tests covering point mutations, deletions, and insertion designs have been conducted.  
-If you encounter any bugs or issues, please report them via [Issues](https://github.com/akikuno/DAJIN2/issues).  
+- ゲノム編集イベントを網羅的に検出することができます。  
+- ゲノム編集結果を可視化し、直観的に確認することができます。  
+- 多サンプル処理が可能です。  
 
 
+## ⚠️ 諸注意
 
-## 🛠 Installation
+DAJIN2は開発段階のツールです。  
+点変異、欠失、挿入(flox)に関する基本的なテストは完了していますが、複雑な編集（例：逆位）には対応していません。  
+ご利用中にエラーに遭遇した場合、お手数ですが[Issues](https://github.com/akikuno/DAJIN2/issues)からご報告をお願いします（日本語でも構いません）。  
 
-### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
+## 🛠 インストール
+
+### [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
 
 ```bash
 conda install -c bioconda DAJIN2
 ```
 
-### From [PyPI](https://pypi.org/project/DAJIN2/)
+### [PyPI](https://pypi.org/project/DAJIN2/)
 
 ```bash
 pip install DAJIN2
 ```
 
 > **Warning**  
-> If you encounter the error **Failed to build mappy** when installing DAJIN2 from pip, please install `gcc` and `zlib`.  
+> pip経由でインストールすると、`Failed to build mappy`というエラーが出ることがあります。  
+> 下記のコードで`gcc`と`zlib`をインストールしたのちに、再度DAJIN2のインストールを行ってください。  
 > `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
 > `brew install gcc zlib` (macOS)
-
-<!-- ```bash
-# Ubuntu
-sudo apt install gcc zlib1g zlib1g-dev
 ```
 
-```bash
-# macOS
-brew install gcc zlib
-``` -->
 
+## 💡 使用法
 
-## 💡 Usage
+### 単一サンプルの解析
 
-### Single Sample Analysis
+単一サンプル（サンプルのFASTQとコントロールのFASTQ）の解析手順は以下の通りです。
 
-DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
 DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
@@ -70,11 +64,11 @@ options:
   -n, --name                Output directory name
   -g, --genome (Optional)   Reference genome ID (e.g hg38, mm39) [default: '']
   -t, --threads (Optional)  Number of threads [default: 1]
-  -h, --help                show this help message and exit
-  -v, --version             show the version number and exit
+  -h, --help                show this help message
+  -v, --version             show the version number
 ```
 
-#### Example
+#### 使用例
 
 ```bash
 # Donwload the example dataset
@@ -104,11 +98,11 @@ DAJIN2 \
 # 🎉 Finished! Open DAJIN_Results/stx2-deletion to see the report.
 ```
 
-### Batch Processing
+### 複数サンプルの一括処理
 
-By using the `batch` subcommand, you can process multiple FASTQ files simultaneously.  
-For this purpose, a CSV or Excel file consolidating the sample information is required.  
-For a specific example, please refer to [this link](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv).
+`batch`サブコマンドを利用することで、複数のFASTQファイルを同時に処理することができます。  
+この際、サンプル情報をまとめたCSVファイルやExcelファイルが必要となります。  
+具体例としては、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)を参照してください。
 
 
 ```bash
@@ -117,10 +111,10 @@ DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 options:
   -f, --file                Path to a CSV or Excel file
   -t, --threads (Optional)  Number of threads [default: 1]
-  -h, --help                Show this help message and exit
+  -h, --help                Show this help message
 ```
 
-#### Example
+#### 使用例
 
 ```bash
 # Donwload the example dataset
@@ -158,12 +152,12 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 # 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
 ```
 
-## 📈 Report Contents
+## 📈 レポート内容
 
-Upon completion of DAJIN2 processing, a directory named **DAJIN_Results** is generated.  
-Inside the **DAJIN_Results** directory, the following files can be found:  
+DAJIN2の処理が完了すると、**DAJIN_Results**というディレクトリが作られます。  
+このDAJIN_Resultsディレクトリには、以下のファイルが含まれています：  
 
-```
+```text
 DAJIN_Results/tyr-substitution
 ├── BAM
 │   ├── tyr_c230gt_01%
@@ -190,51 +184,56 @@ DAJIN_Results/tyr-substitution
 
 ### 1. BAM
 
-The BAM directory contains the BAM files of reads classified per allele.  
+BAMディレクトリには、入力のFASTQと、アレルごとに分類されたreadsのBAMファイルが格納されています。  
 
 > **Note**  
-> Specifying a reference genome using the `genome` option will align the reads to that genome.  
-> Without `genome` options, the reads will align to the control allele within the input FASTA file.
+> `genome`オプションで参照ゲノムを指定すると、その参照ゲノムにアライメントされます。  
+> 指定がない場合、入力のFASTAファイルのcontrolアレルにアライメントされます。
 
-### 2. FASTA and HTML
 
-The FASTA directory stores the FASTA files of each allele.  
-The HTML directory contains HTML files for each allele, where mutation sites are color-highlighted.  
-For example, Tyr point mutation is highlighted in **green**.  
+### 2. FASTA / HTML
+
+FASTAディレクトリには、各アレルのFASTAファイルが保存されます。  
+HTMLディレクトリには、変異箇所が色付けされた各アレルのHTMLファイルが保存されます。  
+Tyr点変異の例を以下に示します：
+- 点変異箇所は**緑色**でハイライトされています。
+
 
 <img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
 
+
 ### 3. MUTATION_INFO
 
-The MUTATION_INFO directory saves tables depicting mutation sites for each allele.  
-An example of a Tyr point mutation is described by its position on the chromosome and the type of mutation.  
+MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテーブルが保存されます。  
+Tyr点変異の例を以下に示します：
+- 点変異の染色体上の位置と、変異の種類が記載されています。
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-### 4. read_plot.html and read_plot.pdf
+### 4. read_plot.html / read_plot.pdf
 
-Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
-The chart's **Allele type** indicates the type of allele, and **% of reads** shows the proportion of reads for that allele.  
+read_plot.html および read_plot.pdf は、各アレルの割合を図示しています。  
+図中の**Allele type**はアレルの種類を、**% of reads**は該当するリードのアレル割合を示しています。  
 
-Additionally, the types of **Allele type** include:
-- **intact**: Alleles that perfectly match the input FASTA allele.
-- **indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
-- **sv**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
+また、**Allele type**の種類は以下の通りです：
+
+- **intact**：入力のFASTAアレルと完全に一致するアレル
+- **indels**：50塩基以内の置換、欠失、挿入、逆位
+- **sv**：50塩基以上の置換、欠失、挿入、逆位
+
 
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
 > **Warning**  
-> In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
-> Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
+> PCRアンプリコンのシーケンシングでは、増幅バイアスのため、**% of reads**が実際のアレルの割合と一致しないことがあります。  
+> 特に大型の欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映していない可能性が高まります。
 
-### 5. read_all.csv and read_summary.csv
+### 5. read_all.csv / read_summary.csv
 
-- read_all.csv: Records which allele each read is classified under.  
-- read_summary.csv: Describes the number of reads and presence proportion for each allele.  
+- read_all.csv：各リードがどのアレルに分類されたかが記録されています。
+- read_summary.csv：各アレルのリード数と存在割合が記述されています。
 
 
-## 📄 References
-
-For more information, please refer to the following publication:
+## 📄 参考文献
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)

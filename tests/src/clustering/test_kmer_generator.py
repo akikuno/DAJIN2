@@ -1,0 +1,39 @@
+import pytest
+
+from typing import Generator
+
+from src.DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
+
+
+# io.read_jsonlのモック
+def mock_read_jsonl(path):
+    return [{"CSSPLIT": "=A,-g,+t|t|t|=A,*ac,N"}, {"CSSPLIT": "=A,-g,=T,*gt,N"}]
+
+
+@pytest.fixture
+def mock_io_read_jsonl(monkeypatch):
+    monkeypatch.setattr("DAJIN2.utils.io.read_jsonl", mock_read_jsonl)
+
+
+# Test 1: Check if the function returns a generator
+def test_is_generator(mock_io_read_jsonl):
+    gen = generate_mutation_kmers("some_path", [set(), {"-"}, {"+", "*"}, {"*"}, set()])
+    assert isinstance(gen, Generator)
+
+
+# Test 2: Check the output with specific mutation_loci and compress_ins=True
+def test_with_specific_mutation_loci_and_compress_ins_true(mock_io_read_jsonl):
+    gen = generate_mutation_kmers("some_path", [set(), {"-"}, {"+", "*"}, {"*"}, set()], compress_ins=True)
+    assert list(gen) == [
+        ["N,N,N", "=A,-g,+t|t|t|=A", "-g,+I=A,*ac", "+I=A,*ac,N", "N,N,N"],
+        ["N,N,N", "=A,-g,=T", "N,N,N", "=T,*gt,N", "N,N,N"],
+    ]
+
+
+# Test 3: Check the output with specific mutation_loci and compress_ins=False
+def test_with_specific_mutation_loci_and_compress_ins_false(mock_io_read_jsonl):
+    gen = generate_mutation_kmers("some_path", [set(), {"-"}, {"+", "*"}, {"*"}, set()], compress_ins=False)
+    assert list(gen) == [
+        ["N,N,N", "=A,-g,+t|t|t|=A", "-g,+3=A,*ac", "+3=A,*ac,N", "N,N,N"],
+        ["N,N,N", "=A,-g,=T", "N,N,N", "=T,*gt,N", "N,N,N"],
+    ]
