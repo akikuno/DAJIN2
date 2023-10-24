@@ -25,6 +25,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install pytest
           python -m pip install -r requirements.txt
+      - name: Install weasyprint on macos-latest
+        if: runner.os == 'macOS'
+        run: |
+            brew update
+            brew install weasyprint
       # - name: Set up Conda
       #   uses: conda-incubator/setup-miniconda@v2
       #   with:
