@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Generator
 from itertools import chain, groupby
 
-# from collections import Counter
+from collections import Counter
 
 from DAJIN2.utils import sam_handler
 from DAJIN2.utils import cssplits_handler
@@ -77,14 +77,19 @@ def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]
         yield midsv_sample
 
 
-def replace_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
-    """Replace N with D, but not contiguous from both ends."""
+def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
+    """
+    Replace internal 'N's with 'D' in a given sequence.
+    This function modifies the 'CSSPLIT' field in the input sample. It identifies
+    the boundaries of consecutive 'N's and replaces any 'N' within these boundaries
+    with the corresponding character from the provided sequence. 'N's at the boundaries
+    remain unchanged.
+    """
     for samp in midsv_sample:
         cssplits = samp["CSSPLIT"].split(",")
 
         left_idx_n, right_idx_n = cssplits_handler.find_n_boundaries(cssplits)
 
-        # Replace Ns within the sequence boundaries with the corresponding sequence character
         for j, (cs, seq_char) in enumerate(zip(cssplits, sequence)):
             if left_idx_n < j < right_idx_n and cs == "N":
                 cssplits[j] = f"-{seq_char}"
@@ -102,16 +107,14 @@ def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[lis
         yield samp
 
 
-# def filter_samples_by_n_proportion(midsv_sample: Generator[dict]) -> Generator[list[dict]]:
-#     """Filters out the samples from the input generator where the proportion of 'N' in the 'CSSPLIT' field is 90% or higher."""
-#     for m in midsv_sample:
-#         cssplits = m.get("CSSPLIT", "").split(",")
-#         n_count = Counter(cssplits)["N"]
-#         total_count = len(cssplits)
-#         if total_count == 0 or n_count / total_count > 0.9:
-#             continue
-#         else:
-#             yield m
+def filter_samples_by_n_proportion(midsv_sample: Generator[dict], threshold: int = 95) -> Generator[list[dict]]:
+    """Filters out the samples from the input generator where the proportion of 'N' in the 'CSSPLIT' field is 95% or higher."""
+    for samp in midsv_sample:
+        cssplits = samp.get("CSSPLIT", "").split(",")
+        count = Counter(cssplits)
+        n_percentage = count["N"] / sum(count.values()) * 100
+        if n_percentage < threshold:
+            yield samp
 
 
 ###########################################################
@@ -132,7 +135,7 @@ def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
         sam_of_map_ont = filter_sam_by_preset(sam_ont, qname_of_map_ont, preset="map-ont")
         sam_of_splice = filter_sam_by_preset(sam_splice, qname_of_map_ont, preset="splice")
         midsv_chaind = transform_to_midsv_format(chain(sam_of_map_ont, sam_of_splice))
-        midsv_sample = replace_n_to_d(midsv_chaind, sequence)
+        midsv_sample = replace_internal_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
-        # midsv_sample = filter_samples_by_n_proportion(midsv_sample)
+        midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output)
