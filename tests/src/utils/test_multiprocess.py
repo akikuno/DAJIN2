@@ -1,16 +1,16 @@
 from __future__ import annotations
 import pytest
 
-import os
-import re
-import logging
 import tempfile
 from src.DAJIN2.utils import multiprocess
 
+from multiprocessing import Queue
 
 ###########################################################
 # generate_chunks
 ###########################################################
+
+
 def test_generate_chunks():
     # Basic test to check if it chunks correctly
     iterable = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -44,117 +44,87 @@ def test_generate_chunks_one():
 
 
 ###########################################################
+# target
+###########################################################
+
+
+def sample_function(arg: dict) -> None:
+    """Sample function to demonstrate how the `run` function works."""
+    if "error" in arg["sample"]:
+        raise ValueError("Sample error!")
+
+
+def test_target_without_exception():
+    queue = Queue()
+    multiprocess.target(sample_function, {"sample": "normal"}, queue)
+    assert queue.empty()  # Queue should be empty if no error
+
+
+def test_target_with_exception():
+    queue = Queue()
+    with pytest.raises(ValueError):
+        multiprocess.target(sample_function, {"sample": "error"}, queue)
+
+    error_message = queue.get()
+    assert "Sample error!" in error_message
+    assert "An unexpected error occurred at error" in error_message
+
+
+###########################################################
 # run_multiprocess
 ###########################################################
 
 
-def _setup_logging(log_file_path):
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-    logging.basicConfig(filename=log_file_path, level=logging.INFO)
+def test_run_without_exception(caplog):
+    arguments = [{"sample": "normal1"}, {"sample": "normal2"}]
+    multiprocess.run(sample_function, arguments, num_workers=2)
+    assert "An unexpected error occurred" not in caplog.text
 
 
-def _dummy_function(args: dict[str]):
-    n = args["value"]
-    temp_file_path = args["path"]
-    _setup_logging("/tmp/multiprocess.log")  # 各プロセスでのログ設定
-    with open(temp_file_path, "a") as f:
-        f.write(str(n) + "\n")
+def test_run_with_exception(caplog):
+    arguments = [{"sample": "normal1"}, {"sample": "error"}]
+    multiprocess.run(sample_function, arguments, num_workers=2)
+    assert "Sample error!" in caplog.text
+
+
+def test_run_with_multiple_exceptions(caplog):
+    arguments = [{"sample": "error1"}, {"sample": "error2"}]
+    multiprocess.run(sample_function, arguments, num_workers=2)
+    assert "Sample error!" in caplog.text
+    assert (
+        "An unexpected error occurred at error1" in caplog.text
+        or "An unexpected error occurred at error2" in caplog.text
+    )
+
+
+def write_value_to_file(args: dict) -> None:
+    """
+    Writes the given value to the specified file and sets up logging.
+    """
+    value = args["value"]
+    file_path = args["path"]
+
+    with open(file_path, "a") as f:
+        f.write(str(value) + "\n")
 
 
 @pytest.mark.slow
-def test_run_multiprocess():
-    # Use tempfile to create a temporary file
+def test_multiprocessing_execution():
+    """
+    Test if the function `write_value_to_file` can be executed in parallel using multiple processes.
+    """
+    # Create a temporary file to store the values
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
-        temp_file_path = temp_file.name
+        file_path = temp_file.name
 
-        # Arguments to run the _dummy_function
-        arguments = [
-            {"value": 1, "path": temp_file_path},
-            {"value": 2, "path": temp_file_path},
-            {"value": 3, "path": temp_file_path},
-            {"value": 4, "path": temp_file_path},
-            {"value": 5, "path": temp_file_path},
-            {"value": 6, "path": temp_file_path},
-            {"value": 7, "path": temp_file_path},
-            {"value": 8, "path": temp_file_path},
-            {"value": 9, "path": temp_file_path},
-            {"value": 10, "path": temp_file_path},
-        ]
+        # Prepare arguments for parallel execution
+        values_to_write = [{"value": i, "path": file_path, "sample": "test"} for i in range(1, 11)]
 
-        # Use the run_multiprocess function
-        multiprocess.run(_dummy_function, arguments, num_workers=3)
+        # Execute the function in parallel using 3 worker processes
+        multiprocess.run(write_value_to_file, values_to_write, num_workers=3)
 
-        # Check if the _dummy_function wrote to the file correctly
-        with open(temp_file_path, "r") as f:
-            lines = f.readlines()
+        # Verify if all values are written correctly
+        with open(file_path, "r") as f:
+            written_values = set(map(int, map(str.strip, f.readlines())))
 
-        assert set(map(int, map(str.strip, lines))) == {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-
-
-###########################################################
-# test logging of run_multiprocess
-###########################################################
-
-
-def _dummy_function_logging(args: dict[str]):
-    n = args["value"]
-    temp_file_path = args["path"]
-    _setup_logging("/tmp/multiprocess.log")  # 各プロセスでのログ設定
-    with open(temp_file_path, "a") as f:
-        f.write(str(n) + "\n")
-
-
-def _dummy_function_that_fails(arg):
-    raise ValueError("This is a simulated error!")
-
-
-@pytest.mark.slow
-def test_logging_of_run_multiprocess():
-    # ログの設定を一時的に変更
-    with tempfile.NamedTemporaryFile(delete=True, mode="w+") as temp_log_file:
-        log_file_path = temp_log_file.name
-        _setup_logging(log_file_path)  # ログ設定のリセットと再設定
-
-        # run_multiprocess関数を実行
-        arguments = [{"value": 1, "path": "/tmp/dummy_path"}, {"value": 2, "path": "/tmp/dummy_path"}]
-        multiprocess.run(_dummy_function_logging, arguments, num_workers=2)
-
-        # ログファイルから内容を読み込む
-        temp_log_file.seek(0)
-        logs = temp_log_file.read()
-
-        # 期待するログメッセージが存在するかどうかを確認
-        assert "Starting process Process-" in logs
-
-
-@pytest.mark.slow
-def test_run_multiprocess_failure():
-    arguments = [{"dummy_arg": 1}, {"dummy_arg": 2}]
-
-    # run_multiprocess関数がSystemExitを引き起こすことを確認
-    with pytest.raises(SystemExit) as exc_info:
-        multiprocess.run(_dummy_function_that_fails, arguments, num_workers=2)
-
-    # exitcode 1が期待される
-    assert exc_info.value.code == 1
-
-
-###########################################################
-# remove log files
-###########################################################
-def delete_log_files(directory="."):
-    # パターンに一致するファイル名を探す正規表現
-    pattern = r"^\d{14}_DAJIN2\.log$"
-    # 指定されたディレクトリ内のファイルをリストアップ
-    for filename in os.listdir(directory):
-        if re.match(pattern, filename):
-            filepath = os.path.join(directory, filename)
-            try:
-                os.remove(filepath)
-                print(f"Deleted: {filepath}")
-            except Exception as e:
-                print(f"Error deleting {filepath}: {e}")
-
-
-delete_log_files()
+        assert written_values == set(range(1, 11))
