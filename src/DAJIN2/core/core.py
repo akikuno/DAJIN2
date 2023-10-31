@@ -263,8 +263,8 @@ def execute_sample(arguments: dict):
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
-    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
-    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "conse_sequence.pickle"))
+    io.save_pickle(cons_percentage, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
+    io.save_pickle(cons_sequence, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "conse_sequence.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
