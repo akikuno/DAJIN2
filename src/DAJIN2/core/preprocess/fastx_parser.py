@@ -36,8 +36,8 @@ def extract_basename(fastq_path: str) -> str:
 ########################################################################
 
 
-def dictionize_allele(path_fasta: str) -> dict:
-    return {_sanitize_name(name): seq.upper() for name, seq, _ in mappy.fastx_read(path_fasta)}
+def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
+    return {_sanitize_name(name): seq.upper() for name, seq, _ in mappy.fastx_read(str(path_fasta))}
 
 
 ########################################################################

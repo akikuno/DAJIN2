@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from itertools import groupby
 from pathlib import Path
+from itertools import groupby
+from collections import defaultdict
 
 from typing import Generator
 
 import numpy as np
+from sklearn import metrics
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
-from sklearn import metrics
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
 from DAJIN2.utils import io
