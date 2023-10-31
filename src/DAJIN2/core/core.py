@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import logging
+import uuid
 
 from pathlib import Path
 from typing import NamedTuple
@@ -19,7 +20,6 @@ def parse_arguments(arguments: dict) -> tuple:
         genome_urls.update(
             {"genome": arguments["genome"], "blat": arguments["blat"], "goldenpath": arguments["goldenpath"]}
         )
-
     return (
         arguments["sample"],
         arguments["control"],
@@ -27,6 +27,7 @@ def parse_arguments(arguments: dict) -> tuple:
         arguments["name"],
         arguments["threads"],
         genome_urls,
+        uuid.uuid4().hex,
     )
 
 
@@ -82,10 +83,11 @@ class FormattedInputs(NamedTuple):
     tempdir: Path
     genome_coordinates: dict[str, str]
     threads: int
+    uuid: str
 
 
 def format_inputs(arguments: dict) -> FormattedInputs:
-    path_sample, path_control, path_allele, name, threads, genome_urls = parse_arguments(arguments)
+    path_sample, path_control, path_allele, name, threads, genome_urls, uuid = parse_arguments(arguments)
     path_sample, path_control, path_allele = convert_inputs_to_posix(path_sample, path_control, path_allele)
     sample_name = preprocess.fastx_parser.extract_basename(path_sample)
     control_name = preprocess.fastx_parser.extract_basename(path_control)
@@ -103,6 +105,7 @@ def format_inputs(arguments: dict) -> FormattedInputs:
         tempdir,
         genome_coordinates,
         threads,
+        uuid,
     )
 
 
@@ -143,21 +146,20 @@ def execute_control(arguments: dict):
     # Mapping using mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
-    preprocess.mapping.generate_sam(ARGS.tempdir, paths_fasta, ARGS.path_control, ARGS.control_name, ARGS.threads)
+    preprocess.mapping.generate_sam(ARGS, paths_fasta, is_control=True, is_insertion=False)
 
     ###########################################################
     # MIDSV conversion
     ###########################################################
-    preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+    preprocess.midsv_caller.execute(ARGS, is_control=True, is_insertion=False)
 
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
-    preprocess.extract_mutation_loci(
-        ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name, is_control=True
-    )
+    preprocess.extract_mutation_loci(ARGS, is_control=True, is_insertion=False)
+
     ###########################################################
-    # Output BAM
+    # Output BAM files
     ###########################################################
     logger.info(f"Output BAM files of {arguments['control']}...")
     report.report_bam.output_bam(
@@ -188,46 +190,43 @@ def execute_sample(arguments: dict):
     # Mapping with mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")
-    preprocess.mapping.generate_sam(ARGS.tempdir, paths_fasta, ARGS.path_sample, ARGS.sample_name, ARGS.threads)
+    preprocess.mapping.generate_sam(ARGS, paths_fasta, is_control=False, is_insertion=False)
 
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+    preprocess.midsv_caller.execute(ARGS, is_control=False, is_insertion=False)
 
     # ============================================================
     # Extract mutation loci
     # ============================================================
     preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
-    preprocess.extract_mutation_loci(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name)
+    preprocess.extract_mutation_loci(ARGS, is_control=False, is_insertion=False)
 
     # ============================================================
     # Detect and align insertion alleles
     # ============================================================
     paths_predifined_allele = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")}
     preprocess.generate_insertion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
-    paths_insertion = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_insertion -= paths_predifined_allele
-    if paths_insertion:
+    paths_insertion_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
+    paths_insertion_fasta -= paths_predifined_allele
+
+    if paths_insertion_fasta:
         # mapping to insertion alleles
-        preprocess.mapping.generate_sam(
-            ARGS.tempdir, paths_insertion, ARGS.path_control, ARGS.control_name, ARGS.threads
-        )
-        preprocess.mapping.generate_sam(ARGS.tempdir, paths_insertion, ARGS.path_sample, ARGS.sample_name, ARGS.threads)
+        preprocess.mapping.generate_sam(ARGS, paths_insertion_fasta, is_control=True, is_insertion=True)
+        preprocess.mapping.generate_sam(ARGS, paths_insertion_fasta, is_control=False, is_insertion=True)
         # add insertions to ARGS.fasta_alleles
-        for path_fasta in paths_insertion:
+        for path_fasta in paths_insertion_fasta:
             allele, seq = Path(path_fasta).read_text().strip().split("\n")
             allele = allele.replace(">", "")
             ARGS.fasta_alleles[allele] = seq
         # MIDSV conversion
-        preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
-        preprocess.midsv_caller.execute(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+        preprocess.midsv_caller.execute(ARGS, is_control=True, is_insertion=True)
+        preprocess.midsv_caller.execute(ARGS, is_control=False, is_insertion=True)
         # Reculculate mutation loci
-        preprocess.extract_mutation_loci(
-            ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name, is_control=True
-        )
+        preprocess.extract_mutation_loci(ARGS, is_control=True, is_insertion=True)
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
-        preprocess.extract_mutation_loci(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.control_name)
+        preprocess.extract_mutation_loci(ARGS, is_control=False, is_insertion=True)
 
     io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
     ########################################################################

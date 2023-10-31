@@ -122,13 +122,22 @@ def filter_samples_by_n_proportion(midsv_sample: Generator[dict], threshold: int
 ###########################################################
 
 
-def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
-    for allele, sequence in FASTA_ALLELES.items():
-        path_output = Path(TEMPDIR, NAME, "midsv", f"{allele}.json")
-        if path_output.exists():
+def execute(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
+    name = ARGS.control_name if is_control else ARGS.sample_name
+
+    for allele, sequence in ARGS.fasta_alleles.items():
+        if Path(ARGS.tempdir, name, "midsv", f"{allele}.json").exists():
             continue
-        path_ont = Path(TEMPDIR, NAME, "sam", f"map-ont_{allele}.sam")
-        path_splice = Path(TEMPDIR, NAME, "sam", f"splice_{allele}.sam")
+
+        if is_control and is_insertion:
+            path_ont = Path(ARGS.tempdir, name, "sam", f"map-ont_{allele}_{ARGS.sample_name}.sam")
+            path_splice = Path(ARGS.tempdir, name, "sam", f"splice_{allele}_{ARGS.sample_name}.sam")
+            path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}_{ARGS.sample_name}.json")
+        else:
+            path_ont = Path(ARGS.tempdir, name, "sam", f"map-ont_{allele}.sam")
+            path_splice = Path(ARGS.tempdir, name, "sam", f"splice_{allele}.sam")
+            path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}.json")
+
         sam_ont = sam_handler.remove_overlapped_reads(list(midsv.read_sam(path_ont)))
         sam_splice = sam_handler.remove_overlapped_reads(list(midsv.read_sam(path_splice)))
         qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
@@ -138,4 +147,4 @@ def execute(TEMPDIR: Path | str, FASTA_ALLELES: dict, NAME: str) -> None:
         midsv_sample = replace_internal_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
-        midsv.write_jsonl(midsv_sample, path_output)
+        midsv.write_jsonl(midsv_sample, path_output_midsv)
