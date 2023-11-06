@@ -5,20 +5,22 @@ from DAJIN2.utils import config
 # prevent BLAS from using all cores
 config.set_single_threaded_blas()
 
-# set logging to export log to stderr and file
-config.set_logging()
+# # set logging to export log to stderr and file
+# path_logfile = config.get_logfile()
+# config.set_logging(path_logfile)
 
 import sys
+import shutil
 import argparse
-
 from pathlib import Path
 from itertools import groupby
+
 from DAJIN2 import gui, view
 from DAJIN2.core import core
 from DAJIN2.utils import config, io, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.3.2"
+DAJIN_VERSION = "0.3.3"
 
 
 def generate_report(name: str) -> None:
@@ -35,12 +37,20 @@ def generate_report(name: str) -> None:
 
 
 def execute_single_mode(arguments: dict[str]):
+    # set logging to export log to stderr and file
+    path_logfile = config.get_logfile()
+    config.set_logging(path_logfile)
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
     if arguments.get("genome"):
         arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
+    # run DAJIN2
     core.execute_control(arguments)
     core.execute_sample(arguments)
+    # finish
     generate_report(arguments["name"])
+    shutil.move(path_logfile, Path("DAJIN_Results", arguments["name"]))
+    if not arguments["debug"]:
+        shutil.rmtree(Path("DAJIN_Results", ".tempdir", arguments["name"]))
 
 
 ################################################################################
@@ -89,6 +99,7 @@ def run_DAJIN2(
 
     # Return a list of unique dictionaries
     contents_unique = [dict(item) for item in set(frozenset(d.items()) for d in contents)]
+
     contents_unique.sort(key=lambda x: x["sample"])
 
     if is_control:
@@ -123,14 +134,19 @@ def execute_batch_mode(arguments: dict[str]):
             if args.get("genome") and args["genome"] not in cache_urls_genome:
                 urls_genome = input_validator.validate_genome_and_fetch_urls(args["genome"])
                 cache_urls_genome[args["genome"]] = urls_genome
-
     for name, groups in groupby(contents, key=lambda x: x[index_of_name]):
+        # set logging to export log to stderr and file
+        path_logfile = config.get_logfile()
+        config.set_logging(path_logfile)
         groups = list(groups)
         # Run DAJIN2
         run_DAJIN2(groups, columns, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
         run_DAJIN2(groups, columns, cache_urls_genome, is_control=False, num_workers=arguments["threads"])
         # Finish
         generate_report(name)
+        shutil.move(path_logfile, Path("DAJIN_Results", name))
+        if not arguments["debug"]:
+            shutil.rmtree(Path("DAJIN_Results", ".tempdir", name))
 
 
 def execute():
