@@ -8,7 +8,8 @@ from collections import defaultdict
 
 from scipy import stats
 from scipy.spatial import distance
-from sklearn import linear_model
+
+from sklearn.cluster import KMeans
 
 from DAJIN2.utils import io
 from DAJIN2.core.preprocess import homopolymer_handler
@@ -127,7 +128,7 @@ def extract_dissimilar_loci(
 
 
 ###########################################################
-# Using OneClassSVM to Extract Anomalous Loci
+# Extract Anomalous Loci
 # The function `extract_dissimilar_loci` overlooks the mutation rate within each kmer.
 # As a result, we encounter numerous false positives, especially in kmers with an extremely low mutation rate.
 # It's essential to account for the mutation rate across the entire sequence.
@@ -136,7 +137,8 @@ def extract_dissimilar_loci(
 
 def transform_log2(values: np.array) -> np.array:
     """Transform values to log2 scale after handling zeros."""
-    values = np.where(values <= 0, 1e-10, values)
+    min_value = min(v for v in values if v > 0)
+    values = np.where(values <= 0, min_value, values)
     return np.log2(values).reshape(-1, 1)
 
 
@@ -157,20 +159,19 @@ def merge_surrounding_index(idx_outliers: list[int]) -> set[int]:
 
 def detect_anomalies(log2_subtract: np.array) -> list[int]:
     """
-    Detect anomalies using OneClassSVM and return indices of outliers.
+    Detect anomalies and return indices of outliers.
 
-    OneClassSVM classifies data points into two classes: 1 (inliers) and -1 (outliers).
+    It classifies data points into two classes: 1 (inliers) and -1 (outliers).
     However, depending on how the "normal" class was learned, either of these classes
     might represent the true anomalies in the context of this problem.
 
     This function returns the indices of the class with the higher mean of log2_subtract
     values, as this class is considered to be the true anomalies.
     """
-    clf = linear_model.SGDOneClassSVM(random_state=0)
-    predicts = clf.fit_predict(log2_subtract)
-    p1 = [i for i, p in enumerate(predicts) if p == -1]
-    p2 = [i for i, p in enumerate(predicts) if p == 1]
-    return p1 if np.mean(log2_subtract[p1]) > np.mean(log2_subtract[p2]) else p2
+    kmeans = KMeans(n_clusters=2, random_state=0)
+    _ = kmeans.fit_predict(log2_subtract)
+    threshold = kmeans.cluster_centers_.mean()
+    return [i for i, v in enumerate(log2_subtract) if v > threshold]
 
 
 def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> dict[str, set[int]]:
@@ -309,53 +310,3 @@ def extract_mutation_loci(ARGS, is_control: bool = False, is_insertion: bool = F
         mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
         io.save_pickle(mutation_loci_transposed, path_output)
-
-
-# def extract_mutation_loci(
-#     TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, CONTROL_NAME: str, is_control=False
-# ) -> None:
-#     path_mutation_control = Path(TEMPDIR, CONTROL_NAME, "mutation_loci")
-#     for allele, sequence in FASTA_ALLELES.items():
-#         if is_control:
-#             if Path(path_mutation_control, f"{allele}_count.pickle").exists():
-#                 continue
-#             indels_control, indels_normalized_control, indels_kmer_control = process_data(
-#                 TEMPDIR, CONTROL_NAME, allele, sequence
-#             )
-
-#             # Save control data for later use
-#             io.save_pickle(indels_control, Path(path_mutation_control, f"{allele}_count.pickle"))
-#             io.save_pickle(indels_normalized_control, Path(path_mutation_control, f"{allele}_normalized.pickle"))
-#             io.save_pickle(indels_kmer_control, Path(path_mutation_control, f"{allele}_kmer.pickle"))
-#             continue
-
-#         path_output = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle")
-#         if path_output.exists():
-#             continue
-
-#         _, indels_normalized_sample, indels_kmer_sample = process_data(TEMPDIR, SAMPLE_NAME, allele, sequence)
-
-#         # Load indels_normalized_control and indels_kmer_control
-#         indels_normalized_control = io.load_pickle(Path(path_mutation_control, f"{allele}_normalized.pickle"))
-#         indels_kmer_control = io.load_pickle(Path(path_mutation_control, f"{allele}_kmer.pickle"))
-
-#         # Extract candidate mutation loci
-#         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
-#         anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_control)
-#         candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
-
-#         # Extract error loci in homopolymer regions
-#         errors_in_homopolymer = homopolymer_handler.extract_errors(
-#             sequence, indels_normalized_sample, indels_normalized_control, candidate_loci
-#         )
-#         mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
-
-#         # Merge all mutations and knockin loci
-#         path_knockin = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
-#         if path_knockin.exists():
-#             knockin_loci = io.load_pickle(path_knockin)
-#             mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
-
-#         mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
-#         mutation_loci_transposed = transpose_mutation_loci(mutation_loci, sequence)
-#         io.save_pickle(mutation_loci_transposed, path_output)
