@@ -1,50 +1,50 @@
 import pytest
 
 from src.DAJIN2.core.consensus.consensus import (
-    _remove_nonconsecutive_n,
-    _update_percentage,
-    _call_percentage,
+    # _remove_nonconsecutive_n,
+    replace_sequence_errror,
+    call_percentage,
     _process_base,
     _call_sequence,
 )
 
 
-@pytest.mark.parametrize(
-    "cons_percentage, expected_output",
-    [
-        # not remove
-        (
-            [{"N": 100}, {"N": 100}, {"A": 50, "C": 50}, {"N": 100}],
-            [{"N": 100}, {"N": 100}, {"A": 50, "C": 50}, {"N": 100}],
-        ),
-        ([{"N": 80, "A": 20}, {"A": 50, "C": 50}], [{"N": 80, "A": 20}, {"A": 50, "C": 50}]),
-        ([{"A": 50, "C": 50}, {"N": 80, "A": 20}], [{"A": 50, "C": 50}, {"N": 80, "A": 20}]),
-        ([{"A": 50, "C": 50}], [{"A": 50, "C": 50}]),
-        ([{"N": 100}], [{"N": 100}]),
-        ([], []),
-        # remove non consecutive N
-        ([{"N": 100}, {"N": 100}, {"A": 60, "N": 40}, {"N": 100}], [{"N": 100}, {"N": 100}, {"A": 60}, {"N": 100}]),
-        ([{"N": 20, "A": 80}, {"A": 50, "C": 50}], [{"A": 80}, {"A": 50, "C": 50}]),
-        ([{"A": 50, "C": 50}, {"N": 20, "A": 80}], [{"A": 50, "C": 50}, {"A": 80}]),
-        ([{"A": 80, "N": 20}], [{"A": 80}]),
-    ],
-)
-def test_remove_nonconsecutive_n(cons_percentage, expected_output):
-    result = _remove_nonconsecutive_n(cons_percentage)
-    assert result == expected_output
+# @pytest.mark.parametrize(
+#     "cons_percentage, expected_output",
+#     [
+#         # not remove
+#         (
+#             [{"N": 100}, {"N": 100}, {"A": 50, "C": 50}, {"N": 100}],
+#             [{"N": 100}, {"N": 100}, {"A": 50, "C": 50}, {"N": 100}],
+#         ),
+#         ([{"N": 80, "A": 20}, {"A": 50, "C": 50}], [{"N": 80, "A": 20}, {"A": 50, "C": 50}]),
+#         ([{"A": 50, "C": 50}, {"N": 80, "A": 20}], [{"A": 50, "C": 50}, {"N": 80, "A": 20}]),
+#         ([{"A": 50, "C": 50}], [{"A": 50, "C": 50}]),
+#         ([{"N": 100}], [{"N": 100}]),
+#         ([], []),
+#         # remove non consecutive N
+#         ([{"N": 100}, {"N": 100}, {"A": 60, "N": 40}, {"N": 100}], [{"N": 100}, {"N": 100}, {"A": 60}, {"N": 100}]),
+#         ([{"N": 20, "A": 80}, {"A": 50, "C": 50}], [{"A": 80}, {"A": 50, "C": 50}]),
+#         ([{"A": 50, "C": 50}, {"N": 20, "A": 80}], [{"A": 50, "C": 50}, {"A": 80}]),
+#         ([{"A": 80, "N": 20}], [{"A": 80}]),
+#     ],
+# )
+# def test_remove_nonconsecutive_n(cons_percentage, expected_output):
+#     result = _remove_nonconsecutive_n(cons_percentage)
+#     assert result == expected_output
 
 
-def test_update_percentage():
+def test_replace_sequence_errror():
     cons_percentage = [{"A": 25, "C": 25, "SEQERROR": 50}, {"SEQERROR": 100}]
     expected_output = [{"A": 50, "C": 50}, {"N": 100}]
-    assert _update_percentage(cons_percentage) == expected_output
+    assert replace_sequence_errror(cons_percentage) == expected_output
 
 
 def test_call_percentage():
     cssplits = [["+A", "-T", "C", "A", "T"], ["+A", "=T", "C", "*AT", "*AT"]]
     mutation_loci = [{"+", "-"}, {"-"}, {}, {}, {"*"}]
     expected_output = [{"+A": 100.0}, {"-T": 50.0, "=T": 50.0}, {"C": 100.0}, {"A": 100.0}, {"T": 50.0, "*AT": 50.0}]
-    assert _call_percentage(cssplits, mutation_loci) == expected_output
+    assert call_percentage(cssplits, mutation_loci) == expected_output
 
 
 ###########################################################
