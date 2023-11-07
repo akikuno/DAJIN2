@@ -35,16 +35,19 @@ class DeferredFileHandler(logging.FileHandler):
         super().emit(record)
 
 
-def set_logging() -> None:
+def get_logfile() -> Path:
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return Path(f"{current_time}_DAJIN2.log")
 
+
+def set_logging(path_logfile: Path) -> None:
     format = "%(asctime)s, %(levelname)s, %(message)s"
     datefmt = "%Y-%m-%d %H:%M:%S"
 
     stderr_handler = logging.StreamHandler()
     stderr_handler.setFormatter(logging.Formatter(format, datefmt=datefmt))
 
-    file_handler = DeferredFileHandler(f"{current_time}_DAJIN2.log")
+    file_handler = DeferredFileHandler(path_logfile)
     file_handler.setFormatter(logging.Formatter(format, datefmt=datefmt))
 
     logging.basicConfig(

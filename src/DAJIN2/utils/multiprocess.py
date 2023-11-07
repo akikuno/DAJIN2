@@ -12,6 +12,11 @@ from typing import Generator
 from collections.abc import Callable
 
 
+def get_error_message_prefix(arg: dict) -> str:
+    """Generate the error message prefix based on the argument's sample value."""
+    return f"An unexpected error occurred at {arg['sample']}"
+
+
 def generate_chunks(iterable, chunk_size: int = 1) -> Generator[tuple]:
     """Yield successive n-sized chunks from iterable."""
     iterator = iter(iterable)
@@ -22,21 +27,35 @@ def generate_chunks(iterable, chunk_size: int = 1) -> Generator[tuple]:
         yield chunk
 
 
-def target(function: Callable, arg: dict, queue: Queue[str]) -> None:
-    """Run a function with a single argument, and handle any exceptions."""
+def suppress_stderr(function: Callable, *args, **kwargs) -> None:
+    """
+    Suppress stderr and execute the function.
+    If an error occurs, revert the stderr and raise the exception.
+    """
+    original_stderr = sys.stderr
+    sys.stderr = io.StringIO()
+
     try:
-        # Redirect stderr to suppress traceback printing
-        original_stderr = sys.stderr
-        sys.stderr = io.StringIO()
-        function(arg)
-    except Exception:
-        # Reset stderr back to original
-        sys.stderr = original_stderr
-        queue.put(f"An unexpected error occurred at {arg['sample']}\n{traceback.format_exc()}")
-        raise  # Re-raise the exception to be caught in the parent process
+        function(*args, **kwargs)
     finally:
-        # Ensure stderr is reset back to original even if no error occurs
         sys.stderr = original_stderr
+
+
+def handle_exception_and_enqueue(queue: Queue[str], arg: dict) -> None:
+    """
+    Handle the exception by placing an error message in the queue.
+    """
+    error_message = f"{get_error_message_prefix(arg)}\n{traceback.format_exc()}"
+    queue.put(error_message)
+
+
+def target(function: Callable, arg: dict, queue: Queue[str]) -> None:
+    """Run a function with a single argument and handle any exceptions."""
+    try:
+        suppress_stderr(function, arg)
+    except Exception:
+        handle_exception_and_enqueue(queue, arg)
+        raise
 
 
 def run(function: Callable, arguments: list[dict], num_workers: int = 1) -> None:
@@ -51,7 +70,7 @@ def run(function: Callable, arguments: list[dict], num_workers: int = 1) -> None
             Process(
                 target=target,
                 args=(function, arg, queue),
-                name=f"An unexpected error occurred at {arg['sample']}",
+                name=get_error_message_prefix(arg),
             )
             for arg in args
         ]

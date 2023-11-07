@@ -21,7 +21,6 @@ from DAJIN2.core.clustering.clustering import reduce_dimension, optimize_labels,
 
 
 # Constants
-RANDOM_UPPER_LIMIT = 10**10
 STRAND_BIAS_LOWER_LIMIT = 0.25
 STRAND_BIAS_UPPER_LIMIT = 0.75
 
@@ -81,9 +80,12 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
         knockin_loci: set[int] = io.load_pickle(path_knockin_loci) if path_knockin_loci.exists() else set()
 
-        RANDOM_INT = random.randint(0, RANDOM_UPPER_LIMIT)
+        RANDOM_INT = random.randint(0, 10**10)
         path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_{RANDOM_INT}.json")
-        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
+        if Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json").exists():
+            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
+        else:
+            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}_{SAMPLE_NAME}.json")
         io.write_jsonl(data=group, file_path=path_sample)
 
         """Prepare and write clustering data to temporary files."""

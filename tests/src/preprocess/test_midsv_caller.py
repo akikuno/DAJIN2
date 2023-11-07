@@ -3,7 +3,7 @@ import midsv
 
 from DAJIN2.core.preprocess.midsv_caller import _has_inversion_in_splice
 from DAJIN2.core.preprocess.midsv_caller import extract_qname_of_map_ont
-from DAJIN2.core.preprocess.midsv_caller import replace_n_to_d
+from DAJIN2.core.preprocess.midsv_caller import replace_internal_n_to_d
 from DAJIN2.core.preprocess.midsv_caller import convert_flag_to_strand
 
 from pathlib import Path
@@ -105,58 +105,58 @@ def test_extract_qname_of_map_ont_real():
 ###########################################################
 
 
-def test_replace_n_to_d():
+def test_replace_internal_n_to_d():
     sequence = "XYZABCDEF"
 
     # 既存のテストケース
     midsv_samples = [{"CSSPLIT": "N,N,A,B,N,N"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "N,N,A,B,N,N"}]
 
     midsv_samples = [{"CSSPLIT": "A,B,N,N,C,D"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "A,B,-Z,-A,C,D"}]
 
     # 新しいテストケース
     # 1. Nが連続していない場合の置換
     midsv_samples = [{"CSSPLIT": "A,N,B,N,C"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "A,-Y,B,-A,C"}]
 
     # 2. Nが最初と最後に連続している場合
     midsv_samples = [{"CSSPLIT": "N,N,N,A,B,C,N,N"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "N,N,N,A,B,C,N,N"}]
 
     # 3. Nが複数回連続している場合の置換
     midsv_samples = [{"CSSPLIT": "A,B,N,N,C,N,N,D"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "A,B,-Z,-A,C,-C,-D,D"}]
 
     # 4. Nが1つだけ存在する場合の置換
     midsv_samples = [{"CSSPLIT": "A,B,N,C,D"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "A,B,-Z,C,D"}]
 
     # 5. Nが存在しない場合の確認
     midsv_samples = [{"CSSPLIT": "A,B,C,D,E"}]
-    result = list(replace_n_to_d(midsv_samples, sequence))
+    result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"CSSPLIT": "A,B,C,D,E"}]
 
 
-def test_replace_n_to_d_multiple_samples():
+def test_replace_internal_n_to_d_multiple_samples():
     midsv_sample = [{"CSSPLIT": "N,N,N,=A,N,=C,N,N"}, {"CSSPLIT": "N,N,=A,N,N,=C,=C,N"}]
     sequence = "GCAACCCC"
-    test = replace_n_to_d(midsv_sample, sequence)
+    test = replace_internal_n_to_d(midsv_sample, sequence)
     test = list(test)
     answer = [{"CSSPLIT": "N,N,N,=A,-C,=C,N,N"}, {"CSSPLIT": "N,N,=A,-A,-C,=C,=C,N"}]
     assert test == answer
 
 
-def test_replace_n_to_d_large_n():
+def test_replace_internal_n_to_d_large_n():
     midsv_sample = [{"CSSPLIT": "N,N,N,N,N,N,=C,N,=A"}]
     sequence = "GCAACCCCA"
-    test = replace_n_to_d(midsv_sample, sequence)
+    test = replace_internal_n_to_d(midsv_sample, sequence)
     test = list(test)
     answer = [{"CSSPLIT": "N,N,N,N,N,N,=C,-C,=A"}]
     assert test == answer

@@ -184,7 +184,11 @@ def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict) -> No
     for query in Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME).iterdir():
         sam = preprocess.mapping.to_sam(ref, query)
         sam = [s.split("\t") for s in sam]
-        midsv_sample = midsv.transform(sam, midsv=False, cssplit=True, qscore=False)[0]
+        try:
+            midsv_sample = midsv.transform(sam, midsv=True, cssplit=True, qscore=False)[0]
+        except AttributeError:
+            # if there is no alignments, continue
+            continue
         header = midsv_sample["QNAME"]
         cssplits = midsv_sample["CSSPLIT"].split(",")
         if GENOME_COODINATES.get("strand") == "-":

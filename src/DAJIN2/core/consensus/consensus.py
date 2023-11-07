@@ -14,19 +14,15 @@ from DAJIN2.utils.cssplits_handler import find_n_boundaries
 ###########################################################
 
 
-def _remove_nonconsecutive_n(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
-    """remove nonconsecutive N"""
-    cons_percentage_remove_n = []
-    n_left, n_right = find_n_boundaries([max(c, key=c.get) for c in cons_percentage])
-    for i, cons_per in enumerate(cons_percentage):
-        if n_left < i < n_right:
-            if not cons_per == {"N": 100}:
-                cons_per.pop("N", None)
-        cons_percentage_remove_n.append(cons_per)
-    return cons_percentage_remove_n
+def remove_all_n(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    for c in cons_percentage:
+        if c == {"N": 100}:
+            continue
+        _ = c.pop("N", None)
+    return cons_percentage
 
 
-def _update_percentage(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+def replace_sequence_errror(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
     """replace sequence error as distributing according to proportion of cs tags"""
     cons_percentage_update = []
     for cons_per in cons_percentage:
@@ -46,7 +42,20 @@ def _update_percentage(cons_percentage: list[dict[str, float]]) -> list[dict[str
     return cons_percentage_update
 
 
-def _call_percentage(cssplits: list[str], mutation_loci) -> list[dict[str, float]]:
+def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    adjusted_percentages = []
+
+    for percentage_dict in cons_percentage:
+        total = sum(percentage_dict.values())
+        scaling_factor = 100 / total
+
+        adjusted_dict = {key: value * scaling_factor for key, value in percentage_dict.items()}
+        adjusted_percentages.append(adjusted_dict)
+
+    return adjusted_percentages
+
+
+def call_percentage(cssplits: list[str], mutation_loci) -> list[dict[str, float]]:
     """call position weight matrix in defferent loci.
     - non defferent loci are annotated to "Match" or "Unknown(N)"
     - sequence errors are annotated to "SEQERROR"
@@ -61,9 +70,9 @@ def _call_percentage(cssplits: list[str], mutation_loci) -> list[dict[str, float
                 cs = "SEQERROR"
             count_cs[cs] += 1 / coverage * 100
         cons_percentage.append(dict(count_cs))
-    cons_percentage = _remove_nonconsecutive_n(cons_percentage)
-    cons_percentage = _update_percentage(cons_percentage)
-    return cons_percentage
+    cons_percentage = remove_all_n(cons_percentage)
+    cons_percentage = replace_sequence_errror(cons_percentage)
+    return adjust_to_100_percent(cons_percentage)
 
 
 ###########################################################
@@ -123,10 +132,10 @@ def call_consensus(
         clust = list(group)
         allele = clust[0]["ALLELE"]
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
+        cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
         with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle"), "rb") as p:
             mutation_loci = pickle.load(p)
-        cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
-        cons_percentage = _call_percentage(cssplits, mutation_loci)
+        cons_percentage = call_percentage(cssplits, mutation_loci)
         cons_percentages[key] = cons_percentage
         cons_sequences[key] = _call_sequence(cons_percentage)
     return cons_percentages, cons_sequences

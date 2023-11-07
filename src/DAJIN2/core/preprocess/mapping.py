@@ -85,30 +85,30 @@ def to_sam(
         yield record
 
 
-def output_sam(
-    TEMPDIR: Path,
-    path_fasta: str | Path,
-    name_fasta: str,
-    path_fastq: str | Path,
-    name_fastq: str,
-    preset: str = "map-ont",
-    threads: int = 1,
-):
-    sam = to_sam(path_fasta, path_fastq, preset=preset, threads=threads)
-    output_sam = Path(TEMPDIR, name_fastq, "sam", f"{preset}_{name_fasta}.sam")
-    output_sam.write_text("\n".join(sam))
-
-
 ########################################################################
 # main
 ########################################################################
 
 
-def generate_sam(temp_dir: Path, paths_fasta: list[str], path_fastq: str, name_fastq: str, threads: int) -> None:
+def generate_sam(ARGS, paths_fasta: list[str], is_control: bool = False, is_insertion: bool = False) -> None:
+    if is_control:
+        path_fastq = ARGS.path_control
+        name = ARGS.control_name
+    else:
+        path_fastq = ARGS.path_sample
+        name = ARGS.sample_name
+
+    out_directory = Path(ARGS.tempdir, name, "sam")
+
     for path_fasta in paths_fasta:
-        path_fasta = Path(path_fasta)
-        output_sam(temp_dir, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="map-ont", threads=threads)
-        output_sam(temp_dir, path_fasta, path_fasta.stem, path_fastq, name_fastq, preset="splice", threads=threads)
+        name_fasta = Path(path_fasta).stem
+        for preset in ["map-ont", "splice"]:
+            sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads)
+            if is_control and is_insertion:
+                path_sam = Path(out_directory, f"{preset}_{name_fasta}_{ARGS.sample_name}.sam")
+            else:
+                path_sam = Path(out_directory, f"{preset}_{name_fasta}.sam")
+            path_sam.write_text("\n".join(sam))
 
 
 ########################################################################
