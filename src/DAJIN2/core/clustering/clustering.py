@@ -38,9 +38,8 @@ def reduce_dimension(scores_sample: Generator[list], scores_control: Generator[l
 
 
 def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]:
-    n_components = min(20, coverage_sample + coverage_control)
     labels_prev = list(range(coverage_sample))
-    for i in range(1, n_components):
+    for i in range(1, coverage_sample):
         np.random.seed(seed=1)
         labels_all = GaussianMixture(n_components=i, random_state=1).fit_predict(X).tolist()
         labels_sample = labels_all[:coverage_sample]
