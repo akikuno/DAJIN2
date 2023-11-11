@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import re
-import numpy as np
 from pathlib import Path
 from typing import Generator
 from collections import defaultdict
 
+import numpy as np
 from scipy import stats
 from scipy.spatial import distance
-
 from sklearn.cluster import KMeans
 
 from DAJIN2.utils import io
@@ -51,6 +50,18 @@ def normalize_indels(count: dict[str, list[int]], coverages: list[int]) -> dict[
     return count_normalized
 
 
+def minimize_mutation_counts(
+    indels_control: dict[str, np.array], indels_sample: dict[str, np.array]
+) -> dict[str, np.array]:
+    """
+    In cases where control has a larger value than sample, adjust the value of sample to match that of control.
+    """
+    indels_control_minimized = dict()
+    for mut in {"+", "-", "*"}:
+        indels_control_minimized[mut] = np.minimum(indels_control[mut], indels_sample[mut])
+    return indels_control_minimized
+
+
 def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.array]:
     results = defaultdict(list)
     center = kmer // 2
@@ -69,7 +80,7 @@ def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.arra
 
 
 ###########################################################
-# Using Cosine similarity and T test to extract dissimilar Loci
+# Using Cosine similarity and T-test to extract dissimilar Loci
 ###########################################################
 
 
@@ -288,8 +299,10 @@ def extract_mutation_loci(ARGS, is_control: bool = False, is_insertion: bool = F
         if is_insertion:
             prefix = f"{allele}_{ARGS.sample_name}"
         indels_normalized_control = io.load_pickle(Path(path_mutation_control, f"{prefix}_normalized.pickle"))
-        indels_kmer_control = io.load_pickle(Path(path_mutation_control, f"{prefix}_kmer.pickle"))
+        # indels_kmer_control = io.load_pickle(Path(path_mutation_control, f"{prefix}_kmer.pickle"))
 
+        indels_normalized_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
+        indels_kmer_control = split_kmer(indels_normalized_control, kmer=11)
         # Extract candidate mutation loci
         dissimilar_loci = extract_dissimilar_loci(indels_kmer_sample, indels_kmer_control)
         anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_control)
