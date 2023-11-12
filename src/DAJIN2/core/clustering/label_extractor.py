@@ -16,7 +16,7 @@ import random
 from itertools import groupby
 
 from DAJIN2.core.clustering.score_handler import make_score, annotate_score
-from DAJIN2.core.clustering.label_handler import relabel_with_consective_order
+from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 from DAJIN2.core.clustering.clustering import reduce_dimension, optimize_labels, get_labels_removed_strand_bias
 
 
