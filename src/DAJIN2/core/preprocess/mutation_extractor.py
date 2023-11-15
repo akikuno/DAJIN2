@@ -232,7 +232,7 @@ def merge_index_of_consecutive_insertions(mutation_loci: dict[str, set[int]]) ->
 ###########################################################
 
 
-def process_data(path_midsv: Path, allele: str, sequence: str) -> tuple:
+def summarize_indels(path_midsv: Path, allele: str, sequence: str) -> tuple:
     """Returns indels, coverages, normalized indels, and kmer indels."""
     indels = count_indels(io.read_jsonl(path_midsv), sequence)
     coverages = call_coverage_of_each_base(io.read_jsonl(path_midsv), sequence)
@@ -245,7 +245,7 @@ def process_data(path_midsv: Path, allele: str, sequence: str) -> tuple:
 def merge_loci(dissimilar_loci: dict[str, set], anomal_loci: dict[str, set]) -> dict[str, set]:
     mutation_loci = dict()
     for mut in {"+", "-", "*"}:
-        mutation_loci[mut] = dissimilar_loci[mut] & anomal_loci[mut]
+        mutation_loci[mut] = dissimilar_loci[mut] | anomal_loci[mut]
     return mutation_loci
 
 
@@ -280,7 +280,7 @@ def extract_mutation_loci(ARGS, is_control: bool = False, is_insertion: bool = F
             if Path(path_mutation_control, f"{prefix}_count.pickle").exists():
                 continue
             path_midsv = Path(ARGS.tempdir, ARGS.control_name, "midsv", f"{prefix}.json")
-            indels_count, indels_normalized, indels_kmer = process_data(path_midsv, allele, sequence)
+            indels_count, indels_normalized, indels_kmer = summarize_indels(path_midsv, allele, sequence)
 
             # Save control data for later use
             io.save_pickle(indels_count, Path(path_mutation_control, f"{prefix}_count.pickle"))
@@ -293,7 +293,7 @@ def extract_mutation_loci(ARGS, is_control: bool = False, is_insertion: bool = F
             continue
 
         path_midsv = Path(ARGS.tempdir, ARGS.sample_name, "midsv", f"{allele}.json")
-        _, indels_normalized_sample, indels_kmer_sample = process_data(path_midsv, allele, sequence)
+        _, indels_normalized_sample, indels_kmer_sample = summarize_indels(path_midsv, allele, sequence)
 
         # Load indels_normalized_control and indels_kmer_control
         if is_insertion:
