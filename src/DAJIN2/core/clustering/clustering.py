@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-from DAJIN2.utils import io, config
+from DAJIN2.utils import config
 
 config.set_warnings()
 
-import numpy as np
-
-from pathlib import Path
 from itertools import chain
 from typing import Generator
 from collections import Counter
-from collections import defaultdict
 
+import numpy as np
 from sklearn import metrics
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-from sklearn.tree import DecisionTreeClassifier
 
 from DAJIN2.core.clustering.label_merger import merge_labels
 
@@ -57,93 +53,3 @@ def optimize_labels(X: np.array, coverage_sample, coverage_control) -> list[int]
             labels_results = labels_merged
         labels_prev = labels_merged
     return labels_results
-
-
-###############################################################################
-# Handle Strand bias
-# # Clusters of reads with mutations with strand bias are merged into similar clusters without strand bias
-###############################################################################
-
-
-def _count_strand(labels: list[int], samples: list[dict[str, str]]) -> tuple[defaultdict, defaultdict]:
-    """Count the occurrences of each strand type by label."""
-    count_strand_by_labels = defaultdict(int)
-    total_count_by_labels = defaultdict(int)
-
-    for label, sample in zip(labels, samples):
-        total_count_by_labels[label] += 1
-        if sample["STRAND"] == "+":
-            count_strand_by_labels[label] += 1
-
-    return count_strand_by_labels, total_count_by_labels
-
-
-def _calculate_strand_biases(
-    count_strand_by_labels: defaultdict, total_count_by_labels: defaultdict
-) -> dict[int, bool]:
-    """Calculate strand biases based on strand counts."""
-    strand_biases = {}
-    for label, total in total_count_by_labels.items():
-        strand_count = count_strand_by_labels[label]
-        strand_ratio = strand_count / total
-        strand_biases[label] = not (0.25 < strand_ratio < 0.75)
-
-    return strand_biases
-
-
-def _get_strand_biases_on_each_label(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
-    """Get strand biases for given labels and samples.
-    Args:
-        labels: A list of integer labels.
-        path_sample: The path to the sample file.
-    Returns:
-        A dictionary containing strand biases by label.
-    """
-    samples = io.read_jsonl(path_sample)
-    count_strand_by_labels, total_count_by_labels = _count_strand(labels, samples)
-    return _calculate_strand_biases(count_strand_by_labels, total_count_by_labels)
-
-
-def _prepare_training_testing_sets(labels, scores, strand_biases) -> tuple[list, list, list]:
-    x_train, y_train, x_test = [], [], []
-    for label, score in zip(labels, scores):
-        if strand_biases[label]:
-            x_test.append(score)
-        else:
-            x_train.append(score)
-            y_train.append(label)
-    return x_train, y_train, x_test
-
-
-def _train_decision_tree(x_train, y_train) -> DecisionTreeClassifier:
-    dtree = DecisionTreeClassifier(random_state=1)
-    dtree.fit(x_train, y_train)
-    return dtree
-
-
-def _allocate_labels(labels, strand_biases, dtree, x_test) -> list[int]:
-    label_predictions = dtree.predict(x_test)
-    label_predict_iter = iter(label_predictions)
-    for i, label in enumerate(labels):
-        if strand_biases[label]:
-            labels[i] = next(label_predict_iter)
-    return labels
-
-
-def _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) -> list[int]:
-    scores = io.read_jsonl(path_score_sample)
-    x_train, y_train, x_test = _prepare_training_testing_sets(labels, scores, strand_biases)
-    dtree = _train_decision_tree(x_train, y_train)
-    return _allocate_labels(labels, strand_biases, dtree, x_test)
-
-
-def get_labels_removed_strand_bias(path_sample, path_score_sample, labels) -> list[int]:
-    strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
-    # Until there is at least one True and one False or
-    # 1000 iterations (1000 is a suitable number to exit an infinite loop just in case)
-    i = 0
-    while len(Counter(strand_biases.values())) > 1 and i < 1000:
-        labels = _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases)
-        strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
-        i += 1
-    return labels

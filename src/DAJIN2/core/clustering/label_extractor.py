@@ -17,23 +17,8 @@ from itertools import groupby
 
 from DAJIN2.core.clustering.score_handler import make_score, annotate_score
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
-from DAJIN2.core.clustering.clustering import reduce_dimension, optimize_labels, get_labels_removed_strand_bias
-
-
-# Constants
-STRAND_BIAS_LOWER_LIMIT = 0.25
-STRAND_BIAS_UPPER_LIMIT = 0.75
-
-
-def is_strand_bias(path_control: Path) -> bool:
-    count_strand = defaultdict(int)
-    for m in io.read_jsonl(path_control):
-        count_strand[m["STRAND"]] += 1
-
-    total = count_strand["+"] + count_strand["-"]
-    percentage_plus = count_strand["+"] / total if total else 0
-
-    return not (STRAND_BIAS_LOWER_LIMIT < percentage_plus < STRAND_BIAS_UPPER_LIMIT)
+from DAJIN2.core.clustering.clustering import reduce_dimension, optimize_labels
+from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias, remove_biased_clusters
 
 
 def get_label_most_common(labels: list[int]) -> int:
@@ -60,7 +45,7 @@ def return_labels(
     labels = optimize_labels(X, coverage_sample, coverage_control)
     # correct clusters with strand bias
     if strand_bias is False:
-        labels = get_labels_removed_strand_bias(path_sample, path_score_sample, labels)
+        labels = remove_biased_clusters(path_sample, path_score_sample, labels)
     return labels
 
 
