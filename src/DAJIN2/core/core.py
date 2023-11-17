@@ -61,7 +61,7 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
     }
     if genome_urls["genome"]:
         if is_cache_genome:
-            genome_coordinates = list(io.read_jsonl(Path(tempdir, "cache", "genome_coodinates.jsonl")))[0]
+            genome_coordinates = list(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))[0]
         else:
             genome_coordinates = preprocess.genome_fetcher.fetch_coordinates(
                 genome_coordinates, genome_urls, fasta_alleles["control"]
@@ -69,7 +69,7 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
             genome_coordinates["chrom_size"] = preprocess.genome_fetcher.fetch_chromosome_size(
                 genome_coordinates, genome_urls
             )
-            io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coodinates.jsonl"))
+            io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
     return genome_coordinates
 
 
@@ -279,7 +279,7 @@ def execute_sample(arguments: dict):
     # HTML
     report.report_files.to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)
-    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates)
+    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
     # BAM
     report.report_bam.output_bam(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE)
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
