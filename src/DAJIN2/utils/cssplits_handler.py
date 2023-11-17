@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 
 
 def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
@@ -19,6 +20,54 @@ def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
         right_idx_n -= 1
 
     return left_idx_n - 1, right_idx_n + 1
+
+
+###########################################################
+# reverse complement to cssplits
+###########################################################
+
+
+def _reverse_cssplits(cssplits: list) -> list:
+    for i, cs in enumerate(cssplits):
+        if cs.startswith("+"):
+            cssplits[i] = "+" + "|".join(cs.split("|")[::-1])
+    return cssplits[::-1]
+
+
+def _realign_insertion(cssplits: list) -> list:
+    for i, cs in enumerate(cssplits):
+        if not cs.startswith("+"):
+            continue
+        if re.search(rf"[{cs[1]}]", "[ACGTacgt]"):
+            continue
+        if i + 1 == len(cssplits):
+            continue
+        cs_current = cs.split("|")
+        cssplits[i] = cs_current[0].replace("+", "")
+        cssplits[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + cssplits[i + 1]
+    return cssplits
+
+
+def _complement_cssplit(cssplits: list) -> list:
+    comp = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N", "a": "t", "c": "g", "g": "c", "t": "a", "n": "n"}
+    for i, cs in enumerate(cssplits):
+        op = cs[0]
+        if op == "*":
+            cssplits[i] = op + comp[cs[1]] + comp[cs[2]]
+        elif op == "+":
+            cssplits[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|"))
+        else:  # Match or Deletion or N
+            cssplits[i] = op + comp[cs[-1]]
+        cssplits[i] = cssplits[i].replace("NN", "N")
+        cssplits[i] = cssplits[i].replace("nn", "n")
+    return cssplits
+
+
+def revcomp_cssplits(cssplits: list[str]) -> list[str]:
+    cssplits_reversed = _reverse_cssplits(cssplits)
+    cssplits_realigned = _realign_insertion(cssplits_reversed)
+    cssplits_revcomped = _complement_cssplit(cssplits_realigned)
+    return cssplits_revcomped
 
 
 ###########################################################
