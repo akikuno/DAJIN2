@@ -8,8 +8,8 @@ from DAJIN2.utils import io
 
 
 # Constants
-STRAND_BIAS_LOWER_LIMIT = 0.25
-STRAND_BIAS_UPPER_LIMIT = 0.75
+STRAND_BIAS_LOWER_LIMIT = 0.1
+STRAND_BIAS_UPPER_LIMIT = 0.9
 
 
 def is_strand_bias(path_control: Path) -> bool:
@@ -106,8 +106,9 @@ def remove_biased_clusters(path_sample, path_score_sample, labels) -> list[int]:
     # Until there is at least one True and one False or
     # 1000 iterations (1000 is a suitable number to exit an infinite loop just in case)
     i = 0
+    labels_corrected = labels
     while len(Counter(strand_biases.values())) > 1 and i < 1000:
-        labels = _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases)
-        strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
+        labels_corrected = _correct_clusters_with_strand_bias(path_score_sample, labels_corrected, strand_biases)
+        strand_biases = _get_strand_biases_on_each_label(labels_corrected, path_sample)
         i += 1
-    return labels
+    return labels_corrected
