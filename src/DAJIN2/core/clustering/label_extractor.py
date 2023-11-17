@@ -4,49 +4,14 @@ from DAJIN2.utils import io, config
 
 config.set_warnings()
 
-import numpy as np
-
 from pathlib import Path
-from collections import Counter
-from collections import defaultdict
-
-from sklearn.mixture import GaussianMixture
-
 import random
 from itertools import groupby
 
 from DAJIN2.core.clustering.score_handler import make_score, annotate_score
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
-from DAJIN2.core.clustering.clustering import reduce_dimension, optimize_labels
-from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias, remove_biased_clusters
-
-
-def get_label_most_common(labels: list[int]) -> int:
-    return Counter(labels).most_common()[0][0]
-
-
-def subset_scores(labels: list[int], scores: list[int], label_most: int, length: int = 1000) -> list[int]:
-    subset = [score for label, score in zip(labels, scores) if label == label_most]
-    return subset[:length]
-
-
-def return_labels(
-    path_score_sample: Path | str, path_score_control: Path | str, path_sample: Path | str, strand_bias: bool
-) -> list[int]:
-    np.random.seed(seed=1)
-    X_control = reduce_dimension([], io.read_jsonl(path_score_control))
-    # subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
-    labels_control = GaussianMixture(n_components=2, random_state=1).fit_predict(X_control)
-    label_most_common = get_label_most_common(labels_control)
-    scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
-    X = reduce_dimension(io.read_jsonl(path_score_sample), scores_control_subset)
-    coverage_sample = io.count_newlines(path_score_sample)
-    coverage_control = len(scores_control_subset)
-    labels = optimize_labels(X, coverage_sample, coverage_control)
-    # correct clusters with strand bias
-    if strand_bias is False:
-        labels = remove_biased_clusters(path_sample, path_score_sample, labels)
-    return labels
+from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias
+from DAJIN2.core.clustering.clustering import return_labels
 
 
 def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:

@@ -7,6 +7,11 @@ from collections import Counter
 from DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 
 
+def subset_scores(labels: list[int], scores: list[int], label_most: int, length: int = 1000) -> list[int]:
+    subset = [score for label, score in zip(labels, scores) if label == label_most]
+    return subset[:length]
+
+
 def call_count(cssplits: Generator[list[str]]) -> list[dict[str, int]]:
     return [dict(Counter(cssplit)) for cssplit in zip(*cssplits)]
 
