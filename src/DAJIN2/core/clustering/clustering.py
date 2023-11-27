@@ -4,6 +4,9 @@ from DAJIN2.utils import io, config
 
 config.set_warnings()
 
+# prevent BLAS from using all cores
+config.set_single_threaded_blas()
+
 from pathlib import Path
 from itertools import chain
 

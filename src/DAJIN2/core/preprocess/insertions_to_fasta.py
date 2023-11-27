@@ -3,8 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from itertools import groupby
 from collections import defaultdict
-
 from typing import Generator
+
+from DAJIN2.utils import io, config
+
+# prevent BLAS from using all cores
+config.set_single_threaded_blas()
 
 import numpy as np
 from sklearn import metrics
@@ -12,7 +16,6 @@ from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
-from DAJIN2.utils import io
 
 ###########################################################
 # Detect insertion sequences
@@ -296,6 +299,8 @@ def filter_consensus(consensus_sequence_insertion: dict[int, str], FASTA_ALLELES
     """Filter similar insertions compared to control sequence"""
     unique_insertions = set(consensus_sequence_insertion.values())
     for query in FASTA_ALLELES.values():
+        if unique_insertions == set():
+            break
         seqs, mismatches, _ = zip(*process.extract_iter(query, unique_insertions, scorer=DamerauLevenshtein.distance))
         for seq, mismatch in zip(seqs, mismatches):
             if mismatch <= 10:

@@ -5,12 +5,16 @@ from pathlib import Path
 from typing import Generator
 from collections import defaultdict
 
+from DAJIN2.utils import io, config
+
+# prevent BLAS from using all cores
+config.set_single_threaded_blas()
+
 import numpy as np
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.cluster import KMeans
 
-from DAJIN2.utils import io
 from DAJIN2.core.preprocess import homopolymer_handler
 
 
