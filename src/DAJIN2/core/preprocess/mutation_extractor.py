@@ -194,8 +194,10 @@ def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> 
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
-        log2_subtract = transform_log2(values_sample - values_control)
-        idx_outliers = detect_anomalies(log2_subtract)
+        values_subtract = values_sample - values_control
+        idx_outliers = detect_anomalies(values_subtract.reshape(-1, 1))
+        # log2_subtract = transform_log2(values_sample - values_control)
+        # idx_outliers = detect_anomalies(log2_subtract)
         results[mut] = merge_surrounding_index(idx_outliers)
     return results
 
