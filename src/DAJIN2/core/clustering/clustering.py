@@ -57,7 +57,7 @@ def optimize_labels(X: spmatrix, coverage_sample, coverage_control) -> list[int]
         num_labels_control = sum(1 for reads in count_control.values() if reads / coverage_control > 0.01)
         mutual_info = metrics.adjusted_rand_score(labels_results, labels_merged)
         # Report the number of clusters in SAMPLE when the number of clusters in CONTROL is split into more than one.
-        if num_labels_control > 1 or 0.95 < mutual_info < 1.0:
+        if num_labels_control >= 2 or 0.95 <= mutual_info <= 1.0:
             return labels_results
         else:
             labels_results = labels_merged
