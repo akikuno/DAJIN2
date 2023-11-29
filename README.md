@@ -38,7 +38,7 @@ conda install -c bioconda DAJIN2
 pip install DAJIN2
 ```
 
-> **Warning**  
+> [!CAUTION]
 > If you encounter the error **Failed to build mappy** when installing DAJIN2 from pip, please install `gcc` and `zlib`.  
 > `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
 > `brew install gcc zlib` (macOS)
@@ -192,7 +192,7 @@ DAJIN_Results/tyr-substitution
 
 The BAM directory contains the BAM files of reads classified per allele.  
 
-> **Note**  
+> [!NOTE]
 > Specifying a reference genome using the `genome` option will align the reads to that genome.  
 > Without `genome` options, the reads will align to the control allele within the input FASTA file.
 
@@ -223,7 +223,7 @@ Additionally, the types of **Allele type** include:
 
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
-> **Warning**  
+> [!WARNING]
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
