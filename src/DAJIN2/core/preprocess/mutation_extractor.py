@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import re
+import warnings
 from pathlib import Path
 from typing import Generator
 from collections import defaultdict
 
+# To suppress warnings from scipy.wilcoxon: UserWarning: Exact p-value calculation does not work if there are zeros.
+warnings.simplefilter("ignore")
+
 from DAJIN2.utils import io, config
 
-# prevent BLAS from using all cores
 config.set_single_threaded_blas()
 
 import numpy as np
@@ -100,16 +103,23 @@ def calculate_cosine_similarities(values_sample: list[float], values_control: li
     return [1 - distance.cosine(x + 1e-10, y + 1e-10) for x, y in zip(values_sample, values_control)]
 
 
-def perform_t_tests(values_sample: list[float], values_control: list[float]) -> list[float]:
-    """
-    Perform T-tests between sample and control values.
+# def perform_t_tests(values_sample: list[float], values_control: list[float]) -> list[float]:
+#     """
+#     Perform T-tests between sample and control values.
 
-    If the variance of the samples or control is zero, the p-value of the t-test is NaN.
-    In this function, we replace such NaN values with 1, implying that the two samples are similar
-    (since a p-value of 1 indicates no statistical difference).
+#     If the variance of the samples or control is zero, the p-value of the t-test is NaN.
+#     In this function, we replace such NaN values with 1, implying that the two samples are similar
+#     (since a p-value of 1 indicates no statistical difference).
+#     """
+#     t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
+#     return [1 if np.isnan(t) else t for t in t_pvalues]
+
+
+def perform_statistics(values_sample: list[float], values_control: list[float]) -> list[float]:
     """
-    t_pvalues = [stats.ttest_ind(x, y, equal_var=False)[1] for x, y in zip(values_sample, values_control)]
-    return [1 if np.isnan(t) else t for t in t_pvalues]
+    Perform statistics between sample and control values.
+    """
+    return [1 if np.array_equal(x, y) else stats.wilcoxon(x, y)[1] for x, y in zip(values_sample, values_control)]
 
 
 def find_dissimilar_indices(cossims: list[float], t_pvalues: list[float]) -> set[int]:
@@ -135,9 +145,10 @@ def extract_dissimilar_loci(
         values_control = indels_kmer_control[mut]
 
         cossims = calculate_cosine_similarities(values_sample, values_control)
-        t_pvalues = perform_t_tests(values_sample, values_control)
+        pvalues = perform_statistics(values_sample, values_control)
+        # pvalues = perform_t_tests(values_sample, values_control)
 
-        results[mut] = find_dissimilar_indices(cossims, t_pvalues)
+        results[mut] = find_dissimilar_indices(cossims, pvalues)
 
     return results
 
@@ -158,17 +169,21 @@ def transform_log2(values: np.array) -> np.array:
 
 
 def merge_surrounding_index(idx_outliers: list[int]) -> set[int]:
-    """If an outlier is found in an adjacent 5-mer, the area is also judged as an outlier."""
+    """
+    Merges indices of outliers if they are within 5 positions of each other.
+    This considers a sequence of indices as a single outlier region.
+    """
     idx_merged = set()
-    for i, idx_curr in enumerate(idx_outliers):
-        if i + 1 == len(idx_outliers):
-            break
-        idx_next = idx_outliers[i + 1]
-        if idx_next - idx_curr <= 5:
-            for j in range(idx_curr, idx_next + 1):
-                idx_merged.add(j)
+    for i in range(len(idx_outliers) - 1):
+        current_idx, next_idx = idx_outliers[i], idx_outliers[i + 1]
+
+        # If the next index is within 5 positions, merge the range
+        if next_idx - current_idx <= 5:
+            idx_merged.update(range(current_idx, next_idx + 1))
         else:
-            idx_merged.add(idx_curr)
+            idx_merged.add(current_idx)
+    # Ensure the last index is always included
+    idx_merged.add(idx_outliers[-1])
     return idx_merged
 
 
@@ -198,7 +213,7 @@ def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> 
         idx_outliers = detect_anomalies(values_subtract.reshape(-1, 1))
         # log2_subtract = transform_log2(values_sample - values_control)
         # idx_outliers = detect_anomalies(log2_subtract)
-        results[mut] = merge_surrounding_index(idx_outliers)
+        results[mut] = merge_surrounding_index(idx_outliers) if idx_outliers else set()
     return results
 
 
