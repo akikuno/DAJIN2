@@ -10,7 +10,6 @@ config.set_single_threaded_blas()
 from pathlib import Path
 from itertools import chain
 
-# from typing import Generator
 from collections import Counter
 
 import numpy as np
@@ -29,24 +28,25 @@ from DAJIN2.core.clustering.strand_bias_handler import remove_biased_clusters
 
 
 def optimize_labels(X: spmatrix, coverage_sample, coverage_control) -> list[int]:
-    labels_results = list(range(coverage_sample))
+    labels_previous = list(range(coverage_sample))
     for i in range(1, coverage_sample):
         np.random.seed(seed=1)
         labels_all = KMeans(n_clusters=i, random_state=1, n_init="auto").fit_predict(X).tolist()
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
-        labels_merged = merge_labels(labels_control, labels_sample)
-        # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_merged))  # ! DEBUG
+        labels_current = merge_labels(labels_control, labels_sample)
+        # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_current))  # ! DEBUG
         # Reads < 1% in the control are considered clustering errors and are not counted
         count_control = Counter(labels_control)
         num_labels_control = sum(1 for reads in count_control.values() if reads / coverage_control > 0.01)
-        mutual_info = metrics.adjusted_rand_score(labels_results, labels_merged)
+        mutual_info = metrics.adjusted_rand_score(labels_previous, labels_current)
         # Report the number of clusters in SAMPLE when the number of clusters in CONTROL is split into more than one.
-        if num_labels_control >= 2 or 0.95 <= mutual_info <= 1.0:
-            return labels_results
-        else:
-            labels_results = labels_merged
-    return labels_results
+        if num_labels_control >= 2:
+            return labels_previous
+        if 0.95 <= mutual_info <= 1.0:
+            return labels_current
+        labels_previous = labels_current
+    return labels_previous
 
 
 def get_label_most_common(labels: list[int]) -> int:
@@ -70,4 +70,3 @@ def return_labels(path_score_sample: Path, path_score_control: Path, path_sample
     if strand_bias is False:
         labels = remove_biased_clusters(path_sample, path_score_sample, labels)
     return labels
-
