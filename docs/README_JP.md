@@ -10,7 +10,7 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-DAJIN2は、ゲノム編集技術で作製された動物の遺伝型を解析するためのソフトウェアです。
+DAJIN2は、ナノポアロングシーケンシング技術を活用した、ゲノム編集サンプルのジェノタイピングツールです。
 
 ## 🌟 特徴
 
@@ -18,12 +18,6 @@ DAJIN2は、ゲノム編集技術で作製された動物の遺伝型を解析�
 - ゲノム編集結果を可視化し、直観的に確認することができます。  
 - 多サンプル処理が可能です。  
 
-
-## ⚠️ 諸注意
-
-DAJIN2は開発段階のツールです。  
-点変異、欠失、挿入(flox)に関する基本的なテストは完了していますが、複雑な編集（例：逆位）には対応していません。  
-ご利用中にエラーに遭遇した場合、お手数ですが[Issues](https://github.com/akikuno/DAJIN2/issues)からご報告をお願いします（日本語でも構いません）。  
 
 ## 🛠 インストール
 
@@ -39,31 +33,28 @@ conda install -c bioconda DAJIN2
 pip install DAJIN2
 ```
 
-> **Warning**  
-> pip経由でインストールすると、`Failed to build mappy`というエラーが出ることがあります。  
-> 下記のコードで`gcc`と`zlib`をインストールしたのちに、再度DAJIN2のインストールを行ってください。  
-> `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
-> `brew install gcc zlib` (macOS)
-```
+> [!CAUTION]
+> インストールに問題が発生した場合は、[トラブルシューティングガイド](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)をご覧ください。
 
 
-## 💡 使用法
+## 💡 使用方法
 
-### 単一サンプルの解析
+### 単一サンプル解析
 
 単一サンプル（サンプルのFASTQとコントロールのFASTQ）の解析手順は以下の通りです。
 
 
 ```bash
-DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
+DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
+  [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
-options:
+引数:
   -s, --sample              Path to a sample FASTQ file
   -c, --control             Path to a control FASTQ file
   -a, --allele              Path to a FASTA file
   -n, --name                Output directory name
-  -g, --genome (Optional)   Reference genome ID (e.g hg38, mm39) [default: '']
-  -t, --threads (Optional)  Number of threads [default: 1]
+  -g, --genome (オプション)   Reference genome ID (e.g hg38, mm39) [default: '']
+  -t, --threads (オプション)  Number of threads [default: 1]
   -h, --help                show this help message
   -v, --version             show the version number
 ```
@@ -102,15 +93,16 @@ DAJIN2 \
 
 `batch`サブコマンドを利用することで、複数のFASTQファイルを同時に処理することができます。  
 この際、サンプル情報をまとめたCSVファイルやExcelファイルが必要となります。  
-具体例としては、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)を参照してください。
+> [!NOTE]
+> サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。
 
 
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 
-options:
+引数:
   -f, --file                Path to a CSV or Excel file
-  -t, --threads (Optional)  Number of threads [default: 1]
+  -t, --threads (オプション)  Number of threads [default: 1]
   -h, --help                Show this help message
 ```
 
@@ -186,7 +178,7 @@ DAJIN_Results/tyr-substitution
 
 BAMディレクトリには、入力のFASTQと、アレルごとに分類されたreadsのBAMファイルが格納されています。  
 
-> **Note**  
+> [!NOTE]  
 > `genome`オプションで参照ゲノムを指定すると、その参照ゲノムにアライメントされます。  
 > 指定がない場合、入力のFASTAファイルのcontrolアレルにアライメントされます。
 
@@ -224,7 +216,7 @@ read_plot.html および read_plot.pdf は、各アレルの割合を図示し�
 
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
-> **Warning**  
+> [!WARNING]  
 > PCRアンプリコンのシーケンシングでは、増幅バイアスのため、**% of reads**が実際のアレルの割合と一致しないことがあります。  
 > 特に大型の欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映していない可能性が高まります。
 
@@ -237,3 +229,17 @@ read_plot.html および read_plot.pdf は、各アレルの割合を図示し�
 ## 📄 参考文献
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
+
+
+## 📣フィードバック
+
+
+質問、バグ報告、その他のフィードバックについて、皆さまからのご意見をお待ちしています。  
+報告には [GitHub Issues](https://github.com/akikuno/DAJIN2/issues) をご利用ください。  
+
+コントリビューションの方法については、[CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) をご参照してください。
+
+## 🤝 コントリビューター行動規範
+
+このプロジェクトは [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)（コントリビューター行動規範）に基づいて公開されています。
+このプロジェクトに参加することにより、その規約を遵守することに同意したことになります。
