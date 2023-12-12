@@ -42,7 +42,8 @@ pip install DAJIN2
 DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
-DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
+DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
+  [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 options:
   -s, --sample              Path to a sample FASTQ file
