@@ -35,9 +35,9 @@ def execute(name: str):
     params_reference = dict()
     path_genome = Path(DIR_IGVJS, "genome_symbol.txt")
     if path_genome.exists():
-        path_coodinates = Path(DIR_IGVJS, "genome_coodinates.jsonl")
+        path_coordinates = Path(DIR_IGVJS, "genome_coordinates.jsonl")
         GENOME = path_genome.read_text().strip()
-        CHROME, START, END, _ = eval(path_coodinates.read_text().strip()).values()
+        CHROME, START, END, _ = eval(path_coordinates.read_text().strip()).values()
         params_genome = {"genome": {"exist": True, "genome": GENOME, "locus": f"{CHROME}:{START}-{END}"}}
     else:
         params_reference = {"reference": {"urlfa": "control.fasta", "urlfai": "control.fasta" + ".fai"}}

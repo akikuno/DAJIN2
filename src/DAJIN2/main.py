@@ -5,10 +5,6 @@ from DAJIN2.utils import config
 # prevent BLAS from using all cores
 config.set_single_threaded_blas()
 
-# # set logging to export log to stderr and file
-# path_logfile = config.get_logfile()
-# config.set_logging(path_logfile)
-
 import sys
 import shutil
 import argparse
@@ -20,7 +16,7 @@ from DAJIN2.core import core
 from DAJIN2.utils import config, io, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.3.3"
+DAJIN_VERSION = "0.3.4"
 
 
 def generate_report(name: str) -> None:

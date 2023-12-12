@@ -2,10 +2,11 @@ import pytest
 
 from src.DAJIN2.core.consensus.consensus import (
     # _remove_nonconsecutive_n,
-    replace_sequence_errror,
+    replace_sequence_error,
+    adjust_to_100_percent,
     call_percentage,
-    _process_base,
-    _call_sequence,
+    cstag_to_base,
+    call_sequence,
 )
 
 
@@ -34,10 +35,22 @@ from src.DAJIN2.core.consensus.consensus import (
 #     assert result == expected_output
 
 
-def test_replace_sequence_errror():
+def test_replace_sequence_error():
     cons_percentage = [{"A": 25, "C": 25, "SEQERROR": 50}, {"SEQERROR": 100}]
-    expected_output = [{"A": 50, "C": 50}, {"N": 100}]
-    assert replace_sequence_errror(cons_percentage) == expected_output
+    expected_output = [{"A": 25, "C": 25}, {"N": 100}]
+    assert replace_sequence_error(cons_percentage) == expected_output
+
+
+def test_adjust_to_100_percent():
+    test = [{"A": 25, "C": 25}, {"N": 100}]
+    expected = [{"A": 50, "C": 50}, {"N": 100}]
+    assert adjust_to_100_percent(test) == expected
+
+
+def test_adjust_to_100_percent_float():
+    test = [{"A": 20.1, "C": 19.9}]
+    expected = [{"A": 50.25, "C": 49.75}]
+    assert adjust_to_100_percent(test) == expected
 
 
 def test_call_percentage():
@@ -52,7 +65,7 @@ def test_call_percentage():
 ###########################################################
 
 
-# Example test cases for _process_base function
+# Example test cases for cstag_to_base function
 @pytest.mark.parametrize(
     "cons, expected_output",
     [
@@ -68,8 +81,8 @@ def test_call_percentage():
         ("", ""),
     ],
 )
-def test_process_base(cons, expected_output):
-    result = _process_base(cons)
+def test_cstag_to_base(cons, expected_output):
+    result = cstag_to_base(cons)
     assert result == expected_output
 
 
@@ -88,5 +101,5 @@ def test_process_base(cons, expected_output):
     ],
 )
 def test_call_sequence(cons_percentage_by_key, expected_sequence):
-    result_sequence = _call_sequence(cons_percentage_by_key)
+    result_sequence = call_sequence(cons_percentage_by_key)
     assert result_sequence == expected_sequence

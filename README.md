@@ -16,13 +16,6 @@ DAJIN2 is a genotyping software designed for organisms that have undergone genom
 
 The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
 
-## 🙏 Feedbacks
-
-DAJIN2 is still in the development phase.  
-Basic tests covering point mutations, deletions, and insertion designs have been conducted.  
-If you encounter any bugs or issues, please report them via [Issues](https://github.com/akikuno/DAJIN2/issues).  
-
-
 
 ## 🛠 Installation
 
@@ -38,20 +31,8 @@ conda install -c bioconda DAJIN2
 pip install DAJIN2
 ```
 
-> **Warning**  
-> If you encounter the error **Failed to build mappy** when installing DAJIN2 from pip, please install `gcc` and `zlib`.  
-> `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
-> `brew install gcc zlib` (macOS)
-
-<!-- ```bash
-# Ubuntu
-sudo apt install gcc zlib1g zlib1g-dev
-```
-
-```bash
-# macOS
-brew install gcc zlib
-``` -->
+> [!CAUTION]
+> If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
 
 
 ## 💡 Usage
@@ -61,7 +42,8 @@ brew install gcc zlib
 DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
-DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
+DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
+  [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 options:
   -s, --sample              Path to a sample FASTQ file
@@ -192,7 +174,7 @@ DAJIN_Results/tyr-substitution
 
 The BAM directory contains the BAM files of reads classified per allele.  
 
-> **Note**  
+> [!NOTE]
 > Specifying a reference genome using the `genome` option will align the reads to that genome.  
 > Without `genome` options, the reads will align to the control allele within the input FASTA file.
 
@@ -223,7 +205,7 @@ Additionally, the types of **Allele type** include:
 
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
-> **Warning**  
+> [!WARNING]
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
@@ -238,3 +220,16 @@ Additionally, the types of **Allele type** include:
 For more information, please refer to the following publication:
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
+
+
+## 📣Feedback and Support
+
+For questions, bug reports, or other forms of feedback, we'd love to hear from you!  
+Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues) for all reporting purposes.  
+
+Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
+
+## 🤝 Code of Conduct
+
+Please note that this project is released with a [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md).  
+By participating in this project you agree to abide by its terms.  
