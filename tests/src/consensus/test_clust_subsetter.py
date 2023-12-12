@@ -1,4 +1,4 @@
-from DAJIN2.core.consensus.clust_subsetter import subset_clust
+from DAJIN2.core.consensus.clust_formatter import subset_clust
 
 
 def test_basic_subset_clust():
