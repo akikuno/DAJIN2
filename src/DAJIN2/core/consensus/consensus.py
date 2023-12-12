@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import pickle
-
 from pathlib import Path
 from typing import NamedTuple
 from itertools import groupby
 from collections import defaultdict
 
+from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import find_n_boundaries
+
 
 ###########################################################
 # call position weight matrix (cons_pergentage)
@@ -26,9 +26,10 @@ def convert_to_percentage(cssplits: list[list[str]], mutation_loci: list[set[str
     for cs_transposed, mut_loci in zip(cssplits_transposed, mutation_loci):
         count_cs = defaultdict(float)
         for cs in cs_transposed:
-            # Annotate as "SEQERROR" if the condition is met
-            if cs[0] in {"+", "-", "*"} and cs[0] not in mut_loci:
-                cs = "SEQERROR"
+            operator = cs[0]
+            if operator in {"+", "-", "*"}:
+                if operator not in mut_loci:
+                    cs = "SEQERROR"
             count_cs[cs] += 1 / coverage * 100
         cons_percentage.append(dict(count_cs))
 
@@ -132,22 +133,21 @@ class ConsensusKey(NamedTuple):
 
 
 def call_consensus(
-    TEMPDIR: Path, SAMPLE_NAME: str, clust_sample: list[dict]
+    tempdir: Path, sample_name: str, clust_sample: list[dict]
 ) -> tuple[defaultdict[list], defaultdict[str]]:
     cons_percentages = defaultdict(list)
     cons_sequences = defaultdict(str)
-    mutation_loci_cache = dict()
-    clust_sample.sort(key=lambda x: x["LABEL"])
-    for label, group in groupby(clust_sample, key=lambda x: x["LABEL"]):
+
+    path_consensus = Path(tempdir, sample_name, "consensus")
+
+    clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
+    for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
-        allele = clust[0]["ALLELE"]
+
+        prefix = f"clust_{allele}_{label}"
+        mutation_loci = io.load_pickle(Path(path_consensus, f"{prefix}_mutation_loci.pickle"))
+
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
-
-        if allele not in mutation_loci_cache:
-            with open(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle"), "rb") as p:
-                mutation_loci_cache[allele] = pickle.load(p)
-        mutation_loci = mutation_loci_cache[allele]
-
         cons_percentage = call_percentage(cssplits, mutation_loci)
 
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
