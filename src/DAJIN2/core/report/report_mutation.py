@@ -1,59 +1,12 @@
 from __future__ import annotations
 
-import re
-import midsv
 
 from pathlib import Path
 from itertools import groupby
-from DAJIN2.core import preprocess
+from DAJIN2.utils.cssplits_handler import revcomp_cssplits
 
-###########################################################
-# reverse complement to cssplits
-###########################################################
-
-
-def _reverse_cssplits(cssplits: list) -> list:
-    for i, cs in enumerate(cssplits):
-        if cs.startswith("+"):
-            cssplits[i] = "+" + "|".join(cs.split("|")[::-1])
-    return cssplits[::-1]
-
-
-def _realign_insertion(cssplits: list) -> list:
-    for i, cs in enumerate(cssplits):
-        if not cs.startswith("+"):
-            continue
-        if re.search(rf"[{cs[1]}]", "[ACGTacgt]"):
-            continue
-        if i + 1 == len(cssplits):
-            continue
-        cs_current = cs.split("|")
-        cssplits[i] = cs_current[0].replace("+", "")
-        cssplits[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + cssplits[i + 1]
-    return cssplits
-
-
-def _complement_cssplit(cssplits: list) -> list:
-    comp = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N", "a": "t", "c": "g", "g": "c", "t": "a", "n": "n"}
-    for i, cs in enumerate(cssplits):
-        op = cs[0]
-        if op == "*":
-            cssplits[i] = op + comp[cs[1]] + comp[cs[2]]
-        elif op == "+":
-            cssplits[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|"))
-        else:  # Match or Deletion or N
-            cssplits[i] = op + comp[cs[-1]]
-        cssplits[i] = cssplits[i].replace("NN", "N")
-        cssplits[i] = cssplits[i].replace("nn", "n")
-    return cssplits
-
-
-def revcomp_cssplits(cssplits: list[str]) -> list[str]:
-    cssplits_reversed = _reverse_cssplits(cssplits)
-    cssplits_realigned = _realign_insertion(cssplits_reversed)
-    cssplits_revcomped = _complement_cssplit(cssplits_realigned)
-    return cssplits_revcomped
-
+# import midsv
+# from DAJIN2.core import preprocess
 
 ###########################################################
 # group by mutation
@@ -150,10 +103,10 @@ def _handle_unknown(group, genome, start, end, header, chromosome):
     return result, start, end
 
 
-def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
-    genome = GENOME_COODINATES["genome"]
-    chromosome = GENOME_COODINATES["chrom"]
-    start = end = GENOME_COODINATES["start"]
+def report_mutations(cssplits_grouped, GENOME_COORDINATES, header):
+    genome = GENOME_COORDINATES["genome"]
+    chromosome = GENOME_COORDINATES["chrom"]
+    start = end = GENOME_COORDINATES["start"]
     handlers = {
         "=": _handle_match,
         "*": _handle_substitution,
@@ -178,24 +131,15 @@ def report_mutations(cssplits_grouped, GENOME_COODINATES, header):
 ###########################################################
 
 
-def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COODINATES: dict) -> None:
+def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_percentage: dict[list]) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
-    ref = Path(TEMPDIR, SAMPLE_NAME, "fasta", "control.fasta")
-    for query in Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME).iterdir():
-        sam = preprocess.mapping.to_sam(ref, query)
-        sam = [s.split("\t") for s in sam]
-        try:
-            midsv_sample = midsv.transform(sam, midsv=True, cssplit=True, qscore=False)[0]
-        except AttributeError:
-            # if there is no alignments, continue
-            continue
-        header = midsv_sample["QNAME"]
-        cssplits = midsv_sample["CSSPLIT"].split(",")
-        if GENOME_COODINATES.get("strand") == "-":
+    for header, cons in cons_percentage.items():
+        cssplits = [max(c, key=c.get) for c in cons]
+        if GENOME_COORDINATES.get("strand") == "-":
             cssplits = revcomp_cssplits(cssplits)
         cssplits_inversion = annotate_inversion(cssplits)
         cssplits_grouped = group_by_mutation(cssplits_inversion)
-        result = report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+        result = report_mutations(cssplits_grouped, GENOME_COORDINATES, header)
         results.extend(result)
     results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
     path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")

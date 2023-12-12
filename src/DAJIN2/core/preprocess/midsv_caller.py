@@ -130,10 +130,16 @@ def execute(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
             continue
 
         if is_control and is_insertion:
+            """
+            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.json` when control is barcode01, sample is barcode02, and the allele is insertion1.
+            """
             path_ont = Path(ARGS.tempdir, name, "sam", f"map-ont_{allele}_{ARGS.sample_name}.sam")
             path_splice = Path(ARGS.tempdir, name, "sam", f"splice_{allele}_{ARGS.sample_name}.sam")
             path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}_{ARGS.sample_name}.json")
         else:
+            """
+            Set the destination for midsv as `barcode02/midsv/insertion1.json` when the sample is barcode02 and the allele is insertion1.
+            """
             path_ont = Path(ARGS.tempdir, name, "sam", f"map-ont_{allele}.sam")
             path_splice = Path(ARGS.tempdir, name, "sam", f"splice_{allele}.sam")
             path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}.json")

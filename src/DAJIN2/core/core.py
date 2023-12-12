@@ -61,7 +61,7 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
     }
     if genome_urls["genome"]:
         if is_cache_genome:
-            genome_coordinates = list(io.read_jsonl(Path(tempdir, "cache", "genome_coodinates.jsonl")))[0]
+            genome_coordinates = list(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))[0]
         else:
             genome_coordinates = preprocess.genome_fetcher.fetch_coordinates(
                 genome_coordinates, genome_urls, fasta_alleles["control"]
@@ -69,7 +69,7 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
             genome_coordinates["chrom_size"] = preprocess.genome_fetcher.fetch_chromosome_size(
                 genome_coordinates, genome_urls
             )
-            io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coodinates.jsonl"))
+            io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
     return genome_coordinates
 
 
@@ -156,7 +156,7 @@ def execute_control(arguments: dict):
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
-    preprocess.extract_mutation_loci(ARGS, is_control=True, is_insertion=False)
+    preprocess.cache_mutation_loci(ARGS, is_control=True, is_insertion=False)
 
     ###########################################################
     # Output BAM files
@@ -177,6 +177,7 @@ def execute_sample(arguments: dict):
     ###########################################################
     # Preprocess
     ###########################################################
+
     ARGS = format_inputs(arguments)
     preprocess.directories.create_temporal(ARGS.tempdir, ARGS.sample_name)
     preprocess.directories.create_report(ARGS.tempdir, ARGS.sample_name)
@@ -201,7 +202,7 @@ def execute_sample(arguments: dict):
     # Extract mutation loci
     # ============================================================
     preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
-    preprocess.extract_mutation_loci(ARGS, is_control=False, is_insertion=False)
+    preprocess.cache_mutation_loci(ARGS, is_control=False, is_insertion=False)
 
     # ============================================================
     # Detect and align insertion alleles
@@ -224,20 +225,24 @@ def execute_sample(arguments: dict):
         preprocess.midsv_caller.execute(ARGS, is_control=True, is_insertion=True)
         preprocess.midsv_caller.execute(ARGS, is_control=False, is_insertion=True)
         # Reculculate mutation loci
-        preprocess.extract_mutation_loci(ARGS, is_control=True, is_insertion=True)
+        preprocess.cache_mutation_loci(ARGS, is_control=True, is_insertion=True)
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
-        preprocess.extract_mutation_loci(ARGS, is_control=False, is_insertion=True)
+        preprocess.cache_mutation_loci(ARGS, is_control=False, is_insertion=True)
 
     io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
+
     ########################################################################
     # Classify alleles
     ########################################################################
+
     logger.info(f"Classify {arguments['sample']}...")
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
     io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
+
     ########################################################################
     # Clustering
     ########################################################################
+
     logger.info(f"Clustering {arguments['sample']}...")
 
     labels = clustering.extract_labels(classif_sample, ARGS.tempdir, ARGS.sample_name, ARGS.control_name)
@@ -254,12 +259,17 @@ def execute_sample(arguments: dict):
 
     logger.info(f"Consensus calling of {arguments['sample']}...")
 
+    consensus.cache_mutation_loci(ARGS, clust_sample)
+
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
+
     cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_subset_sample)
+
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
+
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
@@ -279,14 +289,16 @@ def execute_sample(arguments: dict):
     # HTML
     report.report_files.to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)
-    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates)
+    report.report_mutation.to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
     # BAM
     report.report_bam.output_bam(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE)
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
     # VCF
     # working in progress
+
     ###########################################################
     # Finish call
     ###########################################################
+
     logger.info(f"\N{teacup without handle} {arguments['sample']} is finished!")

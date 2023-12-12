@@ -3,8 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from itertools import groupby
 from collections import defaultdict
-
 from typing import Generator
+
+from DAJIN2.utils import io, config
+
+# prevent BLAS from using all cores
+config.set_single_threaded_blas()
 
 import numpy as np
 from sklearn import metrics
@@ -12,7 +16,6 @@ from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
-from DAJIN2.utils import io
 
 ###########################################################
 # Detect insertion sequences
@@ -174,7 +177,21 @@ def clustering_insertions(scores) -> list[int]:
     X = (X - X.min()) / (X.max() - X.min())
     clustering = MeanShift().fit(X)
     labels = clustering.labels_
-    return labels
+    return labels.tolist()
+
+
+def filter_minor_label(
+    path_sample: str, labels: list[int], insertions_scores_sequences, threshold: float = 0.5
+) -> tuple(list[int], list[str]):
+    coverage = io.count_newlines(path_sample)
+    _, counts = np.unique(labels, return_counts=True)
+    minor_labels = {label for label, count in enumerate(counts) if count / coverage * 100 < threshold}
+    index_minor_labels = {i for i, label in enumerate(labels) if label in minor_labels}
+    labels_filtered = [label for i, label in enumerate(labels) if i not in index_minor_labels]
+    score_seq_filterd = [
+        score_seq for i, score_seq in enumerate(insertions_scores_sequences) if i not in index_minor_labels
+    ]
+    return labels_filtered, score_seq_filterd
 
 
 ###########################################################
@@ -282,6 +299,8 @@ def filter_consensus(consensus_sequence_insertion: dict[int, str], FASTA_ALLELES
     """Filter similar insertions compared to control sequence"""
     unique_insertions = set(consensus_sequence_insertion.values())
     for query in FASTA_ALLELES.values():
+        if unique_insertions == set():
+            break
         seqs, mismatches, _ = zip(*process.extract_iter(query, unique_insertions, scorer=DamerauLevenshtein.distance))
         for seq, mismatch in zip(seqs, mismatches):
             if mismatch <= 10:
@@ -332,15 +351,21 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     insertions_merged = merge_similar_insertions(insertions, mutation_loci)
     insertions_scores_sequences = extract_score_and_sequence(path_sample, insertions_merged)
     labels = clustering_insertions([score for score, _ in insertions_scores_sequences])
-    insertion_sequences_subset = subset_sequences([seq for _, seq in insertions_scores_sequences], labels, num=1000)
+    labels_filtered, insertion_scores_sequences_filtered = filter_minor_label(
+        path_sample, labels, insertions_scores_sequences, threshold=0.5
+    )
+    insertion_sequences_subset = subset_sequences(
+        [seq for _, seq in insertion_scores_sequences_filtered], labels_filtered, num=1000
+    )
     cons_sequence = call_consensus(insertion_sequences_subset)
+    if cons_sequence == dict():
+        # If there is no insertion sequence, return None
+        # It is possible when all insertion sequence annotated as `N` that is filtered out
+        return None
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
     consensus_sequence_insertion = generate_consensus(cons_sequence, index_of_insertions, sequence)
-    if len(consensus_sequence_insertion) == 1:
-        consensus_filtered = consensus_sequence_insertion
-    else:
-        consensus_filtered = filter_consensus(consensus_sequence_insertion, FASTA_ALLELES)
-        if consensus_filtered == dict():
-            return None
+    consensus_filtered = filter_consensus(consensus_sequence_insertion, FASTA_ALLELES)
+    if consensus_filtered == dict():
+        return None
     consensus_labeled = update_labels(consensus_filtered, FASTA_ALLELES)
     save_fasta(TEMPDIR, SAMPLE_NAME, consensus_labeled)

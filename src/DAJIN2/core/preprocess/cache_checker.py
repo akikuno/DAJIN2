@@ -16,7 +16,7 @@ def exists_cached_hash(tempdir: Path, path: str) -> bool:
 
 
 def exists_cached_genome(tempdir: Path, genome: str) -> bool:
-    path_cached_genome = Path(tempdir, "cache", "genome_coodinates.jsonl")
+    path_cached_genome = Path(tempdir, "cache", "genome_coordinates.jsonl")
     if path_cached_genome.exists():
         cached_genome = list(io.read_jsonl(path_cached_genome))[0]
         if genome == cached_genome["genome"]:
