@@ -32,19 +32,7 @@ pip install DAJIN2
 ```
 
 > [!CAUTION]
-> If you encounter the error **Failed to build mappy** when installing DAJIN2 from pip, please install `gcc` and `zlib`.  
-> `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
-> `brew install gcc zlib` (macOS)
-
-<!-- ```bash
-# Ubuntu
-sudo apt install gcc zlib1g zlib1g-dev
-```
-
-```bash
-# macOS
-brew install gcc zlib
-``` -->
+> If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
 
 
 ## 💡 Usage

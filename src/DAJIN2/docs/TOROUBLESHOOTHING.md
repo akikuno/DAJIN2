@@ -47,6 +47,8 @@ pip install DAJIN2
 
 > [!NOTE]
 > Pip installation might encounter issues due to the dependencies mentioned above, especially on systems without `zlib.h` or on Windows.
+> `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
+> `brew install gcc zlib` (macOS)
 
 
 ## Report other troubles
