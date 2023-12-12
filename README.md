@@ -16,13 +16,6 @@ DAJIN2 is a genotyping software designed for organisms that have undergone genom
 
 The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
 
-## 🙏 Feedbacks
-
-DAJIN2 is still in the development phase.  
-Basic tests covering point mutations, deletions, and insertion designs have been conducted.  
-If you encounter any bugs or issues, please report them via [Issues](https://github.com/akikuno/DAJIN2/issues).  
-
-
 
 ## 🛠 Installation
 
@@ -238,3 +231,16 @@ Additionally, the types of **Allele type** include:
 For more information, please refer to the following publication:
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
+
+
+## 📣Feedback and Support
+
+For questions, bug reports, or other forms of feedback, we'd love to hear from you!  
+Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues) for all reporting purposes.  
+
+Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
+
+## 🤝 Code of Conduct
+
+Please note that this project is released with a [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md).  
+By participating in this project you agree to abide by its terms.  
