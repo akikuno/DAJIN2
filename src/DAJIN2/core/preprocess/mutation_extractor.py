@@ -9,7 +9,6 @@ from collections import defaultdict
 from DAJIN2.utils import config
 
 config.set_warnings_ignore()
-config.set_single_threaded_blas()
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:

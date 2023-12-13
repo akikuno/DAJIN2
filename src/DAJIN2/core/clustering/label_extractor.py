@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from DAJIN2.utils import config
-
-config.set_warnings_ignore()
-
 import random
 from pathlib import Path
 from itertools import groupby

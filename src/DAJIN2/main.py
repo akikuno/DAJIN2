@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from DAJIN2.utils import config
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
-# prevent BLAS from using all cores
-config.set_single_threaded_blas()
 
 import sys
 import shutil
@@ -13,10 +16,10 @@ from itertools import groupby
 
 from DAJIN2 import gui, view
 from DAJIN2.core import core
-from DAJIN2.utils import config, io, report_generator, input_validator, multiprocess
+from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.3.4"
+DAJIN_VERSION = "0.3.5"
 
 
 def generate_report(name: str) -> None:

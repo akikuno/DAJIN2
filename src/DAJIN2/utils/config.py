@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import sys
 import logging
 import warnings
@@ -13,14 +12,6 @@ from sklearn.exceptions import ConvergenceWarning
 
 DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
-
-
-def set_single_threaded_blas() -> None:
-    os.environ["OMP_NUM_THREADS"] = "1"
-    os.environ["OPENBLAS_NUM_THREADS"] = "1"
-    os.environ["MKL_NUM_THREADS"] = "1"
-    os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-    os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 
 class DeferredFileHandler(logging.FileHandler):

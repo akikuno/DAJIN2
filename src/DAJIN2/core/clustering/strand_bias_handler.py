@@ -2,13 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from collections import defaultdict, Counter
-
-from DAJIN2.utils import io, config
-
-# prevent BLAS from using all cores
-config.set_single_threaded_blas()
-
 from sklearn.tree import DecisionTreeClassifier
+
+from DAJIN2.utils import io
 
 # Constants
 STRAND_BIAS_LOWER_LIMIT = 0.1

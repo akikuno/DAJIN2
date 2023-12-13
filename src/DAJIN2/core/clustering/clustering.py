@@ -4,20 +4,17 @@ from pathlib import Path
 from itertools import chain
 from collections import Counter
 
-from DAJIN2.utils import config
-
-config.set_warnings_ignore()
-config.set_single_threaded_blas()
-
 import numpy as np
 from sklearn import metrics
 from sklearn.cluster import KMeans
 from scipy.sparse import csr_matrix, spmatrix
 
-from DAJIN2.utils import io
+from DAJIN2.utils import io, config
 from DAJIN2.core.clustering.label_merger import merge_labels
 from DAJIN2.core.clustering.score_handler import subset_scores
 from DAJIN2.core.clustering.strand_bias_handler import remove_biased_clusters
+
+config.set_warnings_ignore()
 
 
 ###############################################################################

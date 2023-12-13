@@ -38,7 +38,7 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
 
     # Extract and cache mutation loci
     path_mutation_control = Path(tempdir, control_name, "mutation_loci")
-    for path_indels_normalized_sample in path_consensus.glob("clust_*.pickle"):
+    for path_indels_normalized_sample in path_consensus.glob("clust_*normalized.pickle"):
         _, allele, label, _ = path_indels_normalized_sample.stem.split("_")
 
         sequence = fasta_alleles[allele]
