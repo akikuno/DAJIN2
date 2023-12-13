@@ -2,8 +2,13 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-import numpy as np
+
+from DAJIN2.utils import config
+
+config.set_single_threaded_blas()
+
 import scipy
+import numpy as np
 from statsmodels.nonparametric.smoothers_lowess import lowess as sm_lowess
 
 
