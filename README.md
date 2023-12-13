@@ -19,6 +19,11 @@ The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Y�
 
 ## 🛠 Installation
 
+### Prerequisites
+
+- Python 3.7 or later
+- Unix-like environment (Linux, macOS, WSL2, etc.)
+
 ### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
