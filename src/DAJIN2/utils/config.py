@@ -62,7 +62,8 @@ def set_logging(path_logfile: Path) -> None:
     sys.excepthook = handle_uncaught_exception
 
 
-def set_warnings() -> None:
+def set_warnings_ignore() -> None:
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
     warnings.filterwarnings("ignore", category=ConvergenceWarning)

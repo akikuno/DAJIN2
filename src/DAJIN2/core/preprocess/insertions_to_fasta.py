@@ -7,7 +7,7 @@ from typing import Generator
 
 from DAJIN2.utils import io, config
 
-# prevent BLAS from using all cores
+config.set_warnings_ignore()
 config.set_single_threaded_blas()
 
 import numpy as np

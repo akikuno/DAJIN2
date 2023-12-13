@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-from DAJIN2.utils import io, config
+from DAJIN2.utils import config
 
-config.set_warnings()
+config.set_warnings_ignore()
 
-from pathlib import Path
 import random
+from pathlib import Path
 from itertools import groupby
 
+from DAJIN2.utils import io
 from DAJIN2.core.clustering.score_handler import make_score, annotate_score
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias

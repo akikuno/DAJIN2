@@ -6,23 +6,24 @@ from pathlib import Path
 from typing import Generator
 from collections import defaultdict
 
+from DAJIN2.utils import config
+
+config.set_warnings_ignore()
+config.set_single_threaded_blas()
+
 """
 To suppress the following warnings from `scipy.wilcoxon`:
 UserWarning: Exact p-value calculation does not work if there are zeros.
 """
-import warnings
+config.set_warnings_ignore()
 
-warnings.simplefilter("ignore")
-
-from DAJIN2.utils import io, config
-
-config.set_single_threaded_blas()
 
 import numpy as np
 from scipy import stats
 from scipy.spatial import distance
 from sklearn.cluster import KMeans
 
+from DAJIN2.utils import io
 from DAJIN2.core.preprocess import homopolymer_handler
 
 
