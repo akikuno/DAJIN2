@@ -21,7 +21,7 @@
 
 + [x] Modified batch processing to run on a single CPU thread per process [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7b43e36b9482cceabe79f47814f62f69d46b7d3e)
 
-+ [x] Simplifed import path:
++ [x] Simplifed import path [Commit Detail](https://github.com/akikuno/DAJIN2/commit/6e2d1726edc49fc638b87526a3f4fcbf1eead4e0)
   + `preprocess.midsv_caller.execute` to `preprocess.generate_midsv`
   + `preprocess.mapping.generate_sam` to `preprocess.generate_sam`
 
