@@ -6,8 +6,8 @@
 
 ## 📝 Documentation
 
-+ [x] Added `ROADMAP.md` to track the progress of the project.
-+ [x] Added *Prerequisites* section to README.md (7d5a3cd8305f9d414a492f5223d5dbec7399aa46)
++ [x] Added `ROADMAP.md` to track the progress of the project cf05d3e5c9b1d3ee806d66c9c1d9f8079863e312
++ [x] Added *Prerequisites* section to README.md 7d5a3cd8305f9d414a492f5223d5dbec7399aa46
 
 ## 🚀 Features
 
@@ -19,7 +19,7 @@
 
 ## 🔧 Maintenance
 
-+ [x] Modified batch processing to run on a single CPU thread per process. (7b43e36b9482cceabe79f47814f62f69d46b7d3e)
++ [x] Modified batch processing to run on a single CPU thread per process. 7b43e36b9482cceabe79f47814f62f69d46b7d3e
 
 + [x] Simplifed import path:
   + `preprocess.midsv_caller.execute` to `preprocess.generate_midsv`
