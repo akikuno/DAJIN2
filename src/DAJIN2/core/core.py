@@ -146,12 +146,12 @@ def execute_control(arguments: dict):
     # Mapping using mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
-    preprocess.mapping.generate_sam(ARGS, paths_fasta, is_control=True, is_insertion=False)
+    preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_insertion=False)
 
     ###########################################################
     # MIDSV conversion
     ###########################################################
-    preprocess.midsv_caller.execute(ARGS, is_control=True, is_insertion=False)
+    preprocess.generate_midsv(ARGS, is_control=True, is_insertion=False)
 
     ###########################################################
     # Prepare data to `extract mutaion loci`
