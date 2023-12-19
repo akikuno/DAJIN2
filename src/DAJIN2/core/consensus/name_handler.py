@@ -3,10 +3,12 @@ from __future__ import annotations
 import re
 from typing import NamedTuple
 
+
 class ConsensusKey(NamedTuple):
     allele: str
     label: int
     percent: float
+
 
 def _detect_sv(cons_percentages: dict[ConsensusKey, list], threshold: int = 50) -> list[bool]:
     exists_sv = []
