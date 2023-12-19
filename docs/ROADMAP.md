@@ -11,11 +11,14 @@
 
 ## 🚀 Features
 
-+ None
++ [ ] Improved clustering algorithm to reduce false negatives [Commit Detail]()
+
+### Consensus
++ [x] Added `convert_consecutive_indels_to_match` to offset the effect when the same base insertion/deletion occurs consecutively [Commit Detail](https://github.com/akikuno/DAJIN2/commit/a678615b4ffeeefdc9509f49651698281b1aff22)
 
 ## 🐛 Bug Fixes
 
-+ None
++ [ ] Remove minor alleles with predicted insertion [Commit Detail]()
 
 ## 🔧 Maintenance
 
@@ -33,6 +36,6 @@
 
 -------------
 
-# Notes
+# Future Work
 
-
++ Inversion detection
