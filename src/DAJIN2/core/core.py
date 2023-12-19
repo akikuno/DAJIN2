@@ -196,7 +196,7 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
-    preprocess.midsv_caller.execute(ARGS, is_control=False, is_insertion=False)
+    preprocess.generate_midsv(ARGS, is_control=False, is_insertion=False)
 
     # ============================================================
     # Extract mutation loci
@@ -222,8 +222,8 @@ def execute_sample(arguments: dict):
             allele = allele.replace(">", "")
             ARGS.fasta_alleles[allele] = seq
         # MIDSV conversion
-        preprocess.midsv_caller.execute(ARGS, is_control=True, is_insertion=True)
-        preprocess.midsv_caller.execute(ARGS, is_control=False, is_insertion=True)
+        preprocess.generate_midsv(ARGS, is_control=True, is_insertion=True)
+        preprocess.generate_midsv(ARGS, is_control=False, is_insertion=True)
         # Reculculate mutation loci
         preprocess.cache_mutation_loci(ARGS, is_control=True, is_insertion=True)
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
