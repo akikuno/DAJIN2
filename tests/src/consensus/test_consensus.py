@@ -23,7 +23,7 @@ def test_convert_consecutive_indels_to_match_empty_input():
     [
         # simple case
         (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"+T|=A": 1}],
             [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"=A": 1}],
         ),
         (
@@ -36,22 +36,22 @@ def test_convert_consecutive_indels_to_match_empty_input():
         ),
         # add match (insertion < deletion)
         (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2, "=T": 1}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2, "=T": 1}, {"+T|=A": 1}],
             [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 2}, {"=A": 1}],
         ),
         # insertion == deletion
         (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"+T|=A": 1}],
             [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 1}, {"=A": 1}],
         ),
         (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1}, {"+T|=A": 1}],
             [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"N": 100}, {"=A": 1}],
         ),
         # insertion > deletion
         (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"T|=A": 10}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 9}, {"=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 3, "=T": 1}, {"+T|=A": 10}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 8}, {"=A": 10}],
         ),
         # no change
         (
@@ -60,7 +60,7 @@ def test_convert_consecutive_indels_to_match_empty_input():
         ),
     ],
 )
-def test_cstag_to_base(cons, expected):
+def test_convert_consecutive_indels_to_match(cons, expected):
     assert convert_consecutive_indels_to_match(cons) == expected
 
 
@@ -132,8 +132,7 @@ def test_call_percentage():
     ],
 )
 def test_cstag_to_base(cons, expected_output):
-    result = cstag_to_base(cons)
-    assert result == expected_output
+    assert cstag_to_base(cons) == expected_output
 
 
 @pytest.mark.parametrize(
@@ -151,5 +150,4 @@ def test_cstag_to_base(cons, expected_output):
     ],
 )
 def test_call_sequence(cons_percentage_by_key, expected_sequence):
-    result_sequence = call_sequence(cons_percentage_by_key)
-    assert result_sequence == expected_sequence
+    assert call_sequence(cons_percentage_by_key) == expected_sequence
