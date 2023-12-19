@@ -1,44 +1,83 @@
 import pytest
 
 from src.DAJIN2.core.consensus.consensus import (
-    # _remove_nonconsecutive_n,
     replace_sequence_error,
     adjust_to_100_percent,
     call_percentage,
     cstag_to_base,
     call_sequence,
+    convert_consecutive_indels_to_match,
 )
 
+###########################################################
+# convert_consecutive_indels_to_match
+###########################################################
 
-# @pytest.mark.parametrize(
-#     "cons_percentage, expected_output",
-#     [
-#         # not remove
-#         (
-#             [{"N": 100}, {"N": 100}, {"A": 50, "C": 50}, {"N": 100}],
-#             [{"N": 100}, {"N": 100}, {"A": 50, "C": 50}, {"N": 100}],
-#         ),
-#         ([{"N": 80, "A": 20}, {"A": 50, "C": 50}], [{"N": 80, "A": 20}, {"A": 50, "C": 50}]),
-#         ([{"A": 50, "C": 50}, {"N": 80, "A": 20}], [{"A": 50, "C": 50}, {"N": 80, "A": 20}]),
-#         ([{"A": 50, "C": 50}], [{"A": 50, "C": 50}]),
-#         ([{"N": 100}], [{"N": 100}]),
-#         ([], []),
-#         # remove non consecutive N
-#         ([{"N": 100}, {"N": 100}, {"A": 60, "N": 40}, {"N": 100}], [{"N": 100}, {"N": 100}, {"A": 60}, {"N": 100}]),
-#         ([{"N": 20, "A": 80}, {"A": 50, "C": 50}], [{"A": 80}, {"A": 50, "C": 50}]),
-#         ([{"A": 50, "C": 50}, {"N": 20, "A": 80}], [{"A": 50, "C": 50}, {"A": 80}]),
-#         ([{"A": 80, "N": 20}], [{"A": 80}]),
-#     ],
-# )
-# def test_remove_nonconsecutive_n(cons_percentage, expected_output):
-#     result = _remove_nonconsecutive_n(cons_percentage)
-#     assert result == expected_output
+
+def test_convert_consecutive_indels_to_match_empty_input():
+    assert convert_consecutive_indels_to_match([]) == []
+
+
+@pytest.mark.parametrize(
+    "cons, expected",
+    [
+        # simple case
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"=A": 1}],
+        ),
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"+G|+T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 1, "=G": 1}, {"-T": 1, "=T": 1}, {"=A": 1}],
+        ),
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"+C|+G|+T|=A": 1}],
+            [{"=A": 2}, {"-C": 1, "=C": 1}, {"-G": 1, "=G": 1}, {"-T": 1, "=T": 1}, {"=A": 1}],
+        ),
+        # add match (insertion < deletion)
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2, "=T": 1}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 2}, {"=A": 1}],
+        ),
+        # insertion == deletion
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 1}, {"=A": 1}],
+        ),
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1}, {"T|=A": 1}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"N": 100}, {"=A": 1}],
+        ),
+        # insertion > deletion
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"T|=A": 10}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 9}, {"=A": 1}],
+        ),
+        # no change
+        (
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"=A": 2}],
+            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"=A": 2}],
+        ),
+    ],
+)
+def test_cstag_to_base(cons, expected):
+    assert convert_consecutive_indels_to_match(cons) == expected
+
+
+###########################################################
+# replace_sequence
+###########################################################
 
 
 def test_replace_sequence_error():
     cons_percentage = [{"A": 25, "C": 25, "SEQERROR": 50}, {"SEQERROR": 100}]
     expected_output = [{"A": 25, "C": 25}, {"N": 100}]
     assert replace_sequence_error(cons_percentage) == expected_output
+
+
+###########################################################
+# adjust_to_100_percent
+###########################################################
 
 
 def test_adjust_to_100_percent():
@@ -53,10 +92,21 @@ def test_adjust_to_100_percent_float():
     assert adjust_to_100_percent(test) == expected
 
 
+###########################################################
+# call_percentage
+###########################################################
+
+
 def test_call_percentage():
-    cssplits = [["+A", "-T", "C", "A", "T"], ["+A", "=T", "C", "*AT", "*AT"]]
+    cssplits = [["+A|=C", "-T", "=C", "=A", "=T"], ["-C", "=T", "=C", "*AT", "*AT"]]
     mutation_loci = [{"+", "-"}, {"-"}, {}, {}, {"*"}]
-    expected_output = [{"+A": 100.0}, {"-T": 50.0, "=T": 50.0}, {"C": 100.0}, {"A": 100.0}, {"T": 50.0, "*AT": 50.0}]
+    expected_output = [
+        {"+A|=C": 50.0, "-C": 50.0},
+        {"-T": 50.0, "=T": 50.0},
+        {"=C": 100.0},
+        {"=A": 100.0},
+        {"=T": 50.0, "*AT": 50.0},
+    ]
     assert call_percentage(cssplits, mutation_loci) == expected_output
 
 

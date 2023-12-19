@@ -62,6 +62,74 @@ def replace_sequence_error(cons_percentage: list[dict[str, float]]) -> list[dict
     return cons_percentage_replaced
 
 
+def convert_consecutive_indels_to_match(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    """
+    Converts consecutive insertion and deletion operations on the same characters
+    into a matched operation. This function processes a sequence of operations
+    represented as a list of dictionaries. It cancels out an insertion ("+")
+    operation followed downstream by a corresponding deletion ("-") operation on
+    the same character. The function then consolidates the remaining operations
+    and returns the updated sequence.
+    """
+    reversed_data = cons_percentage[::-1]
+
+    i = 0
+    while i < len(reversed_data):
+        current_set = reversed_data[i]
+        current_max = max(current_set, key=current_set.get)
+
+        if not current_max.startswith("+"):
+            i += 1
+            continue
+
+        count_ins = current_set[current_max]
+        insertions = [base.lstrip("+") for base in current_max.split("|")[:-1]][::-1]
+        deletions = []
+
+        for j in range(1, len(insertions) + 1):
+            if i + j >= len(reversed_data):
+                break
+
+            next_max = max(reversed_data[i + j], key=reversed_data[i + j].get)
+
+            if not next_max.startswith("-"):
+                break
+
+            deletions.append(next_max.lstrip("-"))
+
+        if insertions != deletions:
+            i += 1
+            continue
+
+        count_ins = reversed_data[i][current_max]
+        op = current_max.split("|")[-1]
+        reversed_data[i][op] = reversed_data[i].get(op, 0) + count_ins
+        del reversed_data[i][current_max]
+
+        for k, insertion in enumerate(insertions, 1):
+            current_set = reversed_data[i + k]
+
+            current_set[f"-{insertion}"] -= count_ins
+            count_del = current_set[f"-{insertion}"]
+            count_match = current_set.get(f"={insertion}", 0)
+            if count_del > 0:
+                current_set[f"={insertion}"] = count_match + count_ins
+            elif count_del == 0:
+                pass
+            else:
+                current_set[f"={insertion}"] = count_match + abs(count_del)
+
+            if count_del <= 0:
+                del current_set[f"-{insertion}"]
+
+            if current_set == {}:
+                current_set["N"] = 100
+
+        i += len(insertions) + 1
+
+    return reversed_data[::-1]
+
+
 def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
     adjusted_percentages = []
 
@@ -82,6 +150,7 @@ def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]]) ->
     cons_percentage = convert_to_percentage(cssplits, mutation_loci)
     cons_percentage = remove_all_n(cons_percentage)
     cons_percentage = replace_sequence_error(cons_percentage)
+    cons_percentage = convert_consecutive_indels_to_match(cons_percentage)
     return adjust_to_100_percent(cons_percentage)
 
 
@@ -132,9 +201,7 @@ class ConsensusKey(NamedTuple):
     percent: float
 
 
-def call_consensus(
-    tempdir: Path, sample_name: str, clust_sample: list[dict]
-) -> tuple[defaultdict[list], defaultdict[str]]:
+def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) -> tuple[dict[list], dict[str]]:
     cons_percentages = defaultdict(list)
     cons_sequences = defaultdict(str)
 
@@ -144,7 +211,7 @@ def call_consensus(
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
 
-        prefix = f"clust_{allele}_{label}"
+        prefix = f"{allele}_{label}"
         mutation_loci = io.load_pickle(Path(path_consensus, f"{prefix}_mutation_loci.pickle"))
 
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
@@ -153,4 +220,4 @@ def call_consensus(
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage
         cons_sequences[key] = call_sequence(cons_percentage)
-    return cons_percentages, cons_sequences
+    return dict(cons_percentages), dict(cons_sequences)
