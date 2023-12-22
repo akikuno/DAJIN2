@@ -70,20 +70,22 @@ def _smooth_data(input_x, input_y, input_xgrid):
 def return_thresholds(error_counts: dict[int, list[float]]) -> list[float]:
     # Initialize empty lists to hold x and y data
     error_positions = []
-    error_counts = []
+    error_counts_extended = []
     # Populate the x and y data with the mutation counts and positions
     for position, counts in error_counts.items():
         position_values = [position] * len(counts)
         error_positions.extend(position_values)
-        error_counts.extend(counts)
+        error_counts_extended.extend(counts)
     # Convert x and y data to numpy arrays
     error_positions = np.array(error_positions)
-    error_counts = np.array(error_counts)
+    error_counts_extended = np.array(error_counts_extended)
     # Define a grid of x values from the minimum to the maximum position
     x_grid = np.linspace(error_positions.min(), error_positions.max(), error_positions.max() + 1)
     # Smooth the y data K times and stack the results
     num_smoothings = 100
-    smoothed_data = np.stack([_smooth_data(error_positions, error_counts, x_grid) for _ in range(num_smoothings)]).T
+    smoothed_data = np.stack(
+        [_smooth_data(error_positions, error_counts_extended, x_grid) for _ in range(num_smoothings)]
+    ).T
     # Calculate the mean and standard error of the smoothed data
     mean_smoothed_data = np.nanmean(smoothed_data, axis=1)
     stderr_smoothed_data = scipy.stats.sem(smoothed_data, axis=1)
