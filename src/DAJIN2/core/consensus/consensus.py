@@ -71,63 +71,70 @@ def convert_consecutive_indels_to_match(cons_percentage: list[dict[str, float]])
     the same character. The function then consolidates the remaining operations
     and returns the updated sequence.
     """
-    reversed_data = cons_percentage[::-1]
+    cons_percentage_reversed = cons_percentage[::-1].copy()
 
     i = 0
-    while i < len(reversed_data):
-        current_set = reversed_data[i]
-        current_max = max(current_set, key=current_set.get)
+    while i < len(cons_percentage_reversed):
+        current_cssplit = cons_percentage_reversed[i]
+        current_consensus = max(current_cssplit, key=current_cssplit.get)
 
-        if not current_max.startswith("+"):
+        if not current_consensus.startswith("+"):
             i += 1
             continue
 
-        count_ins = current_set[current_max]
-        insertions = [base.lstrip("+") for base in current_max.split("|")[:-1]][::-1]
+        insertions = [base.lstrip("+") for base in current_consensus.split("|")[:-1]][::-1]
+
+        # Extract deletions
         deletions = []
+        count_del_min = float("inf")
 
         for j in range(1, len(insertions) + 1):
-            if i + j >= len(reversed_data):
+            if i + j >= len(cons_percentage_reversed):
                 break
 
-            next_max = max(reversed_data[i + j], key=reversed_data[i + j].get)
+            next_consensus = max(cons_percentage_reversed[i + j], key=cons_percentage_reversed[i + j].get)
 
-            if not next_max.startswith("-"):
+            if not next_consensus.startswith("-"):
                 break
 
-            deletions.append(next_max.lstrip("-"))
+            deletions.append(next_consensus.lstrip("-"))
+            count_del_min = min(count_del_min, cons_percentage_reversed[i + j][next_consensus])
 
         if insertions != deletions:
             i += 1
             continue
 
-        count_ins = reversed_data[i][current_max]
-        op = current_max.split("|")[-1]
-        reversed_data[i][op] = reversed_data[i].get(op, 0) + count_ins
-        del reversed_data[i][current_max]
+        # Format deletions
+        count_ins = current_cssplit[current_consensus]
 
         for k, insertion in enumerate(insertions, 1):
-            current_set = reversed_data[i + k]
+            current_cssplit = cons_percentage_reversed[i + k]
+            current_count_match = current_cssplit.get(f"={insertion}", 0)
 
-            current_set[f"-{insertion}"] -= count_ins
-            count_del = current_set[f"-{insertion}"]
-            count_match = current_set.get(f"={insertion}", 0)
-            if count_del > 0:
-                current_set[f"={insertion}"] = count_match + count_ins
-            elif count_del == 0:
-                pass
+            if count_del_min - count_ins == 0:
+                current_cssplit[f"={insertion}"] = current_count_match + count_ins
+                del current_cssplit[f"-{insertion}"]
+            elif count_del_min - count_ins > 0:
+                current_cssplit[f"={insertion}"] = current_count_match + count_ins
+                current_cssplit[f"-{insertion}"] = count_del_min - count_ins
             else:
-                current_set[f"={insertion}"] = count_match + abs(count_del)
+                current_cssplit[f"={insertion}"] = current_count_match + count_del_min
+                current_cssplit[f"-{insertion}"] -= count_del_min
+                if current_cssplit[f"-{insertion}"] <= 0:
+                    del current_cssplit[f"-{insertion}"]
 
-            if count_del <= 0:
-                del current_set[f"-{insertion}"]
-
-            if current_set == {}:
-                current_set["N"] = 100
+        # Format insertion
+        cs_last = current_consensus.split("|")[-1]
+        if count_del_min - count_ins >= 0:
+            cons_percentage_reversed[i][cs_last] = count_ins
+            del cons_percentage_reversed[i][current_consensus]
+        else:
+            cons_percentage_reversed[i][cs_last] = count_del_min
+            cons_percentage_reversed[i][current_consensus] = count_ins - count_del_min
 
         i += len(insertions) + 1
 
-    return reversed_data[::-1]
+    return cons_percentage_reversed[::-1]
 
 
 def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
