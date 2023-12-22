@@ -3,10 +3,6 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 
-from DAJIN2.utils import config
-
-config.set_single_threaded_blas()
-
 import scipy
 import numpy as np
 from statsmodels.nonparametric.smoothers_lowess import lowess as sm_lowess
@@ -26,31 +22,37 @@ def get_repeat_regions(sequence: str, loci: set[int]) -> list[tuple[int, int]]:
     return repeat_regions
 
 
-def get_counts_homopolymer(
-    indels_sample_mut, indels_control_mut, repeat_regions
-) -> tuple[dict[int, list[float]], list[tuple[int, int, np.array]]]:
-    # Initialize default dictionaries to hold counts
-    mutation_counts = defaultdict(list)
-    mutation_counts_regions = []
-    # Iterate through each repeat region
+def get_directions(indels_mut: np.ndarray, repeat_regions: list[tuple]) -> dict[tuple, bool]:
+    directions = dict()
     for start, end in repeat_regions:
-        # Calculate mutations for each sample and control
-        sample_mutations = np.array(indels_sample_mut[start:end])
-        control_mutations = np.array(indels_control_mut[start:end])
-        # Total mutations is the sum of sample and control
-        total_mutations = sample_mutations + control_mutations
-        # If the total number of mutations is greater in the last position, reverse the order
-        if total_mutations[0] > total_mutations[-1]:
-            total_mutations = total_mutations[::-1]
+        error_counts = indels_mut[start:end]
+        # If there are many errors at the beginning, direction is False.
+        if error_counts[0] <= error_counts[-1]:
+            directions[(start, end)] = True
+        else:
+            directions[(start, end)] = False
+    return directions
+
+
+def get_counts_homopolymer(
+    indels_mut: np.ndarray, directions: dict[tuple, bool]
+) -> dict[int, list[float], dict[tuple[int, int], np.ndarray]]:
+    # Initialize default dictionaries to hold counts
+    error_counts = defaultdict(list)
+    error_counts_regions = dict()
+    # Iterate through each repeat region
+    for (start, end), direction in directions.items():
+        indels_counts = indels_mut[start:end]
+        # If there are many errors at the beginning, reverse the order
+        if direction is False:
+            indels_counts = indels_counts[::-1]
             start, end = end, start
-        # Apply a log transformation to the total mutations
-        total_mutations_log = np.log(total_mutations)
-        # Append the start, end, and total log mutations to the region count
-        mutation_counts_regions.append((start, end, total_mutations_log))
-        # Append the log mutation count to each position
-        for position, value in enumerate(total_mutations_log):
-            mutation_counts[position].append(value)
-    return mutation_counts, mutation_counts_regions
+        # Append the start, end, and total log errors to the region count
+        error_counts_regions[(start, end)] = indels_counts
+        # Append the log errors count to each position
+        for position, value in enumerate(indels_counts):
+            error_counts[position].append(value)
+    return dict(error_counts), error_counts_regions
 
 
 def _smooth_data(input_x, input_y, input_xgrid):
@@ -65,24 +67,24 @@ def _smooth_data(input_x, input_y, input_xgrid):
     return interpolated_y_grid
 
 
-def return_thresholds(mutation_counts) -> list(float):
+def return_thresholds(error_counts: dict[int, list[float]]) -> list[float]:
     # Initialize empty lists to hold x and y data
-    mutation_positions = []
-    mutation_counts_log = []
+    error_positions = []
+    error_counts_extended = []
     # Populate the x and y data with the mutation counts and positions
-    for position, counts in mutation_counts.items():
+    for position, counts in error_counts.items():
         position_values = [position] * len(counts)
-        mutation_positions.extend(position_values)
-        mutation_counts_log.extend(counts)
+        error_positions.extend(position_values)
+        error_counts_extended.extend(counts)
     # Convert x and y data to numpy arrays
-    mutation_positions = np.array(mutation_positions)
-    mutation_counts_log = np.array(mutation_counts_log)
+    error_positions = np.array(error_positions)
+    error_counts_extended = np.array(error_counts_extended)
     # Define a grid of x values from the minimum to the maximum position
-    x_grid = np.linspace(mutation_positions.min(), mutation_positions.max(), mutation_positions.max() + 1)
+    x_grid = np.linspace(error_positions.min(), error_positions.max(), error_positions.max() + 1)
     # Smooth the y data K times and stack the results
     num_smoothings = 100
     smoothed_data = np.stack(
-        [_smooth_data(mutation_positions, mutation_counts_log, x_grid) for _ in range(num_smoothings)]
+        [_smooth_data(error_positions, error_counts_extended, x_grid) for _ in range(num_smoothings)]
     ).T
     # Calculate the mean and standard error of the smoothed data
     mean_smoothed_data = np.nanmean(smoothed_data, axis=1)
@@ -93,25 +95,27 @@ def return_thresholds(mutation_counts) -> list(float):
     return thresholds
 
 
-def get_errors_in_homopolyer(mutation_counts_regions, thresholds) -> set(int):
-    # Initialize a set to hold the locations of mutations
+def get_errors_in_homopolyer(
+    error_counts_regions: dict[tuple[int, int], np.ndarray], thresholds: list[float]
+) -> set[int]:
+    # Initialize a set to hold the locations of errors
     sequence_error_loci = set()
-    # Iterate through each region and its associated mutation counts
-    for start, end, log_mutations in mutation_counts_regions:
+    # Iterate through each region and its associated error counts
+    for (start, end), counts in error_counts_regions.items():
         # +-1 because 0-index is not considered as homopolymer
         if start > end:
-            region = set(range(end, start - 1))
+            candidate_error_region = set(range(end, start - 1))
         else:
-            region = set(range(start + 1, end))
+            candidate_error_region = set(range(start + 1, end))
         # Initialize a list to hold the indices of mutations
         mutation_indices = []
         # Iterate through each mutation count
-        for index, log_mutation in enumerate(log_mutations):
+        for index, count in enumerate(counts):
             # Skip the first count (since it has no previous count to compare to)
             if index == 0:
                 continue
             # If the count exceeds the threshold, record the index
-            if log_mutation > thresholds[index]:
+            if count > thresholds[index]:
                 mutation_indices.append(index)
         # Add the absolute location of each mutation to the set of mutation locations
         mutations = set()
@@ -120,7 +124,7 @@ def get_errors_in_homopolyer(mutation_counts_regions, thresholds) -> set(int):
                 mutations.add(start - 1 - mutation_index)
             else:
                 mutations.add(end + mutation_index)
-        sequence_error_loci |= region - mutations
+        sequence_error_loci |= candidate_error_region - mutations
     return sequence_error_loci
 
 
@@ -136,9 +140,9 @@ def extract_errors(sequence, indels_sample, indels_control, candidate_loci: dict
         if repeat_regions == []:
             errors_in_homopolymer[mut] = set()
             continue
-        mutation_counts, mutation_counts_regions = get_counts_homopolymer(
-            indels_sample[mut], indels_control[mut], repeat_regions
-        )
-        thresholds = return_thresholds(mutation_counts)
-        errors_in_homopolymer[mut] = get_errors_in_homopolyer(mutation_counts_regions, thresholds)
+        directions = get_directions(indels_control[mut], repeat_regions)
+        error_counts_control, _ = get_counts_homopolymer(indels_control[mut], directions)
+        _, error_counts_regions_sample = get_counts_homopolymer(indels_sample[mut], directions)
+        thresholds = return_thresholds(error_counts_control)
+        errors_in_homopolymer[mut] = get_errors_in_homopolyer(error_counts_regions_sample, thresholds)
     return errors_in_homopolymer

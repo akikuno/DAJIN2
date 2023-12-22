@@ -122,7 +122,7 @@ def filter_samples_by_n_proportion(midsv_sample: Generator[dict], threshold: int
 ###########################################################
 
 
-def execute(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
+def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():

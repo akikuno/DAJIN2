@@ -5,17 +5,15 @@ from itertools import groupby
 from collections import defaultdict
 from typing import Generator
 
-from DAJIN2.utils import io, config
-
-config.set_warnings_ignore()
-config.set_single_threaded_blas()
-
 import numpy as np
 from sklearn import metrics
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
+from DAJIN2.utils import io, config
+
+config.set_warnings_ignore()
 
 ###########################################################
 # Detect insertion sequences

@@ -8,9 +8,6 @@ from collections import defaultdict
 
 from DAJIN2.utils import config
 
-config.set_warnings_ignore()
-config.set_single_threaded_blas()
-
 """
 To suppress the following warnings from `scipy.wilcoxon`:
 UserWarning: Exact p-value calculation does not work if there are zeros.
@@ -19,9 +16,7 @@ config.set_warnings_ignore()
 
 
 import numpy as np
-from scipy import stats
-from scipy.spatial import distance
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 
 from DAJIN2.utils import io
 from DAJIN2.core.preprocess import homopolymer_handler
@@ -85,84 +80,11 @@ def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.arra
 
 
 ###########################################################
-# Using Cosine similarity and T-test to extract dissimilar Loci
-###########################################################
-
-
-def calculate_cosine_similarities(values_sample: list[float], values_control: list[float]) -> list[float]:
-    """
-    Calculate cosine similarities between sample and control values.
-
-    Due to the behavior of distance.cosine, when dealing with zero-vectors,
-    it doesn't return the expected cosine distance of 1. For example, distance.cosine([0,0,0], [1,2,3]) returns 0.
-    To handle this, a small value (1e-10) is added to each element of the vector to prevent them from being zero-vectors.
-    This ensures the correct behavior without significantly affecting the cosine similarity calculation.
-    """
-    return [1 - distance.cosine(x + 1e-10, y + 1e-10) for x, y in zip(values_sample, values_control)]
-
-
-def perform_statistics(values_sample: list[float], values_control: list[float]) -> list[float]:
-    """
-    Perform statistics between sample and control values.
-    """
-    return [1 if np.array_equal(x, y) else stats.wilcoxon(x, y)[1] for x, y in zip(values_sample, values_control)]
-
-
-def find_dissimilar_indices(cossims: list[float], pvalues: list[float], pvalues_deleted: list[float]) -> set[int]:
-    """Identify indices that are dissimilar based on cosine similarities and statistics p-values."""
-    return {
-        i
-        for i, (cossim, pval, pval_del) in enumerate(zip(cossims, pvalues, pvalues_deleted))
-        if (cossim >= 0.8 and pval < 0.05 and pval_del > 0.05) or cossim < 0.8
-    }
-
-
-def extract_dissimilar_loci(
-    indels_normalized_sample: dict[str, list[float]], indels_normalized_control: dict[str, list[float]]
-) -> dict[str, set[int]]:
-    """
-    Compare Sample and Control to identify dissimilar loci.
-
-    Loci that do not closely resemble the reference in both mean and variance, indicating statistically significant differences, are detected as dissimilar loci.
-    """
-    results = {}
-    for mut in {"+", "-", "*"}:
-        kmer = 11
-
-        indels_kmer_sample = split_kmer(indels_normalized_sample, kmer=kmer)
-        indels_kmer_control = split_kmer(indels_normalized_control, kmer=kmer)
-
-        values_sample = indels_kmer_sample[mut]
-        values_control = indels_kmer_control[mut]
-
-        values_subtracted_sample = [np.delete(v, kmer // 2) for v in values_sample]
-        values_subtracted_control = [np.delete(v, kmer // 2) for v in values_control]
-
-        cossims = calculate_cosine_similarities(values_sample, values_control)
-        pvalues = perform_statistics(values_sample, values_control)
-        pvalues_deleted = perform_statistics(values_subtracted_sample, values_subtracted_control)
-
-        results[mut] = find_dissimilar_indices(cossims, pvalues, pvalues_deleted)
-
-    return results
-
-
-###########################################################
 # Extract Anomalous Loci
-# The function `extract_dissimilar_loci` overlooks the mutation rate within each kmer.
-# As a result, we encounter numerous false positives, especially in kmers with an extremely low mutation rate.
-# It's essential to account for the mutation rate across the entire sequence.
 ###########################################################
 
 
-def transform_log2(values: np.array) -> np.array:
-    """Transform values to log2 scale after handling zeros."""
-    min_value = min(v for v in values if v > 0)
-    values = np.where(values <= 0, min_value, values)
-    return np.log2(values).reshape(-1, 1)
-
-
-def detect_anomalies(log2_subtract: np.array) -> list[int]:
+def detect_anomalies(values_subtract: np.array) -> set[int]:
     """
     Detect anomalies and return indices of outliers.
 
@@ -170,23 +92,33 @@ def detect_anomalies(log2_subtract: np.array) -> list[int]:
     However, depending on how the "normal" class was learned, either of these classes
     might represent the true anomalies in the context of this problem.
 
-    This function returns the indices of the class with the higher mean of log2_subtract
+    This function returns the indices of the class with the higher mean of values_subtract
     values, as this class is considered to be the true anomalies.
     """
-    kmeans = KMeans(n_clusters=2, random_state=0)
-    _ = kmeans.fit_predict(log2_subtract)
+    values_subtract_reshaped = values_subtract.reshape(-1, 1)
+    kmeans = MiniBatchKMeans(n_clusters=2, random_state=0)
+    _ = kmeans.fit_predict(values_subtract_reshaped)
     threshold = kmeans.cluster_centers_.mean()
-    return [i for i, v in enumerate(log2_subtract) if v > threshold]
+    return {i for i, v in enumerate(values_subtract_reshaped) if v > threshold}
 
 
-def extract_anomal_loci(indels_normalized_sample, indels_normalized_control) -> dict[str, set[int]]:
+def extract_anomal_loci(
+    indels_normalized_sample,
+    indels_normalized_control,
+    thresholds: dict[str, float],
+) -> dict[str, set[int]]:
     results = dict()
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
         values_subtract = values_sample - values_control
-        idx_outliers = detect_anomalies(values_subtract.reshape(-1, 1))
-        results[mut] = set(idx_outliers)
+        """"
+        When the result of subtraction is threshold (%) or less, ignore it as 0
+        """
+        threshold = thresholds[mut]
+        values_subtract = np.where(values_subtract <= threshold, 0, values_subtract)
+        idx_outliers = detect_anomalies(values_subtract)
+        results[mut] = idx_outliers
     return results
 
 
@@ -330,22 +262,24 @@ def cache_indels_count(ARGS, is_control: bool = False, is_insertion: bool = Fals
 
 
 def extract_mutation_loci(
-    sequence: str, path_indels_normalized_sample: Path, path_indels_normalized_control: Path, path_knockin: Path
+    sequence: str,
+    path_indels_normalized_sample: Path,
+    path_indels_normalized_control: Path,
+    path_knockin: Path,
+    thresholds: dict[str, float] = {"*": 0.05, "-": 0.05, "+": 0.05},
 ) -> list[set[str]]:
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
     indels_normalized_control = io.load_pickle(path_indels_normalized_control)
-    indels_normalized_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
 
     """Extract candidate mutation loci"""
-    dissimilar_loci = extract_dissimilar_loci(indels_normalized_sample, indels_normalized_control)
-    anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_control)
-    candidate_loci = merge_loci(dissimilar_loci, anomal_loci)
+    indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
+    anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_minimize_control, thresholds)
 
     """Extract error loci in homopolymer regions"""
     errors_in_homopolymer = homopolymer_handler.extract_errors(
-        sequence, indels_normalized_sample, indels_normalized_control, candidate_loci
+        sequence, indels_normalized_sample, indels_normalized_control, anomal_loci
     )
-    mutation_loci = discard_errors_in_homopolymer(candidate_loci, errors_in_homopolymer)
+    mutation_loci = discard_errors_in_homopolymer(anomal_loci, errors_in_homopolymer)
 
     """Merge all mutations and knockin loci"""
     if path_knockin.exists():
@@ -353,7 +287,6 @@ def extract_mutation_loci(
         mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
 
     mutation_loci_merged = merge_index_of_consecutive_indel(mutation_loci)
-    # mutation_loci = merge_index_of_consecutive_insertions(mutation_loci)
     mutation_loci_transposed = transpose_mutation_loci(mutation_loci_merged, sequence)
     return mutation_loci_transposed
 

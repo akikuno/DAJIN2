@@ -62,6 +62,81 @@ def replace_sequence_error(cons_percentage: list[dict[str, float]]) -> list[dict
     return cons_percentage_replaced
 
 
+def convert_consecutive_indels_to_match(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    """
+    Converts consecutive insertion and deletion operations on the same characters
+    into a matched operation. This function processes a sequence of operations
+    represented as a list of dictionaries. It cancels out an insertion ("+")
+    operation followed downstream by a corresponding deletion ("-") operation on
+    the same character. The function then consolidates the remaining operations
+    and returns the updated sequence.
+    """
+    cons_percentage_reversed = cons_percentage[::-1].copy()
+
+    i = 0
+    while i < len(cons_percentage_reversed):
+        current_cssplit = cons_percentage_reversed[i]
+        current_consensus = max(current_cssplit, key=current_cssplit.get)
+
+        if not current_consensus.startswith("+"):
+            i += 1
+            continue
+
+        insertions = [base.lstrip("+") for base in current_consensus.split("|")[:-1]][::-1]
+
+        # Extract deletions
+        deletions = []
+        count_del_min = float("inf")
+
+        for j in range(1, len(insertions) + 1):
+            if i + j >= len(cons_percentage_reversed):
+                break
+
+            next_consensus = max(cons_percentage_reversed[i + j], key=cons_percentage_reversed[i + j].get)
+
+            if not next_consensus.startswith("-"):
+                break
+
+            deletions.append(next_consensus.lstrip("-"))
+            count_del_min = min(count_del_min, cons_percentage_reversed[i + j][next_consensus])
+
+        if insertions != deletions:
+            i += 1
+            continue
+
+        # Format deletions
+        count_ins = current_cssplit[current_consensus]
+
+        for k, insertion in enumerate(insertions, 1):
+            current_cssplit = cons_percentage_reversed[i + k]
+            current_count_match = current_cssplit.get(f"={insertion}", 0)
+
+            if count_del_min - count_ins == 0:
+                current_cssplit[f"={insertion}"] = current_count_match + count_ins
+                del current_cssplit[f"-{insertion}"]
+            elif count_del_min - count_ins > 0:
+                current_cssplit[f"={insertion}"] = current_count_match + count_ins
+                current_cssplit[f"-{insertion}"] = count_del_min - count_ins
+            else:
+                current_cssplit[f"={insertion}"] = current_count_match + count_del_min
+                current_cssplit[f"-{insertion}"] -= count_del_min
+                if current_cssplit[f"-{insertion}"] <= 0:
+                    del current_cssplit[f"-{insertion}"]
+
+        # Format insertion
+        cs_last = current_consensus.split("|")[-1]
+        if count_del_min - count_ins >= 0:
+            cons_percentage_reversed[i][cs_last] = count_ins
+            del cons_percentage_reversed[i][current_consensus]
+        else:
+            cons_percentage_reversed[i][cs_last] = count_del_min
+            cons_percentage_reversed[i][current_consensus] = count_ins - count_del_min
+
+        i += len(insertions) + 1
+
+    return cons_percentage_reversed[::-1]
+
+
 def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
     adjusted_percentages = []
 
@@ -82,6 +157,7 @@ def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]]) ->
     cons_percentage = convert_to_percentage(cssplits, mutation_loci)
     cons_percentage = remove_all_n(cons_percentage)
     cons_percentage = replace_sequence_error(cons_percentage)
+    cons_percentage = convert_consecutive_indels_to_match(cons_percentage)
     return adjust_to_100_percent(cons_percentage)
 
 
@@ -132,9 +208,7 @@ class ConsensusKey(NamedTuple):
     percent: float
 
 
-def call_consensus(
-    tempdir: Path, sample_name: str, clust_sample: list[dict]
-) -> tuple[defaultdict[list], defaultdict[str]]:
+def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) -> tuple[dict[list], dict[str]]:
     cons_percentages = defaultdict(list)
     cons_sequences = defaultdict(str)
 
@@ -144,7 +218,7 @@ def call_consensus(
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
 
-        prefix = f"clust_{allele}_{label}"
+        prefix = f"{allele}_{label}"
         mutation_loci = io.load_pickle(Path(path_consensus, f"{prefix}_mutation_loci.pickle"))
 
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
@@ -153,4 +227,4 @@ def call_consensus(
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage
         cons_sequences[key] = call_sequence(cons_percentage)
-    return cons_percentages, cons_sequences
+    return dict(cons_percentages), dict(cons_sequences)
