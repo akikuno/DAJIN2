@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -19,7 +20,7 @@ from DAJIN2.core import core
 from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.3.5"
+DAJIN_VERSION = "0.3.6"
 
 
 def generate_report(name: str) -> None:
