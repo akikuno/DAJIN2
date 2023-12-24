@@ -1,8 +1,51 @@
 # Development Logs of DAJIN2
 
+<!-- TEMPLATE
+# v0.0.0 (yyyy-mm-dd)
+## 📝 Documentation
+## 🚀 Features
+## 🐛 Bug Fixes
+## 🔧 Maintenance
+## ⛔️ Deprecated
++ [ ] XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+-->
+
+# v0.3.6 (yyyy-mm-dd)
+
+## 📝 Documentation
+## 🚀 Features
+
+### Classification
+
+#### Skipped the classification of minor alleles to suppress excessive subdivision of alleles.
+
++ Added `merge_minor_alleles` to reclassify alleles with less than 10 reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/a9399f5d4aaa0f6bcdbea0ead39b2aabf8223f5d)
+
+### Clustering
+
+#### Skipped the clustering of minor alleles to suppress excessive subdivision of alleles.
+
++ Added the function `merge_minor_cluster` to revert labels clustered with less than 10 reads back to the previous labels.
+ [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+
+
+## 🐛 Bug Fixes
+## 🔧 Maintenance
+## ⛔️ Deprecated
+
+
+# 💡 Future Tasks
+
++ Remove minor alleles with predicted insertion
++ Enhance the Clarity of Insertion Allele Identification.
++ Develop and Integrate Inversion Detection Capability
+
 -------------
 
-# v0.3.5 (2023-12-23)
+# Past Logs
+
+<details>
+<summary> v0.3.5 (2023-12-23) </summary>
 
 ## 📝 Documentation
 
@@ -46,18 +89,4 @@
 
 + None
 
--------------
-
-# 💡 Future Tasks
-
-+ Remove minor alleles with predicted insertion
-+ Enhance the Clarity of Insertion Allele Identification.
-+ Develop and Integrate Inversion Detection Capability
-
-<!-- TEMPLATE
-
-+ [ ] Added tests to `preprocess.mutation_extractor`
-
-+ [ ]  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/)
-
--->
+</details>
