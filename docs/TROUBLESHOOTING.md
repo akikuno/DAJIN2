@@ -15,7 +15,7 @@ conda config --add channels conda-forge
 conda config --set channel_priority strict
 
 # Install DAJIN2 to a virtual environment
-conda create -n env-dajin2 -y
+conda create -n env-dajin2 python=3.10 -y
 conda activate env-dajin2
 conda install -c bioconda DAJIN2 -y
 ```
