@@ -218,8 +218,7 @@ def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) ->
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
 
-        prefix = f"{allele}_{label}"
-        mutation_loci = io.load_pickle(Path(path_consensus, f"{prefix}_mutation_loci.pickle"))
+        mutation_loci = io.load_pickle(Path(path_consensus, f"{allele}_{label}_mutation_loci.pickle"))
 
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
         cons_percentage = call_percentage(cssplits, mutation_loci)

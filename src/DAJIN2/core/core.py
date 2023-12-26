@@ -115,6 +115,7 @@ def format_inputs(arguments: dict) -> FormattedInputs:
 
 
 def execute_control(arguments: dict):
+
     logger.info(f"{arguments['control']} is now processing...")
 
     ###########################################################
@@ -172,6 +173,7 @@ def execute_control(arguments: dict):
 
 
 def execute_sample(arguments: dict):
+
     logger.info(f"{arguments['sample']} is now processing...")
 
     ###########################################################
@@ -236,7 +238,9 @@ def execute_sample(arguments: dict):
     ########################################################################
 
     logger.info(f"Classify {arguments['sample']}...")
+
     classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+
     io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
 
     ########################################################################

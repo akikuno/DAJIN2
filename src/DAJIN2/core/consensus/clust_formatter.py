@@ -59,6 +59,7 @@ def cache_normalized_indels(ARGS, path_midsv_sample: Path) -> None:
 
 
 def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
+
     # Separate clusters by label and cache them
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
     path_consensus = Path(ARGS.tempdir, ARGS.sample_name, "consensus")
