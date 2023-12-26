@@ -10,9 +10,18 @@
 + [ ] XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 -->
 
+<!-- memo ToDo
+- barcode09 allele1 の`N`
+- barcode11 allele2 の大型欠失が反映されていない
+- barcode28 allele1 の`N`
+- FASTQ、VCFを出力する
+ -->
 # v0.3.6 (yyyy-mm-dd)
 
 ## 📝 Documentation
+
++ Added a quick quide of installation to TROUBLESHOOTING.md [Commit Detail](https://github.com/akikuno/DAJIN2/commit/cefed0ff4d04282b9915486be07de85b2b77b657)
+
 ## 🚀 Features
 
 ### Classification
@@ -26,13 +35,21 @@
 #### Skipped the clustering of minor alleles to suppress excessive subdivision of alleles.
 
 + Added the function `merge_minor_cluster` to revert labels clustered with less than 10 reads back to the previous labels.
- [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+ [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4bd9f7dd806d192475d8d4f20c1e50c37281d64e)
 
 
 ## 🐛 Bug Fixes
+
+### Consensus
+
++ 大型欠失の内部で欠失が反映されないバグを修正 [Commit Detail](https://github.com/akikuno/DAJIN2/commit/XXX)
+
 ## 🔧 Maintenance
+
+
 ## ⛔️ Deprecated
 
+---
 
 # 💡 Future Tasks
 
