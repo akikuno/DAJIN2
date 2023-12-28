@@ -115,7 +115,6 @@ def format_inputs(arguments: dict) -> FormattedInputs:
 
 
 def execute_control(arguments: dict):
-
     logger.info(f"{arguments['control']} is now processing...")
 
     ###########################################################
@@ -157,7 +156,7 @@ def execute_control(arguments: dict):
     ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
-    preprocess.cache_mutation_loci(ARGS, is_control=True, is_insertion=False)
+    preprocess.cache_mutation_loci(ARGS, is_control=True)
 
     ###########################################################
     # Output BAM files
@@ -173,7 +172,6 @@ def execute_control(arguments: dict):
 
 
 def execute_sample(arguments: dict):
-
     logger.info(f"{arguments['sample']} is now processing...")
 
     ###########################################################
@@ -204,7 +202,7 @@ def execute_sample(arguments: dict):
     # Extract mutation loci
     # ============================================================
     preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
-    preprocess.cache_mutation_loci(ARGS, is_control=False, is_insertion=False)
+    preprocess.cache_mutation_loci(ARGS, is_control=False)
 
     # ============================================================
     # Detect and align insertion alleles
@@ -227,9 +225,9 @@ def execute_sample(arguments: dict):
         preprocess.generate_midsv(ARGS, is_control=True, is_insertion=True)
         preprocess.generate_midsv(ARGS, is_control=False, is_insertion=True)
         # Reculculate mutation loci
-        preprocess.cache_mutation_loci(ARGS, is_control=True, is_insertion=True)
+        preprocess.cache_mutation_loci(ARGS, is_control=True)
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
-        preprocess.cache_mutation_loci(ARGS, is_control=False, is_insertion=True)
+        preprocess.cache_mutation_loci(ARGS, is_control=False)
 
     io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
 
@@ -263,10 +261,10 @@ def execute_sample(arguments: dict):
 
     logger.info(f"Consensus calling of {arguments['sample']}...")
 
-    consensus.cache_mutation_loci(ARGS, clust_sample)
-
     # Downsampling to 1000 reads in each LABEL
     clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
+
+    consensus.cache_mutation_loci(ARGS, clust_subset_sample)
 
     cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_subset_sample)
 
@@ -278,7 +276,7 @@ def execute_sample(arguments: dict):
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
     io.save_pickle(cons_percentage, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
-    io.save_pickle(cons_sequence, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "conse_sequence.pickle"))
+    io.save_pickle(cons_sequence, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequence.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
