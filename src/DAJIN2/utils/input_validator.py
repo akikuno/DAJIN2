@@ -17,24 +17,25 @@ def update_threads(threads: int) -> int:
     threads_updated = max(1, min(threads, available_threads))
     return threads_updated
 
+
 ########################################################################
 # Check if the sample is in the proper format.
 ########################################################################
 
 
-def _validate_file_existence(input_file: str):
+def validate_file_existence(input_file: str):
     if not Path(input_file).exists():
         raise FileNotFoundError(f"{input_file} is not found")
 
 
-def _validate_fastq_extension(fastq_path: str):
+def validate_fastq_extension(fastq_path: str):
     if not re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", fastq_path):
         raise ValueError(f"{fastq_path} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
 
 
 # Varidate if the file is in the proper format.
 # See top 100 lines
-def _validate_fastq_content(fastq_path: str):
+def validate_fastq_content(fastq_path: str):
     try:
         names, seqs, quals = zip(*[(n, s, q) for i, (n, s, q) in enumerate(mappy.fastx_read(fastq_path)) if i < 100])
         if not (len(names) == len(seqs) == len(quals) > 0):
@@ -43,7 +44,7 @@ def _validate_fastq_content(fastq_path: str):
         raise ValueError(f"{fastq_path} is not a FASTQ format")
 
 
-def _validate_fasta_content(fasta_path: str):
+def validate_fasta_content(fasta_path: str):
     try:
         names, seqs = zip(*[(n, s) for n, s, _ in mappy.fastx_read(fasta_path)])
         if len(names) != len(seqs) or not names:
@@ -59,12 +60,12 @@ def _validate_fasta_content(fasta_path: str):
 
 
 def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
-    for file in [CONTROL, SAMPLE, ALLELE]:
-        _validate_file_existence(file)
-    for file in [CONTROL, SAMPLE]:
-        _validate_fastq_extension(file)
-        _validate_fastq_content(file)
-    _validate_fasta_content(ALLELE)
+    for path_fastx in [CONTROL, SAMPLE, ALLELE]:
+        validate_file_existence(path_fastx)
+    for path_fastx in [CONTROL, SAMPLE]:
+        validate_fastq_extension(path_fastx)
+        validate_fastq_content(path_fastx)
+    validate_fasta_content(ALLELE)
 
 
 ########################################################################
@@ -96,38 +97,42 @@ def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool)
 ########################################################################
 
 
-def _is_webpage_available(url: str) -> bool:
+def is_webpage_available(url: str) -> bool:
     try:
         with urlopen(url) as response:
-            return 200 <= response.status < 300
+            html = response.read().decode("utf-8")
+            if "TITLE" not in html:
+                return True
+            title = next((h for h in html.split("\n") if "<TITLE>" in h), "")
+            return "Error" not in title
     except URLError:
         return False
 
 
 def get_first_available_url(urls: list[str]) -> str | None:
-    return next((url for url in urls if _is_webpage_available(url)), None)
+    return next((url for url in urls if is_webpage_available(url)), None)
 
 
-def _fetch_xml_data(url: str) -> bytes:
+def fetch_xml_data(url: str) -> bytes:
     """Fetch XML data from a given URL."""
     with urlopen(url) as response:
         return response.read()
 
 
-def _extract_genome_ids_from_xml(xml_data: bytes) -> set:
+def extract_genome_ids_from_xml(xml_data: bytes) -> set:
     """Extract genome IDs from XML data."""
     root = ET.fromstring(xml_data)
     return {cc.attrib["id"] for child in root for cc in child if cc.tag == "SOURCE"}
 
 
-def _get_genome_ids_in_ucsc(url_das: str) -> set:
+def get_genome_ids_in_ucsc(url_das: str) -> set:
     """Get available genome IDs in UCSC."""
-    xml_data = _fetch_xml_data(url_das)
-    return _extract_genome_ids_from_xml(xml_data)
+    xml_data = fetch_xml_data(url_das)
+    return extract_genome_ids_from_xml(xml_data)
 
 
 def is_genome_in_ucsc_ids(genome: str, url_das: str) -> bool:
-    genome_ids = _get_genome_ids_in_ucsc(url_das)
+    genome_ids = get_genome_ids_in_ucsc(url_das)
     return genome in genome_ids
 
 
