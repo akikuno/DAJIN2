@@ -28,7 +28,7 @@
 
 + Simplyfy `homopolymer_handler.py` for the error detection using cosine similarity [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
 
-+ Use cosine similarity to filter dissimilar loci at `mutation_extractor.py` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
++ Use cosine similarity to filter dissimilar loci at `mutation_extractor.py` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9f5aa7b48581e58d99fe8c31275c422756aa9f1)
 
 ### Classification
 
