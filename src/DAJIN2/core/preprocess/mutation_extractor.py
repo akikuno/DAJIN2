@@ -46,7 +46,7 @@ def normalize_indels(count: dict[str, list[int]]) -> dict[str, np.array]:
     for mut, indel_count in count.items():
         numerator = np.array(indel_count)
         denominator = numerator + match_count
-        count_normalized[mut] = np.where(denominator == 0, 0, numerator / denominator)
+        count_normalized[mut] = np.where(denominator == 0, 0, numerator / denominator * 100)
     return count_normalized
 
 
@@ -84,7 +84,17 @@ def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.arra
 ###########################################################
 
 
-def detect_anomalies(values_subtract: np.array) -> set[int]:
+def cosine_similarity(x, y):
+    return np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))
+
+
+def identify_dissimilar_loci(values_sample, values_control, index: int) -> int:
+    x = values_sample[index - 5 : index + 6]
+    y = values_control[index - 5 : index + 6]
+    return cosine_similarity(x, y) < 0.95
+
+
+def detect_anomalies(values_sample, values_control, threshold: float) -> set[int]:
     """
     Detect anomalies and return indices of outliers.
 
@@ -95,11 +105,15 @@ def detect_anomalies(values_subtract: np.array) -> set[int]:
     This function returns the indices of the class with the higher mean of values_subtract
     values, as this class is considered to be the true anomalies.
     """
+    values_subtract = values_sample - values_control
+
+    """"When the result of subtraction is threshold (%) or less, ignore it as 0"""
+    values_subtract = np.where(values_subtract <= threshold, 0, values_subtract)
     values_subtract_reshaped = values_subtract.reshape(-1, 1)
-    kmeans = MiniBatchKMeans(n_clusters=2, random_state=0)
-    _ = kmeans.fit_predict(values_subtract_reshaped)
+    kmeans = MiniBatchKMeans(n_clusters=2, random_state=0, n_init="auto").fit(values_subtract_reshaped)
     threshold = kmeans.cluster_centers_.mean()
-    return {i for i, v in enumerate(values_subtract_reshaped) if v > threshold}
+    candidate_loci = {i for i, v in enumerate(values_subtract_reshaped) if v > threshold}
+    return {i for i in candidate_loci if identify_dissimilar_loci(values_sample, values_control, i)}
 
 
 def extract_anomal_loci(
@@ -111,13 +125,7 @@ def extract_anomal_loci(
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
-        values_subtract = values_sample - values_control
-        """"
-        When the result of subtraction is threshold (%) or less, ignore it as 0
-        """
-        threshold = thresholds[mut]
-        values_subtract = np.where(values_subtract <= threshold, 0, values_subtract)
-        idx_outliers = detect_anomalies(values_subtract)
+        idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut])
         results[mut] = idx_outliers
     return results
 
@@ -196,7 +204,7 @@ def merge_index_of_consecutive_indel(mutation_loci: dict[str, set[int]]) -> dict
 
 
 ###########################################################
-# main
+# formatters
 ###########################################################
 
 
@@ -237,25 +245,20 @@ def transpose_mutation_loci(mutation_loci: dict[str, set[int]], sequence: str) -
 ###########################################################
 
 
-def cache_indels_count(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
-    tempdir, sample_name, control_name, fasta_alleles = (
-        ARGS.tempdir,
-        ARGS.sample_name,
-        ARGS.control_name,
-        ARGS.fasta_alleles,
-    )
-
-    for allele, sequence in fasta_alleles.items():
-        if is_control and Path(tempdir, control_name, "midsv", f"{allele}_{sample_name}.json").exists():
-            prefix = f"{allele}_{sample_name}"
+def cache_indels_count(ARGS, is_control: bool = False) -> None:
+    for allele, sequence in ARGS.fasta_alleles.items():
+        if is_control and Path(ARGS.tempdir, ARGS.control_name, "midsv", f"{allele}_{ARGS.sample_name}.json").exists():
+            prefix = f"{allele}_{ARGS.sample_name}"
         else:
             prefix = allele
 
-        path_mutation_loci = Path(tempdir, control_name if is_control else sample_name, "mutation_loci")
+        path_mutation_loci = Path(ARGS.tempdir, ARGS.control_name if is_control else ARGS.sample_name, "mutation_loci")
         if Path(path_mutation_loci, f"{prefix}_count.pickle").exists():
             continue
 
-        path_midsv = Path(tempdir, control_name if is_control else sample_name, "midsv", f"{prefix}.json")
+        path_midsv = Path(
+            ARGS.tempdir, ARGS.control_name if is_control else ARGS.sample_name, "midsv", f"{prefix}.json"
+        )
         indels_count, indels_normalized = summarize_indels(path_midsv, sequence)
         io.save_pickle(indels_count, Path(path_mutation_loci, f"{prefix}_count.pickle"))
         io.save_pickle(indels_normalized, Path(path_mutation_loci, f"{prefix}_normalized.pickle"))
@@ -266,7 +269,7 @@ def extract_mutation_loci(
     path_indels_normalized_sample: Path,
     path_indels_normalized_control: Path,
     path_knockin: Path,
-    thresholds: dict[str, float] = {"*": 0.05, "-": 0.05, "+": 0.05},
+    thresholds: dict[str, float] = {"*": 0.5, "-": 0.5, "+": 0.5},
 ) -> list[set[str]]:
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
     indels_normalized_control = io.load_pickle(path_indels_normalized_control)
@@ -291,34 +294,27 @@ def extract_mutation_loci(
     return mutation_loci_transposed
 
 
-def cache_mutation_loci(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
-    cache_indels_count(ARGS, is_control, is_insertion)
+def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
+    cache_indels_count(ARGS, is_control)
 
     if is_control:
         return
 
-    tempdir, sample_name, control_name, fasta_alleles = (
-        ARGS.tempdir,
-        ARGS.sample_name,
-        ARGS.control_name,
-        ARGS.fasta_alleles,
-    )
+    path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci")
+    path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci")
 
-    path_mutation_sample = Path(tempdir, sample_name, "mutation_loci")
-    path_mutation_control = Path(tempdir, control_name, "mutation_loci")
-
-    for allele, sequence in fasta_alleles.items():
+    for allele, sequence in ARGS.fasta_alleles.items():
         path_output = Path(path_mutation_sample, f"{allele}.pickle")
         if path_output.exists():
             continue
 
-        file_name = f"{allele}_{sample_name}_normalized.pickle"
+        file_name = f"{allele}_{ARGS.sample_name}_normalized.pickle"
         if not Path(path_mutation_control, file_name).exists():
             file_name = f"{allele}_normalized.pickle"
         path_indels_normalized_control = Path(path_mutation_control, file_name)
 
         path_indels_normalized_sample = Path(path_mutation_sample, f"{allele}_normalized.pickle")
-        path_knockin = Path(tempdir, sample_name, "knockin_loci", f"{allele}.pickle")
+        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", f"{allele}.pickle")
 
         mutation_loci = extract_mutation_loci(
             sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin

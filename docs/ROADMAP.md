@@ -24,6 +24,12 @@
 
 ## 🚀 Features
 
+### Preprocess
+
++ Simplyfy `homopolymer_handler.py` for the error detection using cosine similarity [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
+
++ Use cosine similarity to filter dissimilar loci at `mutation_extractor.py` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
+
 ### Classification
 
 #### Skipped the classification of minor alleles to suppress excessive subdivision of alleles.
@@ -36,6 +42,10 @@
 
 + Added the function `merge_minor_cluster` to revert labels clustered with less than 10 reads back to the previous labels.
  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4bd9f7dd806d192475d8d4f20c1e50c37281d64e)
+
+### Consensus
+
++ Use `LocalOutlierFactor` to filter abnormal control reads [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4bd9f7dd806d192494c48da01fc039902c97a23ddea47dd5f2b42ab475d8d4f20c1e50c37281d64e)
 
 
 ## 🐛 Bug Fixes
