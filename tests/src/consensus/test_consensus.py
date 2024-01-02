@@ -6,67 +6,7 @@ from src.DAJIN2.core.consensus.consensus import (
     call_percentage,
     cstag_to_base,
     call_sequence,
-    convert_consecutive_indels_to_match,
 )
-
-###########################################################
-# convert_consecutive_indels_to_match
-###########################################################
-
-
-def test_convert_consecutive_indels_to_match_empty_input():
-    assert convert_consecutive_indels_to_match([]) == []
-
-
-@pytest.mark.parametrize(
-    "cons, expected",
-    [
-        # simple case
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"+T|=A": 1}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"=A": 1}],
-        ),
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"+G|+T|=A": 1}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 1, "=G": 1}, {"-T": 1, "=T": 1}, {"=A": 1}],
-        ),
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"+C|+G|+T|=A": 1}],
-            [{"=A": 2}, {"-C": 1, "=C": 1}, {"-G": 1, "=G": 1}, {"-T": 1, "=T": 1}, {"=A": 1}],
-        ),
-        # insertion < deletion
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2, "=T": 1}, {"+T|=A": 1}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 2}, {"=A": 1}],
-        ),
-        # insertion == deletion
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1, "=T": 1}, {"+T|=A": 1}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 2}, {"=A": 1}],
-        ),
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 1}, {"+T|=A": 1}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 1}, {"=A": 1}],
-        ),
-        # insertion > deletion
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 3, "=T": 1}, {"+T|=A": 10}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"=T": 4}, {"+T|=A": 7, "=A": 3}],
-        ),
-        # deletion_min < insertion
-        (
-            [{"=A": 2}, {"-C": 20}, {"-G": 2}, {"-T": 3, "=T": 1}, {"+C|+G|+T|=A": 10}],
-            [{"=A": 2}, {"-C": 18, "=C": 2}, {"=G": 2}, {"-T": 1, "=T": 3}, {"+C|+G|+T|=A": 8, "=A": 2}],
-        ),
-        # no change
-        (
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"=A": 2}],
-            [{"=A": 2}, {"-C": 2}, {"-G": 2}, {"-T": 2}, {"=A": 2}],
-        ),
-    ],
-)
-def test_convert_consecutive_indels_to_match(cons, expected):
-    assert convert_consecutive_indels_to_match(cons) == expected
 
 
 ###########################################################
