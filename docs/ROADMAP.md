@@ -26,22 +26,26 @@
 
 ### Preprocess
 
++ Update `input_validator.py`: The UCSC Blat server sometimes returns a 200 HTTP status code even when an error occurs. In such cases, "Very Early Error" is indicated in the Title. Therefore, we have made it so that it returns False in those situations. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4ad9c9ef8bd963a6e20c1721480aed0fe7922760)
+
 + Simplyfy `homopolymer_handler.py` for the error detection using cosine similarity [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
 
-+ Use cosine similarity to filter dissimilar loci at `mutation_extractor.py` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9f5aa7b48581e58d99fe8c31275c422756aa9f1)
++ Update `mutation_extractor.py` to use cosine similarity to filter dissimilar loci [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9f5aa7b48581e58d99fe8c31275c422756aa9f1)
+
++ Update the `mutation_extractor.identify_dissimilar_loci`  so that it unconditionally returns True if  the 'sample' shows more than 5% variation compared to the 'control'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0cbec5217fdfba6886979eb86cf970b587e83e5f)
+
++ Add `preprocess.midsv_caller.convert_consecutive_indels_to_match`: Due to alignment errors, there can be instances where a true match is mistakenly replaced with "insertion following a deletion". For example, although it should be "=C,=T", it gets replaced by "-C,+C|=T". In such cases, a process is performed to revert it back to "=C,=T". [Commit Detail](https://github.com/akikuno/DAJIN2/commit/69c56fa904ef847dc5b0e2dcdb90303409412d0f)
 
 ### Classification
 
-#### Skipped the classification of minor alleles to suppress excessive subdivision of alleles.
-
-+ Added `merge_minor_alleles` to reclassify alleles with less than 10 reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/a9399f5d4aaa0f6bcdbea0ead39b2aabf8223f5d)
++ Added `merge_minor_alleles` to reclassify alleles with less than 10 reads to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/a9399f5d4aaa0f6bcdbea0ead39b2aabf8223f5d)
 
 ### Clustering
 
-#### Skipped the clustering of minor alleles to suppress excessive subdivision of alleles.
-
-+ Added the function `merge_minor_cluster` to revert labels clustered with less than 10 reads back to the previous labels.
++ Added the function `merge_minor_cluster` to revert labels clustered with less than 10 reads back to the previous labels to suppress excessive subdivision of alleles.
  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4bd9f7dd806d192475d8d4f20c1e50c37281d64e)
+
++ Update `generate_mutation_kmers` to to consider indices not registered in mutation_loci as mutations by replacing them with "@". For example, if there are no mutations in mutation_loci, "=G,=C,-C" and "~G,=G,=C" become "@,@,@" and "@,@,@" respectively, making them the same and ensuring they do not affect clustering. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/9eefaaa1a9be3922b60655292c0a310e0f5fc76d)
 
 ### Consensus
 
