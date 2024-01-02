@@ -25,10 +25,13 @@ def onehot_by_mutations(midsv_sample: list[dict]) -> dict[str, np.ndarray]:
     return {mut: np.array(value) for mut, value in mut_onehot.items()}
 
 
-def calculate_percentage(mut_onehot: dict[str, np.ndarray], coverage: list[int]) -> dict[str, np.ndarray]:
+def calculate_percentage(
+    mut_onehot_sample: dict[str, np.ndarray], coverage_match: np.ndarray[int]
+) -> dict[str, np.ndarray]:
     mut_percentage = dict()
-    for i, (mut, onehot) in enumerate(mut_onehot.items()):
-        mut_percentage[mut] = np.sum(onehot, axis=0) / coverage[i]
+    for mut, onehot in mut_onehot_sample.items():
+        x = np.sum(onehot, axis=0) / coverage_match
+        mut_percentage[mut] = np.where(np.isnan(x), 0, x)
     return mut_percentage
 
 
@@ -74,11 +77,11 @@ def filter_control(path_midsv_control: Path, path_midsv_sample: Path) -> list[bo
     find similar control reads compared to sample reads
     """
     cssplits = (m["CSSPLIT"].split(",") for m in io.read_jsonl(path_midsv_sample))
-    coverage_not_N = [sum(1 for item in sublist if item != "N") for sublist in zip(*cssplits)]
+    coverage_match = np.array([sum(1 for cs in cssplit if cs.startswith("=")) for cssplit in zip(*cssplits)])
     mut_onehot_sample = onehot_by_mutations(io.read_jsonl(path_midsv_sample))
     mut_onehot_control = onehot_by_mutations(io.read_jsonl(path_midsv_control))
 
-    mut_percentage_sample = calculate_percentage(mut_onehot_sample, coverage_not_N)
+    mut_percentage_sample = calculate_percentage(mut_onehot_sample, coverage_match)
     values_mask = get_values_to_mask(mut_percentage_sample)
 
     mut_onehot_sample_masked = apply_mask(mut_onehot_sample, values_mask)
