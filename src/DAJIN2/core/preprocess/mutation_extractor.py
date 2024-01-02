@@ -89,6 +89,9 @@ def cosine_similarity(x, y):
 
 
 def identify_dissimilar_loci(values_sample, values_control, index: int) -> int:
+    # If 'sample' has more than 5% variation compared to 'control', unconditionally set it to True
+    if values_sample[index] - values_control[index] > 5:
+        return True
     x = values_sample[index - 5 : index + 6]
     y = values_control[index - 5 : index + 6]
     return cosine_similarity(x, y) < 0.95
