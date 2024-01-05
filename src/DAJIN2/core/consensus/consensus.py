@@ -90,7 +90,7 @@ def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]]) ->
 ###########################################################
 
 
-def cstag_to_base(cons: str) -> str:
+def cssplit_to_base(cons: str) -> str:
     if cons.startswith("="):  # match
         return cons.replace("=", "")
     if cons.startswith("-"):  # deletion
@@ -115,7 +115,7 @@ def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     for i, cons_per in enumerate(cons_percentage):
         if n_left < i < n_right:
             cons = max(cons_per, key=cons_per.get)
-            consensus_sequence.append(cstag_to_base(cons))
+            consensus_sequence.append(cssplit_to_base(cons))
         else:
             consensus_sequence.append("N")
     return "".join(consensus_sequence)

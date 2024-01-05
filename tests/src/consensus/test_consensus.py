@@ -4,7 +4,7 @@ from src.DAJIN2.core.consensus.consensus import (
     replace_sequence_error,
     adjust_to_100_percent,
     call_percentage,
-    cstag_to_base,
+    cssplit_to_base,
     call_sequence,
 )
 
@@ -60,7 +60,7 @@ def test_call_percentage():
 ###########################################################
 
 
-# Example test cases for cstag_to_base function
+# Example test cases for cssplit_to_base function
 @pytest.mark.parametrize(
     "cons, expected_output",
     [
@@ -76,8 +76,8 @@ def test_call_percentage():
         ("", ""),
     ],
 )
-def test_cstag_to_base(cons, expected_output):
-    assert cstag_to_base(cons) == expected_output
+def test_cssplit_to_base(cons, expected_output):
+    assert cssplit_to_base(cons) == expected_output
 
 
 @pytest.mark.parametrize(
