@@ -9,7 +9,7 @@ def test_fetch_seq_coodinates_strand_plus():
     genome = "mm39"
     blat_url = "https://genome.ucsc.edu/cgi-bin/hgBlat"
     seq = "GTTAGGATTTTCAGGGTGACGACCTCCCAAGTACTCATCTGTGCAAATGT"
-    test = genome_fetcher._fetch_seq_coordinates(genome, blat_url, seq)
+    test = genome_fetcher.fetch_seq_coordinates(genome, blat_url, seq)
     answer = {"chrom": "chr7", "strand": "+", "start": 87141776, "end": 87141825}
     assert test == answer
 
@@ -19,7 +19,7 @@ def test_fetch_seq_coodinates_strand_minus():
     genome = "mm39"
     blat_url = "https://genome.ucsc.edu/cgi-bin/hgBlat"
     seq = "ACATTTGCACAGATGAGTACTTGGGAGGTCGTCACCCTGAAAATCCTAAC"
-    test = genome_fetcher._fetch_seq_coordinates(genome, blat_url, seq)
+    test = genome_fetcher.fetch_seq_coordinates(genome, blat_url, seq)
     answer = {"chrom": "chr7", "strand": "-", "start": 87141776, "end": 87141825}
     assert test == answer
 
@@ -30,8 +30,8 @@ def test_fetch_seq_coodinates_error():
     blat_url = "https://genome.ucsc.edu/cgi-bin/hgBlat"
     seq = "XXXXXXXXXXXXXXXXX"
     with pytest.raises(ValueError) as e:
-        genome_fetcher._fetch_seq_coordinates(genome, blat_url, seq)
-    assert str(e.value) == f"{seq} is not found in {genome}"
+        genome_fetcher.fetch_seq_coordinates(genome, blat_url, seq)
+    assert str(e.value) == f"{seq[:10]}... is not found in {genome}"
 
 
 @pytest.mark.slow
