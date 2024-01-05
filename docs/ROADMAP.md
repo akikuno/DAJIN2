@@ -38,7 +38,7 @@
 
 ### Classification
 
-+ Added `merge_minor_alleles` to reclassify alleles with less than 10 reads to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/a9399f5d4aaa0f6bcdbea0ead39b2aabf8223f5d)
++ Added `allele_merger.merge_minor_alleles` to reclassify alleles with less than 10 reads to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b0752960def313e237ccf7d44542f9810cad0c00)
 
 ### Clustering
 
