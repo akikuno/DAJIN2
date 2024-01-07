@@ -88,47 +88,44 @@ def cosine_similarity(x, y):
     return np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))
 
 
-def identify_dissimilar_loci(values_sample, values_control, index: int) -> int:
-    # If 'sample' has more than 5% variation compared to 'control', unconditionally set it to True
-    if values_sample[index] - values_control[index] > 5:
+def identify_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> int:
+    # If 'sample' has more than X% variation compared to 'control', unconditionally set it to "dissimilar loci"
+    threshold = 20 if is_consensus else 5
+    if values_sample[index] - values_control[index] > threshold:
         return True
+
     x = values_sample[index - 5 : index + 6]
     y = values_control[index - 5 : index + 6]
+
     return cosine_similarity(x, y) < 0.95
 
 
-def detect_anomalies(values_sample, values_control, threshold: float) -> set[int]:
+def detect_anomalies(values_sample, values_control, threshold: float, is_consensus: bool = False) -> set[int]:
     """
     Detect anomalies and return indices of outliers.
-
-    It classifies data points into two classes: 1 (inliers) and -1 (outliers).
-    However, depending on how the "normal" class was learned, either of these classes
-    might represent the true anomalies in the context of this problem.
-
-    This function returns the indices of the class with the higher mean of values_subtract
-    values, as this class is considered to be the true anomalies.
     """
     values_subtract = values_sample - values_control
-
-    """"When the result of subtraction is threshold (%) or less, ignore it as 0"""
     values_subtract = np.where(values_subtract <= threshold, 0, values_subtract)
+
     values_subtract_reshaped = values_subtract.reshape(-1, 1)
     kmeans = MiniBatchKMeans(n_clusters=2, random_state=0, n_init="auto").fit(values_subtract_reshaped)
     threshold = kmeans.cluster_centers_.mean()
     candidate_loci = {i for i, v in enumerate(values_subtract_reshaped) if v > threshold}
-    return {i for i in candidate_loci if identify_dissimilar_loci(values_sample, values_control, i)}
+
+    return {i for i in candidate_loci if identify_dissimilar_loci(values_sample, values_control, i, is_consensus)}
 
 
 def extract_anomal_loci(
     indels_normalized_sample,
     indels_normalized_control,
     thresholds: dict[str, float],
+    is_consensus: bool = False,
 ) -> dict[str, set[int]]:
     results = dict()
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
-        idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut])
+        idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut], is_consensus)
         results[mut] = idx_outliers
     return results
 
@@ -273,13 +270,16 @@ def extract_mutation_loci(
     path_indels_normalized_control: Path,
     path_knockin: Path,
     thresholds: dict[str, float] = {"*": 0.5, "-": 0.5, "+": 0.5},
+    is_consensus: bool = False,
 ) -> list[set[str]]:
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
     indels_normalized_control = io.load_pickle(path_indels_normalized_control)
 
     """Extract candidate mutation loci"""
     indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
-    anomal_loci = extract_anomal_loci(indels_normalized_sample, indels_normalized_minimize_control, thresholds)
+    anomal_loci = extract_anomal_loci(
+        indels_normalized_sample, indels_normalized_minimize_control, thresholds, is_consensus
+    )
 
     """Extract error loci in homopolymer regions"""
     errors_in_homopolymer = homopolymer_handler.extract_errors(
