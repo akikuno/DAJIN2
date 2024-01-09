@@ -22,20 +22,30 @@ config.set_warnings_ignore()
 ###############################################################################
 
 
-def optimize_labels(X: spmatrix, coverage_sample, coverage_control) -> list[int]:
+def count_number_of_clusters(labels_control: list[int], coverage_control: int) -> int:
+    """Reads < 1% in the control are considered clustering errors and are not counted"""
+    return sum(1 for reads in Counter(labels_control).values() if reads / coverage_control > 0.01)
+
+
+def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) -> list[int]:
     labels_previous = list(range(coverage_sample))
     for i in range(1, coverage_sample):
         np.random.seed(seed=1)
         labels_all = BisectingKMeans(n_clusters=i, random_state=1).fit_predict(X).tolist()
+
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
-        labels_current = merge_labels(labels_control, labels_sample)
+        labels_current = merge_labels(labels_control, labels_sample, labels_previous)
         # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_current))  # ! DEBUG
-        # Reads < 1% in the control are considered clustering errors and are not counted
-        count_control = Counter(labels_control)
-        num_labels_control = sum(1 for reads in count_control.values() if reads / coverage_control > 0.01)
+
+        num_labels_control = count_number_of_clusters(labels_control, coverage_control)
         mutual_info = metrics.adjusted_rand_score(labels_previous, labels_current)
-        # Report the number of clusters in SAMPLE when the number of clusters in CONTROL is split into more than one.
+
+        """
+        Return the number of clusters when:
+        - the number of clusters in control is split into more than one.
+        - the mutual information between the current and previous labels is high enough (= similar).
+        """
         if num_labels_control >= 2:
             return labels_previous
         if 0.95 <= mutual_info <= 1.0:

@@ -24,23 +24,33 @@ def compress_insertion(cssplit: list[str], index: int, compress_ins: bool) -> st
     return cssplit
 
 
+def annotate_cs_tag(cssplit: str, mutation: set[str]) -> str:
+    cs = cssplit[0]  # +, - , *, =, or N
+    if cs in mutation:
+        return cssplit
+    else:
+        return "@"
+
+
 def generate_mutation_kmers(
     path_sample: Path | str, mutation_loci: list[set[str]], compress_ins: bool = True
 ) -> Generator[list[str]]:
     midsv_sample = io.read_jsonl(path_sample)
     for cssplit in (cs["CSSPLIT"].split(",") for cs in midsv_sample):
-        mutation_kmers = ["N,N,N"]
+        mutation_kmers = ["@,@,@"]
         for i in range(1, len(cssplit) - 1):
             if mutation_loci[i] == set():
-                mutation_kmers.append("N,N,N")
+                mutation_kmers.append("@,@,@")
                 continue
-            mutation = cssplit[i][0]  # +, - , *, =, N
-            if mutation == "+":
+            cs_current = cssplit[i][0]  # +, - , *, =, N
+            if cs_current == "+":
                 cssplit = compress_insertion(cssplit, i, compress_ins)
-            if mutation in mutation_loci[i]:
-                kmer = ",".join([cssplit[i - 1], cssplit[i], cssplit[i + 1]])
+            if cs_current in mutation_loci[i]:
+                cs_prev = annotate_cs_tag(cssplit[i - 1], mutation_loci[i - 1])
+                cs_next = annotate_cs_tag(cssplit[i + 1], mutation_loci[i + 1])
+                kmer = ",".join([cs_prev, cssplit[i], cs_next])
                 mutation_kmers.append(kmer)
             else:
-                mutation_kmers.append("N,N,N")
-        mutation_kmers.append("N,N,N")
+                mutation_kmers.append("@,@,@")
+        mutation_kmers.append("@,@,@")
         yield mutation_kmers

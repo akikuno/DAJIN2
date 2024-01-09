@@ -1,28 +1,29 @@
 import pytest
 import midsv
 
-from DAJIN2.core.preprocess.midsv_caller import _has_inversion_in_splice
+from DAJIN2.core.preprocess.midsv_caller import has_inversion_in_splice
 from DAJIN2.core.preprocess.midsv_caller import extract_qname_of_map_ont
 from DAJIN2.core.preprocess.midsv_caller import replace_internal_n_to_d
 from DAJIN2.core.preprocess.midsv_caller import convert_flag_to_strand
+from DAJIN2.core.preprocess.midsv_caller import convert_consecutive_indels_to_match
 
 from pathlib import Path
 from DAJIN2.core.preprocess.mapping import to_sam
 
 
 ###########################################################
-# _has_inversion_in_splice
+# has_inversion_in_splice
 ###########################################################
 def test_has_inversion_in_splice():
     # Test cases where there is an inversion in splice (insertion followed by deletion)
-    assert _has_inversion_in_splice("4M1I4N")
-    assert _has_inversion_in_splice("10M1I5N")
-    assert _has_inversion_in_splice("1I1N")
+    assert has_inversion_in_splice("4M1I4N")
+    assert has_inversion_in_splice("10M1I5N")
+    assert has_inversion_in_splice("1I1N")
 
     # Test cases where there is no inversion in splice
-    assert not _has_inversion_in_splice("10M")
-    assert not _has_inversion_in_splice("5N5M")
-    assert not _has_inversion_in_splice("1I1M")
+    assert not has_inversion_in_splice("10M")
+    assert not has_inversion_in_splice("5N5M")
+    assert not has_inversion_in_splice("1I1M")
 
 
 def test_has_inversion_in_splice_random_inversion():
@@ -32,7 +33,7 @@ def test_has_inversion_in_splice_random_inversion():
     test = list(to_sam(str(path_reference), str(path_query), preset=preset))
     test = [s.split("\t") for s in test]
     test_cigar = [s[5] for s in test if not s[0].startswith("@")]
-    assert _has_inversion_in_splice(test_cigar[0])
+    assert has_inversion_in_splice(test_cigar[0])
 
 
 def test_has_inversion_in_splice_random_deletion():
@@ -42,7 +43,7 @@ def test_has_inversion_in_splice_random_deletion():
     test = list(to_sam(str(path_reference), str(path_query), preset=preset))
     test = [s.split("\t") for s in test]
     test_cigar = [s[5] for s in test if not s[0].startswith("@")]
-    assert not _has_inversion_in_splice(test_cigar[0])
+    assert not has_inversion_in_splice(test_cigar[0])
 
 
 """
@@ -56,7 +57,7 @@ def test_has_inversion_in_splice_random_deletion():
 #     test = list(to_sam(str(path_reference), str(path_query), preset=preset))
 #     test = [s.split("\t") for s in test]
 #     test_cigar = [s[5] for s in test if not s[0].startswith("@")]
-#     assert not _has_inversion_in_splice(test_cigar[0])
+#     assert not has_inversion_in_splice(test_cigar[0])
 
 ###########################################################
 # extract_qname_of_map_ont
@@ -181,3 +182,25 @@ def test_replace_internal_n_to_d_large_n():
 def test_convert_flag_to_strand(input_sample, expected_output):
     result = list(convert_flag_to_strand(iter(input_sample)))
     assert result == expected_output
+
+
+###########################################################
+# convert_consecutive_indels_to_match
+###########################################################
+
+
+@pytest.mark.parametrize(
+    "cons, expected",
+    [
+        # simple case
+        ("=A,-C,-G,-T,+T|=A", "=A,-C,-G,=T,=A"),
+        ("=A,-C,-G,-T,+G|+T|=A", "=A,-C,=G,=T,=A"),
+        ("=A,-C,-G,-T,+C|+G|+T|=A", "=A,=C,=G,=T,=A"),
+        # no change
+        ("=A,=C,=G,=T,=A", "=A,=C,=G,=T,=A"),
+        # empty
+        ("", "")
+    ],
+)
+def test_convert_consecutive_indels_to_match(cons, expected):
+    assert convert_consecutive_indels_to_match(cons) == expected

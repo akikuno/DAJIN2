@@ -13,7 +13,7 @@ from DAJIN2.core.classification import classifier
     ],
 )
 def test_calc_match(input_str, expected_output):
-    result = classifier._calc_match(input_str)
+    result = classifier.calc_match(input_str)
     assert result == expected_output
 
 
@@ -22,7 +22,7 @@ def test_extract_alleles_with_max_score():
         {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 1.0, "ALLELE": "allele1"},
         {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 0.5, "ALLELE": "allele2"},
     ]
-    result = classifier._extract_alleles_with_max_score(score_of_each_alleles)
+    result = classifier.extract_alleles_with_max_score(score_of_each_alleles)
     expected_output = [
         {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "ALLELE": "allele1"},
     ]
@@ -36,7 +36,7 @@ def test_extract_alleles_with_max_score_multiple_reads():
         {"QNAME": "read2", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 0.5, "ALLELE": "allele1"},
         {"QNAME": "read2", "CSSPLIT": "=A,=C,=G,=T", "SCORE": 1.0, "ALLELE": "allele2"},
     ]
-    result = classifier._extract_alleles_with_max_score(score_of_each_alleles)
+    result = classifier.extract_alleles_with_max_score(score_of_each_alleles)
     expected_output = [
         {"QNAME": "read1", "CSSPLIT": "=A,=C,=G,=T", "ALLELE": "allele1"},
         {"QNAME": "read2", "CSSPLIT": "=A,=C,=G,=T", "ALLELE": "allele2"},

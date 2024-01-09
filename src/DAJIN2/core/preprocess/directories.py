@@ -6,7 +6,7 @@ from pathlib import Path
 def create_temporal(TEMPDIR: Path, NAME: str, is_control=False) -> None:
     Path(TEMPDIR, "result").mkdir(parents=True, exist_ok=True)
     if is_control:
-        SUBDIRS = ["fasta", "sam", "midsv", "mutation_loci", "clustering"]
+        SUBDIRS = ["fasta", "sam", "midsv", "mutation_loci", "clustering", "consensus"]
     else:
         SUBDIRS = [
             "fasta",

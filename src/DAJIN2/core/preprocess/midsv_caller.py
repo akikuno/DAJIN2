@@ -12,7 +12,7 @@ from DAJIN2.utils import sam_handler
 from DAJIN2.utils import cssplits_handler
 
 
-def _has_inversion_in_splice(CIGAR: str) -> bool:
+def has_inversion_in_splice(CIGAR: str) -> bool:
     previous_insertion = False
     for cigar in sam_handler.split_cigar(CIGAR):
         if cigar.endswith("I"):
@@ -44,7 +44,7 @@ def extract_qname_of_map_ont(sam_ont: Generator[list[str]], sam_splice: Generato
         cigar_splice = alignments_splice[qname_ont][5]
 
         # If preset=splice and inversion is present, `midsv.transform`` will not work, so use preset=map-ont.
-        if _has_inversion_in_splice(cigar_splice):
+        if has_inversion_in_splice(cigar_splice):
             qname_of_map_ont.add(qname_ont)
             continue
 
@@ -98,11 +98,18 @@ def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) 
         yield samp
 
 
+def is_reverse_strand(flag: int) -> bool:
+    """
+    Determines if the read is mapped to the reverse strand.
+    """
+    # Check if the bit 4 (0-based) is set
+    return bool(flag & 16)
+
+
 def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[list[dict]]:
     """Convert FLAG to STRAND (+ or -)"""
-    REVERSE_STRAND_FLAG = 16 | 2064
     for samp in midsv_sample:
-        samp["STRAND"] = "-" if samp["FLAG"] & REVERSE_STRAND_FLAG else "+"
+        samp["STRAND"] = "-" if is_reverse_strand(int(samp["FLAG"])) else "+"
         del samp["FLAG"]
         yield samp
 
@@ -115,6 +122,64 @@ def filter_samples_by_n_proportion(midsv_sample: Generator[dict], threshold: int
         n_percentage = count["N"] / sum(count.values()) * 100
         if n_percentage < threshold:
             yield samp
+
+
+###########################################################
+# convert_consecutive_indels_to_match
+###########################################################
+
+"""
+Due to alignment errors, there can be instances where a true match is mistakenly replaced with "insertion following a deletion".
+For example, although it should be "=C,=T", it gets replaced by "-C,+C|=T". In such cases, a process is performed to revert it back to "=C,=T".
+"""
+
+
+def convert_consecutive_indels_to_match(cssplit: str) -> str:
+    i = 0
+    cssplit_reversed = cssplit.split(",")[::-1]
+    while i < len(cssplit_reversed):
+        current_cs = cssplit_reversed[i]
+
+        if not current_cs.startswith("+"):
+            i += 1
+            continue
+
+        insertions = [base.lstrip("+") for base in current_cs.split("|")[:-1]][::-1]
+
+        # Extract deletions
+        deletions = []
+
+        for j in range(1, len(insertions) + 1):
+            if i + j >= len(cssplit_reversed):
+                break
+
+            next_cs = cssplit_reversed[i + j]
+
+            if not next_cs.startswith("-"):
+                break
+
+            deletions.append(next_cs.lstrip("-"))
+
+        if insertions != deletions:
+            i += 1
+            continue
+
+        # Format insertions
+        cssplit_reversed[i] = current_cs.split("|")[-1]
+
+        # Format deletions
+        for k, insertion in enumerate(insertions, 1):
+            cssplit_reversed[i + k] = cssplit_reversed[i + k].replace("-", "=")
+
+        i += len(insertions) + 1
+
+    return ",".join(cssplit_reversed[::-1])
+
+
+def convert_consecutive_indels(midsv_sample: Generator) -> Generator[list[dict]]:
+    for m in midsv_sample:
+        m["CSSPLIT"] = convert_consecutive_indels_to_match(m["CSSPLIT"])
+        yield m
 
 
 ###########################################################
@@ -153,4 +218,5 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
         midsv_sample = replace_internal_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
+        midsv_sample = convert_consecutive_indels(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output_midsv)

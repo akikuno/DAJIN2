@@ -173,6 +173,7 @@ def clustering_insertions(scores) -> list[int]:
     if X.max() - X.min() == 0:
         return [1] * len(X)
     X = (X - X.min()) / (X.max() - X.min())
+    np.random.seed(seed=1)
     clustering = MeanShift().fit(X)
     labels = clustering.labels_
     return labels.tolist()
