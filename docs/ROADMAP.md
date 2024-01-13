@@ -3,7 +3,7 @@
 <!-- TEMPLATE
 # v0.0.0 (yyyy-mm-dd)
 ## 📝 Documentation
-## 🚀 Features
+## 🚀 New Features
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
@@ -28,7 +28,11 @@
 
 + Changed `conda config --set channel_priority strict` to `conda config --set channel_priority flexible` for installation process in TROUBLESHOOTING.md. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c95681a8f2b6e725b0b737498981ad767eab842c)
 
-## 🚀 Features
+## 🚀 New Features
+
+
+
+## 🔧 Maintenance
 
 + Update `preprocess.insertion_to_fasta` to facilitate the discrimination of Insertion alleles, the Reference for Insertion alleles has been saved in FASTA/HTML directory. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5899543077f0398863b6316d8c3e953b5f125f55)
 
@@ -37,7 +41,9 @@
 + Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels.[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
 
 ## 🐛 Bug Fixes
-## 🔧 Maintenance
+
++ Debugged `core.py`: Modified the specification of `paths_predefined_fasta` to accept input from user-entered ALLELE data. Previously, it accepted fasta files stored in the fasta directory. However, this approach had a bug where fasta files left over from a previously aborted run (which included newly created insertions) were treated as predefined. This resulted in new insertions being incorrectly categorized as predefined. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/6dd9247f010eb6168157ae9236a634efcfb84a5f)
+
 ## ⛔️ Deprecated
 
 -------------
