@@ -23,18 +23,37 @@ import cstag
 
 
 def count_insertions(midsv_sample: Generator | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
-    insertion_counts = defaultdict(int)
+    # Extract insertion sequences that are more than 10 base pair length
+    insertion_index_sequences = defaultdict(list)
     coverage = 0
     for m_sample in midsv_sample:
         coverage += 1
         cssplits = m_sample["CSSPLIT"].split(",")
-        for idx in (i for i, mut in enumerate(mutation_loci) if "+" in mut):
+        insertion_loci = (i for i, mut in enumerate(mutation_loci) if "+" in mut)
+        for idx in insertion_loci:
             if cssplits[idx].startswith("+") and cssplits[idx].count("|") > 10:
-                insertion_counts[(idx, cssplits[idx])] += 1
+                insertion_index_sequences[idx].append(cssplits[idx])
 
-    # Remove low frequency insertions
+    insertion_counts = defaultdict(int)
     threshold = int(coverage * 0.5 / 100)
-    return {key: count for key, count in insertion_counts.items() if count >= threshold}
+    for i, insertion_sequences in insertion_index_sequences.items():
+        # Count similar insertion sequences
+        query = insertion_sequences[0]
+        seqs, scores, _ = zip(*process.extract_iter(query, insertion_sequences, scorer=DamerauLevenshtein.normalized_distance))
+        labels = [int(score * 10) for score in scores]
+        insertion_labels_sequences = [(label, seq) for label, seq in zip(labels, insertion_sequences)]
+
+        # Filter low frequency insertion sequences
+        insertion_labels_sequences = sorted(insertion_labels_sequences, key=lambda x: x[0])
+        for _, group in groupby(insertion_labels_sequences, key=lambda x: x[0]):
+            group = list(group)
+            if len(group) < threshold:
+                continue
+            seqs = (s for _, s in group)
+            for seq in seqs:
+                insertion_counts[(i, seq)] += 1
+
+    return dict(insertion_counts)
 
 
 def create_insertions_dict(
