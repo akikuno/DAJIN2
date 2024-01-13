@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def relabel_with_consective_order(labels: list[int], start: int = 0) -> list[int]:
+def relabel_with_consective_order(labels: list[int], start: int = 1) -> list[int]:
     """
     Reorders the given list of labels starting from the given start value.
 
@@ -18,8 +18,8 @@ def relabel_with_consective_order(labels: list[int], start: int = 0) -> list[int
 
     for label in labels:
         if label not in label_to_value:
-            next_value += 1
             label_to_value[label] = next_value
+            next_value += 1
 
         reordered_labels.append(label_to_value[label])
 
