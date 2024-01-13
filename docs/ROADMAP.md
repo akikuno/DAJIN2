@@ -22,8 +22,15 @@
 + ReferenceのアレルをFASTA/HTMLディレクトリに保存する
  -->
 
+# v0.3.6
 
+## 📝 Documentation
+## 🚀 Features
++ To facilitate the discrimination of Insertion alleles, the Reference for Insertion alleles has been saved in FASTA/HTML directory. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5899543077f0398863b6316d8c3e953b5f125f55)
 
+## 🐛 Bug Fixes
+## 🔧 Maintenance
+## ⛔️ Deprecated
 
 -------------
 
