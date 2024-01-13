@@ -31,7 +31,7 @@ def parse_arguments(arguments: dict) -> tuple:
     )
 
 
-def convert_inputs_to_posix(sample: str, control: str, allele: str) -> tuple:
+def convert_input_paths_to_posix(sample: str, control: str, allele: str) -> tuple:
     sample = io.convert_to_posix(sample)
     control = io.convert_to_posix(control)
     allele = io.convert_to_posix(allele)
@@ -51,17 +51,9 @@ def check_caches(tempdir: Path, path_allele: str, genome_url: str) -> bool:
 
 
 def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_genome: bool, tempdir: Path) -> dict:
-    genome_coordinates = {
-        "genome": genome_urls["genome"],
-        "chrom_size": 0,
-        "chrom": "control",
-        "start": 0,
-        "end": len(fasta_alleles["control"]) - 1,
-        "strand": "+",
-    }
     if genome_urls["genome"]:
         if is_cache_genome:
-            genome_coordinates = list(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))[0]
+            genome_coordinates = next(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))
         else:
             genome_coordinates = preprocess.genome_fetcher.fetch_coordinates(
                 genome_coordinates, genome_urls, fasta_alleles["control"]
@@ -70,6 +62,16 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
                 genome_coordinates, genome_urls
             )
             io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
+    else:
+        genome_coordinates = {
+            "genome": genome_urls["genome"],
+            "chrom_size": 0,
+            "chrom": "control",
+            "start": 0,
+            "end": len(fasta_alleles["control"]) - 1,
+            "strand": "+",
+        }
+
     return genome_coordinates
 
 
@@ -88,7 +90,7 @@ class FormattedInputs(NamedTuple):
 
 def format_inputs(arguments: dict) -> FormattedInputs:
     path_sample, path_control, path_allele, name, threads, genome_urls, uuid = parse_arguments(arguments)
-    path_sample, path_control, path_allele = convert_inputs_to_posix(path_sample, path_control, path_allele)
+    path_sample, path_control, path_allele = convert_input_paths_to_posix(path_sample, path_control, path_allele)
     sample_name = preprocess.fastx_parser.extract_basename(path_sample)
     control_name = preprocess.fastx_parser.extract_basename(path_control)
     fasta_alleles = preprocess.fastx_parser.dictionize_allele(path_allele)
@@ -121,8 +123,8 @@ def execute_control(arguments: dict):
     # Preprocess
     ###########################################################
     ARGS = format_inputs(arguments)
-    preprocess.directories.create_temporal(ARGS.tempdir, ARGS.control_name, is_control=True)
-    preprocess.directories.create_report(ARGS.tempdir, ARGS.control_name, is_control=True)
+    preprocess.directories.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
+    preprocess.directories.create_report_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
     io.cache_control_hash(ARGS.tempdir, ARGS.path_allele)
 
     ###########################################################
@@ -179,8 +181,8 @@ def execute_sample(arguments: dict):
     ###########################################################
 
     ARGS = format_inputs(arguments)
-    preprocess.directories.create_temporal(ARGS.tempdir, ARGS.sample_name)
-    preprocess.directories.create_report(ARGS.tempdir, ARGS.sample_name)
+    preprocess.directories.create_temporal_directories(ARGS.tempdir, ARGS.sample_name, is_control=False)
+    preprocess.directories.create_report_directories(ARGS.tempdir, ARGS.sample_name, is_control=False)
 
     logger.info(f"Preprocess {arguments['sample']}...")
 
@@ -207,10 +209,12 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Detect and align insertion alleles
     # ============================================================
-    paths_predifined_allele = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")}
+    paths_predefined_fasta = {
+        str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
+    }
     preprocess.generate_insertion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
     paths_insertion_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_insertion_fasta -= paths_predifined_allele
+    paths_insertion_fasta -= paths_predefined_fasta
 
     if paths_insertion_fasta:
         # mapping to insertion alleles
