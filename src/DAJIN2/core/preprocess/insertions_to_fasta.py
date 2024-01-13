@@ -15,6 +15,8 @@ from DAJIN2.utils import io, config
 
 config.set_warnings_ignore()
 
+import cstag
+
 ###########################################################
 # Detect insertion sequences
 ###########################################################
@@ -27,7 +29,7 @@ def count_insertions(midsv_sample: Generator | str, mutation_loci: dict) -> dict
         coverage += 1
         cssplits = m_sample["CSSPLIT"].split(",")
         for idx in (i for i, mut in enumerate(mutation_loci) if "+" in mut):
-            if cssplits[idx].startswith("+"):
+            if cssplits[idx].startswith("+") and cssplits[idx].count("|") > 10:
                 insertion_counts[(idx, cssplits[idx])] += 1
 
     # Remove low frequency insertions
@@ -212,7 +214,7 @@ def subset_sequences(sequences, labels, num=1000) -> list[dict]:
     return sequences_subset
 
 
-def _call_percentage(cssplits: list[str]) -> list[dict[str, float]]:
+def _call_percentage(cssplits: list[list[str]]) -> list[dict[str, float]]:
     """call position weight matrix in defferent loci."""
     coverage = len(cssplits)
     cssplits_transposed = [list(cs) for cs in zip(*cssplits)]
@@ -294,17 +296,38 @@ def generate_consensus(cons_sequence, index_of_insertions, sequence) -> dict[int
     return consensus_sequence_insertion
 
 
-def filter_consensus(consensus_sequence_insertion: dict[int, str], FASTA_ALLELES: dict) -> dict[int, str]:
-    """Filter similar insertions compared to control sequence"""
-    unique_insertions = set(consensus_sequence_insertion.values())
-    for query in FASTA_ALLELES.values():
-        if unique_insertions == set():
-            break
-        seqs, mismatches, _ = zip(*process.extract_iter(query, unique_insertions, scorer=DamerauLevenshtein.distance))
-        for seq, mismatch in zip(seqs, mismatches):
-            if mismatch <= 10:
-                unique_insertions.remove(seq)
-    return {i: seq for i, seq in enumerate(unique_insertions)}
+def generate_cstag(cons_sequence, index_of_insertions, sequence) -> dict[int, str]:
+    cstag_insertion = dict()
+    for label, cons_seq in cons_sequence.items():
+        cons_seq = cons_seq.split(",")
+        list_sequence = list(sequence)
+        for idx, seq in zip(index_of_insertions, cons_seq):
+            if seq == "N":
+                continue
+            seq = seq.lower()
+            list_sequence[idx] = f"+{seq}="
+        cstag_insertion[label] = "cs:Z:=" + "".join(list_sequence)
+    return cstag_insertion
+
+
+def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertion: dict) -> None:
+    for header, cs_tag in cstag_insertion.items():
+        html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
+        Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
+
+
+# def filter_consensus(consensus_sequence_insertion: dict[int, str], FASTA_ALLELES: dict) -> dict[int, str]:
+#     # TODO: これは全長を比較しなくても、インサーションの長さだけ比較すれば良い
+#     """Filter similar insertions compared to control sequence"""
+#     unique_insertions = set(consensus_sequence_insertion.values())
+#     for query in FASTA_ALLELES.values():
+#         if unique_insertions == set():
+#             break
+#         seqs, mismatches, _ = zip(*process.extract_iter(query, unique_insertions, scorer=DamerauLevenshtein.distance))
+#         for seq, mismatch in zip(seqs, mismatches):
+#             if mismatch <= 10:
+#                 unique_insertions.remove(seq)
+#     return {i: seq for i, seq in enumerate(unique_insertions)}
 
 
 ###########################################################
@@ -361,10 +384,12 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
         # If there is no insertion sequence, return None
         # It is possible when all insertion sequence annotated as `N` that is filtered out
         return None
+    cons_sequence = update_labels(cons_sequence, FASTA_ALLELES)
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
     consensus_sequence_insertion = generate_consensus(cons_sequence, index_of_insertions, sequence)
-    consensus_filtered = filter_consensus(consensus_sequence_insertion, FASTA_ALLELES)
-    if consensus_filtered == dict():
-        return None
-    consensus_labeled = update_labels(consensus_filtered, FASTA_ALLELES)
-    save_fasta(TEMPDIR, SAMPLE_NAME, consensus_labeled)
+    cstag_insertion = generate_cstag(cons_sequence, index_of_insertions, sequence)
+    # consensus_filtered = filter_consensus(consensus_sequence_insertion, FASTA_ALLELES)
+    # if consensus_filtered == dict():
+    #     return None
+    save_fasta(TEMPDIR, SAMPLE_NAME, consensus_sequence_insertion)
+    save_html(TEMPDIR, SAMPLE_NAME, cstag_insertion)

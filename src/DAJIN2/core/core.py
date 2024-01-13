@@ -288,6 +288,7 @@ def execute_sample(arguments: dict):
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
     # FASTA
     report.report_files.to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
+    report.report_files.to_fasta_reference(ARGS.tempdir, ARGS.sample_name)
     # HTML
     report.report_files.to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)
