@@ -25,7 +25,7 @@ def test_merge_minor_cluster():
     """
     labels_sample = [1, 1, 1, 2, 3, 3, 4, 5]
     labels_previous = [0, 0, 0, 0, 1, 1, 2, 2]
-    expected_output = [0, 0, 0, 0, 1, 1, 2, 2]
+    expected_output = [6, 6, 6, 6, 7, 7, 8, 8]
     assert (
         merge_minor_cluster(labels_sample, labels_previous, threshold_percentage=20, threshold_readnumber=100)
         == expected_output
