@@ -26,7 +26,9 @@
 
 ## 📝 Documentation
 ## 🚀 Features
-+ To facilitate the discrimination of Insertion alleles, the Reference for Insertion alleles has been saved in FASTA/HTML directory. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5899543077f0398863b6316d8c3e953b5f125f55)
++ Update `preprocess.insertion_to_fasta.py` to facilitate the discrimination of Insertion alleles, the Reference for Insertion alleles has been saved in FASTA/HTML directory. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5899543077f0398863b6316d8c3e953b5f125f55)
+
++ Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels.[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
 
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
