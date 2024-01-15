@@ -51,6 +51,14 @@ def check_caches(tempdir: Path, path_allele: str, genome_url: str) -> bool:
 
 
 def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_genome: bool, tempdir: Path) -> dict:
+    genome_coordinates = {
+        "genome": genome_urls["genome"],
+        "chrom_size": 0,
+        "chrom": "control",
+        "start": 0,
+        "end": len(fasta_alleles["control"]) - 1,
+        "strand": "+",
+    }
     if genome_urls["genome"]:
         if is_cache_genome:
             genome_coordinates = next(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))
@@ -62,15 +70,6 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
                 genome_coordinates, genome_urls
             )
             io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
-    else:
-        genome_coordinates = {
-            "genome": genome_urls["genome"],
-            "chrom_size": 0,
-            "chrom": "control",
-            "start": 0,
-            "end": len(fasta_alleles["control"]) - 1,
-            "strand": "+",
-        }
 
     return genome_coordinates
 
