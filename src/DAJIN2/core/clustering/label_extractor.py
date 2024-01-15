@@ -12,8 +12,8 @@ from DAJIN2.core.clustering.clustering import return_labels
 
 
 def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
-    labels_all = []
-    max_label = 0
+    labels_result = []
+    max_label = 1
     strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
@@ -35,9 +35,9 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         """Skip clustering when the number of reads is too small or there is no mutation."""
         read_numbers = io.count_newlines(path_sample)
         is_no_mutation = all(m == set() for m in mutation_loci)
-        if read_numbers <= 10 or is_no_mutation:
+        if read_numbers <= 5 or is_no_mutation:
             max_label += 1
-            labels_all.extend([max_label] * read_numbers)
+            labels_result.extend([max_label] * read_numbers)
             continue
 
         """Calculate scores to temporary files."""
@@ -53,14 +53,13 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
 
         """Extract labels."""
         labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
-        labels_reordered = relabel_with_consective_order(labels, start=max_label)
-
-        max_label = max(labels_reordered)
-        labels_all.extend(labels_reordered)
+        labels_result += relabel_with_consective_order(labels, start=max_label)
 
         """Remove temporary files."""
         path_sample.unlink()
         path_score_sample.unlink()
         path_score_control.unlink()
 
-    return labels_all
+        max_label = max(labels_result) + 1
+
+    return labels_result

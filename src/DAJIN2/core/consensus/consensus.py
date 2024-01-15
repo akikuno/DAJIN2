@@ -6,7 +6,7 @@ from itertools import groupby
 from collections import defaultdict
 
 from DAJIN2.utils import io
-from DAJIN2.utils.cssplits_handler import find_n_boundaries
+from DAJIN2.utils.cssplits_handler import call_sequence
 
 
 ###########################################################
@@ -86,42 +86,6 @@ def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]]) ->
 
 
 ###########################################################
-# Call sequence
-###########################################################
-
-
-def cssplit_to_base(cons: str) -> str:
-    if cons.startswith("="):  # match
-        return cons.replace("=", "")
-    if cons.startswith("-"):  # deletion
-        return ""
-    if cons.startswith("*"):  # substitution
-        return cons[-1]
-    if cons.startswith("+"):  # insertion
-        cons_ins = cons.split("|")
-        if cons_ins[-1].startswith("="):  # match after insertion
-            cons = cons.replace("=", "")
-        elif cons_ins[-1].startswith("-"):  # deletion after insertion
-            cons = "".join(cons_ins[:-1])
-        elif cons_ins[-1].startswith("*"):  # substitution after insertion
-            cons = "".join([*cons_ins[:-1], cons_ins[-1][-1]])
-        return cons.replace("+", "").replace("|", "")
-    return cons
-
-
-def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
-    consensus_sequence = []
-    n_left, n_right = find_n_boundaries(cons_percentage)
-    for i, cons_per in enumerate(cons_percentage):
-        if n_left < i < n_right:
-            cons = max(cons_per, key=cons_per.get)
-            consensus_sequence.append(cssplit_to_base(cons))
-        else:
-            consensus_sequence.append("N")
-    return "".join(consensus_sequence)
-
-
-###########################################################
 # main
 ###########################################################
 
@@ -133,12 +97,13 @@ class ConsensusKey(NamedTuple):
 
 
 def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) -> tuple[dict[list], dict[str]]:
-    cons_percentages = defaultdict(list)
-    cons_sequences = defaultdict(str)
-
     path_consensus = Path(tempdir, sample_name, "consensus")
 
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
+
+    cons_percentages = dict()
+    cons_sequences = dict()
+
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
 

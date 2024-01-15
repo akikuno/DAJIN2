@@ -1,11 +1,7 @@
-import pytest
-
 from src.DAJIN2.core.consensus.consensus import (
     replace_sequence_error,
     adjust_to_100_percent,
     call_percentage,
-    cssplit_to_base,
-    call_sequence,
 )
 
 
@@ -53,46 +49,3 @@ def test_call_percentage():
         {"=T": 50.0, "*AT": 50.0},
     ]
     assert call_percentage(cssplits, mutation_loci) == expected_output
-
-
-###########################################################
-# call sequence
-###########################################################
-
-
-# Example test cases for cssplit_to_base function
-@pytest.mark.parametrize(
-    "cons, expected_output",
-    [
-        ("=A", "A"),
-        ("-A", ""),
-        ("*AC", "C"),
-        ("+G|+G|+G|=A", "GGGA"),
-        ("+G|+G|+G|-A", "GGG"),
-        ("+G|+G|+G|*AT", "GGGT"),
-        ("+G|+G|+G|N", "GGGN"),
-        ("A", "A"),
-        ("N", "N"),
-        ("", ""),
-    ],
-)
-def test_cssplit_to_base(cons, expected_output):
-    assert cssplit_to_base(cons) == expected_output
-
-
-@pytest.mark.parametrize(
-    "cons_percentage_by_key, expected_sequence",
-    [
-        ([{"=A": 1.0}, {"=T": 0.9, "-T": 0.1}], "AT"),  # match
-        ([{"=A": 1.0}, {"-A": 0.9, "=A": 0.1}, {"=T": 1.0}], "AT"),  # deletion
-        ([{"=A": 1.0}, {"*AC": 0.9, "-A": 0.1}, {"=T": 1.0}], "ACT"),  # substitution
-        ([{"=A": 1.0}, {"=a": 0.9, "-a": 0.1}, {"=T": 1.0}], "AaT"),  # inversion
-        ([{"=A": 1.0}, {"+G|+G|+G|=A": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGAT"),  # insertion match
-        ([{"=A": 1.0}, {"+G|+G|+G|-A": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGT"),  # insertion deletion
-        ([{"=A": 1.0}, {"+G|+G|+G|*AT": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGTT"),  # insertion substitution
-        ([{"=A": 1.0}, {"+G|+G|+G|N": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGNT"),  # insertion N
-        ([{"=A": 1.0}], "A"),
-    ],
-)
-def test_call_sequence(cons_percentage_by_key, expected_sequence):
-    assert call_sequence(cons_percentage_by_key) == expected_sequence

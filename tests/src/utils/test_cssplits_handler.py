@@ -4,6 +4,7 @@ from DAJIN2.utils.cssplits_handler import (
     add_match_operator_to_n,
     concatenate_cssplits,
     standardize_case,
+    call_sequence,
 )
 
 
@@ -95,3 +96,26 @@ def test_standardize_case_mixed():
 )
 def test_standardize_case_parametrized(input, expected):
     assert standardize_case(input) == expected
+
+
+###########################################################
+# call sequence
+###########################################################
+
+
+@pytest.mark.parametrize(
+    "cons_percentage_by_key, expected_sequence",
+    [
+        ([{"=A": 1.0}, {"=T": 0.9, "-T": 0.1}], "AT"),  # match
+        ([{"=A": 1.0}, {"-A": 0.9, "=A": 0.1}, {"=T": 1.0}], "AT"),  # deletion
+        ([{"=A": 1.0}, {"*AC": 0.9, "-A": 0.1}, {"=T": 1.0}], "ACT"),  # substitution
+        ([{"=A": 1.0}, {"=a": 0.9, "-a": 0.1}, {"=T": 1.0}], "AAT"),  # inversion (not reflected in sequence...)
+        ([{"=A": 1.0}, {"+G|+G|+G|=A": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGAT"),  # insertion match
+        ([{"=A": 1.0}, {"+G|+G|+G|-A": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGT"),  # insertion deletion
+        ([{"=A": 1.0}, {"+G|+G|+G|*AT": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGTT"),  # insertion substitution
+        ([{"=A": 1.0}, {"+G|+G|+G|N": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGNT"),  # insertion N
+        ([{"=A": 1.0}], "A"),
+    ],
+)
+def test_call_sequence(cons_percentage_by_key, expected_sequence):
+    assert call_sequence(cons_percentage_by_key) == expected_sequence

@@ -12,6 +12,7 @@ from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift, MiniBatchKMeans
 
 from DAJIN2.utils import io, config
+from DAJIN2.utils.cssplits_handler import call_sequence
 
 config.set_warnings_ignore()
 
@@ -39,7 +40,9 @@ def count_insertions(midsv_sample: Generator | str, mutation_loci: dict) -> dict
     for i, insertion_sequences in insertion_index_sequences.items():
         # Count similar insertion sequences
         query = insertion_sequences[0]
-        seqs, scores, _ = zip(*process.extract_iter(query, insertion_sequences, scorer=DamerauLevenshtein.normalized_distance))
+        seqs, scores, _ = zip(
+            *process.extract_iter(query, insertion_sequences, scorer=DamerauLevenshtein.normalized_distance)
+        )
         labels = [int(score * 10) for score in scores]
         insertion_labels_sequences = [(label, seq) for label, seq in zip(labels, insertion_sequences)]
 
@@ -214,6 +217,22 @@ def filter_minor_label(
     return labels_filtered, score_seq_filterd
 
 
+def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
+    user_defined_alleles = set(FASTA_ALLELES)
+    d_values = list(d.values())
+    len_d = len(d_values)
+    digits_up = 0
+    # Update labels to avoid duplicating user-specified alleles
+    # (insertion1 -> insertion01 -> insertion001...)
+    while True:
+        digits = len(str(len_d)) + digits_up
+        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
+        if user_defined_alleles.isdisjoint(set(d_updated)):
+            break
+        digits_up += 1
+    return d_updated
+
+
 ###########################################################
 # Call consensus
 ###########################################################
@@ -236,38 +255,14 @@ def subset_sequences(sequences, labels, num=1000) -> list[dict]:
 def _call_percentage(cssplits: list[list[str]]) -> list[dict[str, float]]:
     """call position weight matrix in defferent loci."""
     coverage = len(cssplits)
-    cssplits_transposed = [list(cs) for cs in zip(*cssplits)]
+    cssplits_transposed = (list(cs) for cs in zip(*cssplits))
     cons_percentage = []
     for cs_transposed in cssplits_transposed:
         count_cs = defaultdict(float)
         for cs in cs_transposed:
             count_cs[cs] += 1 / coverage * 100
-        cons_percentage.append(count_cs)
+        cons_percentage.append(dict(count_cs))
     return cons_percentage
-
-
-def _call_sequence(cons_percentage: list[dict[str, float]]) -> str:
-    consensus_sequence = []
-    for cons_per in cons_percentage:
-        cons = max(cons_per, key=cons_per.get)
-        if cons.startswith("="):
-            cons = cons.replace("=", "")
-        elif cons.startswith("-"):
-            continue
-        elif cons.startswith("*"):
-            cons = cons[-1]
-        elif cons.startswith("+"):
-            cons_ins = cons.split("|")
-            if cons_ins[-1].startswith("="):
-                cons = cons.replace("=", "")
-            elif cons_ins[-1].startswith("-"):
-                cons = "".join(cons_ins[:-1])
-            elif cons_ins[-1].startswith("*"):
-                cons = "".join([*cons_ins[:-1], cons_ins[-1][-1]])
-            cons = cons.replace("+", "")
-            cons = cons.replace("|", "")
-        consensus_sequence.append(cons)
-    return ",".join(consensus_sequence)
 
 
 def _remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
@@ -279,13 +274,13 @@ def _remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
     return cons_sequence_removed
 
 
-def call_consensus(sequences_subset: list[dict]) -> dict[int, str]:
+def call_consensus_of_insertion(insertion_sequences_subset: list[dict]) -> dict[int, str]:
     cons_sequence = dict()
-    sequences_subset.sort(key=lambda x: x["LABEL"])
-    for label, group in groupby(sequences_subset, key=lambda x: x["LABEL"]):
+    insertion_sequences_subset.sort(key=lambda x: x["LABEL"])
+    for label, group in groupby(insertion_sequences_subset, key=lambda x: x["LABEL"]):
         cssplits = [cs["CSSPLIT"].split(",") for cs in group]
         cons_per = _call_percentage(cssplits)
-        cons_seq = _call_sequence(cons_per)
+        cons_seq = call_sequence(cons_per, sep=",")
         cons_sequence[label] = cons_seq
     return _remove_all_n(cons_sequence)
 
@@ -302,8 +297,13 @@ def extract_index_of_insertions(insertions, insertions_merged) -> list[int]:
     return index_of_insertions
 
 
-def generate_consensus(cons_sequence, index_of_insertions, sequence) -> dict[int, str]:
-    consensus_sequence_insertion = dict()
+###########################################################
+# generate and save fasta
+###########################################################
+
+
+def generate_fasta(cons_sequence, index_of_insertions, sequence) -> dict[int, str]:
+    fasta_insertions = dict()
     for label, cons_seq in cons_sequence.items():
         cons_seq = cons_seq.split(",")
         list_sequence = list(sequence)
@@ -311,12 +311,21 @@ def generate_consensus(cons_sequence, index_of_insertions, sequence) -> dict[int
             if seq == "N":
                 continue
             list_sequence[idx] = seq
-        consensus_sequence_insertion[label] = "".join(list_sequence)
-    return consensus_sequence_insertion
+        fasta_insertions[label] = "".join(list_sequence)
+    return fasta_insertions
+
+
+def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict) -> None:
+    for header, seq in fasta_insertions.items():
+        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}")
+
+###########################################################
+# generate and save as HTML and PDF
+###########################################################
 
 
 def generate_cstag(cons_sequence, index_of_insertions, sequence) -> dict[int, str]:
-    cstag_insertion = dict()
+    cstag_insertions = dict()
     for label, cons_seq in cons_sequence.items():
         cons_seq = cons_seq.split(",")
         list_sequence = list(sequence)
@@ -325,54 +334,14 @@ def generate_cstag(cons_sequence, index_of_insertions, sequence) -> dict[int, st
                 continue
             seq = seq.lower()
             list_sequence[idx] = f"+{seq}="
-        cstag_insertion[label] = "cs:Z:=" + "".join(list_sequence)
-    return cstag_insertion
+        cstag_insertions[label] = "cs:Z:=" + "".join(list_sequence)
+    return cstag_insertions
 
 
-def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertion: dict) -> None:
-    for header, cs_tag in cstag_insertion.items():
+def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict) -> None:
+    for header, cs_tag in cstag_insertions.items():
         html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
         Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
-
-
-# def filter_consensus(consensus_sequence_insertion: dict[int, str], FASTA_ALLELES: dict) -> dict[int, str]:
-#     # TODO: これは全長を比較しなくても、インサーションの長さだけ比較すれば良い
-#     """Filter similar insertions compared to control sequence"""
-#     unique_insertions = set(consensus_sequence_insertion.values())
-#     for query in FASTA_ALLELES.values():
-#         if unique_insertions == set():
-#             break
-#         seqs, mismatches, _ = zip(*process.extract_iter(query, unique_insertions, scorer=DamerauLevenshtein.distance))
-#         for seq, mismatch in zip(seqs, mismatches):
-#             if mismatch <= 10:
-#                 unique_insertions.remove(seq)
-#     return {i: seq for i, seq in enumerate(unique_insertions)}
-
-
-###########################################################
-# generate fasta
-###########################################################
-
-
-def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
-    user_defined_alleles = set(FASTA_ALLELES)
-    d_values = list(d.values())
-    len_d = len(d_values)
-    digits_up = 0
-    # Update labels to avoid duplicating user-specified alleles
-    # (insertion1 -> insertion01 -> insertion001...)
-    while True:
-        digits = len(str(len_d)) + digits_up
-        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
-        if user_defined_alleles.isdisjoint(set(d_updated)):
-            break
-        digits_up += 1
-    return d_updated
-
-
-def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, consensus_sequence_insertion: dict) -> None:
-    for header, seq in consensus_sequence_insertion.items():
-        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}")
 
 
 ###########################################################
@@ -386,8 +355,8 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     sequence = FASTA_ALLELES["control"]
     mutation_loci = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
     insertions = extract_insertions(path_sample, path_control, mutation_loci)
-    index_set = set(i for i, m in enumerate(mutation_loci) if "+" in m)
-    if insertions.keys() & index_set == set():
+    index_insertions = set(i for i, m in enumerate(mutation_loci) if "+" in m)
+    if insertions.keys() & index_insertions == set():
         return None
     insertions_merged = merge_similar_insertions(insertions, mutation_loci)
     insertions_scores_sequences = extract_score_and_sequence(path_sample, insertions_merged)
@@ -398,17 +367,14 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     insertion_sequences_subset = subset_sequences(
         [seq for _, seq in insertion_scores_sequences_filtered], labels_filtered, num=1000
     )
-    cons_sequence = call_consensus(insertion_sequences_subset)
-    if cons_sequence == dict():
+    consensus_of_insertions = call_consensus_of_insertion(insertion_sequences_subset)
+    if consensus_of_insertions == dict():
         # If there is no insertion sequence, return None
         # It is possible when all insertion sequence annotated as `N` that is filtered out
         return None
-    cons_sequence = update_labels(cons_sequence, FASTA_ALLELES)
+    consensus_of_insertions = update_labels(consensus_of_insertions, FASTA_ALLELES)
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
-    consensus_sequence_insertion = generate_consensus(cons_sequence, index_of_insertions, sequence)
-    cstag_insertion = generate_cstag(cons_sequence, index_of_insertions, sequence)
-    # consensus_filtered = filter_consensus(consensus_sequence_insertion, FASTA_ALLELES)
-    # if consensus_filtered == dict():
-    #     return None
-    save_fasta(TEMPDIR, SAMPLE_NAME, consensus_sequence_insertion)
-    save_html(TEMPDIR, SAMPLE_NAME, cstag_insertion)
+    fasta_insertions = generate_fasta(consensus_of_insertions, index_of_insertions, sequence)
+    cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, sequence)
+    save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions)
+    save_html(TEMPDIR, SAMPLE_NAME, cstag_insertions)
