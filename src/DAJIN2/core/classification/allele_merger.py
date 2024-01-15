@@ -19,11 +19,11 @@ def count_allele_with_max_score(score_of_each_alleles: list[dict]) -> dict[str, 
     return allele_counts
 
 
-def extract_minor_alleles(allele_counts: dict[str, int], threshold_readnumber: int = 10) -> dict[str, int]:
+def extract_minor_alleles(allele_counts: dict[str, int], threshold_readnumber: int = 5) -> dict[str, int]:
     return {allele: value for allele, value in allele_counts.items() if value < threshold_readnumber}
 
 
-def extract_major_alleles(allele_counts: dict[str, int], threshold_readnumber: int = 10) -> set[str]:
+def extract_major_alleles(allele_counts: dict[str, int], threshold_readnumber: int = 5) -> set[str]:
     return {allele for allele, value in allele_counts.items() if value >= threshold_readnumber}
 
 
@@ -60,7 +60,7 @@ def replace_negative_inf_with_most_major_allele(
     return score_of_minor_alleles
 
 
-def merge_minor_alleles(score_of_each_alleles, threshold_readnumber: int = 10) -> list[dict]:
+def merge_minor_alleles(score_of_each_alleles, threshold_readnumber: int = 5) -> list[dict]:
     score_of_each_alleles.sort(key=lambda x: [x["QNAME"]])
 
     all_allele_counts = count_allele_with_max_score(score_of_each_alleles)
