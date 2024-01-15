@@ -11,18 +11,16 @@
 -->
 
 <!-- memo ToDo
-- ✅ barcode09 allele1 の`N`
-- barcode11 allele2 の大型欠失が反映されていない ＆ barcode28 allele1 の`N` → Control側の問題
+- macOS (Apple Silicon) でのインストール方法を追記する
 - FASTQ、VCFを出力する
 
 + # 💡 Future Tasks
 + Remove minor alleles with predicted insertion
 + Enhance the Clarity of Insertion Allele Identification.
 + Develop and Integrate Inversion Detection Capability
-+ ReferenceのアレルをFASTA/HTMLディレクトリに保存する
  -->
 
-# v0.3.6
+# v0.4.0
 
 ## 📝 Documentation
 
@@ -30,6 +28,9 @@
 
 ## 🚀 New Features
 
++ Apple Silicon (ARM64) supoorts. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/435bab6c56cb2172601d4b37488850fe48046f9c)
+
++ Changed the definition of the minor allele from a read number of less than or equal to 10 to less than or equal to 5. This is based on the assumption that one sample contains 1000 reads, where 0.5% corresponds to 5 reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/80a3ddcf7cac3eed2bcc76b88ea534873af4dd90)
 
 
 ## 🔧 Maintenance
@@ -38,7 +39,9 @@
 
 + Updated `preprocess.insertions_to_fasta.count_insertions` of the counting method to treat similar insertions as identical. Previously, the same insertion was erroneously counted as different ones due to sequence errors. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7bc18f486253e876d51a296f64909e1c73114e79)
 
-+ Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels.[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
++ Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
+
++ Moved the `call_sequence` function to the `cssplits_handler` module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/ef5b0bf41ab33a7e8d06d33fe7fa6c27a443742a)
 
 ## 🐛 Bug Fixes
 
