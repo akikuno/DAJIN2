@@ -27,8 +27,18 @@ The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Y�
 ### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
-conda install -c bioconda DAJIN2
+conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
+conda activate env-dajin2
 ```
+
+> [!NOTE]
+> To Apple Silicon (ARM64) users:  
+> [Since the Bioconda channel does not yet support Apple Silicon](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919), please use the following command to install `DAJIN2` through Rosetta.
+> ```bash
+> CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
+> conda activate env-dajin2
+> conda config --env --set subdir osx-64
+> ```
 
 ### From [PyPI](https://pypi.org/project/DAJIN2/)
 
