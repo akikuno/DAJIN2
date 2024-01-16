@@ -136,6 +136,7 @@ def execute_batch_mode(arguments: dict[str]):
                 cache_urls_genome[args["genome"]] = urls_genome
     for name, groups in groupby(contents, key=lambda x: x[index_of_name]):
         # set logging to export log to stderr and file
+        config.reset_logging()
         path_logfile = config.get_logfile()
         config.set_logging(path_logfile)
         groups = list(groups)
