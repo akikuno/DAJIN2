@@ -79,31 +79,6 @@ def test_fasta_without_error():
 # validate URL
 ###############################################################################
 
-
-@pytest.mark.slow
-def test_available_url_pass():
-    assert input_validator.is_webpage_available("https://example.com") is True
-
-
-@pytest.mark.slow
-def test_available_url_fail():
-    assert input_validator.is_webpage_available("https://example_xxx.com") is False
-
-
-@pytest.mark.slow
-def test_get_first_available_url():
-    test = input_validator.get_first_available_url(["https://example_xxx.com", "https://example.com"])
-    answer = "https://example.com"
-    assert test == answer
-
-
-@pytest.mark.slow
-def test_get_first_available_url_not_found():
-    test = input_validator.get_first_available_url(["https://example_xxx.com", "https://example_yyy.com"])
-    answer = None
-    assert test == answer
-
-
 @pytest.mark.slow
 def test_available_genome_pass():
     genome = "mm10"

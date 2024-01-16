@@ -8,7 +8,7 @@ def fetch_seq_coordinates(genome: str, blat_url: str, seq: str) -> dict:
     response = urlopen(url).read().decode("utf8").split("\n")
     matches = [x for x in response if "100.0%" in x]
     if not matches:
-        raise ValueError(f"{seq[:10]}... is not found in {genome}")
+        raise ValueError(f"{seq[:60]}... is not found in {genome}")
     chrom, strand, start, end, _ = matches[0].split()[-5:]
     return {"chrom": chrom, "strand": strand, "start": int(start), "end": int(end)}
 

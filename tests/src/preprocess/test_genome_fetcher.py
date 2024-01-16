@@ -28,10 +28,10 @@ def test_fetch_seq_coodinates_strand_minus():
 def test_fetch_seq_coodinates_error():
     genome = "mm39"
     blat_url = "https://genome.ucsc.edu/cgi-bin/hgBlat"
-    seq = "XXXXXXXXXXXXXXXXX"
+    seq = "X" * 100
     with pytest.raises(ValueError) as e:
         genome_fetcher.fetch_seq_coordinates(genome, blat_url, seq)
-    assert str(e.value) == f"{seq[:10]}... is not found in {genome}"
+    assert str(e.value) == f"{seq[:60]}... is not found in {genome}"
 
 
 @pytest.mark.slow

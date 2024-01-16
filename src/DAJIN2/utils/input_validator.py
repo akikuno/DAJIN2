@@ -97,20 +97,22 @@ def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool)
 ########################################################################
 
 
-def is_webpage_available(url: str) -> bool:
+def get_html(url: str) -> str:
     try:
-        with urlopen(url) as response:
+        with urlopen(url, timeout=10) as response:
             html = response.read().decode("utf-8")
-            if "TITLE" not in html:
-                return True
-            title = next((h for h in html.split("\n") if "<TITLE>" in h), "")
-            return "Error" not in title
+        return html
     except URLError:
-        return False
+        return ""
 
 
-def get_first_available_url(urls: list[str]) -> str | None:
-    return next((url for url in urls if is_webpage_available(url)), None)
+def format_url(key: str, url: str) -> str:
+    return url + "/hg38" if key == "goldenpath" else url
+
+
+def get_first_available_url(key: str, urls: list[str]) -> str | None:
+    search_keys = {"blat": "BLAT Search Genome", "das": "GRCh38/hg38", "goldenpath": "bigZips"}
+    return next((url for url in urls if search_keys[key] in get_html(format_url(key, url))), None)
 
 
 def fetch_xml_data(url: str) -> bytes:
@@ -150,11 +152,11 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
         ],
         "goldenpath": [
             "https://hgdownload.cse.ucsc.edu/goldenPath",
-            "http://hgdownload-euro.soe.ucsc.edu/goldenPath",
+            "https://hgdownload.soe.ucsc.edu/goldenPath",
         ],
     }
 
-    available_servers = {key: get_first_available_url(urls) for key, urls in server_lists.items()}
+    available_servers = {key: get_first_available_url(key, urls) for key, urls in server_lists.items()}
 
     error_messages = {
         "blat": "All UCSC blat servers are currently down. Please wait for a while and try again.",
@@ -163,7 +165,7 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
     }
 
     for key, message in error_messages.items():
-        if not available_servers[key]:
+        if available_servers[key] is None:
             raise URLError(message)
 
     if not is_genome_in_ucsc_ids(genome, available_servers["das"]):
