@@ -2,6 +2,7 @@
 
 <!-- TEMPLATE
 # v0.0.0 (yyyy-mm-dd)
+## 💥 Breaking Changes
 ## 📝 Documentation
 ## 🚀 New Features
 ## 🐛 Bug Fixes
@@ -11,11 +12,11 @@
 -->
 
 <!-- memo ToDo
-- macOS (Apple Silicon) でのインストール方法を追記する
-- FASTQ、VCFを出力する
+- ✅ macOS (Apple Silicon) でのインストール方法を追記する
+- Guppyの出力にあわせて、ディレクトリを指定するだけで実行できるようにする
+- ~~FASTQ~~、VCF、PDFを出力する
 
 + # 💡 Future Tasks
-+ Remove minor alleles with predicted insertion
 + Enhance the Clarity of Insertion Allele Identification.
 + Develop and Integrate Inversion Detection Capability
  -->
@@ -37,13 +38,17 @@
 
 + Update `preprocess.insertion_to_fasta` to facilitate the discrimination of Insertion alleles, the Reference for Insertion alleles has been saved in FASTA/HTML directory. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5899543077f0398863b6316d8c3e953b5f125f55)
 
++ Update `insertions_to_fasta.extract_enriched_insertions`: Previously, it calculated the presence ratio of insertion alleles separately for samples and controls, filtering at 0.5%. However, due to a threshold issue, some control insertions were narrowly missing the threshold, resulting in them being incorrectly identified as sample-specific insertions. To rectify this, the algorithm now clusters samples and controls together, excluding clusters where both types are mixed. This modification allows for the extraction of sample-specific insertion alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/65030daba7c56a6c3f3f685832084b71c6b2e1c3)
+
 + Updated `preprocess.insertions_to_fasta.count_insertions` of the counting method to treat similar insertions as identical. Previously, the same insertion was erroneously counted as different ones due to sequence errors. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7bc18f486253e876d51a296f64909e1c73114e79)
 
-+ Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
 
 + Moved the `call_sequence` function to the `cssplits_handler` module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/ef5b0bf41ab33a7e8d06d33fe7fa6c27a443742a)
 
 ## 🐛 Bug Fixes
+
++ Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
+
 
 + Updated `utils.input_validator.validate_genome_and_fetch_urls` to obtain `available_server` more explicitly. Previously, it relied on HTTP response codes, but there were instances where the UCSC Genome Browser showed a normal (200) response while internally being in error. Therefore, with this change, a more explicit method is employed by searching for specific keywords present in the normal HTML, to determine if the server is functioning correctly. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/24a02591e8a146030012dbf564e4b6cd98d42139)
 
