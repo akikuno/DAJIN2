@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from itertools import groupby
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import Generator
 
 import numpy as np
@@ -23,62 +23,72 @@ import cstag
 ###########################################################
 
 
-def count_insertions(midsv_sample: Generator | str, mutation_loci: dict) -> dict[tuple[int, str], int]:
-    # Extract insertion sequences that are more than 10 base pair length
-    insertion_index_sequences = defaultdict(list)
-    coverage = 0
+def extract_all_insertions(midsv_sample: Generator, mutation_loci: dict) -> dict[int, list[str]]:
+    """To extract insertion sequences of **10 base pairs or more** at each index."""
+    insertion_index_sequences_control = defaultdict(list)
     for m_sample in midsv_sample:
-        coverage += 1
         cssplits = m_sample["CSSPLIT"].split(",")
         insertion_loci = (i for i, mut in enumerate(mutation_loci) if "+" in mut)
         for idx in insertion_loci:
             if cssplits[idx].startswith("+") and cssplits[idx].count("|") > 10:
-                insertion_index_sequences[idx].append(cssplits[idx])
+                insertion_index_sequences_control[idx].append(cssplits[idx])
 
-    insertion_counts = defaultdict(int)
-    threshold = int(coverage * 0.5 / 100)
-    for i, insertion_sequences in insertion_index_sequences.items():
-        # Count similar insertion sequences
-        query = insertion_sequences[0]
-        seqs, scores, _ = zip(
-            *process.extract_iter(query, insertion_sequences, scorer=DamerauLevenshtein.normalized_distance)
+    return dict(insertion_index_sequences_control)
+
+
+def remove_non_alphabets(s):
+    # Using list comprehension to keep only alphabet characters
+    return "".join([char for char in s if char.isalpha()])
+
+
+def extract_enriched_insertions(
+    insertions_sample: dict, insertions_control: dict, coverage_sample: int
+) -> dict[int, dict[str, int]]:
+    enriched_insertions = dict()
+    threshold_sample = max(5, int(coverage_sample * 0.5 / 100))
+    for i in insertions_sample:
+        ins_sample = insertions_sample[i]
+        ins_control = insertions_control.get(i, [])
+        seq_all = [remove_non_alphabets(seq) for seq in ins_sample + ins_control]
+        query = seq_all[0]
+        _, scores, _ = zip(*process.extract_iter(query, seq_all, scorer=DamerauLevenshtein.normalized_distance))
+        labels_all = MeanShift().fit(np.array(scores).reshape(-1, 1)).labels_.tolist()
+        labels_sample = labels_all[: len(ins_sample)]
+        labels_control = labels_all[len(ins_sample) :]
+        labels_count_sample = dict(Counter(labels_sample))
+        labels_count_control = dict(Counter(labels_control))
+
+        to_delete = set()
+        # To remove labels containing a high proportion of controls (5% or more, or 5 or more reads).
+        threshold_control = max(5, int(len(labels_control) * 0.05))
+        for label, count_control in labels_count_control.items():
+            if count_control > threshold_control:
+                to_delete.add(label)
+
+        # To delete labels with sample coverage below 0.5% or fewer than 5 reads.
+        for label, count_sample in labels_count_sample.items():
+            if count_sample < threshold_sample:
+                to_delete.add(label)
+
+        for label in to_delete:
+            del labels_count_sample[label]
+
+        if labels_count_sample == dict():
+            continue
+
+        # Count the remaining insertion sequences.
+        enriched_insertions[i] = dict(
+            Counter([ins for ins, label in zip(ins_sample, labels_sample) if label in labels_count_sample])
         )
-        labels = [int(score * 10) for score in scores]
-        insertion_labels_sequences = [(label, seq) for label, seq in zip(labels, insertion_sequences)]
-
-        # Filter low frequency insertion sequences
-        insertion_labels_sequences = sorted(insertion_labels_sequences, key=lambda x: x[0])
-        for _, group in groupby(insertion_labels_sequences, key=lambda x: x[0]):
-            group = list(group)
-            if len(group) < threshold:
-                continue
-            seqs = (s for _, s in group)
-            for seq in seqs:
-                insertion_counts[(i, seq)] += 1
-
-    return dict(insertion_counts)
+    return enriched_insertions
 
 
-def create_insertions_dict(
-    insertion_sample: dict[tuple[int, str], int], insertion_control: dict[tuple[int, str], int]
-) -> defaultdict[int, dict[str, int]]:
-    """Create a dictionary of insertions that are present in the sample but not in the control."""
-    insertions = defaultdict(dict)
-    for key in insertion_sample.keys() - insertion_control.keys():
-        score = insertion_sample[key]
-        idx, seq = key
-        if isinstance(seq, int):
-            idx, seq = seq, idx
-        insertions[idx][seq] = score
-    return insertions
+def extract_insertions(path_sample: Path, path_control: Path, mutation_loci: dict) -> dict[int, dict[str, int]]:
+    insertions_sample = extract_all_insertions(io.read_jsonl(path_sample), mutation_loci)
+    insertions_control = extract_all_insertions(io.read_jsonl(path_control), mutation_loci)
+    coverage_sample = io.count_newlines(path_sample)
 
-
-def extract_insertions(
-    path_sample: Path | str, path_control: Path | str, mutation_loci: dict
-) -> defaultdict[int, dict[str, int]]:
-    insertion_sample = count_insertions(io.read_jsonl(path_sample), mutation_loci)
-    insertion_control = count_insertions(io.read_jsonl(path_control), mutation_loci)
-    return create_insertions_dict(insertion_sample, insertion_control)
+    return extract_enriched_insertions(insertions_sample, insertions_control, coverage_sample)
 
 
 ###########################################################
@@ -218,12 +228,14 @@ def filter_minor_label(
 
 
 def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
+    """
+    Update labels to avoid duplicating user-specified alleles
+    (insertion1 -> insertion01 -> insertion001...)
+    """
     user_defined_alleles = set(FASTA_ALLELES)
     d_values = list(d.values())
     len_d = len(d_values)
     digits_up = 0
-    # Update labels to avoid duplicating user-specified alleles
-    # (insertion1 -> insertion01 -> insertion001...)
     while True:
         digits = len(str(len_d)) + digits_up
         d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
@@ -319,6 +331,7 @@ def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict) ->
     for header, seq in fasta_insertions.items():
         Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}")
 
+
 ###########################################################
 # generate and save as HTML and PDF
 ###########################################################
@@ -355,8 +368,7 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     sequence = FASTA_ALLELES["control"]
     mutation_loci = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
     insertions = extract_insertions(path_sample, path_control, mutation_loci)
-    index_insertions = set(i for i, m in enumerate(mutation_loci) if "+" in m)
-    if insertions.keys() & index_insertions == set():
+    if insertions == dict():
         return None
     insertions_merged = merge_similar_insertions(insertions, mutation_loci)
     insertions_scores_sequences = extract_score_and_sequence(path_sample, insertions_merged)
@@ -369,8 +381,10 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     )
     consensus_of_insertions = call_consensus_of_insertion(insertion_sequences_subset)
     if consensus_of_insertions == dict():
-        # If there is no insertion sequence, return None
-        # It is possible when all insertion sequence annotated as `N` that is filtered out
+        """
+        If there is no insertion sequence, return None
+        It is possible when all insertion sequence annotated as `N` that is filtered out
+        """
         return None
     consensus_of_insertions = update_labels(consensus_of_insertions, FASTA_ALLELES)
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
