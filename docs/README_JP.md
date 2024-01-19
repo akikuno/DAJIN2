@@ -161,9 +161,8 @@ DAJIN2 \
 <!-- > [!NOTE]
 > サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。 -->
 
-サンプル情報のまとめ方は、こちらをご参照ください。  
-
-[![Google Slide]([スライドのURL](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000))](https://docs.google.com/presentation/d/1DHWXBNCGpyePWC_dCnCmuRbwvACIUUXN/edit?usp=sharing&ouid=115567492402389323951&rtpof=true&sd=true)
+> [!NOTE]
+> サンプル情報のまとめ方は、[こちら](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000)をご参照ください。  
 
 <!-- <iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe> -->
 
