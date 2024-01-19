@@ -10,14 +10,13 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-DAJIN2は、ナノポアロングシーケンシング技術を活用した、ゲノム編集サンプルのジェノタイピングツールです。
+DAJIN2は、ターゲットナノポアシーアシーケンシング（PCRアンプリコン, nCATS）を利用したゲノム編集サンプルのジェノタイピングツールです。
 
 ## 🌟 特徴
 
-- ゲノム編集イベントを網羅的に検出することができます。  
-- ゲノム編集結果を可視化し、直観的に確認することができます。  
-- 多サンプル処理が可能です。  
-
++ **網羅的な変異検出**: ゲノム編集イベントを広範囲にわたり検出する能力を備えており、小さな変異から大きな構造変化まで、幅広い変異を特定することが可能です
++ **直観的な可視化**: ゲノム編集の結果は直観的に可視化され、変異を迅速かつ容易に識別し、分析することができます
++ **多サンプル対応**: 多様なサンプルに対応しており、複数のサンプルを同時に処理することが可能です。これにより、大規模な実験や比較研究を効率的に進めることができます
 
 ## 🛠 インストール
 
@@ -58,7 +57,7 @@ pip install DAJIN2
 
 #### サンプルおよびコントロールのFASTQファイル
 
-DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロール**が必要です  
+DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロール**が必要です。  
 ゲノム編集サンプルとコントロールのFASTQファイル（Gzip圧縮・非圧縮どちらも対応可能）を含むディレクトリを指定します。
 
 <!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
@@ -86,11 +85,12 @@ fastq_pass
 
 FASTAファイルには、ゲノム編集によって予測されるアレルを記述します。
 
-**`>control`から始まるヘッダーは、コントロールアレルを示し、これは必須です。**  
+> [!IMPORTANT]
+>コントロールアレルの指定： `>control`というヘッダー名と、その配列は必須です。  
 
-例えば、ノックインやノックアウトなど、事前に予想されるアレルがある場合、それらをFASTAファイルに記載してください。
+事前に想定されるアレルがある場合（例：ノックインやノックアウト）、それらのシーケンスもFASTAファイルに記載してください。これらの想定アレルの名称は任意に設定できます。
 
-以下に一例を示します。
+以下は、FASTAファイルの典型例です：
 
 ```text
 >control
@@ -100,6 +100,8 @@ ACGTACGTCCCCACGTACGT
 >knock-out
 ACGTACGT
 ```
+
+ここで、`>control` はコントロールアレルの配列を、`>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレルの配列を表しています。
 
 ### 単一サンプル解析
 
@@ -121,7 +123,7 @@ DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
   -v, --version             バージョン情報の出力
 ```
 
-#### 使用例
+<!-- #### 使用例
 
 ```bash
 # Donwload the example dataset
@@ -149,16 +151,19 @@ DAJIN2 \
 # 2023-06-04 11:35:01: Consensus calling example-single/sample.fq.gz...
 # 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
 # 🎉 Finished! Open DAJIN_Results/stx2-deletion to see the report.
-```
+``` -->
 
 ### 複数サンプルの一括処理
 
-`batch`サブコマンドを利用することで、複数のFASTQファイルを同時に処理することができます。  
-この際、サンプル情報をまとめたCSVファイルやExcelファイルが必要となります。  
+`batch`サブコマンドを利用することで、複数サンプルの同時処理が可能です。  
+サンプル情報をまとめたCSVファイルやExcelファイルが必要となります。  
 
-> [!NOTE]
-> サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。
+<!-- > [!NOTE]
+> サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。 -->
 
+サンプル情報のまとめ方は、こちらをご参照ください。  
+
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
 
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
@@ -168,7 +173,7 @@ DAJIN2 batch <-f|--file> [-t|--threads] [-h]
   -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
   -h, --help                ヘルプメッセージの出力
 ```
-
+<!-- 
 #### 使用例
 
 ```bash
@@ -205,12 +210,12 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 # 2023-07-31 17:04:16: Output reports of example-batch/tyr_c230gt_10%.fq.gz...
 # 2023-07-31 17:04:24: 🍵 example-batch/tyr_c230gt_10%.fq.gz is finished!
 # 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
-```
+``` -->
 
 ## 📈 レポート内容
 
 DAJIN2の処理が完了すると、**DAJIN_Results**というディレクトリが作られます。  
-このDAJIN_Resultsディレクトリには、以下のファイルが含まれています：  
+このDAJIN_Resultsディレクトリには、以下のファイルが含まれます：  
 
 ```text
 DAJIN_Results/tyr-substitution
@@ -280,8 +285,8 @@ read_plot.html および read_plot.pdf は、各アレルの割合を図示し�
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
 > [!WARNING]  
-> PCRアンプリコンのシーケンシングでは、増幅バイアスのため、**% of reads**が実際のアレルの割合と一致しないことがあります。  
-> 特に大型の欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映していない可能性が高まります。
+> PCRアンプリコンを用いたターゲットシーケンシングでは、増幅バイアスのため **% of reads**が実際のアレルの割合と一致しないことがあります。  
+> とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
 
 ### 5. read_all.csv / read_summary.csv
 
@@ -289,20 +294,17 @@ read_plot.html および read_plot.pdf は、各アレルの割合を図示し�
 - read_summary.csv：各アレルのリード数と存在割合が記述されています。
 
 
-## 📄 参考文献
-
-[Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
-
-
-## 📣フィードバック
+## 📣フィードバックと行動規範
 
 
 質問、バグ報告、その他のフィードバックについて、皆さまからのご意見をお待ちしています。  
 報告には [GitHub Issues](https://github.com/akikuno/DAJIN2/issues) をご利用ください。  
+フィードバックの方法は、[CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) をご覧ください。  
 
-コントリビューションの方法については、[CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) をご参照してください。
+<!-- ## 🤝 コントリビューター行動規範 -->
 
-## 🤝 コントリビューター行動規範
+なお、このプロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
 
-このプロジェクトは [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)（コントリビューター行動規範）に基づいて公開されています。
-このプロジェクトに参加することにより、その規約を遵守することに同意したことになります。
+## 📄 参考文献
+
+[Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
