@@ -28,9 +28,19 @@ DAJIN2は、ナノポアロングシーケンシング技術を活用した、�
 
 ### [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
 
+
 ```bash
-conda install -c bioconda DAJIN2
+conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
+conda activate env-dajin2
 ```
+
+> [!NOTE]
+> [Apple SiliconはBiocondaチャンネルに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールをしてください
+> ```bash
+> CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
+> conda activate env-dajin2
+> conda config --env --set subdir osx-64
+> ```
 
 ### [PyPI](https://pypi.org/project/DAJIN2/)
 
@@ -44,6 +54,53 @@ pip install DAJIN2
 
 ## 💡 使用方法
 
+### 必須ファイル
+
+#### サンプルおよびコントロールのFASTQファイル
+
+DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロール**が必要です  
+ゲノム編集サンプルとコントロールのFASTQファイル（Gzip圧縮・非圧縮どちらも対応可能）を含むディレクトリを指定します。
+
+<!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
+Guppyによるベースコール処理後、以下のようなファイル構成が出力されます：
+
+
+```text
+fastq_pass
+├── barcode01
+│   ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_0_0.fastq.gz
+│   ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_10_0.fastq.gz
+│   └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
+└── barcode02
+    ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_0_0.fastq.gz
+    ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_10_0.fastq.gz
+    └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
+```
+
+上記例では、barcode01をコントロール、barcode02をサンプルとして扱います。それぞれのディレクトリは下記の通りに指定します：
+
++ コントロール: `fastq_pass/barcode01`
++ サンプル: `fastq_pass/barcode01`
+
+#### FASTAファイル
+
+FASTAファイルには、ゲノム編集によって予測されるアレルを記述します。
+
+**`>control`から始まるヘッダーは、コントロールアレルを示し、これは必須です。**  
+
+例えば、ノックインやノックアウトなど、事前に予想されるアレルがある場合、それらをFASTAファイルに記載してください。
+
+以下に一例を示します。
+
+```text
+>control
+ACGTACGTACGTACGT
+>knock-in
+ACGTACGTCCCCACGTACGT
+>knock-out
+ACGTACGT
+```
+
 ### 単一サンプル解析
 
 単一サンプル（サンプルのFASTQとコントロールのFASTQ）の解析手順は以下の通りです。
@@ -54,14 +111,14 @@ DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
   [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 引数:
-  -s, --sample              Path to a sample FASTQ file
-  -c, --control             Path to a control FASTQ file
-  -a, --allele              Path to a FASTA file
-  -n, --name                Output directory name
-  -g, --genome (オプション)   Reference genome ID (e.g hg38, mm39) [default: '']
-  -t, --threads (オプション)  Number of threads [default: 1]
-  -h, --help                show this help message
-  -v, --version             show the version number
+  -s, --sample              サンプルのFASTQファイルが格納されたディレクトリのパス
+  -c, --control             コントロールのFASTQファイルが格納されたディレクトリのパス
+  -a, --allele              ゲノム編集によって期待されるアレルを記載したFASTAファイルのパス
+  -n, --name (オプション)     出力ディレクトリの名前 [デフォルト: Results]
+  -g, --genome (オプション)   参照ゲノムのID (e.g hg38, mm39) [デフォルト: '']
+  -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
+  -h, --help                ヘルプメッセージの出力
+  -v, --version             バージョン情報の出力
 ```
 
 #### 使用例
@@ -98,6 +155,7 @@ DAJIN2 \
 
 `batch`サブコマンドを利用することで、複数のFASTQファイルを同時に処理することができます。  
 この際、サンプル情報をまとめたCSVファイルやExcelファイルが必要となります。  
+
 > [!NOTE]
 > サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。
 
@@ -106,9 +164,9 @@ DAJIN2 \
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 
 引数:
-  -f, --file                Path to a CSV or Excel file
-  -t, --threads (オプション)  Number of threads [default: 1]
-  -h, --help                Show this help message
+  -f, --file                CSVまたはExcelファイルのパス
+  -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
+  -h, --help                ヘルプメッセージの出力
 ```
 
 #### 使用例

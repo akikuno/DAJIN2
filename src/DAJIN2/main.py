@@ -157,10 +157,10 @@ def execute():
     # Single mode
     ###############################################################################
 
-    parser.add_argument("-s", "--sample", type=str, help="Full path to a sample FASTQ file")
-    parser.add_argument("-c", "--control", type=str, help="Full path to a control FASTQ file")
-    parser.add_argument("-a", "--allele", type=str, help="Full path to a FASTA file")
-    parser.add_argument("-n", "--name", type=str, help="Output directory name", default="DAJIN2-results")
+    parser.add_argument("-s", "--sample", type=str, help="Path to a sample directory including FASTQ file")
+    parser.add_argument("-c", "--control", type=str, help="Path to a control directory including FASTQ file")
+    parser.add_argument("-a", "--allele", type=str, help="Path to a FASTA file")
+    parser.add_argument("-n", "--name", type=str, help="Output directory name", default="Results")
     parser.add_argument(
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )

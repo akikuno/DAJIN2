@@ -92,10 +92,10 @@ def to_sam(
 
 def generate_sam(ARGS, paths_fasta: list[str], is_control: bool = False, is_insertion: bool = False) -> None:
     if is_control:
-        path_fastq = ARGS.path_control
+        path_fastq = Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz")
         name = ARGS.control_name
     else:
-        path_fastq = ARGS.path_sample
+        path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
         name = ARGS.sample_name
 
     out_directory = Path(ARGS.tempdir, name, "sam")

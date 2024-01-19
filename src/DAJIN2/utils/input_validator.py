@@ -60,11 +60,10 @@ def validate_fasta_content(fasta_path: str):
 
 
 def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
-    for path_fastx in [CONTROL, SAMPLE, ALLELE]:
-        validate_file_existence(path_fastx)
-    for path_fastx in [CONTROL, SAMPLE]:
-        validate_fastq_extension(path_fastx)
-        validate_fastq_content(path_fastx)
+    for path_directory in [CONTROL, SAMPLE]:
+        _ = [validate_fastq_extension(str(path_fastx)) for path_fastx in Path(path_directory).iterdir()]
+        _ = [validate_fastq_content(str(path_fastx)) for path_fastx in Path(path_directory).iterdir()]
+    validate_file_existence(ALLELE)
     validate_fasta_content(ALLELE)
 
 
