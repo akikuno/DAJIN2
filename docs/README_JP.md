@@ -105,22 +105,33 @@ ACGTACGT
 
 ### 単一サンプル解析
 
-単一サンプル（サンプルのFASTQとコントロールのFASTQ）の解析手順は以下の通りです。
-
+単一サンプルの解析手順は以下の通りです。
 
 ```bash
-DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
+DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 引数:
-  -s, --sample              サンプルのFASTQファイルが格納されたディレクトリのパス
   -c, --control             コントロールのFASTQファイルが格納されたディレクトリのパス
+  -s, --sample              サンプルのFASTQファイルが格納されたディレクトリのパス
   -a, --allele              ゲノム編集によって期待されるアレルを記載したFASTAファイルのパス
   -n, --name (オプション)     出力ディレクトリの名前 [デフォルト: Results]
   -g, --genome (オプション)   参照ゲノムのID (e.g hg38, mm39) [デフォルト: '']
   -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
   -h, --help                ヘルプメッセージの出力
   -v, --version             バージョン情報の出力
+```
+
+#### 実行例
+
+```bash
+DAJIN2 \
+    --control example/barcode01 \
+    --sample example/barcode02 \
+    --allele example/design.fa \
+    --name IL6-knockin \
+    --genome hg38 \
+    --threads 4
 ```
 
 <!-- #### 使用例
@@ -156,7 +167,7 @@ DAJIN2 \
 ### 複数サンプルの一括処理
 
 `batch`サブコマンドを利用することで、複数サンプルの同時処理が可能です。  
-サンプル情報をまとめたCSVファイルやExcelファイルが必要となります。  
+サンプル情報をまとめたCSVファイルまたはExcelファイルが必要です。  
 
 <!-- > [!NOTE]
 > サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。 -->
@@ -174,6 +185,14 @@ DAJIN2 batch <-f|--file> [-t|--threads] [-h]
   -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
   -h, --help                ヘルプメッセージの出力
 ```
+
+#### 実行例
+
+```bash
+DAJIN2 --file batch.csv --threads 4
+```
+
+
 <!-- 
 #### 使用例
 
@@ -213,7 +232,7 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 # 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
 ``` -->
 
-## 📈 レポート内容
+## 📈 出力結果
 
 DAJIN2の処理が完了すると、**DAJIN_Results**というディレクトリが作られます。  
 このDAJIN_Resultsディレクトリには、以下のファイルが含まれます：  
