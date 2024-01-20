@@ -11,17 +11,19 @@
 + [ ] XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 -->
 
-<!-- memo ToDo
-- ✅ macOS (Apple Silicon) でのインストール方法を追記する
-- ✅ Guppyの出力にあわせて、ディレクトリを指定するだけで実行できるようにする
-- ~~FASTQ~~、VCF、PDFを出力する
-
-+ # 💡 Future Tasks
-+ ✅ Enhance the Clarity of Insertion Allele Identification.
-+ Develop and Integrate Inversion Detection Capability
+<!-- 💡 ToDo
+- VCF、PDFを出力する
+- 逆位アレルでの検証を加える
+- nCATSがほしい…
  -->
 
-# v0.4.0
+-------------
+
+# Past Logs
+
+
+<details>
+<summary> v0.4.0 (2024-01-20) </summary>
 
 ## 💥 Breaking
 
@@ -65,11 +67,7 @@
 
 + Debugged `core.py`: Modified the specification of `paths_predefined_fasta` to accept input from user-entered ALLELE data. Previously, it accepted fasta files stored in the fasta directory. However, this approach had a bug where fasta files left over from a previously aborted run (which included newly created insertions) were treated as predefined. This resulted in new insertions being incorrectly categorized as predefined. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/6dd9247f010eb6168157ae9236a634efcfb84a5f)
 
-## ⛔️ Deprecated
-
--------------
-
-# Past Logs
+</details>
 
 <details>
 <summary> v0.3.6 (2024-01-10) </summary>
