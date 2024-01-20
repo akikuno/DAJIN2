@@ -12,9 +12,15 @@
 
 [日本語はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
-DAJIN2 is a genotyping software designed for organisms that have undergone genome editing, utilizing nanopore sequencing technology.  
+DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore sequencer target sequencing.
 
-The name DAJIN is inspired by the term 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), which signifies capturing everything in a single net.  
+The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), symbolizing the concept of capturing everything in one sweep.  
+
+## 🌟 Features
+
++ **Comprehensive Mutation Detection**: Equipped with the capability to detect genome editing events over a wide range, it can identify a broad spectrum of mutations, from small changes to large structural variations.
++ **Intuitive Visualization**: The outcomes of genome editing are visualized intuitively, allowing for the rapid and easy identification and analysis of mutations.
++ **Multi-Sample Compatibility**: Accommodates a variety of samples, enabling simultaneous processing of multiple samples. This facilitates efficient progression of large-scale experiments and comparative studies.
 
 
 ## 🛠 Installation
@@ -52,6 +58,56 @@ pip install DAJIN2
 
 ## 💡 Usage
 
+### Required Files
+
+#### FASTQ Files for Sample and Control
+
+In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ files (both gzip compressed and uncompressed) of the genome editing sample and control.
+
+<!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
+After base calling with Guppy, the following file structure will be output:
+
+
+```text
+fastq_pass
+├── barcode01
+│   ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_0_0.fastq.gz
+│   ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_10_0.fastq.gz
+│   └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
+└── barcode02
+    ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_0_0.fastq.gz
+    ├── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_10_0.fastq.gz
+    └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
+```
+
+Assuming barcode01 as the control and barcode02 as the sample, specify each directory as follows:
+
++ Control: fastq_pass/barcode01
++ Sample: fastq_pass/barcode01
+
+#### FASTA File for Allele
+
+The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
+
+> [!IMPORTANT]
+> Specifying the control allele: A header name >control and its sequence are mandatory.
+
+If there are anticipated alleles (e.g., knock-ins or knock-outs), include their sequences in the FASTA file too. These anticipated alleles can be named arbitrarily.
+
+Below is a typical example of a FASTA file:
+
+```text
+>control
+ACGTACGTACGTACGT
+>knock-in
+ACGTACGTCCCCACGTACGT
+>knock-out
+ACGTACGT
+```
+
+Here, `>control` represents the sequence of the control allele, while `>knock-in` and `>knock-out` represent the sequences of the anticipated knock-in and knock-out alleles, respectively.
+
+
 ### Single Sample Analysis
 
 DAJIN2 allows for the analysis of single samples (one sample vs one control).
@@ -60,20 +116,30 @@ DAJIN2 allows for the analysis of single samples (one sample vs one control).
 DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
   [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
-options:
-  -s, --sample              Path to a sample FASTQ file
-  -c, --control             Path to a control FASTQ file
-  -a, --allele              Path to a FASTA file
-  -n, --name                Output directory name
-  -g, --genome (Optional)   Reference genome ID (e.g hg38, mm39) [default: '']
-  -t, --threads (Optional)  Number of threads [default: 1]
-  -h, --help                show this help message and exit
-  -v, --version             show the version number and exit
+Options:
+-s, --sample              Specify the path to the directory containing sample FASTQ files.
+-c, --control             Specify the path to the directory containing control FASTQ files.
+-a, --allele              Specify the path to the FASTA file.
+-n, --name (Optional)     Set the output directory name. Default: 'Results'.
+-g, --genome (Optional)   Specify the reference genome ID (e.g., hg38, mm39). Default: '' (empty string).
+-t, --threads (Optional)  Set the number of threads. Default: 1.
+-h, --help                Display this help message and exit.
+-v, --version             Display the version number and exit.
 ```
 
 #### Example
 
 ```bash
+DAJIN2 \
+    --control example/barcode01 \
+    --sample example/barcode02 \
+    --allele example/design.fa \
+    --name IL6-knockin \
+    --genome hg38 \
+    --threads 4
+```
+
+<!-- ```bash
 # Donwload the example dataset
 wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-single.tar.gz
 tar -xf example-single.tar.gz
@@ -100,26 +166,34 @@ DAJIN2 \
 # 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
 # 🎉 Finished! Open DAJIN_Results/stx2-deletion to see the report.
 ```
+ -->
 
 ### Batch Processing
 
 By using the `batch` subcommand, you can process multiple FASTQ files simultaneously.  
 For this purpose, a CSV or Excel file consolidating the sample information is required.  
-For a specific example, please refer to [this link](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv).
+<!-- For a specific example, please refer to [this link](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv). -->
+
+> [!NOTE]
+> For guidance on how to compile sample information, please refer to [this document](https://docs.google.com/presentation/d/e/2PACX-1vSMEmXJPG2TNjfT66XZJRzqJd82aAqO5gJrdEzyhn15YBBr_Li-j5puOgVChYf3jA/embed?start=false&loop=false&delayms=3000).
 
 
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 
 options:
-  -f, --file                Path to a CSV or Excel file
-  -t, --threads (Optional)  Number of threads [default: 1]
-  -h, --help                Show this help message and exit
+  -f, --file                Specify the path to the CSV or Excel file.
+  -t, --threads (Optional)  Set the number of threads. Default: 1.
+  -h, --help                Display this help message and exit.
 ```
 
 #### Example
 
 ```bash
+DAJIN2 --file batch.csv --threads 4
+```
+
+<!-- ```bash
 # Donwload the example dataset
 wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-batch.tar.gz
 tar -xf example-batch.tar.gz
@@ -153,7 +227,7 @@ DAJIN2 batch --file example-batch/batch.csv --threads 3
 # 2023-07-31 17:04:16: Output reports of example-batch/tyr_c230gt_10%.fq.gz...
 # 2023-07-31 17:04:24: 🍵 example-batch/tyr_c230gt_10%.fq.gz is finished!
 # 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
-```
+``` -->
 
 ## 📈 Report Contents
 
@@ -229,14 +303,6 @@ Additionally, the types of **Allele type** include:
 - read_all.csv: Records which allele each read is classified under.  
 - read_summary.csv: Describes the number of reads and presence proportion for each allele.  
 
-
-## 📄 References
-
-For more information, please refer to the following publication:
-
-[Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
-
-
 ## 📣Feedback and Support
 
 For questions, bug reports, or other forms of feedback, we'd love to hear from you!  
@@ -248,3 +314,11 @@ Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/
 
 Please note that this project is released with a [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md).  
 By participating in this project you agree to abide by its terms.  
+
+
+## 📄 References
+
+For more information, please refer to the following publication:
+
+[Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
+
