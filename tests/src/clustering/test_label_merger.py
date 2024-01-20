@@ -1,6 +1,7 @@
 from DAJIN2.core.clustering.label_merger import merge_mixed_cluster
 from DAJIN2.core.clustering.label_merger import map_clusters_to_previous
 from DAJIN2.core.clustering.label_merger import merge_minor_cluster
+from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 
 
 def test_merge_mixed_cluster():
@@ -25,8 +26,8 @@ def test_merge_minor_cluster():
     """
     labels_sample = [1, 1, 1, 2, 3, 3, 4, 5]
     labels_previous = [0, 0, 0, 0, 1, 1, 2, 2]
-    expected_output = [0, 0, 0, 0, 1, 1, 2, 2]
-    assert (
-        merge_minor_cluster(labels_sample, labels_previous, threshold_percentage=20, threshold_readnumber=100)
-        == expected_output
-    )
+    expected_output = [1, 1, 1, 1, 2, 2, 3, 3]
+
+    results = merge_minor_cluster(labels_sample, labels_previous, threshold_percentage=20, threshold_readnumber=100)
+
+    assert relabel_with_consective_order(results) == expected_output

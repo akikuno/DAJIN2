@@ -1,5 +1,6 @@
 from __future__ import annotations
 import re
+import cstag
 
 
 def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
@@ -139,3 +140,18 @@ def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     cssplits = add_match_operator_to_n(cssplits)
     cssplits_concatenated = concatenate_cssplits(cssplits)
     return standardize_case(cssplits_concatenated)
+
+
+###########################################################
+# convert position weight matrix (cons_pergentage) to sequence
+###########################################################
+
+
+def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str:
+    consensus_sequence = []
+    for cons_per in cons_percentage:
+        cssplits = max(cons_per, key=cons_per.get)
+        cs_tag = convert_cssplits_to_cstag([cssplits])
+        seq = cstag.to_sequence(cs_tag)
+        consensus_sequence.append(seq)
+    return f"{sep}".join(consensus_sequence)

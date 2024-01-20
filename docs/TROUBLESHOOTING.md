@@ -12,7 +12,7 @@ conda update -n base conda -y
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
-conda config --set channel_priority strict
+conda config --set channel_priority flexible
 
 # Install DAJIN2 to a virtual environment
 conda create -n env-dajin2 python=3.10 -y
@@ -50,10 +50,13 @@ We strongly recommend using Conda or Mamba for installation, as they efficiently
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
-conda config --set channel_priority strict
+conda config --set channel_priority flexible
 ```
 
-3. Create a new virtual environment (optional but recommended):
+> [!NOTE]
+> Bioconda recommends using `conda config --set channel_priority strict`, but as the installation of openpyxl fails, please use `conda config --set channel_priority flexible`.
+
+1. Create a new virtual environment (optional but recommended):
 
 ```bash
 conda create -n env-dajin2

@@ -9,7 +9,7 @@ from collections import defaultdict
 ##########################################################
 
 
-def count_alleles(score_of_each_alleles: list[dict]) -> dict[str, int]:
+def count_allele_with_max_score(score_of_each_alleles: list[dict]) -> dict[str, int]:
     score_of_each_alleles.sort(key=lambda x: x["QNAME"])
     allele_counts = defaultdict(int)
     for _, group in groupby(score_of_each_alleles, key=lambda x: x["QNAME"]):
@@ -19,17 +19,12 @@ def count_alleles(score_of_each_alleles: list[dict]) -> dict[str, int]:
     return allele_counts
 
 
-def extract_minor_alleles(count_allele: dict[str, int], threshold_readnumber: int = 10) -> dict[str, int]:
-    return {allele: value for allele, value in count_allele.items() if value < threshold_readnumber}
+def extract_minor_alleles(allele_counts: dict[str, int], threshold_readnumber: int = 5) -> dict[str, int]:
+    return {allele: value for allele, value in allele_counts.items() if value < threshold_readnumber}
 
 
-def extract_major_alleles(count_allele: dict[str, int], threshold_readnumber: int = 10) -> set[str]:
-    return {allele for allele, value in count_allele.items() if value >= threshold_readnumber}
-
-
-def sum_dictionaries(dict1, dict2):
-    """Function to sum the values of two dictionaries based on their keys."""
-    return {key: dict1.get(key, 0) + dict2.get(key, 0) for key in set(dict1) | set(dict2)}
+def extract_major_alleles(allele_counts: dict[str, int], threshold_readnumber: int = 5) -> set[str]:
+    return {allele for allele, value in allele_counts.items() if value >= threshold_readnumber}
 
 
 def split_major_minor_alleles(
@@ -65,10 +60,10 @@ def replace_negative_inf_with_most_major_allele(
     return score_of_minor_alleles
 
 
-def merge_minor_alleles(score_of_each_alleles, threshold_readnumber: int = 10) -> list[dict]:
+def merge_minor_alleles(score_of_each_alleles, threshold_readnumber: int = 5) -> list[dict]:
     score_of_each_alleles.sort(key=lambda x: [x["QNAME"]])
 
-    all_allele_counts = count_alleles(score_of_each_alleles)
+    all_allele_counts = count_allele_with_max_score(score_of_each_alleles)
     minor_allele_counts = extract_minor_alleles(all_allele_counts, threshold_readnumber)
 
     score_of_alleles_merged, score_of_minor_alleles = split_major_minor_alleles(
@@ -89,7 +84,7 @@ def merge_minor_alleles(score_of_each_alleles, threshold_readnumber: int = 10) -
                 if g["ALLELE"] in minor_allele:
                     g["SCORE"] = float("-inf")
 
-        allele_counts = count_alleles(score_of_minor_alleles)
+        allele_counts = count_allele_with_max_score(score_of_minor_alleles)
         new_major_allele |= extract_major_alleles(allele_counts, threshold_readnumber)
 
     score_of_minor_alleles = replace_negative_inf_with_most_major_allele(score_of_minor_alleles, all_allele_counts)

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import NamedTuple
 from collections import defaultdict
 
-from DAJIN2.utils import io, config
+from DAJIN2.utils import io, config, fastx_handler
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,7 @@ def parse_arguments(arguments: dict) -> tuple:
         genome_urls.update(
             {"genome": arguments["genome"], "blat": arguments["blat"], "goldenpath": arguments["goldenpath"]}
         )
+
     return (
         arguments["sample"],
         arguments["control"],
@@ -31,22 +32,25 @@ def parse_arguments(arguments: dict) -> tuple:
     )
 
 
-def convert_inputs_to_posix(sample: str, control: str, allele: str) -> tuple:
+def convert_input_paths_to_posix(sample: str, control: str, allele: str) -> tuple:
     sample = io.convert_to_posix(sample)
     control = io.convert_to_posix(control)
     allele = io.convert_to_posix(allele)
+
     return sample, control, allele
 
 
 def create_temporal_directory(name: str, control_name: str) -> Path:
     tempdir = Path(config.TEMP_ROOT_DIR, name)
     Path(tempdir, "cache", ".igvjs", control_name).mkdir(parents=True, exist_ok=True)
+
     return tempdir
 
 
 def check_caches(tempdir: Path, path_allele: str, genome_url: str) -> bool:
     is_cache_hash = preprocess.cache_checker.exists_cached_hash(tempdir=tempdir, path=path_allele)
     is_cache_genome = preprocess.cache_checker.exists_cached_genome(tempdir=tempdir, genome=genome_url)
+
     return is_cache_hash and is_cache_genome
 
 
@@ -61,7 +65,7 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
     }
     if genome_urls["genome"]:
         if is_cache_genome:
-            genome_coordinates = list(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))[0]
+            genome_coordinates = next(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))
         else:
             genome_coordinates = preprocess.genome_fetcher.fetch_coordinates(
                 genome_coordinates, genome_urls, fasta_alleles["control"]
@@ -70,6 +74,7 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
                 genome_coordinates, genome_urls
             )
             io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
+
     return genome_coordinates
 
 
@@ -88,13 +93,14 @@ class FormattedInputs(NamedTuple):
 
 def format_inputs(arguments: dict) -> FormattedInputs:
     path_sample, path_control, path_allele, name, threads, genome_urls, uuid = parse_arguments(arguments)
-    path_sample, path_control, path_allele = convert_inputs_to_posix(path_sample, path_control, path_allele)
+    path_sample, path_control, path_allele = convert_input_paths_to_posix(path_sample, path_control, path_allele)
     sample_name = preprocess.fastx_parser.extract_basename(path_sample)
     control_name = preprocess.fastx_parser.extract_basename(path_control)
     fasta_alleles = preprocess.fastx_parser.dictionize_allele(path_allele)
     tempdir = create_temporal_directory(name, control_name)
     is_cache_genome = check_caches(tempdir, path_allele, genome_urls["genome"])
     genome_coordinates = get_genome_coordinates(genome_urls, fasta_alleles, is_cache_genome, tempdir)
+
     return FormattedInputs(
         path_sample,
         path_control,
@@ -121,8 +127,8 @@ def execute_control(arguments: dict):
     # Preprocess
     ###########################################################
     ARGS = format_inputs(arguments)
-    preprocess.directories.create_temporal(ARGS.tempdir, ARGS.control_name, is_control=True)
-    preprocess.directories.create_report(ARGS.tempdir, ARGS.control_name, is_control=True)
+    preprocess.directories.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
+    preprocess.directories.create_report_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
     io.cache_control_hash(ARGS.tempdir, ARGS.path_allele)
 
     ###########################################################
@@ -132,6 +138,11 @@ def execute_control(arguments: dict):
         logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
         return
     logger.info(f"Preprocess {arguments['control']}...")
+
+    ###########################################################
+    # Merge fastq files
+    ###########################################################
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control)
 
     ###########################################################
     # Mapping
@@ -179,17 +190,24 @@ def execute_sample(arguments: dict):
     ###########################################################
 
     ARGS = format_inputs(arguments)
-    preprocess.directories.create_temporal(ARGS.tempdir, ARGS.sample_name)
-    preprocess.directories.create_report(ARGS.tempdir, ARGS.sample_name)
+    preprocess.directories.create_temporal_directories(ARGS.tempdir, ARGS.sample_name, is_control=False)
+    preprocess.directories.create_report_directories(ARGS.tempdir, ARGS.sample_name, is_control=False)
 
     logger.info(f"Preprocess {arguments['sample']}...")
 
-    for path_fasta in Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta"):
-        shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
+    # ============================================================
+    # Merge fastq files
+    # ============================================================
+
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_sample)
 
     # ============================================================
     # Mapping with mappy
     # ============================================================
+
+    for path_fasta in Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta"):
+        shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
+
     paths_fasta = Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")
     preprocess.mapping.generate_sam(ARGS, paths_fasta, is_control=False, is_insertion=False)
 
@@ -207,10 +225,12 @@ def execute_sample(arguments: dict):
     # ============================================================
     # Detect and align insertion alleles
     # ============================================================
-    paths_predifined_allele = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")}
+    paths_predefined_fasta = {
+        str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
+    }
     preprocess.generate_insertion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
     paths_insertion_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_insertion_fasta -= paths_predifined_allele
+    paths_insertion_fasta -= paths_predefined_fasta
 
     if paths_insertion_fasta:
         # mapping to insertion alleles
@@ -288,6 +308,7 @@ def execute_sample(arguments: dict):
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
     # FASTA
     report.report_files.to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
+    report.report_files.to_fasta_reference(ARGS.tempdir, ARGS.sample_name)
     # HTML
     report.report_files.to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)

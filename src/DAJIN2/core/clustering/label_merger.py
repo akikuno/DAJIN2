@@ -40,11 +40,21 @@ def map_clusters_to_previous(labels_sample: list[int], labels_previous: list[int
     return correspondence
 
 
+def get_update_required_labels(correspondence: dict) -> dict:
+    update_required_labels = {}
+    for key, value in correspondence.items():
+        if value not in update_required_labels:
+            update_required_labels[value] = {key}
+        else:
+            update_required_labels[value].add(key)
+    return update_required_labels
+
+
 def merge_minor_cluster(
     labels_sample: list[int],
     labels_previous: list[int],
     threshold_percentage: float = 0.5,
-    threshold_readnumber: int = 10,
+    threshold_readnumber: int = 5,
 ) -> list[int]:
     """Merge labels in sample if they appear less than 'threshold' percentage."""
 
@@ -55,8 +65,12 @@ def merge_minor_cluster(
     minor_labels = minor_labels_percentage | minor_labels_readnumber
 
     correspondence = map_clusters_to_previous(labels_sample, labels_previous)
+    update_required_labels = get_update_required_labels(correspondence)
 
-    labels_merged = [correspondence[label] if label in minor_labels else label for label in labels_sample]
+    labels_merged = labels_sample.copy()
+    for m in minor_labels:
+        new_label = max(labels_merged) + 1
+        labels_merged = [new_label if label in update_required_labels[correspondence[m]] else label for label in labels_merged]
 
     return labels_merged
 
@@ -67,8 +81,8 @@ def merge_minor_cluster(
 
 
 def merge_labels(labels_control: list[int], labels_sample: list[int], labels_previous: list[int]) -> list[int]:
-    labels_merged = merge_mixed_cluster(labels_control, labels_sample)
     labels_merged = merge_minor_cluster(
-        labels_merged, labels_previous, threshold_percentage=0.5, threshold_readnumber=10
+        labels_sample, labels_previous, threshold_percentage=0.5, threshold_readnumber=10
     )
+    labels_merged = merge_mixed_cluster(labels_control, labels_merged)
     return labels_merged

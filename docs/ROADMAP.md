@@ -2,8 +2,9 @@
 
 <!-- TEMPLATE
 # v0.0.0 (yyyy-mm-dd)
+## 💥 Breaking
 ## 📝 Documentation
-## 🚀 Features
+## 🚀 New Features
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
@@ -11,19 +12,60 @@
 -->
 
 <!-- memo ToDo
-- ✅ barcode09 allele1 の`N`
-- barcode11 allele2 の大型欠失が反映されていない ＆ barcode28 allele1 の`N` → Control側の問題
-- FASTQ、VCFを出力する
+- ✅ macOS (Apple Silicon) でのインストール方法を追記する
+- ✅ Guppyの出力にあわせて、ディレクトリを指定するだけで実行できるようにする
+- ~~FASTQ~~、VCF、PDFを出力する
 
 + # 💡 Future Tasks
-+ Remove minor alleles with predicted insertion
-+ Enhance the Clarity of Insertion Allele Identification.
++ ✅ Enhance the Clarity of Insertion Allele Identification.
 + Develop and Integrate Inversion Detection Capability
-+ ReferenceのアレルをFASTA/HTMLディレクトリに保存する
  -->
 
+# v0.4.0
+
+## 💥 Breaking
+
++ Changed the input from a path to a FASTQ file to **a path to a directory**: The output of Guppy is now stored in multiple FASTQ files under the `barcodeXX/` directory. Previously, it was necessary to combine the FASTQ files in the `barcodeXX/` directory into one and specify it as an argument. With this revision, it is now possible to directly specify the `barcodeXX` directory, allowing users to seamlessly proceed to DAJIN2 analysis after Guppy processing.
+[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d35ce6f89278d0361cc2b5b30fecfabbc66aa1c4)
+
+## 📝 Documentation
+
++ Changed `conda config --set channel_priority strict` to `conda config --set channel_priority flexible` for installation process in TROUBLESHOOTING.md. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c95681a8f2b6e725b0b737498981ad767eab842c)
+
+## 🚀 New Features
+
++ Apple Silicon (ARM64) supoorts. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/435bab6c56cb2172601d4b37488850fe48046f9c)
+
++ Changed the definition of the minor allele from a read number of less than or equal to 10 to less than or equal to 5. This is based on the assumption that one sample contains 1000 reads, where 0.5% corresponds to 5 reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/80a3ddcf7cac3eed2bcc76b88ea534873af4dd90)
 
 
+## 🔧 Update
+
++ Update `preprocess.insertion_to_fasta` to facilitate the discrimination of Insertion alleles, the Reference for Insertion alleles has been saved in FASTA/HTML directory. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5899543077f0398863b6316d8c3e953b5f125f55)
+
++ Update `insertions_to_fasta.extract_enriched_insertions`: Previously, it calculated the presence ratio of insertion alleles separately for samples and controls, filtering at 0.5%. However, due to a threshold issue, some control insertions were narrowly missing the threshold, resulting in them being incorrectly identified as sample-specific insertions. To rectify this, the algorithm now clusters samples and controls together, excluding clusters where both types are mixed. This modification allows for the extraction of sample-specific insertion alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/65030daba7c56a6c3f3f685832084b71c6b2e1c3)
+
++ Updated `preprocess.insertions_to_fasta.count_insertions` of the counting method to treat similar insertions as identical. Previously, the same insertion was erroneously counted as different ones due to sequence errors. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7bc18f486253e876d51a296f64909e1c73114e79)
+
++ Updated `preprocess.insertions_to_fasta.merge_similar_insertions`: Previously, clustering was done using MiniBatchKMeans, but this method had an issue where it excessively clustered when only highly similar insertion sequences existed. Therefore, a strategy similar to `extract_enriched_insertions` was adopted, changing the algorithm to one that mixes with a uniform distribution of random scores before clustering. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/fb7074cab9d9e4e3d293cb5487a3525a5faf06fd)
+
++ Added `preprocess.insertions_to_fasta.clustering_insertions`: Combined the clustering methods used in `extract_enriched_insertions` and `merge_similar_insertions` into a common function. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/6d7ff79351c5f60320b2269accb0e3bc159fdd5b)
+
+
++ Moved the `call_sequence` function to the `cssplits_handler` module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/ef5b0bf41ab33a7e8d06d33fe7fa6c27a443742a)
+
+## 🐛 Bug Fixes
+
++ Debug `clustering.merge_labels` to be able to correctly revert minor labels back to parent labels. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8127a94e042328b87e456d3748ebea66a845ba1a)
+
+
++ Updated `utils.input_validator.validate_genome_and_fetch_urls` to obtain `available_server` more explicitly. Previously, it relied on HTTP response codes, but there were instances where the UCSC Genome Browser showed a normal (200) response while internally being in error. Therefore, with this change, a more explicit method is employed by searching for specific keywords present in the normal HTML, to determine if the server is functioning correctly. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/24a02591e8a146030012dbf564e4b6cd98d42139)
+
++ Added `config.reset_logging` to reset the logging configuration. Previously, when batch processing multiple experiment IDs (names), a bug existed where the log settings from previous experiments remained, and the log file name was not updated. However, with this change, log files are now created for each experiment ID. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b83669c627710a5e358f934212e961373203ee52)
+
++ Debugged `core.py`: Modified the specification of `paths_predefined_fasta` to accept input from user-entered ALLELE data. Previously, it accepted fasta files stored in the fasta directory. However, this approach had a bug where fasta files left over from a previously aborted run (which included newly created insertions) were treated as predefined. This resulted in new insertions being incorrectly categorized as predefined. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/6dd9247f010eb6168157ae9236a634efcfb84a5f)
+
+## ⛔️ Deprecated
 
 -------------
 

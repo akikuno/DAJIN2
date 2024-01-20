@@ -53,6 +53,15 @@ def set_logging(path_logfile: Path) -> None:
     sys.excepthook = handle_uncaught_exception
 
 
+def reset_logging():
+    """
+    Reset the logging system to its default state.
+    """
+    # Remove all existing handlers
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
+
 def set_warnings_ignore() -> None:
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     warnings.filterwarnings("ignore", category=FutureWarning)
