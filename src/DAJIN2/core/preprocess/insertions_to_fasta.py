@@ -274,11 +274,16 @@ def call_consensus_of_insertion(insertion_sequences_subset: list[dict]) -> dict[
     return _remove_all_n(cons_sequence)
 
 
-def extract_index_of_insertions(insertions, insertions_merged) -> list[int]:
+def extract_index_of_insertions(
+    insertions: dict[int, dict[str, int]], insertions_merged: dict[dict[frozenset[str], int]]
+) -> list[int]:
+    """`insertions_merged` contains multiple surrounding indices for a single insertion allele. Among them, select the one index where the insertion allele is most frequent."""
     index_of_insertions = []
     for idx_group in insertions_merged:
         max_val = -1
         for idx in idx_group:
+            if idx not in insertions:
+                continue
             if max_val < sum(insertions[idx].values()):
                 max_val = sum(insertions[idx].values())
                 max_idx = idx
