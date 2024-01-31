@@ -78,7 +78,7 @@ def revcomp_cssplits(cssplits: list[str]) -> list[str]:
 
 def add_match_operator_to_n(cssplits: list[str]) -> list[str]:
     """Add "=" (match operator) to the sequences that start with "N"."""
-    return ["=" + seq if seq.startswith("N") else seq for seq in cssplits]
+    return ["=" + seq if seq.startswith("N") or seq.startswith("n") else seq for seq in cssplits]
 
 
 def format_insertion(cs: str) -> str:
