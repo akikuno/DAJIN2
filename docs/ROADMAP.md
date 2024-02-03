@@ -17,6 +17,22 @@
 - nCATSがほしい…
  -->
 
+# v0.4.1 (yyyy-mm-dd)
+## 💥 Breaking
+## 📝 Documentation
+
+## 🚀 New Features
+
++ Add `cssplits_handler.detect_insertion_within_deletion` to extract insertion sequence within a deletion. When an insertion sequence exists within a deletion, minimap2 may align bases that partially match the reference through local alignment, and in some cases, it fails to detect them as insertions. In such cases, adjustments have been made to ensure that the insertion sequence can be properly detected. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7651e20852b94ed4d5bb38539bb56229dcc8b763)
+
+## 🐛 Bug Fixes
++ Add `=` to the prefix when there is an `n` in inversion, in order to be recognized as a valid cstag [Commit Detail](https://github.com/akikuno/DAJIN2/commit/747ff3ece221a8c1e4f1ba1b696c4751618b4992)
+
+## 🔧 Maintenance
+## ⛔️ Deprecated
+<!-- + [ ] XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx) -->
+
+
 -------------
 
 # Past Logs
