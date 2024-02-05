@@ -20,7 +20,7 @@ from DAJIN2.core import core
 from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.4.0"
+DAJIN_VERSION = "0.4.1"
 
 
 def generate_report(name: str) -> None:
