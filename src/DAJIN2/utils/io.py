@@ -66,8 +66,12 @@ def load_from_excel(path: str) -> list:
 
 def load_from_csv(path: str) -> list:
     """Load data from a CSV file and return as a list."""
-    with open(path, "r") as f:
-        return [row for row in csv.reader(f, skipinitialspace=True, delimiter=",")]
+    with open(path, "r") as csvfile:
+        contents = []
+        for row in csv.reader(csvfile):
+            trimmed_row = [field.strip() for field in row]
+            contents.append(trimmed_row)
+        return contents
 
 
 def load_batchfile(path_batchfile: str) -> list:
