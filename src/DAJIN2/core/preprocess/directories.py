@@ -7,7 +7,7 @@ def create_temporal_directories(TEMPDIR: Path, NAME: str, is_control=False) -> N
     Path(TEMPDIR, "result").mkdir(parents=True, exist_ok=True)
     SUBDIRS = ["fasta", "fastq", "sam", "midsv", "mutation_loci", "clustering", "consensus"]
     if is_control is False:
-        SUBDIRS.extend(["knockin_loci", "classification"])
+        SUBDIRS.extend(["cstag", "knockin_loci", "classification"])
     for subdir in SUBDIRS:
         Path(TEMPDIR, NAME, subdir).mkdir(parents=True, exist_ok=True)
 
