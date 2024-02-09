@@ -131,7 +131,7 @@ def report_mutations(cssplits_grouped, GENOME_COORDINATES, header):
 ###########################################################
 
 
-def to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_percentage: dict[list]) -> None:
+def export_to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_percentage: dict[list]) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
     for header, cons in cons_percentage.items():
         cssplits = [max(c, key=c.get) for c in cons]

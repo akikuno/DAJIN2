@@ -40,7 +40,7 @@ def output_plot(df_summary: pd.DataFrame, report_directory: Path):
         y="PERCENT",
         color="ALLELETYPE",
         text="PERCENT",
-        labels={"SAMPLE": "Samples", "PERCENT": "% of reads", "ALLELETYPE": "Alelle type"},
+        labels={"SAMPLE": "Samples", "PERCENT": "Percent of reads", "ALLELETYPE": "Alelle type"},
     )
     fig.update_traces(textposition="inside", cliponaxis=False)
     fig.update_xaxes(categoryorder="category ascending")
