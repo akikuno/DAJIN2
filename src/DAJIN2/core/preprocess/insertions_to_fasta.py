@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 import random
 from pathlib import Path
 from itertools import groupby
@@ -11,8 +12,8 @@ from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift
 
+from DAJIN2.core.preprocess.mapping import to_sam
 from DAJIN2.utils import io, config
-
 from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
 
 config.set_warnings_ignore()
@@ -265,7 +266,10 @@ def extract_score_and_sequence(
 
 
 def filter_minor_label(
-    path_sample: str, labels: list[int], insertions_scores_sequences, threshold: float = 0.5
+    path_sample: str,
+    labels: list[int],
+    insertions_scores_sequences: list[tuple[list[int], str]],
+    threshold: float = 0.5,
 ) -> tuple(list[int], list[str]):
     coverage = io.count_newlines(path_sample)
     _, counts = np.unique(labels, return_counts=True)
@@ -302,7 +306,48 @@ def subset_sequences(sequences, labels, num=1000) -> list[dict]:
     return sequences_subset
 
 
-def call_consensus_insertion_sequence(cssplits: list[list[str]]) -> str:
+def get_cstag_position(sam_insertions: list[str]) -> tuple[list[str], list[int]]:
+    cs_tags = []
+    positions = []
+    for sam in sam_insertions:
+        if sam.startswith("@"):
+            continue
+        cs_tags.append(sam.split("\t")[-1])
+        positions.append(int(sam.split("\t")[3]))
+    return cs_tags, positions
+
+
+def mapping_insertion(
+    TEMPDIR: Path, SAMPLE_NAME: str, cs_transposed: list[str], consensus_length: int
+) -> Generator[str]:
+    # Temporarily cache the reference sequence
+    cs_insertion = next(cs for cs in cs_transposed if cs != "N" and len(cs) == consensus_length)
+    ref_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
+
+    path_reference = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"reference-{str(uuid.uuid4())}.fasta")
+    Path(path_reference).write_text(f">reference_insertion\n{ref_seq}\n")
+
+    # Temporarily cache the query sequences
+    path_query = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"query-{str(uuid.uuid4())}.fasta")
+    with Path(path_query).open("w") as file:
+        for i, cs_insertion in enumerate(cs_transposed):
+            que_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
+            file.write(f">query_insertion_{i}\n{que_seq}\n")
+
+    # Switch the mappy settings to either long-read or short-read, depending on the length of the reference sequence
+    if len(ref_seq) > 500:
+        sam_insertions = to_sam(path_reference, path_query)
+    else:
+        options = {"k": 3, "min_dp_score": 1, "min_chain_score": 1, "min_cnt": 1}
+        sam_insertions = to_sam(path_reference, path_query, preset="sr", options=options)
+
+    path_reference.unlink()
+    path_query.unlink()
+
+    return sam_insertions
+
+
+def generate_consensus_insertions(TEMPDIR: Path, SAMPLE_NAME: str, cssplits: list[list[str]]) -> str:
     consensus_insertion = []
     cssplits_transposed = (list(cs) for cs in zip(*cssplits))
     for cs_transposed in cssplits_transposed:
@@ -312,7 +357,7 @@ def call_consensus_insertion_sequence(cssplits: list[list[str]]) -> str:
 
         count_N = sum(1 for cs in cs_transposed if cs == "N")
 
-        count_cs = defaultdict(float)
+        count_cs = defaultdict(int)
         for cs in cs_transposed:
             if cs == "N":
                 continue
@@ -325,16 +370,14 @@ def call_consensus_insertion_sequence(cssplits: list[list[str]]) -> str:
             consensus_insertion.append("N")
             continue
 
-        cs_insertion = [cs for cs in cs_transposed if cs != "N" and len(cs) == consensus_length]
+        sam_insertions = mapping_insertion(TEMPDIR, SAMPLE_NAME, cs_transposed, consensus_length)
 
-        cs_insertion_transposed = (list(cs) for cs in zip(*(cs.split("|") for cs in cs_insertion)))
-        cs_insertion_consensus = []
-        for cs_ins in cs_insertion_transposed:
-            cs_ins_most_common = Counter(cs_ins).most_common()[0][0]
-            cs_insertion_consensus.append(cs_ins_most_common)
-
-        cs_insertion_consensus = "|".join(cs_insertion_consensus)
-        consensus_insertion.append(cs_insertion_consensus)
+        cs_tags, positions = get_cstag_position(sam_insertions)
+        if cs_tags == []:  # When not mapped at all, append `N`.
+            consensus_insertion.append("N")
+        else:
+            cs_insertion_consensus = cstag.to_sequence(cstag.consensus(cs_tags, positions))
+            consensus_insertion.append("|".join("+" + cs for cs in cs_insertion_consensus))
 
     return ",".join(consensus_insertion)
 
@@ -366,14 +409,17 @@ def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
     return d_updated
 
 
-def call_consensus_of_insertion(insertion_sequences_subset: list[dict], FASTA_ALLELES: dict) -> dict[int, str]:
-    cons_sequence = dict()
+def call_consensus_of_insertion(
+    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, insertion_sequences_subset: list[dict]
+) -> dict[int, str]:
+    """Generate consensus cssplits."""
+    consensus_insertion_cssplits = dict()
     insertion_sequences_subset.sort(key=lambda x: x["LABEL"])
     for label, group in groupby(insertion_sequences_subset, key=lambda x: x["LABEL"]):
         cssplits = [cs["CSSPLIT"].split(",") for cs in group]
-        cons_sequence[label] = call_consensus_insertion_sequence(cssplits)
+        consensus_insertion_cssplits[label] = generate_consensus_insertions(TEMPDIR, SAMPLE_NAME, cssplits)
 
-    return update_labels(remove_all_n(cons_sequence), FASTA_ALLELES)
+    return update_labels(remove_all_n(consensus_insertion_cssplits), FASTA_ALLELES)
 
 
 def extract_index_of_insertions(
@@ -394,7 +440,7 @@ def extract_index_of_insertions(
 
 
 ###########################################################
-# generate cstag and FASTA
+# Generate cstag and FASTA
 ###########################################################
 
 
@@ -408,7 +454,7 @@ def generate_cstag(
         for idx, seq in zip(index_of_insertions, cons_seq):
             if seq == "N":
                 continue
-            list_sequence[idx] = convert_cssplits_to_cstag([seq])
+            list_sequence[idx] = convert_cssplits_to_cstag([seq]) + "="
         cstag_insertions[label] = "cs:Z:=" + "".join(list_sequence)
     return cstag_insertions
 
@@ -425,15 +471,20 @@ def generate_fasta(cstag_insertions: dict[str, str]) -> dict[str, str]:
 ###########################################################
 
 
+def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict[str, str]) -> None:
+    for header, seq in fasta_insertions.items():
+        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}\n")
+
+
+def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_insertions: dict[str, str]) -> None:
+    for header, cs_tag in cstag_insertions.items():
+        Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
+
+
 def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict[int, str]) -> None:
     for header, cs_tag in cstag_insertions.items():
         html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
         Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
-
-
-def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict) -> None:
-    for header, seq in fasta_insertions.items():
-        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}\n")
 
 
 ###########################################################
@@ -459,7 +510,9 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     insertion_sequences_subset = subset_sequences(
         [seq for _, seq in insertion_scores_sequences_filtered], labels_filtered, num=1000
     )
-    consensus_of_insertions = call_consensus_of_insertion(insertion_sequences_subset, FASTA_ALLELES)
+    consensus_of_insertions = call_consensus_of_insertion(
+        TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, insertion_sequences_subset
+    )
     if consensus_of_insertions == dict():
         """
         If there is no insertion sequence, return None

@@ -10,7 +10,12 @@ from DAJIN2.utils.dna_handler import revcomp
 
 
 def to_sam(
-    path_reference_fasta: Path, path_query_fastx: Path, preset: str = "map-ont", threads: int = 1, cslong: bool = True
+    path_reference_fasta: Path,
+    path_query_fastx: Path,
+    preset: str = "map-ont",
+    threads: int = 1,
+    options: dict = {},
+    cslong: bool = True,
 ) -> Generator[str]:
     """Align sequences using mappy and Convert PAF to SAM.
 
@@ -29,7 +34,7 @@ def to_sam(
 
     SAM = [f"@SQ\tSN:{n}\tLN:{len(s)}" for n, s, _ in mappy.fastx_read(path_reference_fasta)]
 
-    ref = mappy.Aligner(path_reference_fasta, preset=preset, n_threads=threads)
+    ref = mappy.Aligner(path_reference_fasta, preset=preset, n_threads=threads, **options)
     if not ref:
         raise ValueError(f"Failed to load {path_reference_fasta}")
 
@@ -90,7 +95,9 @@ def to_sam(
 ########################################################################
 
 
-def generate_sam(ARGS, paths_fasta: list[str], is_control: bool = False, is_insertion: bool = False) -> None:
+def generate_sam(
+    ARGS, paths_fasta: list[str], mappy_options: dict = {}, is_control: bool = False, is_insertion: bool = False
+) -> None:
     if is_control:
         path_fastq = Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz")
         name = ARGS.control_name
@@ -103,7 +110,7 @@ def generate_sam(ARGS, paths_fasta: list[str], is_control: bool = False, is_inse
     for path_fasta in paths_fasta:
         name_fasta = Path(path_fasta).stem
         for preset in ["map-ont", "splice"]:
-            sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads)
+            sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads, options=mappy_options)
             if is_control and is_insertion:
                 path_sam = Path(out_directory, f"{preset}_{name_fasta}_{ARGS.sample_name}.sam")
             else:
