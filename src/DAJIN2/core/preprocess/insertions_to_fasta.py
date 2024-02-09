@@ -341,9 +341,6 @@ def mapping_insertion(
         options = {"k": 3, "min_dp_score": 1, "min_chain_score": 1, "min_cnt": 1}
         sam_insertions = to_sam(path_reference, path_query, preset="sr", options=options)
 
-    path_reference.unlink()
-    path_query.unlink()
-
     return sam_insertions
 
 
@@ -481,10 +478,10 @@ def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_insertions: dict[str
         Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
 
 
-def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict[int, str]) -> None:
-    for header, cs_tag in cstag_insertions.items():
-        html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
-        Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
+# def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict[int, str]) -> None:
+#     for header, cs_tag in cstag_insertions.items():
+#         html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
+#         Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
 
 
 ###########################################################
@@ -524,4 +521,8 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     fasta_insertions = generate_fasta(cstag_insertions)
 
     save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions)
-    save_html(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+    # save_html(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+
+    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("reference-*.fasta")]
+    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("query-*.fasta")]

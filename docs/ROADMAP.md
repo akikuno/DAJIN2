@@ -25,6 +25,9 @@
 
 + Add `cssplits_handler.detect_insertion_within_deletion` to extract insertion sequence within a deletion. When an insertion sequence exists within a deletion, minimap2 may align bases that partially match the reference through local alignment, and in some cases, it fails to detect them as insertions. In such cases, adjustments have been made to ensure that the insertion sequence can be properly detected. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7651e20852b94ed4d5bb38539bb56229dcc8b763)
 
++ Add `report.insertion_refractor.py`: In mappings made by insertion, the original insertion information is not included in the consensus. Therefore, the script was added to reflect the original insertion information onto the consensus. This allows both insertions and deletions within the insertion allele to be listed together on a single HTML file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/e6c3b636bb2ba537d1341d1042341afd6583dd0b)
+
+
 ## 🐛 Bug Fixes
 
 + Add `=` to the prefix when there is an `n` in inversion, in order to be recognized as a valid cstag [Commit Detail](https://github.com/akikuno/DAJIN2/commit/747ff3ece221a8c1e4f1ba1b696c4751618b4992)
@@ -37,6 +40,10 @@
   + Modified the approach to reduce randomness by avoiding the use of set or frozenset. Now utilizes list or tuple along with `random.sample()` for subsetting reads.
   + Refactored `call_consensus_insertion_sequence`.
   + Fixed a bug in `extract_score_and_sequence` to ensure correct appending of scores for insertions_merged_subset.
+
++ Change the function name of `report` to something more explicit. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/93132c5beba17278c7d67b76817bb13dfaae57a3)
+
++ Update `utils.report_report_generator`: Legendの並び順を固定しました。Control Intact -> Control Indels -> Control SV -> Sample Intact -> Sample Indels -> Sample SV ... -> Insertion1 Intact -> Insertion1 Indels -> Insertion1 SV ... といった並び順にしました [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 
 
 ## ⛔️ Deprecated
