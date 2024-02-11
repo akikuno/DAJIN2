@@ -32,14 +32,14 @@ def get_logfile() -> Path:
 
 
 def set_logging(path_logfile: Path) -> None:
-    format = "%(asctime)s, %(levelname)s, %(message)s"
-    datefmt = "%Y-%m-%d %H:%M:%S"
+    log_format = "%(asctime)s, %(levelname)s, %(message)s"
+    date_format = "%Y-%m-%d %H:%M:%S"
 
     stderr_handler = logging.StreamHandler()
-    stderr_handler.setFormatter(logging.Formatter(format, datefmt=datefmt))
+    stderr_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
 
     file_handler = DeferredFileHandler(path_logfile)
-    file_handler.setFormatter(logging.Formatter(format, datefmt=datefmt))
+    file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
 
     logging.basicConfig(
         level=logging.INFO,
