@@ -173,7 +173,7 @@ def execute_control(arguments: dict):
     # Output BAM files
     ###########################################################
     logger.info(f"Output BAM files of {arguments['control']}...")
-    report.report_bam.output_bam(
+    report.report_bam.export_to_bam(
         ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, is_control=True
     )
     ###########################################################
