@@ -374,7 +374,11 @@ def generate_consensus_insertions(TEMPDIR: Path, SAMPLE_NAME: str, cssplits: lis
             consensus_insertion.append("N")
         else:
             cs_insertion_consensus = cstag.to_sequence(cstag.consensus(cs_tags, positions))
-            consensus_insertion.append("|".join("+" + cs for cs in cs_insertion_consensus))
+            cs_last = Counter(cs.split("|")[-1] for cs in cs_transposed if len(cs) == consensus_length).most_common()[
+                0
+            ][0]
+            cssplits_insertion_consensus = "|".join("+" + cs for cs in cs_insertion_consensus[:-1]) + "|" + cs_last
+            consensus_insertion.append(cssplits_insertion_consensus)
 
     return ",".join(consensus_insertion)
 
@@ -419,6 +423,11 @@ def call_consensus_of_insertion(
     return update_labels(remove_all_n(consensus_insertion_cssplits), FASTA_ALLELES)
 
 
+###########################################################
+# Generate cstag and FASTA
+###########################################################
+
+
 def extract_index_of_insertions(
     insertions: dict[int, dict[str, int]], insertions_merged: dict[tuple(int), dict[tuple[str], int]]
 ) -> list[int]:
@@ -434,11 +443,6 @@ def extract_index_of_insertions(
                 max_idx = idx
         index_of_insertions.append(max_idx)
     return index_of_insertions
-
-
-###########################################################
-# Generate cstag and FASTA
-###########################################################
 
 
 def generate_cstag(
