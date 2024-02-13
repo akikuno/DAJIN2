@@ -19,6 +19,7 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 ## 🌟 Features
 
 + **Comprehensive Mutation Detection**: Equipped with the capability to detect genome editing events over a wide range, it can identify a broad spectrum of mutations, from small changes to large structural variations.
+  + DAJIN2 is also possible to detect complex mutations characteristic of genome editing, such as "insertions occurring in regions where deletions have occurred."
 + **Intuitive Visualization**: The outcomes of genome editing are visualized intuitively, allowing for the rapid and easy identification and analysis of mutations.
 + **Multi-Sample Compatibility**: Accommodates a variety of samples, enabling simultaneous processing of multiple samples. This facilitates efficient progression of large-scale experiments and comparative studies.
 
@@ -253,10 +254,9 @@ DAJIN_Results/tyr-substitution
 │   ├── tyr_c230gt_01%.csv
 │   ├── tyr_c230gt_10%.csv
 │   └── tyr_c230gt_50%.csv
-├── read_all.csv
 ├── read_plot.html
 ├── read_plot.pdf
-└── read_summary.csv
+└── read_summary.xlsx
 ```
 
 ### 1. BAM
@@ -285,12 +285,12 @@ An example of a Tyr point mutation is described by its position on the chromosom
 ### 4. read_plot.html and read_plot.pdf
 
 Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
-The chart's **Allele type** indicates the type of allele, and **% of reads** shows the proportion of reads for that allele.  
+The chart's **Allele type** indicates the type of allele, and **Percent of reads** shows the proportion of reads for that allele.  
 
 Additionally, the types of **Allele type** include:
-- **intact**: Alleles that perfectly match the input FASTA allele.
-- **indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
-- **sv**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
+- **Intact**: Alleles that perfectly match the input FASTA allele.
+- **Indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
+- **SV**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
 
 <img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
@@ -298,10 +298,9 @@ Additionally, the types of **Allele type** include:
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
-### 5. read_all.csv and read_summary.csv
+### 5. read_summary.xlsx
 
-- read_all.csv: Records which allele each read is classified under.  
-- read_summary.csv: Describes the number of reads and presence proportion for each allele.  
+- read_summary.xlsx: Describes the number of reads and presence proportion for each allele.  
 
 ## 📣Feedback and Support
 

@@ -116,7 +116,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     # if kaleido is installed, output a pdf
     try:
         fig.write_image(f"{output_filename}.pdf")
-    except ValueError:
+    except Exception:
         pass
 
 
@@ -129,7 +129,6 @@ def report(NAME: str) -> None:
     results_summary = summarize_info(results_all)
 
     # Write to Excel
-    io.write_xlsx(results_all, Path(report_directory, "read_all.xlsx"))
     io.write_xlsx(results_summary, Path(report_directory, "read_summary.xlsx"))
 
     # Write to plot as HTML and PDF
