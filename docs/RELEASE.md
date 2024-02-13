@@ -17,8 +17,7 @@
 - nCATSがほしい…
  -->
 
-# v0.4.1 (yyyy-mm-dd)
-## 💥 Breaking
+# v0.4.1 (2024-02-13)
 
 ## 📝 Documentation
 
