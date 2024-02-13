@@ -14,16 +14,18 @@ DAJIN2は、ナノポアシーアターゲットシーケンシングを用い�
 
 ## 🌟 特徴
 
-+ **網羅的な変異検出**: ゲノム編集イベントを広範囲にわたり検出する能力を備えており、小さな変異から大きな構造変化まで、幅広い変異を特定することが可能です
-  + ゲノム編集に特徴的な「欠失が生じた領域に挿入が起こる」といった複合的な変異の検出も可能です
-+ **直観的な可視化**: ゲノム編集の結果は直観的に可視化され、変異を迅速かつ容易に識別し、分析することができます
-+ **多サンプル対応**: 多様なサンプルに対応しており、複数のサンプルを同時に処理することが可能です。これにより、大規模な実験や比較研究を効率的に進めることができます
++ **網羅的な変異検出**: ナノポアターゲット領域におけるゲノム編集イベントを、点変異から構造多型まで、網羅的に変異を検出することができます。
+  + 特に、ゲノム編集で生じる**意図しない変異**の検出や、**欠失が生じた領域における挿入イベント**といった複合的な変異の検出が可能である点が強みとなります
++ **高感度なアレル分類**: ゲノム編集により生じるモザイクアレルの分類が可能です。
+  + 1%しか存在しないマイナーアレルを分類することができます
++ **直観的な可視化**: ゲノム編集結果は直観的に可視化され、変異を迅速かつ容易に識別することができます
++ **多サンプル対応**: 複数のサンプルの一括処理が可能です。これにより、大規模な実験や比較研究を効率的に進めることができます
 
 ## 🛠 インストール
 
-### 必須環境
+### 環境
 
-- Python 3.7 以上
+- Python 3.8 以上
 - Unix環境 (Linux, macOS, WSL2, etc.)
 
 ### [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
@@ -52,9 +54,9 @@ pip install DAJIN2
 > インストールに問題が発生した場合は、[トラブルシューティングガイド](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)をご覧ください。
 
 
-## 💡 使用方法
+## 💻 使用方法
 
-### 必須ファイル
+### 必要なファイル
 
 #### サンプルおよびコントロールのFASTQファイル
 
@@ -91,7 +93,7 @@ FASTAファイルには、ゲノム編集によって想定されるアレルを
 
 事前に想定されるアレルがある場合（例：ノックインやノックアウト）、それらのシーケンスもFASTAファイルに記載してください。これらの想定アレルの名称は任意に設定できます。
 
-以下は、FASTAファイルの典型例です：
+以下は、FASTAファイルの一例です：
 
 ```text
 >control
@@ -102,11 +104,12 @@ ACGTACGTCCCCACGTACGT
 ACGTACGT
 ```
 
-ここで、`>control` はコントロールアレルの配列を、`>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレルの配列を表しています。
+ここで、`>control` はコントロールアレルの配列を表しており、必須です。  
+`>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの配列です。  
 
 ### 単一サンプル解析
 
-単一サンプルの解析手順は以下の通りです。
+単一サンプルの解析コマンドは以下の通りです。
 
 ```bash
 DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
@@ -264,12 +267,11 @@ DAJIN_Results/tyr-substitution
 
 ### 1. BAM
 
-BAMディレクトリには、入力のFASTQと、アレルごとに分類されたreadsのBAMファイルが格納されています。  
+BAMディレクトリには、アレルごとに分類されたBAMファイルが格納されています。  
 
 > [!NOTE]  
 > `genome`オプションで参照ゲノムを指定すると、その参照ゲノムにアライメントされます。  
 > 指定がない場合、入力のFASTAファイルのcontrolアレルにアライメントされます。
-
 
 ### 2. FASTA / HTML
 
@@ -285,17 +287,18 @@ Tyr点変異の例を以下に示します：
 ### 3. MUTATION_INFO
 
 MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテーブルが保存されます。  
-Tyr点変異の例を以下に示します：
+*Tyr*点変異の例を以下に示します：
 - 点変異の染色体上の位置と、変異の種類が記載されています。
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-### 4. read_plot.html / read_plot.pdf
+### 4. read_summary.xlsx / read_plot.html / read_plot.pdf
 
-read_plot.html および read_plot.pdf は、各アレルの割合を図示しています。  
+read_summary.xlsxには、各アレルのリード数と存在割合が記述されています。  
+read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化したもので、各アレルの割合を図示しています。  
 図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
 
-また、**Allele type**の種類は以下の通りです：
+**Allele type**の種類は以下の通りです：
 
 - **Intact**：入力のFASTAアレルと完全に一致するアレル
 - **Indels**：50塩基以内の置換、欠失、挿入、逆位を含むアレル
@@ -308,21 +311,17 @@ read_plot.html および read_plot.pdf は、各アレルの割合を図示し�
 > PCRアンプリコンを用いたターゲットシーケンシングでは、増幅バイアスのため **% of reads**が実際のアレルの割合と一致しないことがあります。  
 > とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
 
-### 5. read_summary.xlsx
-
-- read_summary.csv：各アレルのリード数と存在割合が記述されています。
-
 
 ## 📣フィードバックと行動規範
 
 
 質問、バグ報告、その他のフィードバックについて、皆さまからのご意見をお待ちしています。  
-報告には [GitHub Issues](https://github.com/akikuno/DAJIN2/issues) をご利用ください。  
-フィードバックの方法は、[CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) をご覧ください。  
+報告には [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) をご利用ください（日本語でも大丈夫です）。  
+<!-- フィードバックの方法は、[CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) をご覧ください。   -->
 
 <!-- ## 🤝 コントリビューター行動規範 -->
 
-なお、このプロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
+なお、本プロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
 
 ## 📄 参考文献
 

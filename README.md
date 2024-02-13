@@ -21,14 +21,14 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 + **Comprehensive Mutation Detection**: Equipped with the capability to detect genome editing events over a wide range, it can identify a broad spectrum of mutations, from small changes to large structural variations.
   + DAJIN2 is also possible to detect complex mutations characteristic of genome editing, such as "insertions occurring in regions where deletions have occurred."
 + **Intuitive Visualization**: The outcomes of genome editing are visualized intuitively, allowing for the rapid and easy identification and analysis of mutations.
-+ **Multi-Sample Compatibility**: Accommodates a variety of samples, enabling simultaneous processing of multiple samples. This facilitates efficient progression of large-scale experiments and comparative studies.
++ **Multi-Sample Compatibility**: Enabling parallel processing of multiple samples. This facilitates efficient progression of large-scale experiments and comparative studies.
 
 
 ## 🛠 Installation
 
 ### Prerequisites
 
-- Python 3.7 or later
+- Python 3.8 or later
 - Unix-like environment (Linux, macOS, WSL2, etc.)
 
 ### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
@@ -57,7 +57,7 @@ pip install DAJIN2
 > If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
 
 
-## 💡 Usage
+## 💻 Usage
 
 ### Required Files
 
@@ -91,11 +91,11 @@ Assuming barcode01 as the control and barcode02 as the sample, specify each dire
 The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
 
 > [!IMPORTANT]
-> Specifying the control allele: A header name >control and its sequence are mandatory.
+> **A header name >control and its sequence are mandatory.**
 
 If there are anticipated alleles (e.g., knock-ins or knock-outs), include their sequences in the FASTA file too. These anticipated alleles can be named arbitrarily.
 
-Below is a typical example of a FASTA file:
+Below is an example of a FASTA file:
 
 ```text
 >control
@@ -278,16 +278,17 @@ For example, Tyr point mutation is highlighted in **green**.
 ### 3. MUTATION_INFO
 
 The MUTATION_INFO directory saves tables depicting mutation sites for each allele.  
-An example of a Tyr point mutation is described by its position on the chromosome and the type of mutation.  
+An example of a *Tyr* point mutation is described by its position on the chromosome and the type of mutation.  
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-### 4. read_plot.html and read_plot.pdf
+### 4. resd_summary.xlsx, read_plot.html and read_plot.pdf
 
+read_summary.xlsx describes the number of reads and presence proportion for each allele.  
 Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
-The chart's **Allele type** indicates the type of allele, and **Percent of reads** shows the proportion of reads for that allele.  
+The chart's **Allele type** indicates the type of allele, and **Percent of reads** shows the proportion of reads for each allele.  
 
-Additionally, the types of **Allele type** include:
+The **Allele type** includes:
 - **Intact**: Alleles that perfectly match the input FASTA allele.
 - **Indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
 - **SV**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
@@ -298,14 +299,10 @@ Additionally, the types of **Allele type** include:
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
-### 5. read_summary.xlsx
-
-- read_summary.xlsx: Describes the number of reads and presence proportion for each allele.  
-
 ## 📣Feedback and Support
 
 For questions, bug reports, or other forms of feedback, we'd love to hear from you!  
-Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues) for all reporting purposes.  
+Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) for all reporting purposes.  
 
 Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
 
