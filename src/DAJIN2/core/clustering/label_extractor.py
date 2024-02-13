@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import random
+import uuid
+
 from pathlib import Path
 from itertools import groupby
 
@@ -18,12 +19,13 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
     classif_sample.sort(key=lambda x: x["ALLELE"])
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         """Cache data to temporary files"""
-        RANDOM_INT = random.randint(0, 10**10)
         if Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json").exists():
             path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
         else:
             path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}_{SAMPLE_NAME}.json")
-        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_{RANDOM_INT}.json")
+
+        unique_id = str(uuid.uuid4())
+        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_{unique_id}.jsonl")
         io.write_jsonl(data=group, file_path=path_sample)
 
         """Load mutation_loci and knockin_loci."""
@@ -46,8 +48,8 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
         scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
 
-        path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"{allele}_score_{RANDOM_INT}.json")
-        path_score_control = Path(TEMPDIR, CONTROL_NAME, "clustering", f"{allele}_score_{RANDOM_INT}.json")
+        path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_score_sample_{unique_id}.jsonl")
+        path_score_control = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_score_control_{unique_id}.jsonl")
         io.write_jsonl(data=scores_sample, file_path=path_score_sample)
         io.write_jsonl(data=scores_control, file_path=path_score_control)
 

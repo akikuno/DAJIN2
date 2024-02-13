@@ -88,16 +88,16 @@ def write_sam_to_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str |
     pysam.index("-@", f"{threads}", str(path_bam))
 
 
-def update_sam(sam: list, GENOME_COODINATES: dict = None) -> list:
+def update_sam(sam: list, GENOME_COODINATES: dict = {}) -> list:
     sam_update = sam.copy()
     sam_update = sam_handler.remove_overlapped_reads(sam_update)
     sam_update = sam_handler.remove_microhomology(sam_update)
-    if GENOME_COODINATES["genome"]:
+    if "genome" in GENOME_COODINATES:
         sam_update = realign(sam_update, GENOME_COODINATES)
     return sam_update
 
 
-def output_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
+def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
     randomnum = random.randint(100_000, 999_999)
     path_sam_input = Path(TEMPDIR, NAME, "sam", "map-ont_control.sam")
     sam = list(midsv.read_sam(path_sam_input))

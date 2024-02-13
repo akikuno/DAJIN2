@@ -115,4 +115,4 @@ def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) ->
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage
         cons_sequences[key] = call_sequence(cons_percentage)
-    return dict(cons_percentages), dict(cons_sequences)
+    return cons_percentages, cons_sequences

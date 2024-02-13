@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import os
 import csv
 import json
 import pickle
 import hashlib
 
 import wslPath
-import pandas as pd
 
 from pathlib import Path
 
 from io import BufferedReader
 from typing import Generator
+
+from openpyxl import load_workbook, Workbook
 
 ###########################################################
 # Input/Output
@@ -24,7 +24,7 @@ def load_pickle(file_path: Path):
         return pickle.load(f)
 
 
-def save_pickle(data: object, file_path: Path):
+def save_pickle(data: object, file_path: Path) -> None:
     with open(file_path, "wb") as f:
         pickle.dump(data, f)
 
@@ -42,41 +42,84 @@ def write_jsonl(data: list[dict], file_path: str | Path) -> None:
             f.write(json_str + "\n")
 
 
+def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:
+    # Create a workbook and a worksheet
+    wb = Workbook()
+    ws = wb.active
+
+    if not data:
+        wb.save(file_path)
+        return
+
+    # Initialize headers with the keys of the first dictionary, maintaining order
+    headers = list(data[0].keys())
+
+    # Check for new keys in the subsequent dictionaries and append them to the headers list
+    for item in data[1:]:
+        for key in item.keys():
+            if key not in headers:
+                headers.append(key)
+
+    # Write the headers to the first row
+    ws.append(headers)
+
+    # Write the data to Excel
+    for item in data:
+        row = [item.get(header, "") for header in headers]
+        ws.append(row)
+
+    # Save the file
+    wb.save(file_path)
+
+
 ###########################################################
 # Load batch file
 ###########################################################
 
 
-def check_excel_or_csv(filepath: str) -> str:
+def check_excel_or_csv(file_path: str) -> str | None:
     """Check if the file is an Excel or CSV file. Raise error for other types."""
-    _, ext = os.path.splitext(filepath)
-    if ext in [".xlsx", ".xls"]:
+    file_extension = Path(file_path).suffix
+    if file_extension in [".xlsx", ".xls"]:
         return "excel"
-    elif ext == ".csv":
+    elif file_extension == ".csv":
         return "csv"
     else:
         raise ValueError("The provided file must be either an Excel or CSV file.")
 
 
-def load_from_excel(path: str) -> list:
+def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
     """Load data from an Excel file and return as a list."""
-    df = pd.read_excel(path)
-    return [df.columns.to_list()] + df.values.tolist()
+    wb = load_workbook(filename=file_path)
+    ws = wb.active
+
+    headers = [cell for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+
+    data = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        row_data = {headers[i]: (row[i] if i < len(row) else None) for i in range(len(headers))}
+        data.append(row_data)
+
+    return data
 
 
-def load_from_csv(path: str) -> list:
+def read_csv(file_path: str) -> list[dict[str, str]]:
     """Load data from a CSV file and return as a list."""
-    with open(path, "r") as f:
-        return [row for row in csv.reader(f, skipinitialspace=True, delimiter=",")]
+    with open(file_path, "r") as csvfile:
+        contents = []
+        for row in csv.reader(csvfile):
+            trimmed_row = [field.strip() for field in row]
+            contents.append(trimmed_row)
+        return contents
 
 
-def load_batchfile(path_batchfile: str) -> list:
+def load_batchfile(batchfile_path: str) -> list[dict[str, str]]:
     """Load data from either an Excel or CSV file."""
-    file_type = check_excel_or_csv(path_batchfile)
+    file_type = check_excel_or_csv(batchfile_path)
     if file_type == "excel":
-        return load_from_excel(path_batchfile)
+        return read_xlsx(batchfile_path)
     elif file_type == "csv":
-        return load_from_csv(path_batchfile)
+        return read_csv(batchfile_path)
 
 
 ###########################################################

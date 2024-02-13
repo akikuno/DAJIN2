@@ -78,7 +78,7 @@ def revcomp_cssplits(cssplits: list[str]) -> list[str]:
 
 def add_match_operator_to_n(cssplits: list[str]) -> list[str]:
     """Add "=" (match operator) to the sequences that start with "N"."""
-    return ["=" + seq if seq.startswith("N") else seq for seq in cssplits]
+    return ["=" + seq if seq.startswith("N") or seq.startswith("n") else seq for seq in cssplits]
 
 
 def format_insertion(cs: str) -> str:
@@ -142,9 +142,7 @@ def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     return standardize_case(cssplits_concatenated)
 
 
-###########################################################
 # convert position weight matrix (cons_pergentage) to sequence
-###########################################################
 
 
 def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str:
@@ -155,3 +153,80 @@ def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str
         seq = cstag.to_sequence(cs_tag)
         consensus_sequence.append(seq)
     return f"{sep}".join(consensus_sequence)
+
+
+###########################################################
+# detect_insertion_within_deletion
+###########################################################
+
+
+def is_start_of_deletion(i: int, cssplits: list[str], start_del_count: int = 3) -> bool:
+    """
+    Determine if the current index is the start of a deletion.
+    If there are consecutive deletions from the beginning, it is determined that there is a cluster of deletions.
+    """
+    if i + start_del_count > len(cssplits):
+        return False
+    return all([cs.startswith("-") for cs in cssplits[i : i + start_del_count]])
+
+
+def is_within_deletion(i: int, cssplits: list[str], distance: int = 10) -> bool:
+    """Count matches that are continuous for `distance` bases, and if there is a deletion in between, it is determined to be inside a cluster of deletions."""
+    exist_deletion = False
+    total_num_match = 0
+    j = 1
+    while True:
+        if i + j >= len(cssplits) or total_num_match > distance:
+            exist_deletion = False
+            break
+        current = cssplits[i + j]
+        if current.startswith("="):
+            total_num_match += 1
+        else:
+            total_num_match = 0
+            if current.startswith("-"):
+                exist_deletion = True
+                break
+        j += 1
+    return exist_deletion
+
+
+def adjust_cs_insertion(cs: str) -> str:
+    if cs.startswith("-"):
+        return None
+    elif cs.startswith("+"):
+        ins = "|".join(cs.split("|")[:-1])
+        end_cs = cs.split("|")[-1][-1]
+        cs_insertion = f"{ins}|+{end_cs}|"
+    else:
+        cs_insertion = f"+{cs[-1]}|"
+    return cs_insertion
+
+
+def detect_insertion_within_deletion(cssplits: str, start_del_count: int = 3, distance: int = 10) -> str:
+    cssplits = cssplits.split(",")
+    cssplits_updated = cssplits.copy()
+
+    insertion = []
+    within_deletion = False
+    for i, cs in enumerate(cssplits):
+        if cs.startswith("-"):
+            if within_deletion is False and is_start_of_deletion(i, cssplits, start_del_count) is False:
+                continue
+            within_deletion = is_within_deletion(i, cssplits, distance)
+            if within_deletion is False:
+                cssplits_updated[i + 1] = "".join(insertion) + cssplits_updated[i + 1]
+                insertion = []
+        if within_deletion is False:
+            continue
+        if not cs.startswith("-"):
+            if cs.startswith("*"):
+                cssplits_updated[i] = f"-{cs[1]}"
+            elif cs.startswith("+") and cs.split("|")[-1].startswith("*"):
+                cssplits_updated[i] = f'-{cs.split("|")[-1][1]}'
+            else:
+                cssplits_updated[i] = f"-{cs[-1]}"
+            adjusted_cs = adjust_cs_insertion(cs)
+            insertion.append(adjusted_cs)
+
+    return ",".join(cssplits_updated)

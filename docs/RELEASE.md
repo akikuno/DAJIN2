@@ -8,7 +8,7 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-+ [ ] XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+- XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 -->
 
 <!-- 💡 ToDo
@@ -16,6 +16,44 @@
 - 逆位アレルでの検証を加える
 - nCATSがほしい…
  -->
+
+# v0.4.1 (2024-02-13)
+
+## 📝 Documentation
+
+- Added documentation for a new feature in `README.md`: DAJIN2 can now detect complex mutations characteristic of genome editing, such as insertions occurring in regions where deletions have occurred.
+
+## 🚀 New Features
+
+- Introduced `cssplits_handler.detect_insertion_within_deletion` to extract insertion sequences within deletions. This addresses cases where minimap2 may align bases that partially match the reference through local alignment, potentially failing to detect them as insertions. This enhancement ensures the proper detection of insertion sequences. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7651e20852b94ed4d5bb38539bb56229dcc8b763)
+
+- Added `report.insertion_refractor.py` to include original insertion information in the consensus for mappings made by insertion. This addition enables the listing of both insertions and deletions within the insertion allele on a single HTML file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/e6c3b636bb2ba537d1341d1042341afd6583dd0b)
+
+## 🔧 Maintenance
+
+- Updated `insertions_to_fasta.py`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7927feb0bb4f3091537aaebabd60a441456a3413)
+  - Modified the approach to reduce randomness by replacing set or frozenset with list or tuple, and using `random.sample()` for subsetting reads.
+  - Refactored `call_consensus_insertion_sequence`.
+  - Fixed a bug in `extract_score_and_sequence` to ensure correct appending of scores for the insertions_merged_subset.
+
+- Changed the function name of `report` to be more explicit. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/93132c5beba17278c7d67b76817bb13dfaae57a3)
+
+- Updated `utils.report_report_generator` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/821f06f05b5ed2f4ba2d7baad6159d774d2e5db0)
+  - Capitalized "Allele" (e.g., control) and "Allele type" (e.g., intact).
+  - Changed the output format of read_all and read_summary from CSV to XLSX.
+  - Corrected the order of the Legend to follow a logical sequence from control to sample, and then to specific insertions.
+
+- Updated `utils.io.read_xlsx` to switch from using pandas to openpyxl due to the DeprecationWarning in Pandas being cumbersome. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5d942bace8417bb973441b360a0ec31d77d81e24)
+
+## 🐛 Bug Fixes
+
+- Added `=` to the prefix for valid cstag recognition when there is an `n` in inversion. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/747ff3ece221a8c1e4f1ba1b696c4751618b4992)
+
+- Modified the io.load_from_csv function to trim spaces before and after each field, addressing an error caused by spaces in batch.csv. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f5d49230f8ebd37061a27d6767d3c1954b8f8576)
+
+## ⛔️ Deprecated
+
+- Removed `reads_all.csv`. This CSV file, which showed the allele for each read, is no longer reported due to its limited usefulness and because the same information can be obtained from the BAM file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/76e3eaee320deb79cbf3cf97cc6aed69c5bbc3ef)
 
 -------------
 

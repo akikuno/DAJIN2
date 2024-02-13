@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from src.DAJIN2.core import report
 
 ###########################################################

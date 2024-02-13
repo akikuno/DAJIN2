@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+import random
 from pathlib import Path
 from itertools import groupby
 from collections import defaultdict, Counter
@@ -10,17 +12,23 @@ from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift
 
+from DAJIN2.core.preprocess.mapping import to_sam
 from DAJIN2.utils import io, config
-from DAJIN2.utils.cssplits_handler import call_sequence
+from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
 
 config.set_warnings_ignore()
 
 import cstag
 
 
-def remove_non_alphabets(s):
-    # Using list comprehension to keep only alphabet characters
+def remove_non_alphabets(s: str) -> str:
+    """Convert a cssplits to a plain DNA sequence."""
     return "".join([char for char in s if char.isalpha()])
+
+
+###########################################################
+# Cluster insertion alleles
+###########################################################
 
 
 def clustering_insertions(insertions_cssplit: list[str]) -> list[int]:
@@ -41,7 +49,7 @@ def clustering_insertions(insertions_cssplit: list[str]) -> list[int]:
 ###########################################################
 
 
-def extract_all_insertions(midsv_sample: Generator, mutation_loci: dict) -> dict[int, list[str]]:
+def extract_all_insertions(midsv_sample: Generator, mutation_loci: list[set[str]]) -> dict[int, list[str]]:
     """To extract insertion sequences of **10 base pairs or more** at each index."""
     insertion_index_sequences_control = defaultdict(list)
     for m_sample in midsv_sample:
@@ -96,7 +104,9 @@ def extract_enriched_insertions(
     return enriched_insertions
 
 
-def extract_insertions(path_sample: Path, path_control: Path, mutation_loci: dict) -> dict[int, dict[str, int]]:
+def extract_insertions(
+    path_sample: Path, path_control: Path, mutation_loci: list[set[str]]
+) -> dict[int, dict[str, int]]:
     insertions_sample = extract_all_insertions(io.read_jsonl(path_sample), mutation_loci)
     insertions_control = extract_all_insertions(io.read_jsonl(path_control), mutation_loci)
     coverage_sample = io.count_newlines(path_sample)
@@ -109,7 +119,7 @@ def extract_insertions(path_sample: Path, path_control: Path, mutation_loci: dic
 ###########################################################
 
 
-def _group_index_by_consecutive_insertions(mutation_loci: dict[str, set[int]]) -> list[tuple[int]]:
+def group_index_by_consecutive_insertions(mutation_loci: list[set[str]]) -> list[tuple[int]]:
     index = sorted(i for i, m in enumerate(mutation_loci) if "+" in m)
     index_grouped = []
     for _, group in groupby(enumerate(index), lambda i_x: i_x[0] - i_x[1]):
@@ -118,7 +128,9 @@ def _group_index_by_consecutive_insertions(mutation_loci: dict[str, set[int]]) -
     return index_grouped
 
 
-def _group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
+def group_insertions(
+    insertions: dict[int, dict[str, int]], index_grouped: list[tuple[int]]
+) -> dict[tuple[int], dict[str, int]]:
     """
     Insertion bases in consecutive insertion base positions are grouped together in mutation_loci,
     as the insertion site may shift by a few bases.
@@ -129,69 +141,135 @@ def _group_insertions(insertions, index_grouped) -> dict[dict[str, int]]:
             if i not in insertions:
                 continue
             insertions_grouped[idx].update(insertions[i])
-    return insertions_grouped
+    return dict(insertions_grouped)
 
 
-def _get_merged_insertion(insertion: dict[str, int], labels: np.ndarray) -> dict[frozenset, int]:
-    insertion_label = [(label, {key: val}) for label, (key, val) in zip(labels, insertion.items())]
+def get_merged_insertion(insertion: dict[str, int], labels: np.ndarray) -> dict[tuple[str], int]:
+    insertion_label = [(label, {seq: count}) for label, (seq, count) in zip(labels, insertion.items())]
     insertion_label.sort(key=lambda x: x[0])
+
     insertion_merged = dict()
     for _, group in groupby(insertion_label, key=lambda x: x[0]):
         group = [g[1] for g in group]
-        seq, count = set(), 0
-        for g in group:
-            key, val = list(g.items())[0]
-            seq.add(key)
-            count += val
-        insertion_merged[frozenset(seq)] = count
+        sequences, counts = set(), 0
+        for seq_count in group:
+            seq, count = next(iter(seq_count.items()))
+            sequences.add(seq)
+            counts += count
+        insertion_merged[tuple(sorted(sequences))] = counts
+
     return insertion_merged
 
 
-def merge_similar_insertions(insertions, mutation_loci) -> dict[dict[frozenset[str], int]]:
-    index_grouped = _group_index_by_consecutive_insertions(mutation_loci)
-    insertions_grouped = _group_insertions(insertions, index_grouped)
-    insertions_merged = defaultdict(dict)
+def merge_similar_insertions(
+    insertions: dict[int, dict[str, int]], mutation_loci: list[set[str]]
+) -> dict[tuple(int), dict[tuple[str], int]]:
+    index_grouped = group_index_by_consecutive_insertions(mutation_loci)
+    insertions_grouped = group_insertions(insertions, index_grouped)
+    insertions_merged = dict()
     for idx, insertion in insertions_grouped.items():
         if len(insertion) == 1:
-            key, val = list(insertion.items())[0]
-            insertions_merged[idx][frozenset([key])] = val
+            seq, count = next(iter(insertion.items()))
+            insertions_merged[idx] = {tuple([seq]): count}
             continue
         labels = clustering_insertions(insertion)
-        insertions_merged[idx] = _get_merged_insertion(insertion, labels)
+        insertions_merged[idx] = get_merged_insertion(insertion, labels)
+
     return insertions_merged
 
 
 ###########################################################
-# Cluster insertion alleles
+# Pre- and post-process of clustering insertion alleles
 ###########################################################
 
 
-def extract_score_and_sequence(path_sample, insertions_merged) -> list[tuple[list[int], str]]:
+def flatten_keys_to_set(dict_keys: list[tuple[int]]) -> set[int]:
+    flattened_nums = set()
+    for key_tuple in dict_keys:
+        for num in key_tuple:
+            flattened_nums.add(num)
+    return flattened_nums
+
+
+def subset_insertions(
+    insertions_merged: dict[tuple(int), dict[tuple[str], int]], num_subset: int = 100
+) -> dict[tuple(int), dict[tuple[str], int]]:
+    """
+    If the number of seqs exceeds `num_subset`, limit it to only the `num_subset` elements with fiexd random sampling.
+    """
+    random.seed(1)
+    insertions_merged_subset = defaultdict(dict)
+    for idx_grouped, insertions in insertions_merged.items():
+        for cs_insertion, counts in insertions.items():
+            if len(cs_insertion) > num_subset:
+                sequences = random.sample(cs_insertion, num_subset)
+            else:
+                sequences = cs_insertion
+            sequences = tuple(remove_non_alphabets(seq) for seq in sequences)
+            insertions_merged_subset[idx_grouped][sequences] = counts
+
+    return dict(insertions_merged_subset)
+
+
+def extract_score_and_sequence(
+    path_sample, insertions_merged: dict[tuple(int), dict[tuple[str], int]]
+) -> list[tuple[list[int], str]]:
     scores = []
     sequences = []
+
+    insertions_merged_subset = subset_insertions(insertions_merged, num_subset=100)
+    set_keys = flatten_keys_to_set(insertions_merged.keys())
+
+    cache_score = defaultdict(int)
     for m in io.read_jsonl(path_sample):
         cssplits = m["CSSPLIT"].split(",")
+        if not any(True for i in set_keys if cssplits[i].startswith("+")):
+            continue
+
         score = [0] * len(insertions_merged)
         sequence = ["N"] * len(insertions_merged)
         for i, (idx_grouped, insertions) in enumerate(insertions_merged.items()):
             for idx in idx_grouped:
                 if not cssplits[idx].startswith("+"):
                     continue
+
                 for seqs, count in insertions.items():
-                    _, distances, _ = zip(
-                        *process.extract_iter(cssplits[idx], seqs, scorer=DamerauLevenshtein.normalized_distance)
-                    )
-                    if any(True for d in distances if d < 0.1):
+                    if cssplits[idx] in seqs:
                         score[i] = count
                         sequence[i] = cssplits[idx]
+                        continue
+
+                if (idx, cssplits[idx]) in cache_score:
+                    score[i] = cache_score[(idx, cssplits[idx])]
+                    sequence[i] = cssplits[idx]
+                    continue
+
+                flag_break = False
+                for seqs, count in insertions_merged_subset[idx_grouped].items():
+                    for _, distance, _ in process.extract_iter(
+                        remove_non_alphabets(cssplits[idx]), seqs, scorer=DamerauLevenshtein.normalized_distance
+                    ):
+                        if distance < 0.1:
+                            score[i] = count
+                            sequence[i] = cssplits[idx]
+                            flag_break = True
+                            break
+                    if flag_break:
+                        cache_score[(idx, cssplits[idx])] = count
+                        break
+
         if any(score):
             scores.append(score)
             sequences.append(",".join(sequence))
+
     return [(score, sequence) for score, sequence in zip(scores, sequences)]
 
 
 def filter_minor_label(
-    path_sample: str, labels: list[int], insertions_scores_sequences, threshold: float = 0.5
+    path_sample: str,
+    labels: list[int],
+    insertions_scores_sequences: list[tuple[list[int], str]],
+    threshold: float = 0.5,
 ) -> tuple(list[int], list[str]):
     coverage = io.count_newlines(path_sample)
     _, counts = np.unique(labels, return_counts=True)
@@ -202,6 +280,116 @@ def filter_minor_label(
         score_seq for i, score_seq in enumerate(insertions_scores_sequences) if i not in index_minor_labels
     ]
     return labels_filtered, score_seq_filterd
+
+
+###########################################################
+# Call consensus
+###########################################################
+
+
+def subset_sequences(sequences, labels, num=1000) -> list[dict]:
+    """
+    Downsampling to the required number of sequences when there is a huge number of inserted sequences
+    """
+    sequences_subset = []
+    tmp_sequences = []
+    random.seed(1)
+    for sequence, label in zip(sequences, labels):
+        tmp_sequences.append({"CSSPLIT": sequence, "LABEL": label})
+    tmp_sequences.sort(key=lambda x: x["LABEL"])
+    for _, group in groupby(tmp_sequences, key=lambda x: x["LABEL"]):
+        group = list(group)
+        if len(group) > num:
+            sequences_subset += random.sample(group, num)
+        else:
+            sequences_subset += group
+    return sequences_subset
+
+
+def get_cstag_position(sam_insertions: list[str]) -> tuple[list[str], list[int]]:
+    cs_tags = []
+    positions = []
+    for sam in sam_insertions:
+        if sam.startswith("@"):
+            continue
+        cs_tags.append(sam.split("\t")[-1])
+        positions.append(int(sam.split("\t")[3]))
+    return cs_tags, positions
+
+
+def mapping_insertion(
+    TEMPDIR: Path, SAMPLE_NAME: str, cs_transposed: list[str], consensus_length: int
+) -> Generator[str]:
+    # Temporarily cache the reference sequence
+    cs_insertion = next(cs for cs in cs_transposed if cs != "N" and len(cs) == consensus_length)
+    ref_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
+
+    path_reference = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"reference-{str(uuid.uuid4())}.fasta")
+    Path(path_reference).write_text(f">reference_insertion\n{ref_seq}\n")
+
+    # Temporarily cache the query sequences
+    path_query = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"query-{str(uuid.uuid4())}.fasta")
+    with Path(path_query).open("w") as file:
+        for i, cs_insertion in enumerate(cs_transposed):
+            que_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
+            file.write(f">query_insertion_{i}\n{que_seq}\n")
+
+    # Switch the mappy settings to either long-read or short-read, depending on the length of the reference sequence
+    if len(ref_seq) > 500:
+        sam_insertions = to_sam(path_reference, path_query)
+    else:
+        options = {"k": 3, "min_dp_score": 1, "min_chain_score": 1, "min_cnt": 1}
+        sam_insertions = to_sam(path_reference, path_query, preset="sr", options=options)
+
+    return sam_insertions
+
+
+def generate_consensus_insertions(TEMPDIR: Path, SAMPLE_NAME: str, cssplits: list[list[str]]) -> str:
+    consensus_insertion = []
+    cssplits_transposed = (list(cs) for cs in zip(*cssplits))
+    for cs_transposed in cssplits_transposed:
+        if all(True if cs == "N" else False for cs in cs_transposed):
+            consensus_insertion.append("N")
+            continue
+
+        count_N = sum(1 for cs in cs_transposed if cs == "N")
+
+        count_cs = defaultdict(int)
+        for cs in cs_transposed:
+            if cs == "N":
+                continue
+            count_cs[len(cs)] += 1
+
+        consensus_length = max(count_cs, key=count_cs.get)
+        count_consensus = sum(1 for cs in cs_transposed if len(cs) == consensus_length)
+
+        if count_N > count_consensus:
+            consensus_insertion.append("N")
+            continue
+
+        sam_insertions = mapping_insertion(TEMPDIR, SAMPLE_NAME, cs_transposed, consensus_length)
+
+        cs_tags, positions = get_cstag_position(sam_insertions)
+        if cs_tags == []:  # When not mapped at all, append `N`.
+            consensus_insertion.append("N")
+        else:
+            cs_insertion_consensus = cstag.to_sequence(cstag.consensus(cs_tags, positions))
+            cs_last = Counter(cs.split("|")[-1] for cs in cs_transposed if len(cs) == consensus_length).most_common()[
+                0
+            ][0]
+            cssplits_insertion_consensus = "|".join("+" + cs for cs in cs_insertion_consensus[:-1]) + "|" + cs_last
+            consensus_insertion.append(cssplits_insertion_consensus)
+
+    return ",".join(consensus_insertion)
+
+
+def remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
+    cons_sequence_removed = dict()
+    for label, seq in cons_sequence.items():
+        if all(True if s == "N" else False for s in seq.split(",")):
+            continue
+        cons_sequence_removed[label] = seq
+    return cons_sequence_removed
 
 
 def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
@@ -222,60 +410,26 @@ def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
     return d_updated
 
 
-###########################################################
-# Call consensus
-###########################################################
-
-
-def subset_sequences(sequences, labels, num=1000) -> list[dict]:
-    """
-    Downsampling to the required number of sequences when there is a huge number of inserted sequences
-    """
-    sequences_subset = []
-    tmp_sequences = []
-    for sequence, label in zip(sequences, labels):
-        tmp_sequences.append({"CSSPLIT": sequence, "LABEL": label})
-    tmp_sequences.sort(key=lambda x: x["LABEL"])
-    for _, group in groupby(tmp_sequences, key=lambda x: x["LABEL"]):
-        sequences_subset.extend(list(group)[:num])
-    return sequences_subset
-
-
-def _call_percentage(cssplits: list[list[str]]) -> list[dict[str, float]]:
-    """call position weight matrix in defferent loci."""
-    coverage = len(cssplits)
-    cssplits_transposed = (list(cs) for cs in zip(*cssplits))
-    cons_percentage = []
-    for cs_transposed in cssplits_transposed:
-        count_cs = defaultdict(float)
-        for cs in cs_transposed:
-            count_cs[cs] += 1 / coverage * 100
-        cons_percentage.append(dict(count_cs))
-    return cons_percentage
-
-
-def _remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
-    cons_sequence_removed = dict()
-    for label, seq in cons_sequence.items():
-        if all(True if s == "N" else False for s in seq.split(",")):
-            continue
-        cons_sequence_removed[label] = seq
-    return cons_sequence_removed
-
-
-def call_consensus_of_insertion(insertion_sequences_subset: list[dict]) -> dict[int, str]:
-    cons_sequence = dict()
+def call_consensus_of_insertion(
+    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, insertion_sequences_subset: list[dict]
+) -> dict[int, str]:
+    """Generate consensus cssplits."""
+    consensus_insertion_cssplits = dict()
     insertion_sequences_subset.sort(key=lambda x: x["LABEL"])
     for label, group in groupby(insertion_sequences_subset, key=lambda x: x["LABEL"]):
         cssplits = [cs["CSSPLIT"].split(",") for cs in group]
-        cons_per = _call_percentage(cssplits)
-        cons_seq = call_sequence(cons_per, sep=",")
-        cons_sequence[label] = cons_seq
-    return _remove_all_n(cons_sequence)
+        consensus_insertion_cssplits[label] = generate_consensus_insertions(TEMPDIR, SAMPLE_NAME, cssplits)
+
+    return update_labels(remove_all_n(consensus_insertion_cssplits), FASTA_ALLELES)
+
+
+###########################################################
+# Generate cstag and FASTA
+###########################################################
 
 
 def extract_index_of_insertions(
-    insertions: dict[int, dict[str, int]], insertions_merged: dict[dict[frozenset[str], int]]
+    insertions: dict[int, dict[str, int]], insertions_merged: dict[tuple(int), dict[tuple[str], int]]
 ) -> list[int]:
     """`insertions_merged` contains multiple surrounding indices for a single insertion allele. Among them, select the one index where the insertion allele is most frequent."""
     index_of_insertions = []
@@ -291,52 +445,47 @@ def extract_index_of_insertions(
     return index_of_insertions
 
 
-###########################################################
-# generate and save fasta
-###########################################################
-
-
-def generate_fasta(cons_sequence, index_of_insertions, sequence) -> dict[int, str]:
-    fasta_insertions = dict()
-    for label, cons_seq in cons_sequence.items():
-        cons_seq = cons_seq.split(",")
-        list_sequence = list(sequence)
-        for idx, seq in zip(index_of_insertions, cons_seq):
-            if seq == "N":
-                continue
-            list_sequence[idx] = seq
-        fasta_insertions[label] = "".join(list_sequence)
-    return fasta_insertions
-
-
-def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict) -> None:
-    for header, seq in fasta_insertions.items():
-        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}")
-
-
-###########################################################
-# generate and save as HTML and PDF
-###########################################################
-
-
-def generate_cstag(cons_sequence, index_of_insertions, sequence) -> dict[int, str]:
+def generate_cstag(
+    consensus_of_insertions: dict[str, str], index_of_insertions: list[int], sequence: str
+) -> dict[str, str]:
     cstag_insertions = dict()
-    for label, cons_seq in cons_sequence.items():
+    for label, cons_seq in consensus_of_insertions.items():
         cons_seq = cons_seq.split(",")
         list_sequence = list(sequence)
         for idx, seq in zip(index_of_insertions, cons_seq):
             if seq == "N":
                 continue
-            seq = seq.lower()
-            list_sequence[idx] = f"+{seq}="
+            list_sequence[idx] = convert_cssplits_to_cstag([seq]) + "="
         cstag_insertions[label] = "cs:Z:=" + "".join(list_sequence)
     return cstag_insertions
 
 
-def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict) -> None:
+def generate_fasta(cstag_insertions: dict[str, str]) -> dict[str, str]:
+    fasta_insertions = dict()
+    for label, cs_tag in cstag_insertions.items():
+        fasta_insertions[label] = cstag.to_sequence(cs_tag)
+    return fasta_insertions
+
+
+###########################################################
+# Save cstag (HTML) and fasta
+###########################################################
+
+
+def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict[str, str]) -> None:
+    for header, seq in fasta_insertions.items():
+        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}\n")
+
+
+def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_insertions: dict[str, str]) -> None:
     for header, cs_tag in cstag_insertions.items():
-        html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
-        Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
+        Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
+
+
+# def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict[int, str]) -> None:
+#     for header, cs_tag in cstag_insertions.items():
+#         html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
+#         Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
 
 
 ###########################################################
@@ -345,32 +494,39 @@ def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict) -> None:
 
 
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
-    path_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
-    path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
-    sequence = FASTA_ALLELES["control"]
-    mutation_loci = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
-    insertions = extract_insertions(path_sample, path_control, mutation_loci)
+    PATH_SAMPLE = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
+    PATH_CONTROL = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
+    SEQUENCE = FASTA_ALLELES["control"]
+    MUTATION_LOCI = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
+
+    insertions = extract_insertions(PATH_SAMPLE, PATH_CONTROL, MUTATION_LOCI)
     if insertions == dict():
         return None
-    insertions_merged = merge_similar_insertions(insertions, mutation_loci)
-    insertions_scores_sequences = extract_score_and_sequence(path_sample, insertions_merged)
+    insertions_merged = merge_similar_insertions(insertions, MUTATION_LOCI)
+    insertions_scores_sequences = extract_score_and_sequence(PATH_SAMPLE, insertions_merged)
     labels = clustering_insertions([cssplit for _, cssplit in insertions_scores_sequences])
     labels_filtered, insertion_scores_sequences_filtered = filter_minor_label(
-        path_sample, labels, insertions_scores_sequences, threshold=0.5
+        PATH_SAMPLE, labels, insertions_scores_sequences, threshold=0.5
     )
     insertion_sequences_subset = subset_sequences(
         [seq for _, seq in insertion_scores_sequences_filtered], labels_filtered, num=1000
     )
-    consensus_of_insertions = call_consensus_of_insertion(insertion_sequences_subset)
+    consensus_of_insertions = call_consensus_of_insertion(
+        TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, insertion_sequences_subset
+    )
     if consensus_of_insertions == dict():
         """
         If there is no insertion sequence, return None
         It is possible when all insertion sequence annotated as `N` that is filtered out
         """
         return None
-    consensus_of_insertions = update_labels(consensus_of_insertions, FASTA_ALLELES)
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
-    fasta_insertions = generate_fasta(consensus_of_insertions, index_of_insertions, sequence)
-    cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, sequence)
+    cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, SEQUENCE)
+    fasta_insertions = generate_fasta(cstag_insertions)
+
     save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions)
-    save_html(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+    # save_html(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+
+    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("reference-*.fasta")]
+    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("query-*.fasta")]
