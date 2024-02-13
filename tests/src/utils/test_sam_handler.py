@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import midsv
 from pathlib import Path
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from DAJIN2.core.preprocess import mapping
 

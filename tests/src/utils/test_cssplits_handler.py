@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from DAJIN2.utils.cssplits_handler import (
     find_n_boundaries,
