@@ -23,40 +23,51 @@ def update_threads(threads: int) -> int:
 ########################################################################
 
 
-def validate_file_existence(input_file: str):
-    if not Path(input_file).exists():
-        raise FileNotFoundError(f"{input_file} is not found")
+def validate_file_existence(path_file: str):
+    if not Path(path_file).exists():
+        raise FileNotFoundError(f"{path_file} is not found")
 
 
-def validate_fastq_extension(fastq_path: str):
-    if not re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", fastq_path):
-        raise ValueError(f"{fastq_path} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
+def validate_fastq_extension(path_fastq: str):
+    if not re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", path_fastq):
+        raise ValueError(f"{path_fastq} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
 
 
-# Varidate if the file is in the proper format.
-# See top 100 lines
-def validate_fastq_content(fastq_path: str):
+# Varidate if the file is in the proper format viewing top 100 lines
+def validate_fastq_content(path_fastq: str):
     try:
-        names, seqs, quals = zip(*[(n, s, q) for i, (n, s, q) in enumerate(mappy.fastx_read(fastq_path)) if i < 100])
-        if not (len(names) == len(seqs) == len(quals) > 0):
+        headers, seqs, quals = zip(*[(n, s, q) for i, (n, s, q) in enumerate(mappy.fastx_read(path_fastq)) if i < 100])
+        # Remove empty elements
+        headers = [header for header in headers if header]
+        seqs = [seq for seq in seqs if seq]
+        quals = [qual for qual in quals if qual]
+
+        if not (len(headers) == len(seqs) == len(quals) > 0):
             raise ValueError
+
     except ValueError:
-        raise ValueError(f"{fastq_path} is not a FASTQ format")
+        raise ValueError(f"{path_fastq} is not a proper FASTQ format")
 
 
-def validate_fasta_content(fasta_path: str):
+def validate_fasta_content(path_fasta: str):
     try:
-        names, seqs = zip(*[(n, s) for n, s, _ in mappy.fastx_read(fasta_path)])
-        if len(names) != len(seqs) or not names:
+        headers, seqs = zip(*[(n, s) for n, s, _ in mappy.fastx_read(path_fasta)])
+        # Remove empty elements
+        headers = [header for header in headers if header]
+        seqs = [seq for seq in seqs if seq]
+
+        if len(headers) != len(seqs) or not headers:
             raise ValueError
+
     except ValueError:
-        raise ValueError(f"{fasta_path} is not a proper FASTA format")
-    if len(names) != len(set(names)):
-        raise ValueError(f"{fasta_path} must include unique identifiers")
+        raise ValueError(f"{path_fasta} is not a proper FASTA format")
+
+    if len(headers) != len(set(headers)):
+        raise ValueError(f"{path_fasta} must include unique identifiers")
     if len(seqs) != len(set(seqs)):
-        raise ValueError(f"{fasta_path} must include unique DNA sequences")
-    if "control" not in names:
-        raise ValueError(f"One of the headers in the {fasta_path} must be '>control'")
+        raise ValueError(f"{path_fasta} must include unique DNA sequences")
+    if "control" not in headers:
+        raise ValueError(f"One of the headers in the {path_fasta} must be '>control'")
 
 
 def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
