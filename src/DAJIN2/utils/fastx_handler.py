@@ -1,22 +1,80 @@
 from __future__ import annotations
 
+import re
 import gzip
 from pathlib import Path
+
+import mappy
+
+
+#################################################
+# Helper function
+#################################################
+
+
+def sanitize_filename(path_file: Path | str) -> str:
+    """
+    Sanitize the path_file by replacing invalid characters on Windows OS with '-'
+    """
+    path_file = str(path_file).lstrip()
+    if not path_file:
+        raise ValueError("Provided FASTA/FASTQ is empty or consists only of whitespace")
+    return re.sub(r'[\\/:?.,\'"<>| ]', "-", path_file)
+
+
+#################################################
+# Extract filename
+#################################################
+
+
+def extract_filename(path_fasta: Path | str) -> str:
+    filename = Path(path_fasta).name
+    filename = re.sub(r"\..*$", "", filename)  # Remove file extension
+    return sanitize_filename(filename)
+
+
+#################################################
+# Convert allele file to dictionary type fasta format
+#################################################
+
+
+def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
+    return {sanitize_filename(name): seq.upper() for name, seq, _ in mappy.fastx_read(str(path_fasta))}
+
+
+#################################################
+# Export fasta files as single-FASTA format
+#################################################
+
+
+def export_fasta_files(TEMPDIR: Path, FASTA_ALLELES: dict, NAME: str) -> None:
+    """
+    This function exports FASTA files in single-FASTA format.
+
+    :param TEMPDIR: Temporary directory Path object where the output files will be saved.
+    :param FASTA_ALLELES: Dictionary containing identifier and sequence pairs.
+    :param NAME: Name to be included in the output path.
+    """
+    for identifier, sequence in FASTA_ALLELES.items():
+        contents = "\n".join([">" + identifier, sequence]) + "\n"
+        output_fasta = Path(TEMPDIR, NAME, "fasta", f"{identifier}.fasta")
+        output_fasta.write_text(contents)
+
 
 #################################################
 # save_concatenated_fastx
 #################################################
 
 
-def extract_extention(file_path: Path) -> str:
-    suffixes = file_path.suffixes
-    return "".join(suffixes[-2:]) if len(suffixes) >= 2 else suffixes[0]
+def extract_extention(path_file: Path) -> str:
+    suffixes = path_file.suffixes
+    return "".join(suffixes)
 
 
-def is_gzip_file(file_name: Path) -> bool:
+def is_gzip_file(path_file: Path) -> bool:
     """Check if a file is a GZip compressed file."""
     try:
-        with file_name.open("rb") as f:
+        with path_file.open("rb") as f:
             return f.read(2) == b"\x1f\x8b"
     except IOError:
         return False
@@ -25,12 +83,12 @@ def is_gzip_file(file_name: Path) -> bool:
 def save_fastq_as_gzip(TEMPDIR: Path, path_fastx: list[Path], barcode: str) -> None:
     """Merge gzip and non-gzip files into a single gzip file."""
     with gzip.open(Path(TEMPDIR, barcode, "fastq", f"{barcode}.fastq.gz"), "wb") as merged_file:
-        for file_name in path_fastx:
-            if is_gzip_file(file_name):
-                with gzip.open(file_name, "rb") as f:
+        for path_file in path_fastx:
+            if is_gzip_file(path_file):
+                with gzip.open(path_file, "rb") as f:
                     merged_file.write(f.read())
             else:
-                with open(file_name, "r") as f:
+                with open(path_file, "r") as f:
                     merged_file.write(f.read().encode())
 
 
