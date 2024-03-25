@@ -4,25 +4,12 @@ import shutil
 import logging
 
 from pathlib import Path
-from typing import NamedTuple
 
 from DAJIN2.utils import io, fastx_handler
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
+from DAJIN2.core.preprocess.input_formatter import FormattedInputs
 
 logger = logging.getLogger(__name__)
-
-
-class FormattedInputs(NamedTuple):
-    path_sample: str
-    path_control: str
-    path_allele: str
-    sample_name: str
-    control_name: str
-    fasta_alleles: dict[str, str]
-    tempdir: Path
-    genome_coordinates: dict[str, str]
-    threads: int
-    uuid: str
 
 
 ###########################################################

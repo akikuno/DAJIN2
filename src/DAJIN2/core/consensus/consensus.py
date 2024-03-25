@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import NamedTuple
+from dataclasses import dataclass
 from itertools import groupby
 from collections import defaultdict
 
@@ -90,7 +90,8 @@ def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]]) ->
 ###########################################################
 
 
-class ConsensusKey(NamedTuple):
+@dataclass(frozen=True)
+class ConsensusKey:
     allele: str
     label: int
     percent: float
