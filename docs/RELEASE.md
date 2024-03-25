@@ -1,5 +1,3 @@
-# Development Logs of DAJIN2
-
 <!-- TEMPLATE
 # v0.0.0 (yyyy-mm-dd)
 ## 💥 Breaking
@@ -17,18 +15,11 @@
 - nCATSがほしい…
  -->
 
-# v0.4.2 (yyyy-mm-dd)
-## 💥 Breaking
-
-## 📝 Documentation
-
-## 🚀 New Features
-
-+ Remove multi-mapping reads, as multi-mapping reads are mostly reads that are locally mapped to low-complexity regions. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d00bea83366113ff0ccf80639b75bb7edbb4ed2f)
-
-## 🐛 Bug Fixes
+# v0.4.2 (2024-03-25)
 
 ## 🔧 Maintenance
+
++ Remove multi-mapping reads, as multi-mapping reads are mostly reads that are locally mapped to low-complexity regions. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d00bea83366113ff0ccf80639b75bb7edbb4ed2f)
 
 + Create `preprocess.input_formatter.py` to summarize formatting functions to a module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/bb45bb81a8deb530109de18e794f63ecb088f651)
 
@@ -46,12 +37,10 @@
 
 + Standardize to use `dataclass` instead of `NamedTuple`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b7c34fbcda51ef037488f1f58564fa72128033f1)
 
-## ⛔️ Deprecated
-
 
 -------------------------------------------------------------
 
-# Past Logs
+# Past Releases
 
 
 <details>
