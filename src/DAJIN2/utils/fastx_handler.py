@@ -48,13 +48,7 @@ def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
 
 
 def export_fasta_files(TEMPDIR: Path, FASTA_ALLELES: dict, NAME: str) -> None:
-    """
-    This function exports FASTA files in single-FASTA format.
-
-    :param TEMPDIR: Temporary directory Path object where the output files will be saved.
-    :param FASTA_ALLELES: Dictionary containing identifier and sequence pairs.
-    :param NAME: Name to be included in the output path.
-    """
+    """+ Save multiple FASTAs in separate single-FASTA format files."""
     for identifier, sequence in FASTA_ALLELES.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, NAME, "fasta", f"{identifier}.fasta")
