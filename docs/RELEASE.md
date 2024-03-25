@@ -17,7 +17,45 @@
 - nCATSがほしい…
  -->
 
-# v0.4.1 (2024-02-13)
+# v0.4.2 (yyyy-mm-dd)
+## 💥 Breaking
+
+## 📝 Documentation
+
+## 🚀 New Features
+
++ Remove multi-mapping reads, as multi-mapping reads are mostly reads that are locally mapped to low-complexity regions. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d00bea83366113ff0ccf80639b75bb7edbb4ed2f)
+
+## 🐛 Bug Fixes
+
+## 🔧 Maintenance
+
++ Create `preprocess.input_formatter.py` to summarize formatting functions to a module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/bb45bb81a8deb530109de18e794f63ecb088f651)
+
++ Refactor `directory_manager.py` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/9d558304609935f9d3320cc1f6d7b3a46168d9e2)
+
++ Refactor `preprocess.__init__.py` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/43ab68a135498b3e8192e1facbd085152e429f86)
+
++ To increase cohesion by functions of the same category into a single module, we have migrated `preprocess.fastx_parser` to `utils.fastx_handler`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/e9396369c47cb09af7d78c0f9eb71a5f225232e5)
+
++ Remove the packages that are no longer in use from `requirements.txt`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/43ab68a135498b3e8192e1facbd085152e429f86)
+
++ Add `read_sam` in sam_handler module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b37b3750f76ef354827229a7467e56a439225fe1)
+
++ Revise the docstring of `export_fasta_files`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4c6fa03f61d8473e50c187e3bf4cb3e8685f2631)
+
++ Standardize to use `dataclass` instead of `NamedTuple`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b7c34fbcda51ef037488f1f58564fa72128033f1)
+
+## ⛔️ Deprecated
+
+
+-------------------------------------------------------------
+
+# Past Logs
+
+
+<details>
+<summary> v0.4.1 (2024-02-13) </summary>
 
 ## 📝 Documentation
 
@@ -55,9 +93,7 @@
 
 - Removed `reads_all.csv`. This CSV file, which showed the allele for each read, is no longer reported due to its limited usefulness and because the same information can be obtained from the BAM file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/76e3eaee320deb79cbf3cf97cc6aed69c5bbc3ef)
 
--------------
-
-# Past Logs
+</details>
 
 
 <details>

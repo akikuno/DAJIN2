@@ -43,6 +43,10 @@ def to_sam(
             query_seq = QUERY_SEQ.upper()
             query_qual = QUERY_QUAL
 
+            # Skip multi-mapping reads
+            if hit.mapq == 0:
+                continue
+
             # Report flag
             if hit.is_primary:
                 flag = 0 if hit.strand == 1 else 16
