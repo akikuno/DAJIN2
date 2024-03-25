@@ -21,10 +21,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies via pip
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies via conda
         run: |
-          python -m pip install --upgrade pip pytest
-          python -m pip install -e .
+          conda install -y -c conda-forge pytest
+          conda install -y -c conda-forge bioconda --file requirements.txt
 
       - name: Install weasyprint on macos-latest🍎
         if: runner.os == 'macOS'
