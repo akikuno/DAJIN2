@@ -11,7 +11,7 @@ jobs:
     strategy:
       max-parallel: 6
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, macos-14]
         python-version: ['3.8', '3.9', '3.10']
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
