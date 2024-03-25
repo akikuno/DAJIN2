@@ -46,6 +46,7 @@
 
 + Standardize to use `dataclass` instead of `NamedTuple`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b7c34fbcda51ef037488f1f58564fa72128033f1)
 
++ Add Python 3.11 for testing using Github Actions. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b7c34fbcda51ef037488f1f58564fa72128033f1)
 
 ## ⛔️ Deprecated
 
