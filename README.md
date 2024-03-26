@@ -137,10 +137,10 @@ wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
 tar -xf example_single.tar.gz
 
 # Run DAJIN2
-time DAJIN2 \
+DAJIN2 \
     --control example_single/control \
     --sample example_single/sample \
-    --allele example_single/stx2-deletion.fa \
+    --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
     --genome mm39 \
     --threads 4
