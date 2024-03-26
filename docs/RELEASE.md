@@ -13,9 +13,30 @@
 - VCF、PDFを出力する
 - 逆位アレルでの検証を加える
 - nCATSがほしい…
+- Docker imageにして、darwin-arm64でも動くようにする
+- Flaskではなく、streamlitでGUIを作る
  -->
 
-# v0.4.2 (2024-03-25)
+# v0.4.3 (2024-XX-XX)
+
+## 💥 Breaking
+## 📝 Documentation
+## 🚀 New Features
+## 🐛 Bug Fixes
+## 🔧 Maintenance
+
++ Change `threshold_readnumber` at `labem_merger.merge_labels` from 10 to 5 to capture 1% alleles from 500 total reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8448a8ec1f9efd4d15687a695ab993dc0a27efae)
+
+## ⛔️ Deprecated
++ XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<details>
+<summary> v0.4.2 (2024-03-25) </summary>
 
 ## 🔧 Maintenance
 
@@ -37,10 +58,7 @@
 
 + Standardize to use `dataclass` instead of `NamedTuple`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b7c34fbcda51ef037488f1f58564fa72128033f1)
 
-
--------------------------------------------------------------
-
-# Past Releases
+</details>
 
 
 <details>
