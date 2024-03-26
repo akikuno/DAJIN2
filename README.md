@@ -45,6 +45,7 @@ conda activate env-dajin2
 > CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 > conda activate env-dajin2
 > conda config --env --set subdir osx-64
+> python -c "import platform; print(platform.machine())" # Confirm that the output is 'x86_64', not 'arm64'
 > ```
 
 ### From [PyPI](https://pypi.org/project/DAJIN2/)
@@ -131,12 +132,17 @@ Options:
 #### Example
 
 ```bash
-DAJIN2 \
-    --control example/barcode01 \
-    --sample example/barcode02 \
-    --allele example/design.fa \
-    --name IL6-knockin \
-    --genome hg38 \
+# Download example dataset
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+tar -xf example_single.tar.gz
+
+# Run DAJIN2
+time DAJIN2 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2-deletion.fa \
+    --name stx2_deletion \
+    --genome mm39 \
     --threads 4
 ```
 
@@ -173,7 +179,6 @@ DAJIN2 \
 
 By using the `batch` subcommand, you can process multiple FASTQ files simultaneously.  
 For this purpose, a CSV or Excel file consolidating the sample information is required.  
-<!-- For a specific example, please refer to [this link](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv). -->
 
 > [!NOTE]
 > For guidance on how to compile sample information, please refer to [this document](https://docs.google.com/presentation/d/e/2PACX-1vSMEmXJPG2TNjfT66XZJRzqJd82aAqO5gJrdEzyhn15YBBr_Li-j5puOgVChYf3jA/embed?start=false&loop=false&delayms=3000).
@@ -191,13 +196,18 @@ options:
 #### Example
 
 ```bash
-DAJIN2 --file batch.csv --threads 4
+# Donwload the example dataset
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
+tar -xf example_batch.tar.gz
+
+# Run DAJIN2
+DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
 <!-- ```bash
 # Donwload the example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-batch.tar.gz
-tar -xf example-batch.tar.gz
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
+tar -xf example_batch.tar.gz
 
 # Run DAJIN2
 DAJIN2 batch --file example-batch/batch.csv --threads 3

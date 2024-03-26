@@ -1,0 +1,4 @@
+name, control, sample, allele, genome
+tyr_c230gt, example_batch/control, example_batch/tyr_c230gt_50, example_batch/tyr.fasta, mm39
+tyr_c230gt, example_batch/control, example_batch/tyr_c230gt_10, example_batch/tyr.fasta, mm39
+tyr_c230gt, example_batch/control, example_batch/tyr_c230gt_01, example_batch/tyr.fasta, mm39
