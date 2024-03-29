@@ -8,8 +8,7 @@ from itertools import chain, groupby
 
 from collections import Counter
 
-from DAJIN2.utils import sam_handler
-from DAJIN2.utils import cssplits_handler
+from DAJIN2.utils import io, sam_handler, cssplits_handler
 
 
 def has_inversion_in_splice(CIGAR: str) -> bool:
@@ -215,8 +214,8 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
             path_splice = Path(ARGS.tempdir, name, "sam", f"splice_{allele}.sam")
             path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}.json")
 
-        sam_ont = sam_handler.remove_overlapped_reads(list(sam_handler.read_sam(path_ont)))
-        sam_splice = sam_handler.remove_overlapped_reads(list(sam_handler.read_sam(path_splice)))
+        sam_ont = sam_handler.remove_overlapped_reads(list(io.read_sam(path_ont)))
+        sam_splice = sam_handler.remove_overlapped_reads(list(io.read_sam(path_splice)))
         qname_of_map_ont = extract_qname_of_map_ont(sam_ont, sam_splice)
         sam_of_map_ont = filter_sam_by_preset(sam_ont, qname_of_map_ont, preset="map-ont")
         sam_of_splice = filter_sam_by_preset(sam_splice, qname_of_map_ont, preset="splice")
