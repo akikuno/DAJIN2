@@ -5,11 +5,19 @@ from urllib.request import urlopen
 
 def fetch_seq_coordinates(genome: str, blat_url: str, seq: str) -> dict:
     url = f"{blat_url}?db={genome}&type=BLAT&userSeq={seq}"
-    response = urlopen(url).read().decode("utf8").split("\n")
-    matches = [x for x in response if "100.0%" in x]
+    records = urlopen(url).read().decode("utf8").split("\n")
+    matches = []
+    for record in records:
+        if "100.0%" not in record:
+            continue
+        record_trim = [r for r in record.split(" ") if r]
+        if record_trim[-1] == str(len(seq)):
+            matches = record_trim
+
     if not matches:
         raise ValueError(f"{seq[:60]}... is not found in {genome}")
-    chrom, strand, start, end, _ = matches[0].split()[-5:]
+
+    chrom, strand, start, end, _ = matches[-5:]
     return {"chrom": chrom, "strand": strand, "start": int(start), "end": int(end)}
 
 

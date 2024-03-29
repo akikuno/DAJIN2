@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import re
 
-from pathlib import Path
-from typing import Generator
 from itertools import groupby
 from DAJIN2.utils.dna_handler import revcomp
 
@@ -23,17 +21,6 @@ def is_header(s: list[str]) -> bool:
 
 def is_mapped(s: list[str]) -> bool:
     return not s[0].startswith("@") and s[9] != "*"
-
-
-###########################################################
-# Read sam
-###########################################################
-
-
-def read_sam(path_of_sam: str | Path) -> Generator[list]:
-    with open(path_of_sam) as f:
-        for line in f:
-            yield line.strip().split("\t")
 
 
 ###########################################################

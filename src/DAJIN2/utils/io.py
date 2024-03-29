@@ -19,6 +19,12 @@ from openpyxl import load_workbook, Workbook
 ###########################################################
 
 
+def read_sam(path_of_sam: str | Path) -> Generator[list]:
+    with open(path_of_sam) as f:
+        for line in f:
+            yield line.strip().split("\t")
+
+
 def load_pickle(file_path: Path):
     with open(file_path, "rb") as f:
         return pickle.load(f)

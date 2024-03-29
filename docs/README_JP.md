@@ -42,6 +42,7 @@ conda activate env-dajin2
 > CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 > conda activate env-dajin2
 > conda config --env --set subdir osx-64
+> python -c "import platform; print(platform.machine())" # 'arm64'ではなく、'x86_64'と表示されることをご確認ください
 > ```
 
 ### [PyPI](https://pypi.org/project/DAJIN2/)
@@ -129,12 +130,17 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
 #### 実行例
 
 ```bash
+# Example datasetのダウンロード
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+tar -xf example_single.tar.gz
+
+# DAJIN2の実行（単一サンプル解析）
 DAJIN2 \
-    --control example/barcode01 \
-    --sample example/barcode02 \
-    --allele example/design.fa \
-    --name IL6-knockin \
-    --genome hg38 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2_deletion.fa \
+    --name stx2_deletion \
+    --genome mm39 \
     --threads 4
 ```
 
@@ -193,6 +199,11 @@ DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 #### 実行例
 
 ```bash
+# Example datasetのダウンロード
+wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
+tar -xf example_batch.tar.gz
+
+# DAJIN2の実行（バッチ処理）
 DAJIN2 --file batch.csv --threads 4
 ```
 

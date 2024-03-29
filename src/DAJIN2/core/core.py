@@ -70,8 +70,8 @@ def execute_control(arguments: dict):
     # Output BAM files
     ###########################################################
     logger.info(f"Output BAM files of {arguments['control']}...")
-    report.report_bam.export_to_bam(
-        ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, is_control=True
+    report.bam_exporter.export_to_bam(
+        ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, ARGS.uuid, is_control=True
     )
     ###########################################################
     # Finish call
@@ -204,15 +204,15 @@ def execute_sample(arguments: dict):
     # RESULT
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
     # FASTA
-    report.report_files.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
-    report.report_files.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
+    report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
+    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
     # HTML
-    report.report_files.export_to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
+    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
     # CSV (Allele Info)
-    report.report_mutation.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
+    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
     # BAM
-    report.report_bam.export_to_bam(
-        ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE
+    report.bam_exporter.export_to_bam(
+        ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, ARGS.uuid, RESULT_SAMPLE
     )
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
