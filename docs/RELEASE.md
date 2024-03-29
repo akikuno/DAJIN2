@@ -17,18 +17,46 @@
 - Flaskではなく、streamlitでGUIを作る
  -->
 
-# v0.4.3 (2024-XX-XX)
+# v0.4.3 (2024-03-29)
 
-## 💥 Breaking
+<!-- ## 💥 Breaking -->
 ## 📝 Documentation
-## 🚀 New Features
+
++ Update example dataset and a description of README.md/README_JP.md [Commit Detail](https://github.com/akikuno/DAJIN2/commit/2f9b57057f978b7870e80179c035564c4ee54a40)
+
+
+<!-- ## 🚀 New Features -->
 ## 🐛 Bug Fixes
+
++ Update `preprocess.genome_fetcher_fetch_seq_coordinates` to accurately verify that the entire length of the input sequence is present within the reference sequence. Previously, partial 100% matches were inadvertently accepted; this revision aims to ensure the full alignment of the input sequence with the reference. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/25584734e21e2c8da92d1de12bce498dfc341d03)
+
++ Update `report.bam_exporter` to be case-sensitive and consistent with directory names. This is to avoid errors caused by the difference between report/bam and report/BAM on Ubuntu, which is case-sensitive to directory names. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/011b21ab32b6965a65e9b442bbf3f2854a44db8e)
+  + Thank you @takeiga for reporting the issue #24 !
+
+
 ## 🔧 Maintenance
 
 + Change `threshold_readnumber` at `labem_merger.merge_labels` from 10 to 5 to capture 1% alleles from 500 total reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8448a8ec1f9efd4d15687a695ab993dc0a27efae)
 
-## ⛔️ Deprecated
-+ XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
++ Update the `requirements.txt` to install a newer version of the library. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d1cbf95b6a16ea720e0033e9a125d6201b99bcee)
+
++ Update `report.report_bam` and rename to `report.bam_exporter`: [Commit Detail](https://github.com/akikuno/DAJIN2/commit/011b21ab32b6965a65e9b442bbf3f2854a44db8e)
+  + Use UUID instead of random number for the temporary file name.
+  + Rename `realign` to `recalculate_sam_coodinates_to_reference` for the readability of the function name.
+  + Add `convert_pos_to_one_indexed` to convert the 0-based position to 1-based position and suppress samtools warning.
+    + Warning: `[W::sam_parse1] mapped query cannot have zero coordinate; treated as unmapped`
+  + Add tests for the `write_sam_to_bam` function
+
++ Move `read_sam` function from sam_handler to io module. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f9b9382ab706530b0cd4c34d7ff8f8c79002b654)
+
++ Rename `report.report_mutation`, `report.report_files` to `report.mutation_exporter` and `report.sequence_exporter` to be more explicit. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/35d8250876cd845623e63c898d7c608d27a82a45)
+
+
+<!-- ## ⛔️ Deprecated -->
+
+<!-- 
+[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+-->
 
 
 -------------------------------------------------------------
