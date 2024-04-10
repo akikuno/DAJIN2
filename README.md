@@ -204,41 +204,6 @@ tar -xf example_batch.tar.gz
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
-<!-- ```bash
-# Donwload the example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
-tar -xf example_batch.tar.gz
-
-# Run DAJIN2
-DAJIN2 batch --file example-batch/batch.csv --threads 3
-
-# 2023-07-31 17:01:10: example-batch/tyr_control.fq.gz is now processing...
-# 2023-07-31 17:01:16: Preprocess example-batch/tyr_control.fq.gz...
-# 2023-07-31 17:01:48: Output BAM files of example-batch/tyr_control.fq.gz...
-# 2023-07-31 17:01:52: 🍵 example-batch/tyr_control.fq.gz is finished!
-# 2023-07-31 17:01:52: example-batch/tyr_c230gt_50%.fq.gz is now processing...
-# 2023-07-31 17:01:52: example-batch/tyr_c230gt_10%.fq.gz is now processing...
-# 2023-07-31 17:01:52: example-batch/tyr_c230gt_01%.fq.gz is now processing...
-# 2023-07-31 17:01:55: Preprocess example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:01:55: Preprocess example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:01:55: Preprocess example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:02:17: Classify example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:02:19: Clustering example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:02:34: Classify example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:02:35: Classify example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:02:39: Clustering example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:02:39: Clustering example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:02:53: Consensus calling of example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:02:59: Output reports of example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:03:04: 🍵 example-batch/tyr_c230gt_50%.fq.gz is finished!
-# 2023-07-31 17:03:39: Consensus calling of example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:03:51: Output reports of example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:04:03: 🍵 example-batch/tyr_c230gt_01%.fq.gz is finished!
-# 2023-07-31 17:04:08: Consensus calling of example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:04:16: Output reports of example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:04:24: 🍵 example-batch/tyr_c230gt_10%.fq.gz is finished!
-# 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
-``` -->
 
 ## 📈 Report Contents
 
@@ -248,22 +213,22 @@ Inside the **DAJIN_Results** directory, the following files can be found:
 ```
 DAJIN_Results/tyr-substitution
 ├── BAM
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   ├── tyr_c230gt_50%
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   ├── tyr_c230gt_50
 │   └── tyr_control
 ├── FASTA
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   └── tyr_c230gt_50%
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
 ├── HTML
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   └── tyr_c230gt_50%
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
 ├── MUTATION_INFO
-│   ├── tyr_c230gt_01%.csv
-│   ├── tyr_c230gt_10%.csv
-│   └── tyr_c230gt_50%.csv
+│   ├── tyr_c230gt_01.csv
+│   ├── tyr_c230gt_10.csv
+│   └── tyr_c230gt_50.csv
 ├── read_plot.html
 ├── read_plot.pdf
 └── read_summary.xlsx
