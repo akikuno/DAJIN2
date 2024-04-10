@@ -90,12 +90,12 @@ def cosine_similarity(x, y):
 
 def identify_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> int:
     # If 'sample' has more than X% variation compared to 'control', unconditionally set it to "dissimilar loci"
-    threshold = 20 if is_consensus else 5
+    threshold = 20 if is_consensus else 0.5
     if values_sample[index] - values_control[index] > threshold:
         return True
 
-    x = values_sample[index - 5 : index + 6]
-    y = values_control[index - 5 : index + 6]
+    x = np.array(values_sample[index - 5 : index + 6]) + 1e-6
+    y = np.array(values_control[index - 5 : index + 6]) + 1e-6
 
     return cosine_similarity(x, y) < 0.95
 
@@ -109,8 +109,8 @@ def detect_anomalies(values_sample, values_control, threshold: float, is_consens
 
     values_subtract_reshaped = values_subtract.reshape(-1, 1)
     kmeans = MiniBatchKMeans(n_clusters=2, random_state=0, n_init="auto").fit(values_subtract_reshaped)
-    threshold = kmeans.cluster_centers_.mean()
-    candidate_loci = {i for i, v in enumerate(values_subtract_reshaped) if v > threshold}
+    threshold_kmeans = kmeans.cluster_centers_.mean()
+    candidate_loci = {i for i, v in enumerate(values_subtract_reshaped) if v > threshold_kmeans}
 
     return {i for i in candidate_loci if identify_dissimilar_loci(values_sample, values_control, i, is_consensus)}
 
