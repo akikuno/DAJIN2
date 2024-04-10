@@ -83,8 +83,8 @@ def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:
 ###########################################################
 
 
-def check_excel_or_csv(file_path: str) -> str | None:
-    """Check if the file is an Excel or CSV file. Raise error for other types."""
+def determine_file_type(file_path: str) -> str | None:
+    """Determine if the file is an Excel or CSV file. Raise error for other types."""
     file_extension = Path(file_path).suffix
     if file_extension in [".xlsx", ".xls"]:
         return "excel"
@@ -112,16 +112,18 @@ def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
 def read_csv(file_path: str) -> list[dict[str, str]]:
     """Load data from a CSV file and return as a list."""
     with open(file_path, "r") as csvfile:
-        contents = []
+        inputs = []
         for row in csv.reader(csvfile):
+            if not row:  # Skip empty rows
+                continue
             trimmed_row = [field.strip() for field in row]
-            contents.append(trimmed_row)
-        return contents
+            inputs.append(trimmed_row)
+        return inputs
 
 
 def load_batchfile(batchfile_path: str) -> list[dict[str, str]]:
     """Load data from either an Excel or CSV file."""
-    file_type = check_excel_or_csv(batchfile_path)
+    file_type = determine_file_type(batchfile_path)
     if file_type == "excel":
         return read_xlsx(batchfile_path)
     elif file_type == "csv":
