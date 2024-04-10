@@ -17,7 +17,27 @@
 - Flaskではなく、streamlitでGUIを作る
  -->
 
-# v0.4.3 (2024-03-29)
+# v0.4.4 (yyyy-mm-dd)
+
+
+## 💥 Breaking
+## 📝 Documentation
+## 🚀 New Features
+## 🐛 Bug Fixes
+## 🔧 Maintenance
+
++ Update a function name of `utils.io.check_excel_or_csv` to `utils.io.determine_file_type` for clarity. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/38f3e2f429eadb3f16dc5f0f64e9b5b135d2cac0)
+
+<!-- - XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx) -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<details>
+<summary> v0.4.3 (2024-03-29) </summary>
 
 <!-- ## 💥 Breaking -->
 ## 📝 Documentation
@@ -51,17 +71,8 @@
 
 + Rename `report.report_mutation`, `report.report_files` to `report.mutation_exporter` and `report.sequence_exporter` to be more explicit. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/35d8250876cd845623e63c898d7c608d27a82a45)
 
+</details>
 
-<!-- ## ⛔️ Deprecated -->
-
-<!-- 
-[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
--->
-
-
--------------------------------------------------------------
-
-# Past Releases
 
 <details>
 <summary> v0.4.2 (2024-03-25) </summary>
