@@ -131,7 +131,7 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
 
 ```bash
 # Example datasetのダウンロード
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
 tar -xf example_single.tar.gz
 
 # DAJIN2の実行（単一サンプル解析）
@@ -200,7 +200,7 @@ DAJIN2 batch <-f|--file> [-t|--threads] [-h]
 
 ```bash
 # Example datasetのダウンロード
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
 tar -xf example_batch.tar.gz
 
 # DAJIN2の実行（バッチ処理）
