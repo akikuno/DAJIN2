@@ -89,11 +89,11 @@ def cosine_similarity(x, y):
 
 
 def identify_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> int:
-    # If 'sample' has more than X% variation compared to 'control', unconditionally set it to "dissimilar loci"
-    threshold = 20 if is_consensus else 0.5
-    if values_sample[index] - values_control[index] > threshold:
+    # If 'sample' has more than 20% variation compared to 'control' in consensus mode, unconditionally set it to 'dissimilar loci'. This is set to counteract cases where, when evaluating cosine similarity during significant deletions, values exceedingly close to 1 can occur even if not observed in the control (e.g., control = [1,1,1,1,1], sample = [100,100,100,100,100] -> cosine similarity = 1).
+    if is_consensus and values_sample[index] - values_control[index] > 20:
         return True
 
+    # Subset 10 bases around index and add 1e-6 to avoid division by zero when calculating cosine similarity.
     x = np.array(values_sample[index - 5 : index + 6]) + 1e-6
     y = np.array(values_control[index - 5 : index + 6]) + 1e-6
 
