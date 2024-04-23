@@ -39,17 +39,16 @@ def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) ->
         # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_current))  # ! DEBUG
 
         num_labels_control = count_number_of_clusters(labels_control, coverage_control)
-        mutual_info = metrics.adjusted_rand_score(labels_previous, labels_current)
+        rand_index = metrics.adjusted_rand_score(labels_previous, labels_current)
 
         """
         Return the number of clusters when:
-        - the number of clusters in control is split into more than one.
-        - the mutual information between the current and previous labels is high enough (= similar).
+            - the number of clusters in control is split into more than one.
+            - the mutual information between the current and previous labels is high enough (= similar).
+        To reduce the allele number, previous labels are returned.
         """
-        if num_labels_control >= 2:
+        if num_labels_control >= 2 or rand_index >= 0.95:
             return labels_previous
-        if 0.95 <= mutual_info <= 1.0:
-            return labels_current
         labels_previous = labels_current
     return labels_previous
 
