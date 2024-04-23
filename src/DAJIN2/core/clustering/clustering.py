@@ -57,11 +57,13 @@ def get_label_most_common(labels: list[int]) -> int:
     return Counter(labels).most_common()[0][0]
 
 
-def return_labels(path_score_sample: Path, path_score_control: Path, path_sample: Path, strand_bias: bool) -> list[int]:
+def return_labels(
+    path_score_sample: Path, path_score_control: Path, path_sample: Path, strand_bias_in_control: bool
+) -> list[int]:
     np.random.seed(seed=1)
     score_control = list(io.read_jsonl(path_score_control))
     X_control = csr_matrix(score_control)
-    # subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
+    """Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time"""
     labels_control = BisectingKMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
     scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
@@ -70,7 +72,7 @@ def return_labels(path_score_sample: Path, path_score_control: Path, path_sample
     coverage_sample = io.count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
     labels = optimize_labels(X, coverage_sample, coverage_control)
-    # correct clusters with strand bias
-    if strand_bias is False:
+    """Re-allocate clusters with strand bias to clusters without strand bias"""
+    if strand_bias_in_control is False:
         labels = remove_biased_clusters(path_sample, path_score_sample, labels)
     return labels
