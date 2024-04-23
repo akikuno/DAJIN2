@@ -11,13 +11,13 @@ from src.DAJIN2 import main
 def test_validate_columns_all_required_present():
     columns = ["sample", "control", "allele", "name"]
     # No error should be raised
-    main.validate_columns_of_batch_file(columns, "test_filepath")
+    main.validate_headers_of_batch_file(columns, "test_filepath")
 
 
 def test_validate_columns_missing_required():
     columns = ["sample", "control", "allele"]
     with pytest.raises(ValueError, match="test_filepath must contain sample, control, allele, name in the header"):
-        main.validate_columns_of_batch_file(columns, "test_filepath")
+        main.validate_headers_of_batch_file(columns, "test_filepath")
 
 
 def test_validate_columns_extra_not_accepted():
@@ -25,4 +25,4 @@ def test_validate_columns_extra_not_accepted():
     with pytest.raises(
         ValueError, match="Accepted header names of test_filepath are sample, control, allele, name, genome."
     ):
-        main.validate_columns_of_batch_file(columns, "test_filepath")
+        main.validate_headers_of_batch_file(columns, "test_filepath")
