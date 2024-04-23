@@ -20,7 +20,7 @@ from DAJIN2.core import core
 from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.4.3"
+DAJIN_VERSION = "0.4.4"
 
 
 def generate_report(name: str) -> None:
@@ -58,21 +58,21 @@ def execute_single_mode(arguments: dict[str]):
 ################################################################################
 
 
-def validate_columns_of_batch_file(columns: list, filepath: str) -> None:
-    """Validate the columns of a batch file."""
-    required_columns = ["sample", "control", "allele", "name"]
-    accepted_columns = ["sample", "control", "allele", "name", "genome"]
+def validate_headers_of_batch_file(headers: list, filepath: str) -> None:
+    """Validate the headers of a batch file."""
+    required_headers = ["sample", "control", "allele", "name"]
+    accepted_headers = ["sample", "control", "allele", "name", "genome"]
 
-    if not set(required_columns).issubset(set(columns)):
-        raise ValueError(f"{filepath} must contain {', '.join(required_columns)} in the header")
+    if not set(required_headers).issubset(set(headers)):
+        raise ValueError(f"{filepath} must contain {', '.join(required_headers)} in the header")
 
-    if not set(columns).issubset(accepted_columns):
-        raise ValueError(f"Accepted header names of {filepath} are {', '.join(accepted_columns)}.")
+    if not set(headers).issubset(accepted_headers):
+        raise ValueError(f"Accepted header names of {filepath} are {', '.join(accepted_headers)}.")
 
 
-def create_argument_dict(columns: list, group: list, cache_urls_genome: dict, is_control: bool) -> dict:
-    """Create a dictionary of arguments from the given columns and group."""
-    args = dict(zip(columns, group))
+def create_argument_dict(headers: list, group: list, cache_urls_genome: dict, is_control: bool) -> dict:
+    """Create a dictionary of arguments from the given headers and group."""
+    args = dict(zip(headers, group))
     args["threads"] = 1  # Set the number of threads to 1 for batch mode
 
     # Assign the "sample" field depending on whether it's a control or not
@@ -89,11 +89,11 @@ def create_argument_dict(columns: list, group: list, cache_urls_genome: dict, is
 
 
 def run_DAJIN2(
-    groups: list, columns: list, cache_urls_genome: dict, is_control: bool = True, num_workers: int = 1
+    groups: list, headers: list, cache_urls_genome: dict, is_control: bool = True, num_workers: int = 1
 ) -> None:
     contents = []
     for group in groups:
-        args = create_argument_dict(columns, group, cache_urls_genome, is_control)
+        args = create_argument_dict(headers, group, cache_urls_genome, is_control)
         if args:  # Add args to contents only if it's not an empty dict
             contents.append(args)
 
@@ -117,17 +117,17 @@ def execute_batch_mode(arguments: dict[str]):
     inputs = io.load_batchfile(path_batchfile)
 
     # Validate Column of the batch file
-    columns = inputs[0]
-    validate_columns_of_batch_file(columns, path_batchfile)
+    headers = inputs[0]
+    validate_headers_of_batch_file(headers, path_batchfile)
 
     # Validate contents and fetch genome urls
     contents = inputs[1:]
     cache_urls_genome = dict()
-    index_of_name = columns.index("name")
+    index_of_name = headers.index("name")
     contents.sort(key=lambda x: x[index_of_name])
     for _, groups in groupby(contents, key=lambda x: x[index_of_name]):
         for group in groups:
-            args = dict(zip(columns, group))
+            args = dict(zip(headers, group))
             # validate contents in the batch file
             input_validator.validate_files(args["sample"], args["control"], args["allele"])
             # validate genome and fetch urls
@@ -141,8 +141,8 @@ def execute_batch_mode(arguments: dict[str]):
         config.set_logging(path_logfile)
         groups = list(groups)
         # Run DAJIN2
-        run_DAJIN2(groups, columns, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
-        run_DAJIN2(groups, columns, cache_urls_genome, is_control=False, num_workers=arguments["threads"])
+        run_DAJIN2(groups, headers, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
+        run_DAJIN2(groups, headers, cache_urls_genome, is_control=False, num_workers=arguments["threads"])
         # Finish
         generate_report(name)
         shutil.move(path_logfile, Path("DAJIN_Results", name))

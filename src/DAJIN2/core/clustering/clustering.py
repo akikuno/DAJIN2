@@ -39,17 +39,16 @@ def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) ->
         # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_current))  # ! DEBUG
 
         num_labels_control = count_number_of_clusters(labels_control, coverage_control)
-        mutual_info = metrics.adjusted_rand_score(labels_previous, labels_current)
+        rand_index = metrics.adjusted_rand_score(labels_previous, labels_current)
 
         """
         Return the number of clusters when:
-        - the number of clusters in control is split into more than one.
-        - the mutual information between the current and previous labels is high enough (= similar).
+            - the number of clusters in control is split into more than one.
+            - the mutual information between the current and previous labels is high enough (= similar).
+        To reduce the allele number, previous labels are returned.
         """
-        if num_labels_control >= 2:
+        if num_labels_control >= 2 or rand_index >= 0.95:
             return labels_previous
-        if 0.95 <= mutual_info <= 1.0:
-            return labels_current
         labels_previous = labels_current
     return labels_previous
 
@@ -58,11 +57,13 @@ def get_label_most_common(labels: list[int]) -> int:
     return Counter(labels).most_common()[0][0]
 
 
-def return_labels(path_score_sample: Path, path_score_control: Path, path_sample: Path, strand_bias: bool) -> list[int]:
+def return_labels(
+    path_score_sample: Path, path_score_control: Path, path_sample: Path, strand_bias_in_control: bool
+) -> list[int]:
     np.random.seed(seed=1)
     score_control = list(io.read_jsonl(path_score_control))
     X_control = csr_matrix(score_control)
-    # subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
+    """Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time"""
     labels_control = BisectingKMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
     scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
@@ -71,7 +72,7 @@ def return_labels(path_score_sample: Path, path_score_control: Path, path_sample
     coverage_sample = io.count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
     labels = optimize_labels(X, coverage_sample, coverage_control)
-    # correct clusters with strand bias
-    if strand_bias is False:
+    """Re-allocate clusters with strand bias to clusters without strand bias"""
+    if strand_bias_in_control is False:
         labels = remove_biased_clusters(path_sample, path_score_sample, labels)
     return labels
