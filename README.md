@@ -133,7 +133,7 @@ Options:
 
 ```bash
 # Download example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
 tar -xf example_single.tar.gz
 
 # Run DAJIN2
@@ -197,7 +197,7 @@ options:
 
 ```bash
 # Donwload the example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
 tar -xf example_batch.tar.gz
 
 # Run DAJIN2
