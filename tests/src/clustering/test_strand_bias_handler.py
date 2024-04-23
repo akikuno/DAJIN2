@@ -4,7 +4,7 @@ from DAJIN2.core.clustering.strand_bias_handler import (
     STRAND_BIAS_LOWER_LIMIT,
     STRAND_BIAS_UPPER_LIMIT,
     count_strand,
-    calculate_strand_biases,
+    determine_strand_biases,
 )
 
 
@@ -38,7 +38,7 @@ def test_count_strand_no_positive():
     assert total == expected_total
 
 
-def test_calculate_strand_biases():
+def test_determine_strand_biases():
     # Test data
     positive_counts = {1: 99, 2: 20, 3: 50}
     total_counts = {1: 100, 2: 100, 3: 100}
@@ -50,7 +50,7 @@ def test_calculate_strand_biases():
     }
 
     # Call the function
-    biases = calculate_strand_biases(positive_counts, total_counts)
+    biases = determine_strand_biases(positive_counts, total_counts)
 
     # Assertions to check function output against expected biases
     assert biases == expected_biases
@@ -66,6 +66,6 @@ def test_edge_cases():
         2: not (STRAND_BIAS_LOWER_LIMIT < 0.9 < STRAND_BIAS_UPPER_LIMIT),
     }
 
-    biases = calculate_strand_biases(positive_counts, total_counts)
+    biases = determine_strand_biases(positive_counts, total_counts)
 
     assert biases == expected_biases
