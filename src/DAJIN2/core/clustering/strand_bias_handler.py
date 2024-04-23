@@ -1,7 +1,15 @@
 from __future__ import annotations
 
+"""
+Nanopore sequencing results often results in strand specific mutations even though the mutation is not strand specific, thus they are considered as sequencing errors and should be removed.
+
+This module provides functions to determine whether each allele obtained after clustering is formed due to sequencing errors caused by strand bias.
+
+Re-allocates reads belonging to clusters with strand bias to clusters without strand bias.
+"""
+
 from pathlib import Path
-from collections import defaultdict, Counter
+from collections import defaultdict
 from sklearn.tree import DecisionTreeClassifier
 
 from DAJIN2.utils import io
@@ -12,12 +20,16 @@ STRAND_BIAS_UPPER_LIMIT = 0.9
 
 
 def is_strand_bias(path_control: Path) -> bool:
+    """
+    Determines whether there is a strand bias in sequencing data
+    based on the distribution of '+' and '-' strands.
+    """
     count_strand = defaultdict(int)
-    for m in io.read_jsonl(path_control):
-        count_strand[m["STRAND"]] += 1
+    for sample in io.read_jsonl(path_control):
+        count_strand[sample["STRAND"]] += 1
 
     total = count_strand["+"] + count_strand["-"]
-    percentage_plus = count_strand["+"] / total if total else 0
+    percentage_plus = count_strand["+"] / total if total > 0 else 0
 
     return not (STRAND_BIAS_LOWER_LIMIT < percentage_plus < STRAND_BIAS_UPPER_LIMIT)
 
@@ -28,86 +40,76 @@ def is_strand_bias(path_control: Path) -> bool:
 ###############################################################################
 
 
-def _count_strand(labels: list[int], samples: list[dict[str, str]]) -> tuple[defaultdict, defaultdict]:
+def count_strand(labels: list[int], samples: list[dict[str, str]]) -> tuple[dict[str, int], dict[str, int]]:
     """Count the occurrences of each strand type by label."""
-    count_strand_by_labels = defaultdict(int)
-    total_count_by_labels = defaultdict(int)
+    positive_strand_counts_by_labels = defaultdict(int)
+    total_counts_by_labels = defaultdict(int)
 
     for label, sample in zip(labels, samples):
-        total_count_by_labels[label] += 1
+        total_counts_by_labels[label] += 1
         if sample["STRAND"] == "+":
-            count_strand_by_labels[label] += 1
+            positive_strand_counts_by_labels[label] += 1
 
-    return count_strand_by_labels, total_count_by_labels
+    return dict(positive_strand_counts_by_labels), dict(total_counts_by_labels)
 
 
-def _calculate_strand_biases(
-    count_strand_by_labels: defaultdict, total_count_by_labels: defaultdict
+def determine_strand_biases(
+    positive_strand_counts_by_labels: defaultdict, total_counts_by_labels: defaultdict
 ) -> dict[int, bool]:
-    """Calculate strand biases based on strand counts."""
+    """Determine strand biases based on positive strand counts."""
     strand_biases = {}
-    for label, total in total_count_by_labels.items():
-        strand_count = count_strand_by_labels[label]
-        strand_ratio = strand_count / total
+    for label, total in total_counts_by_labels.items():
+        positive_strand_count = positive_strand_counts_by_labels[label]
+        strand_ratio = positive_strand_count / total
         strand_biases[label] = not (STRAND_BIAS_LOWER_LIMIT < strand_ratio < STRAND_BIAS_UPPER_LIMIT)
 
     return strand_biases
 
 
-def _get_strand_biases_on_each_label(labels: list[int], path_sample: Path | str) -> dict[int, bool]:
-    """Get strand biases for given labels and samples.
-    Args:
-        labels: A list of integer labels.
-        path_sample: The path to the sample file.
-    Returns:
-        A dictionary containing strand biases by label.
-    """
-    samples = io.read_jsonl(path_sample)
-    count_strand_by_labels, total_count_by_labels = _count_strand(labels, samples)
-    return _calculate_strand_biases(count_strand_by_labels, total_count_by_labels)
-
-
-def _prepare_training_testing_sets(labels, scores, strand_biases) -> tuple[list, list, list]:
-    x_train, y_train, x_test = [], [], []
+def prepare_training_testing_sets(labels, scores, strand_biases) -> tuple[list, list, list]:
+    """Prepare training and testing datasets based on strand biases."""
+    train_data, train_labels, test_data = [], [], []
     for label, score in zip(labels, scores):
         if strand_biases[label]:
-            x_test.append(score)
+            test_data.append(score)
         else:
-            x_train.append(score)
-            y_train.append(label)
-    return x_train, y_train, x_test
+            train_data.append(score)
+            train_labels.append(label)
+    return train_data, train_labels, test_data
 
 
-def _train_decision_tree(x_train, y_train) -> DecisionTreeClassifier:
+def train_decision_tree(train_data, train_labels) -> DecisionTreeClassifier:
+    """Train a decision tree classifier using the provided features and labels."""
     dtree = DecisionTreeClassifier(random_state=1)
-    dtree.fit(x_train, y_train)
+    dtree.fit(train_data, train_labels)
     return dtree
 
 
-def _allocate_labels(labels, strand_biases, dtree, x_test) -> list[int]:
-    label_predictions = dtree.predict(x_test)
-    label_predict_iter = iter(label_predictions)
+def allocate_labels(labels: list[int], strand_biases: dict[str, bool], dtree, test_data) -> list[int]:
+    """Re-allocates reads belonging to clusters with strand bias to clusters without strand bias."""
+    label_predictions = iter(dtree.predict(test_data))
     for i, label in enumerate(labels):
         if strand_biases[label]:
-            labels[i] = next(label_predict_iter)
+            labels[i] = next(label_predictions)
     return labels
 
 
-def _correct_clusters_with_strand_bias(path_score_sample, labels, strand_biases) -> list[int]:
-    scores = io.read_jsonl(path_score_sample)
-    x_train, y_train, x_test = _prepare_training_testing_sets(labels, scores, strand_biases)
-    dtree = _train_decision_tree(x_train, y_train)
-    return _allocate_labels(labels, strand_biases, dtree, x_test)
+def remove_biased_clusters(path_sample: Path, path_score_sample: Path, labels: list[int]) -> list[int]:
+    """Remove clusters with strand bias by re-labeling based on decision tree predictions.
+    Continue until at least one of the samples exhibits strand bias (i.e., do not calculate if all samples exhibit strand bias, or conversely, if none of the samples exhibit strand bias) or
+    1000 iterations are reached, which serves as a safeguard to prevent infinite loops.
+    """
+    samples = io.read_jsonl(path_sample)
+    positive_strand_counts_by_labels, total_counts_by_labels = count_strand(labels, samples)
+    strand_biases = determine_strand_biases(positive_strand_counts_by_labels, total_counts_by_labels)
 
-
-def remove_biased_clusters(path_sample, path_score_sample, labels) -> list[int]:
-    strand_biases = _get_strand_biases_on_each_label(labels, path_sample)
-    # Until there is at least one True and one False or
-    # 1000 iterations (1000 is a suitable number to exit an infinite loop just in case)
-    i = 0
+    iteration_count = 0
     labels_corrected = labels
-    while len(Counter(strand_biases.values())) > 1 and i < 1000:
-        labels_corrected = _correct_clusters_with_strand_bias(path_score_sample, labels_corrected, strand_biases)
-        strand_biases = _get_strand_biases_on_each_label(labels_corrected, path_sample)
-        i += 1
+    while len(set(strand_biases.values())) > 1 or iteration_count < 1000:
+        scores = io.read_jsonl(path_score_sample)
+        train_data, train_labels, test_data = prepare_training_testing_sets(labels, scores, strand_biases)
+        dtree = train_decision_tree(train_data, train_labels)
+        labels_corrected = allocate_labels(labels, strand_biases, dtree, test_data)
+        strand_biases = determine_strand_biases(labels_corrected, path_sample)
+        iteration_count += 1
     return labels_corrected
