@@ -17,18 +17,30 @@
 - Flaskではなく、streamlitでGUIを作る
  -->
 
-# v0.4.4 (yyyy-mm-dd)
+# v0.4.4 (2024-04-23)
 
 
 ## 💥 Breaking
-## 📝 Documentation
-## 🚀 New Features
-## 🐛 Bug Fixes
+
++ Update the threshold from 5 to 0.5 at `identify_dissimilar_loci` to capture 1% minor alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/257b63819921dcf822b831d733f556acd4fec718)
+
++ Return smaller allele clustering labels (`labels_previous`) when the adjusted Rand index is sufficiently high to reduce predicted allele numbers.
+ [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8872daad03bc76acc80fb79fa7260dba73186fae)
+
 ## 🔧 Maintenance
+
++ Add the detailed discription at `identify_dissimilar_loci` to clarify the purpose of the function. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d2309a133e1bd1f09366477c830923b20e10ca6a)
 
 + Update a function name of `utils.io.check_excel_or_csv` to `utils.io.determine_file_type` for clarity. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/38f3e2f429eadb3f16dc5f0f64e9b5b135d2cac0)
 
-<!-- - XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx) -->
++ Update examples: In tyr_c230gt_01, the point mutation of Tyr was previously 0.7%, but has been increased to 1.0% by adding point mutation reads from tyr_c230gt_50. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/8967dfd9cc79679be8c7a3e1052467bc57cc375b)
+
++ Rename `validate_columns_of_batch_file` in test_main.py. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/fc7dc3b9799831b17753f5bbfbd3ca0b4d99e454)
+
++ Add tests of `strand_bias_handler` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/50703a253f6fde01a002909a3f484141363bbab5)
+
++ Add type hints and comments in `return_labels` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/02fd72d040865c1c8c81015d965ae12f6788b422)
+
 
 
 
