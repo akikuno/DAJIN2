@@ -6,7 +6,7 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-- XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 -->
 
 <!-- 💡 ToDo
@@ -18,16 +18,44 @@
 - Flaskではなく、streamlitでGUIを作る
  -->
 
-v0.4.5 (2024-04-24)
+v0.4.6 (2024-04-24)
 
+## 💥 Breaking
+
++ Update the log file [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+  + Add the version of DAJIN2 to the log file to track the version of the analysis.
+  + Rename the log file to `DAJIN2_log_<current time>.txt` from `<current time>_DAJIN2.log` to enabling open the file in any text editor.
+
+## 📝 Documentation
+
++ Enhance the descriptions in GitHub Issue templates to clarify their purpose. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/08f3c71bf9f8b755e718eea79dd4a2562aa59297)
+
+
+## 🔧 Maintenance
+
++ Move `DAJIN2_VERSION` to `utils.config.py` from `main.py` to make it easier to recognize its location. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+
+
+<!-- TEMPLATE
+## 📝 Documentation
+## 🚀 New Features
 ## 🐛 Bug Fixes
-
-+ In version 0.4.4 of strand_bias_handler.remove_biased_clusters, there was an error in the continuation condition for removing biased clusters, which has now been corrected. The correct condition should be 'there are alleles with and without strand bias **and** the iteration count is less than or equal to 1000'. Instead, it was incorrectly set to 'there are alleles with and without strand bias **or** the iteration count is less than or equal to 1000'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b72b3855121d0da6ac80636089315ecc26464657)
-
+## ⛔️ Deprecated
+[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+-->
 
 -------------------------------------------------------------
 
 # Past Releases
+
+<details>
+<summary> v0.4.5 (2024-04-24) </summary>
+
+## 🐛 Bug Fixes
+
++ In version 0.4.4 of strand_bias_handler.remove_biased_clusters, there was an error in the continuation condition for removing biased clusters, which has now been corrected. The correct condition should be 'there are alleles with and without strand bias **and** the iteration count is less than or equal to 1000'. Instead, it was incorrectly set to 'there are alleles with and without strand bias **or** the iteration count is less than or equal to 1000'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b72b3855121d0da6ac80636089315ecc26464657)
+<details>
+
 
 <details>
 <summary> v0.4.4 (2024-04-23) </summary>

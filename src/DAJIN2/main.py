@@ -20,9 +20,6 @@ from DAJIN2.core import core
 from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
 
 
-DAJIN_VERSION = "0.4.5"
-
-
 def generate_report(name: str) -> None:
     report_generator.report(name)
     print(
@@ -165,7 +162,7 @@ def execute():
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
+    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {config.DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
     ###############################################################################
