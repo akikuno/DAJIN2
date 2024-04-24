@@ -105,7 +105,7 @@ def remove_biased_clusters(path_sample: Path, path_score_sample: Path, labels: l
 
     iteration_count = 0
     labels_corrected = labels
-    while len(set(strand_biases.values())) > 1 or iteration_count < 1000:
+    while len(set(strand_biases.values())) > 1 and iteration_count < 1000:
         scores = io.read_jsonl(path_score_sample)
         train_data, train_labels, test_data = prepare_training_testing_sets(labels, scores, strand_biases)
         dtree = train_decision_tree(train_data, train_labels)

@@ -10,6 +10,7 @@
 -->
 
 <!-- 💡 ToDo
+- logにDAJIN2のバージョンを出力する
 - VCF、PDFを出力する
 - 逆位アレルでの検証を加える
 - nCATSがほしい…
@@ -17,8 +18,19 @@
 - Flaskではなく、streamlitでGUIを作る
  -->
 
-# v0.4.4 (2024-04-23)
+v0.4.5 (2024-04-24)
 
+## 🐛 Bug Fixes
+
++ In version 0.4.4 of strand_bias_handler.remove_biased_clusters, there was an error in the continuation condition for removing biased clusters, which has now been corrected. The correct condition should be 'there are alleles with and without strand bias **and** the iteration count is less than or equal to 1000'. Instead, it was incorrectly set to 'there are alleles with and without strand bias **or** the iteration count is less than or equal to 1000'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b72b3855121d0da6ac80636089315ecc26464657)
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<details>
+<summary> v0.4.4 (2024-04-23) </summary>
 
 ## 💥 Breaking
 
@@ -42,11 +54,7 @@
 + Add type hints and comments in `return_labels` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/02fd72d040865c1c8c81015d965ae12f6788b422)
 
 
-
-
--------------------------------------------------------------
-
-# Past Releases
+</details>
 
 <details>
 <summary> v0.4.3 (2024-03-29) </summary>
