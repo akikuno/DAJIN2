@@ -25,7 +25,7 @@ DAJIN2は、ナノポアシーアターゲットシーケンシングを用い�
 
 ### 環境
 
-- Python 3.8 以上
+- Python 3.8 - 3.10
 - Unix環境 (Linux, macOS, WSL2, etc.)
 
 ### [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
@@ -35,6 +35,9 @@ DAJIN2は、ナノポアシーアターゲットシーケンシングを用い�
 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 conda activate env-dajin2
 ```
+
+> [!IMPORTANT]
+> 現状、[BiocondaがPython 3.11以上に対応していない](https://github.com/bioconda/bioconda-recipes/issues/37805)ため、DAJIN2はPython 3.8 から 3.10までをサポートしています。
 
 > [!NOTE]
 > [Apple SiliconはBiocondaチャンネルに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールをしてください
