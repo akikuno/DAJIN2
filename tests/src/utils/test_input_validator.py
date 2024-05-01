@@ -87,16 +87,35 @@ def test_fasta_without_error():
 # validate URL
 ###############################################################################
 
+server_lists = {
+    "blat": [
+        "https://genome.ucsc.edu/cgi-bin/hgBlat",
+        "https://genome-asia.ucsc.edu/cgi-bin/hgBlat",
+        "https://genome-euro.ucsc.edu/cgi-bin/hgBlat",
+    ],
+    "das": [
+        "https://genome.ucsc.edu/cgi-bin/das/dsn/",
+        "https://genome-asia.ucsc.edu/cgi-bin/das/dsn/",
+        "https://genome-euro.ucsc.edu/cgi-bin/das/dsn",
+    ],
+    "goldenpath": [
+        "https://hgdownload.cse.ucsc.edu/goldenPath",
+        "https://hgdownload.soe.ucsc.edu/goldenPath",
+    ],
+}
+
+available_servers = {key: input_validator.get_first_available_url(key, urls) for key, urls in server_lists.items()}
+
 
 @pytest.mark.slow
 def test_available_genome_pass():
     genome = "mm10"
-    url_das = "https://genome.ucsc.edu/cgi-bin/das/dsn"
+    url_das = available_servers["das"]
     assert input_validator.is_genome_in_ucsc_ids(genome, url_das) is True
 
 
 @pytest.mark.slow
 def test_available_genome_fail():
     genome = "mm12345"
-    url_das = "https://genome.ucsc.edu/cgi-bin/das/dsn"
+    url_das = available_servers["das"]
     assert input_validator.is_genome_in_ucsc_ids(genome, url_das) is False

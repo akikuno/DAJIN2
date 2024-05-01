@@ -11,6 +11,23 @@ import xml.etree.ElementTree as ET
 
 import mappy
 
+########################################################################
+# To ensure that SSL certificate verification does not fail,
+# obtain the latest Certificate Authority (CA) certificates.
+########################################################################
+
+import ssl
+import certifi
+
+context = ssl.create_default_context(cafile=certifi.where())
+
+
+########################################################################
+# To accommodate cases where a user might input negative values or
+# excessively large values, update the number of threads
+# from "1" to "max cpu threads - 1".
+########################################################################
+
 
 def update_threads(threads: int) -> int:
     available_threads = os.cpu_count() - 1
@@ -109,7 +126,7 @@ def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool)
 
 def get_html(url: str) -> str:
     try:
-        with urlopen(url, timeout=10) as response:
+        with urlopen(url, timeout=10, context=context) as response:
             html = response.read().decode("utf-8")
         return html
     except URLError:
@@ -127,7 +144,7 @@ def get_first_available_url(key: str, urls: list[str]) -> str | None:
 
 def fetch_xml_data(url: str) -> bytes:
     """Fetch XML data from a given URL."""
-    with urlopen(url) as response:
+    with urlopen(url, context=context) as response:
         return response.read()
 
 
