@@ -62,10 +62,10 @@ def validate_headers_of_batch_file(headers: set[str], filepath: str) -> None:
     accepted_headers = {"sample", "control", "allele", "name", "genome"}
 
     if not required_headers.issubset(headers):
-        raise ValueError(f"{filepath} must contain {', '.join(required_headers)} in the header")
+        raise ValueError(f'{filepath} must contain "sample", "control", "allele" and "name" in the header')
 
     if not headers.issubset(accepted_headers):
-        raise ValueError(f"Accepted header names of {filepath} are {', '.join(accepted_headers)}.")
+        raise ValueError(f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome".')
 
 
 def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) -> dict[str, str]:
