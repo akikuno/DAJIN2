@@ -49,7 +49,7 @@
 
 + Update `utils.input_validator` to ensure that SSL certificate verification does not fail, obtain the latest Certificate Authority (CA) certificates. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/524a19577bb9a4aa9c4d0ce88d434f1dd5a6e679)
 
-<!-- TODO FLOXのExampleを追加して、E2Eテストに活かす！-->
++ Add an example of flox knockin design to the `examples`
 
 ## 🐛 Bug Fixes
 
