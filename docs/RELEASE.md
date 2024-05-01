@@ -18,31 +18,50 @@
 - Flaskではなく、streamlitでGUIを作る
  -->
 
-v0.4.6 (2024-04-24)
+<!-- ############################################################# # -->
+
+# v0.4.6 (2024-MM-DD)
 
 ## 💥 Breaking
 
-+ Update the log file [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
++ Update the log file [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f179c264193391e27f16c66d0f0153f8ae366005)
   + Add the version of DAJIN2 to the log file to track the version of the analysis.
   + Rename the log file to `DAJIN2_log_<current time>.txt` from `<current time>_DAJIN2.log` to enabling open the file in any text editor.
 
++ Update `preprocess.insertions_to_fasta.py` which detects unintended insertion alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d8bbd9f50b163b6099a5e77c9f7f4de2f5fc08f7)
+  + `clustering_insertions`: To accelerate MeanShift clustering, set `bin_seeding=True`. Additionally, because clustering decoys without variation becomes extremely slow, we have switched to using decoys that include slight variations.
+  + `extract_unique_insertions`: Within `unintended insertion alleles`, alleles similar to the `intended allele` provided by the user are now excluded.
+    + The similarity is defined as there being differences of more than 10 bases
+
 ## 📝 Documentation
+
++ Add the descriptions about required Python version supporting from 3.8 to 3.10 due to a Bioconda issue to the README.md. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0b2f9bf8354e7ff72cc8f8925e1cae6dfba67468)
+
 
 + Enhance the descriptions in GitHub Issue templates to clarify their purpose. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/08f3c71bf9f8b755e718eea79dd4a2562aa59297)
 
 
 ## 🔧 Maintenance
 
-+ Move `DAJIN2_VERSION` to `utils.config.py` from `main.py` to make it easier to recognize its location. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
++ Move `DAJIN2_VERSION` to `utils.config.py` from `main.py` to make it easier to recognize its location. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f179c264193391e27f16c66d0f0153f8ae366005)
 
++ Update `io.read_csv` to return a `list[dict[str, str]]`, not `list[str]` to align the output format with `read_xlsx`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d406d34fe990776b6dcecc306ba6fb521c9d0ea0)
 
-<!-- TEMPLATE
-## 📝 Documentation
-## 🚀 New Features
++ Update `utils.input_validator` to ensure that SSL certificate verification does not fail, obtain the latest Certificate Authority (CA) certificates. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/524a19577bb9a4aa9c4d0ce88d434f1dd5a6e679)
+
+<!-- TODO FLOXのExampleを追加して、E2Eテストに活かす！-->
+
 ## 🐛 Bug Fixes
-## ⛔️ Deprecated
-[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
--->
+
++ Debug `clustering.strand_bias_handler` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/33e955f4afbfa5c30e3494ee97d1fffe33769778)
+  + For `positive_strand_counts_by_labels: dict`, there was a bug that caused an error and halted execution when accessing a non-existent key. It has been fixed to output 0 instead.
+  + Created a wrapper function `annotate_strand_bias_by_labels` for outputting strand bias. Fixed a bug where the second and subsequent arguments were not being correctly passed when reallocating clusters with strand bias.
+
++ Fix `preprocess.knockin_handler` to correctly identify the flox knock-in sites as deletions not present in the control.  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d4d267c99f8c51d3a3f88f67882bead66685f710)
+
+<!-- ############################################################# # -->
+
+
 
 -------------------------------------------------------------
 
