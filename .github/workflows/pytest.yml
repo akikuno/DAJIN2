@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies on ubuntu-latest🐧
         if: runner.os == 'Linux'
         run: |
+          conda create -y -n env-dajin2 python=${{ matrix.python-version }}
+          conda activate env-dajin2
+
           # Remove kaleido from requirements.txt because it has a different name in conda (python-kaleido).
           grep -v kaleido requirements.txt > requirements_.txt 
           conda install --yes --file requirements_.txt
@@ -55,4 +58,5 @@ jobs:
         env:
           PYTHONPATH: src
         run: |
+          conda activate env-dajin2
           pytest tests/ -p no:warnings -vv
