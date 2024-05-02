@@ -28,33 +28,33 @@ jobs:
           activate-environment: test-env
           channels: bioconda, conda-forge, defaults, anaconda
 
-      - name: Install dependencies on ubuntu-latest🐧
+      - name: Setup conda environment on ubuntu-latest🐧
         if: runner.os == 'Linux'
         run: |
           conda create -y -n env-dajin2 python=${{ matrix.python-version }}
-          conda activate env-dajin2
 
-          # Remove kaleido from requirements.txt because it has a different name in conda (python-kaleido).
-          grep -v kaleido requirements.txt > requirements_.txt 
-          conda install --yes --file requirements_.txt
-          pip install -U pip pytest kaleido
-
-      - name: Install dependencies on macos-latest🍎
+      - name: Setup conda environment on macos-latest🍎
         if: runner.os == 'macOS'
         run: |
+          # ==========================================
           # Use Rosseta for macOS because the Bioconda channel does not yet support Apple Silicon
+          # ==========================================
           CONDA_SUBDIR=osx-64 conda create -y -n env-dajin2 python=${{ matrix.python-version }}
           conda activate env-dajin2
           conda config --env --set subdir osx-64
 
+      - name: Install dependencies
+        run: |
+          conda activate env-dajin2
+
+          # ==========================================
+          # Remove kaleido from requirements.txt because it has a different name in conda (python-kaleido).
+          # ==========================================
           grep -v kaleido requirements.txt > requirements_.txt 
           conda install --yes --file requirements_.txt
           pip install -U pip pytest kaleido
 
-          # # Install weasyprint on macOS (I am not sure why it is not available in conda-forge)
-          # brew install weasyprint
-
-      - name: Test with pytest
+      - name: Execute tests
         env:
           PYTHONPATH: src
         run: |
