@@ -422,27 +422,7 @@ def remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
     return cons_sequence_removed
 
 
-def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
-    """
-    Update labels to avoid duplicating user-specified alleles
-    (insertion1 -> insertion01 -> insertion001...)
-    """
-    user_defined_alleles = set(FASTA_ALLELES)
-    d_values = list(d.values())
-    len_d = len(d_values)
-    digits_up = 0
-    while True:
-        digits = len(str(len_d)) + digits_up
-        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
-        if user_defined_alleles.isdisjoint(set(d_updated)):
-            break
-        digits_up += 1
-    return d_updated
-
-
-def call_consensus_of_insertion(
-    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, insertion_sequences_subset: list[dict]
-) -> dict[int, str]:
+def call_consensus_of_insertion(TEMPDIR: Path, SAMPLE_NAME: str, insertion_sequences_subset: list[dict]) -> dict[int, str]:
     """Generate consensus cssplits."""
     consensus_insertion_cssplits = dict()
     insertion_sequences_subset.sort(key=lambda x: x["LABEL"])
@@ -450,7 +430,7 @@ def call_consensus_of_insertion(
         cssplits = [cs["CSSPLIT"].split(",") for cs in group]
         consensus_insertion_cssplits[label] = generate_consensus_insertions(TEMPDIR, SAMPLE_NAME, cssplits)
 
-    return update_labels(remove_all_n(consensus_insertion_cssplits), FASTA_ALLELES)
+    return remove_all_n(consensus_insertion_cssplits)
 
 
 ###########################################################
@@ -512,6 +492,26 @@ def extract_unique_insertions(FASTA_ALLELES: dict[str, str], fasta_insertions: d
 
     return {key: fasta_insertions[key] for key in to_keep if key in fasta_insertions}
 
+
+def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
+    """
+    Update labels to avoid duplicating user-specified alleles.
+    If the allele 'insertion1' exists in FASTA_ALLELES, increment the digits.
+    (insertion1 -> insertion01 -> insertion001...)
+    """
+    user_defined_alleles = set(FASTA_ALLELES)
+    d_values = list(d.values())
+    len_d = len(d_values)
+    digits_up = 0
+    while True:
+        digits = len(str(len_d)) + digits_up
+        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
+        if user_defined_alleles.isdisjoint(set(d_updated)):
+            break
+        digits_up += 1
+    return d_updated
+
+
 ###########################################################
 # Save cstag and fasta
 ###########################################################
@@ -565,9 +565,7 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     insertion_sequences_subset = subset_sequences(
         [seq for _, seq in insertion_scores_sequences_filtered], labels_filtered, num=1000
     )
-    consensus_of_insertions = call_consensus_of_insertion(
-        TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, insertion_sequences_subset
-    )
+    consensus_of_insertions = call_consensus_of_insertion(TEMPDIR, SAMPLE_NAME, insertion_sequences_subset)
     if consensus_of_insertions == dict():
         """
         If there is no insertion sequence, return None
@@ -580,14 +578,18 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
     cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, FASTA_ALLELES["control"])
     fasta_insertions = generate_fasta(cstag_insertions)
+    fasta_insertions_unique = extract_unique_insertions(FASTA_ALLELES, fasta_insertions)
 
-    fasta_insertions = extract_unique_insertions(FASTA_ALLELES, fasta_insertions)
-
-    if fasta_insertions == dict():
+    if fasta_insertions_unique == dict():
         remove_temporal_files(TEMPDIR, SAMPLE_NAME)
         return None
 
-    save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions)
-    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+    # Update labels
+    cstag_insertions_update = {key: cstag_insertions[key] for key in fasta_insertions_unique.keys()}
+    cstag_insertions_update = update_labels(cstag_insertions_update, FASTA_ALLELES)
+    fasta_insertions_update = update_labels(fasta_insertions_unique, FASTA_ALLELES)
+
+    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions_update)
+    save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions_update)
 
     remove_temporal_files(TEMPDIR, SAMPLE_NAME)
