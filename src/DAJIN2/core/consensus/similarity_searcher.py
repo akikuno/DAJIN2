@@ -72,14 +72,22 @@ def identify_normal_reads(
 ###########################################################
 
 
-def filter_control(path_midsv_control: Path, path_midsv_sample: Path) -> list[bool]:
+def filter_control(ARGS, path_midsv_control: Path, path_midsv_sample: Path) -> list[bool]:
     """
     find similar control reads compared to sample reads
     """
     cssplits = (m["CSSPLIT"].split(",") for m in io.read_jsonl(path_midsv_sample))
     coverage_match = np.array([sum(1 for cs in cssplit if cs.startswith("=")) for cssplit in zip(*cssplits)])
     mut_onehot_sample = onehot_by_mutations(io.read_jsonl(path_midsv_sample))
-    mut_onehot_control = onehot_by_mutations(io.read_jsonl(path_midsv_control))
+
+    path_mut_onehot_control = Path(
+        ARGS.tempdir, ARGS.control_name, "consensus", f"{path_midsv_control.stem}_onehot.pickle"
+    )
+    if path_mut_onehot_control.exists():
+        mut_onehot_control = io.load_pickle(path_mut_onehot_control)
+    else:
+        mut_onehot_control = onehot_by_mutations(io.read_jsonl(path_midsv_control))
+        io.save_pickle(mut_onehot_control, path_mut_onehot_control)
 
     mut_percentage_sample = calculate_percentage(mut_onehot_sample, coverage_match)
     values_mask = get_values_to_mask(mut_percentage_sample)
@@ -90,8 +98,10 @@ def filter_control(path_midsv_control: Path, path_midsv_sample: Path) -> list[bo
     return identify_normal_reads(mut_onehot_sample_masked, mut_onehot_control_masked)
 
 
-def cache_selected_control_by_similarity(path_midsv_control: Path, path_midsv_sample: Path, path_output: Path) -> None:
-    normal_reads_flags = filter_control(path_midsv_control, path_midsv_sample)
+def cache_selected_control_by_similarity(
+    ARGS, path_midsv_control: Path, path_midsv_sample: Path, path_output: Path
+) -> None:
+    normal_reads_flags = filter_control(ARGS, path_midsv_control, path_midsv_sample)
     midsv_control = io.read_jsonl(path_midsv_control)
     midsv_filtered = (m for m, flag in zip(midsv_control, normal_reads_flags) if flag is True)
 
