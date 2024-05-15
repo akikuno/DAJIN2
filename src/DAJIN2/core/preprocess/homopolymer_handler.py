@@ -32,11 +32,11 @@ def extract_errors(
     sequence: str,
     indels_normalized_sample: dict[str, np.array],
     indels_normalized_control: dict[str, np.array],
-    candidate_loci: dict[set],
+    anomal_loci: dict[set],
 ) -> dict[str, set[int]]:
     errors_in_homopolymer = dict()
     for mut in ["+", "-", "*"]:
-        repeat_regions = get_repeat_regions(sequence, candidate_loci[mut])
+        repeat_regions = get_repeat_regions(sequence, anomal_loci[mut])
         if len(repeat_regions) == 0:
             errors_in_homopolymer[mut] = set()
             continue

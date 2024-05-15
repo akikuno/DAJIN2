@@ -121,13 +121,14 @@ def extract_anomal_loci(
     thresholds: dict[str, float],
     is_consensus: bool = False,
 ) -> dict[str, set[int]]:
-    results = dict()
+    """Extract outlier loci compareing indel counts between sample and control."""
+    anomal_loci = dict()
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
         idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut], is_consensus)
-        results[mut] = idx_outliers
-    return results
+        anomal_loci[mut] = idx_outliers
+    return anomal_loci
 
 
 ###########################################################
@@ -277,7 +278,7 @@ def extract_mutation_loci(
 
     """Extract candidate mutation loci"""
     indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
-    anomal_loci = extract_anomal_loci(
+    anomal_loci: dict[str, set[int]] = extract_anomal_loci(
         indels_normalized_sample, indels_normalized_minimize_control, thresholds, is_consensus
     )
 
@@ -319,7 +320,7 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         path_indels_normalized_sample = Path(path_mutation_sample, f"{allele}_normalized.pickle")
         path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", f"{allele}.pickle")
 
-        mutation_loci = extract_mutation_loci(
+        mutation_loci: list[set[str]] = extract_mutation_loci(
             sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin
         )
 
