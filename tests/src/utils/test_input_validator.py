@@ -111,11 +111,11 @@ available_servers = {key: input_validator.get_first_available_url(key, urls) for
 def test_available_genome_pass():
     genome = "mm10"
     url_das = available_servers["das"]
-    assert input_validator.is_genome_in_ucsc_ids(genome, url_das) is True
+    assert input_validator.is_genome_id_available_in_ucsc(genome, url_das) is True
 
 
 @pytest.mark.slow
 def test_available_genome_fail():
     genome = "mm12345"
     url_das = available_servers["das"]
-    assert input_validator.is_genome_in_ucsc_ids(genome, url_das) is False
+    assert input_validator.is_genome_id_available_in_ucsc(genome, url_das) is False
