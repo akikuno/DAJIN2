@@ -160,35 +160,56 @@ def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str
 ###########################################################
 
 
-def is_start_of_deletion(i: int, cssplits: list[str], start_del_count: int = 3) -> bool:
-    """
-    Determine if the current index is the start of a deletion.
-    If there are consecutive deletions from the beginning, it is determined that there is a cluster of deletions.
-    """
-    if i + start_del_count > len(cssplits):
+def is_start_of_consecutive_deletions(cssplits: list[str], i: int, del_range: int = 3) -> bool:
+    """Determine if the current index is the start of a consective deletion."""
+    if i + del_range > len(cssplits):
         return False
-    return all([cs.startswith("-") for cs in cssplits[i : i + start_del_count]])
+
+    for j in range(del_range):
+        if not cssplits[i + j].startswith("-"):
+            return False
+
+    return True
 
 
-def is_within_deletion(i: int, cssplits: list[str], distance: int = 10) -> bool:
-    """Count matches that are continuous for `distance` bases, and if there is a deletion in between, it is determined to be inside a cluster of deletions."""
-    exist_deletion = False
-    total_num_match = 0
-    j = 1
-    while True:
-        if i + j >= len(cssplits) or total_num_match > distance:
-            exist_deletion = False
-            break
-        current = cssplits[i + j]
-        if current.startswith("="):
-            total_num_match += 1
-        else:
-            total_num_match = 0
-            if current.startswith("-"):
-                exist_deletion = True
-                break
-        j += 1
-    return exist_deletion
+def get_range_of_inclusive_deletions(cssplits: list[str], del_range: int = 3, distance: int = 10) -> set[int]:
+    inclusive_deletion_range: set[int] = set()
+    n: int = len(cssplits)
+    i: int = 0
+    while i < n:
+        # Check for start of deletion
+        if cssplits[i].startswith("-"):
+            start: int = i
+            while i < n and cssplits[i].startswith("-"):
+                i += 1
+            # We have found the end of a deletion range
+            end: int = i
+            # Check if deletion length is enough to be considered
+
+            if end - start >= del_range:
+                # Now check for matching sequence within 'distance'
+                match_count: int = 0
+                while i < n and match_count <= distance:
+                    if cssplits[i].startswith("="):
+                        match_count += 1
+                    elif cssplits[i].startswith("-"):
+                        # If another deletion is found, reset match count and update range
+                        next_start: int = i
+                        while i < n and cssplits[i].startswith("-"):
+                            i += 1
+                            next_end: int = i
+                        if next_end - next_start >= del_range:
+                            inclusive_deletion_range.update(range(start, next_end))
+
+                            start = next_start
+                            end = next_end
+                            match_count = 0
+                            break
+                    i += 1
+
+        i += 1
+
+    return inclusive_deletion_range
 
 
 def adjust_cs_insertion(cs: str) -> str:
@@ -203,30 +224,35 @@ def adjust_cs_insertion(cs: str) -> str:
     return cs_insertion
 
 
-def detect_insertion_within_deletion(cssplits: str, start_del_count: int = 3, distance: int = 10) -> str:
-    cssplits = cssplits.split(",")
+def reallocate_insertion_within_deletion(cssplit: str, del_range: int = 3, distance: int = 10) -> str:
+    """
+    Since the mapping in minimap2 is local alignment, insertion bases within large deletions may be partially mapped to the reference genome and not detected as insertion bases. Therefore, update cssplits to detect insertions within large deletions as insertions.
+    """
+    cssplits = cssplit.split(",")
     cssplits_updated = cssplits.copy()
 
-    insertion = []
-    within_deletion = False
+    range_of_inclusive_deletion: set[int] = get_range_of_inclusive_deletions(cssplits, del_range, distance)
+
+    insertion_within_deletion = []
     for i, cs in enumerate(cssplits):
-        if cs.startswith("-"):
-            if within_deletion is False and is_start_of_deletion(i, cssplits, start_del_count) is False:
+        if i in range_of_inclusive_deletion:
+            if cs.startswith("-"):
                 continue
-            within_deletion = is_within_deletion(i, cssplits, distance)
-            if within_deletion is False:
-                cssplits_updated[i + 1] = "".join(insertion) + cssplits_updated[i + 1]
-                insertion = []
-        if within_deletion is False:
-            continue
-        if not cs.startswith("-"):
-            if cs.startswith("*"):
-                cssplits_updated[i] = f"-{cs[1]}"
+            if cs.startswith("N") or cs.startswith("n"):
+                cs_new = cs
+            elif cs.startswith("*"):
+                cs_new = f"-{cs[1]}"
             elif cs.startswith("+") and cs.split("|")[-1].startswith("*"):
-                cssplits_updated[i] = f'-{cs.split("|")[-1][1]}'
+                cs_new = f'-{cs.split("|")[-1][1]}'
             else:
-                cssplits_updated[i] = f"-{cs[-1]}"
-            adjusted_cs = adjust_cs_insertion(cs)
-            insertion.append(adjusted_cs)
+                cs_new = f"-{cs[-1]}"
+            cssplits_updated[i] = cs_new
+
+            insertion_within_deletion.append(adjust_cs_insertion(cs))
+        else:
+            if not insertion_within_deletion:
+                continue
+            cssplits_updated[i] = "".join(insertion_within_deletion) + cs
+            insertion_within_deletion = []
 
     return ",".join(cssplits_updated)
