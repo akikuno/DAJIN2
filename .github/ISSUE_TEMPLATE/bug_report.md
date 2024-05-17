@@ -19,6 +19,12 @@ labels: bug
 
 ## Python version
 
+You can track the version of python by running the following command in the terminal:
+
+```bash
+python --version
+```
+
 > [!IMPORTANT]
 > DAJIN2 supports Python 3.8 to 3.10, not Python 3.11 yet due to [Bioconda issue] (https://github.com/bioconda/bioconda-recipes/issues/37805).
 

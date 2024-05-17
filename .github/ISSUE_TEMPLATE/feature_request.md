@@ -4,13 +4,21 @@ about: Suggest an idea for this project
 labels: request
 ---
 
-## Is your feature request related to a problem? Please describe.
+## Describe the features you want.
 
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
-## Describe the solution you'd like
+## Describe the solution you'd like if you have any.
 
-## Describe alternatives you've considered if you have any
+
+## DAJIN2 version
+
+You can track the version of DAJIN2 by running the following command in the terminal:
+
+```bash
+DAJIN2 --version
+```
+
+Or, it is recorded in the log file when DAJIN2 is executed.
 
 ## Additional context
 
