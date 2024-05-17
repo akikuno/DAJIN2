@@ -26,7 +26,19 @@
 
 <!-- ############################################################# # -->
 
-# v0.4.6 (2024-MM-DD)
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!--  ------------------------------------------------------------- -->
+
+<details>
+<summary> v0.4.6 (2024-05-17) </summary>
 
 ## 💥 Breaking
 
@@ -34,7 +46,7 @@
   + Add the version of DAJIN2 to the log file to track the version of the analysis.
   + Rename the log file to `DAJIN2_log_<current time>.txt` from `<current time>_DAJIN2.log` to enabling open the file in any text editor.
 
-Update `mutation_extractor.is_dissimilar_loci` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/2e141bfbbf41a8fe72d11acf159e1974143b7f4e)
++ Update `mutation_extractor.is_dissimilar_loci` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/2e141bfbbf41a8fe72d11acf159e1974143b7f4e)
   - Rename to `is_dissimilar_loci` from `identify_dissimilar_loci` to explicitly indicate that a boolean is returned.
   - Changed to use cosine distance instead of cosine similarity to make "difference from control" more intuitive.
   - Added a condition to ensure that the cosine distance is not dependent on the specific index: Calculate the cosine distance for 10 bases starting from the neighbor of the corresponding indel, and add the condition that the cosine distances of these adjacent 10 bases should be similar.
@@ -84,17 +96,11 @@ Update `mutation_extractor.is_dissimilar_loci` [Commit Detail](https://github.co
 + Fix `preprocess.knockin_handler` to correctly identify the flox knock-in sites as deletions not present in the control.  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d4d267c99f8c51d3a3f88f67882bead66685f710)
 
 + Bug fix of `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7cafabf3a89b75af73f1a40da16e6390d47b48d5)
-
   - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. Therefore, the region between two deletions is now defined only if the size of both deletions is equal to or greater than the specified threshold (default = 3).
 
+</details>
 
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
+<!--  ------------------------------------------------------------- -->
 
 <details>
 <summary> v0.4.5 (2024-04-24) </summary>
@@ -102,7 +108,8 @@ Update `mutation_extractor.is_dissimilar_loci` [Commit Detail](https://github.co
 ## 🐛 Bug Fixes
 
 + In version 0.4.4 of strand_bias_handler.remove_biased_clusters, there was an error in the continuation condition for removing biased clusters, which has now been corrected. The correct condition should be 'there are alleles with and without strand bias **and** the iteration count is less than or equal to 1000'. Instead, it was incorrectly set to 'there are alleles with and without strand bias **or** the iteration count is less than or equal to 1000'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b72b3855121d0da6ac80636089315ecc26464657)
-<details>
+
+</details>
 
 
 <details>
