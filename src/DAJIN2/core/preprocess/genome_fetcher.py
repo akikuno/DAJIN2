@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import ssl
 from urllib.request import urlopen
+
+
+def fetch_html_without_verification(url: str) -> str:
+    context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
+    with urlopen(url, context=context, timeout=10) as response:
+        return response.read().decode("utf-8").split("\n")
 
 
 def fetch_seq_coordinates(genome: str, blat_url: str, seq: str) -> dict:
     url = f"{blat_url}?db={genome}&type=BLAT&userSeq={seq}"
-    records = urlopen(url).read().decode("utf8").split("\n")
+    records = fetch_html_without_verification(url)
     matches = []
     for record in records:
         if "100.0%" not in record:
@@ -43,9 +50,9 @@ def fetch_chromosome_size(genome_coordinates: dict, genome_urls: dict) -> int:
     genome = genome_coordinates["genome"]
     url = f"{genome_urls['goldenpath']}/{genome}/bigZips/{genome}.chrom.sizes"
 
-    response = urlopen(url).read().decode("utf8").split("\n")
-    for line in response:
-        chrom_name, size = line.split("\t")
+    records = fetch_html_without_verification(url)
+    for record in records:
+        chrom_name, size = record.split("\t")
         if chrom == chrom_name:
             return int(size)
     raise ValueError(f"Chromosome {chrom} size not found.")

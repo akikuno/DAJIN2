@@ -75,7 +75,9 @@ def cache_normalized_indels(ARGS, path_midsv_sample: Path) -> None:
     path_midsv_control = extract_path_control(ARGS, allele)
     path_midsv_n_filtered_control = extract_path_n_filtered_control(ARGS, path_midsv_control)
 
-    cache_selected_control_by_similarity(path_midsv_n_filtered_control, path_midsv_sample, path_midsv_sample.parent)
+    cache_selected_control_by_similarity(
+        ARGS, path_midsv_n_filtered_control, path_midsv_sample, path_midsv_sample.parent
+    )
 
     path_midsv_similar_control = Path(path_midsv_sample.parent, f"{allele}_{label}_control.jsonl")
 

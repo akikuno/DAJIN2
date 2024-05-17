@@ -1,4 +1,4 @@
-name: Pytest for Ubuntu latest
+name: Pytest for Ubuntu / macOS latest
 
 on:
   push:
@@ -15,24 +15,48 @@ jobs:
         python-version: ['3.8', '3.9', '3.10']
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
+    defaults:
+      run:
+        shell: bash -l {0}
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python-version }}
+          miniconda-version: "latest"
+          activate-environment: test-env
+          channels: bioconda, conda-forge, defaults, anaconda
 
-      - name: Install dependencies via pip
+      - name: Setup conda environment on ubuntu-latest🐧
+        if: runner.os == 'Linux'
         run: |
-          python -m pip install --upgrade pip pytest
-          python -m pip install -e .
+          conda create -y -n env-dajin2 python=${{ matrix.python-version }}
 
-      - name: Install weasyprint on macos-latest🍎
+      - name: Setup conda environment on macos-latest🍎
         if: runner.os == 'macOS'
         run: |
-            brew install weasyprint
+          # ==========================================
+          # Use Rosseta for macOS because the Bioconda channel does not yet support Apple Silicon
+          # ==========================================
+          CONDA_SUBDIR=osx-64 conda create -y -n env-dajin2 python=${{ matrix.python-version }}
+          conda activate env-dajin2
+          conda config --env --set subdir osx-64
 
-      - name: Test with pytest
+      - name: Install dependencies
+        run: |
+          conda activate env-dajin2
+
+          # ==========================================
+          # Remove kaleido from requirements.txt because it has a different name in conda (python-kaleido).
+          # ==========================================
+          grep -v kaleido requirements.txt > requirements_.txt 
+          conda install --yes --file requirements_.txt
+          pip install -U pip pytest kaleido
+
+      - name: Execute tests
         env:
           PYTHONPATH: src
         run: |
-          python -m pytest tests/ -p no:warnings -vv
+          conda activate env-dajin2
+          pytest tests/ -p no:warnings -vv

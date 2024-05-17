@@ -95,30 +95,39 @@ def determine_file_type(file_path: str) -> str | None:
 
 
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
-    """Load data from an Excel file and return as a list."""
+    """Load data from an Excel file."""
     wb = load_workbook(filename=file_path)
     ws = wb.active
 
     headers = [cell for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
 
-    data = []
+    records = []
     for row in ws.iter_rows(min_row=2, values_only=True):
+        if all(element is None for element in row):  # Skip rows with all None values
+            continue
         row_data = {headers[i]: (row[i] if i < len(row) else None) for i in range(len(headers))}
-        data.append(row_data)
+        records.append(row_data)
 
-    return data
+    return records
 
 
-def read_csv(file_path: str) -> list[dict[str, str]]:
-    """Load data from a CSV file and return as a list."""
+def read_csv(file_path: str | Path) -> list[dict[str, str]]:
+    """Load data from a CSV file."""
     with open(file_path, "r") as csvfile:
-        inputs = []
+
+        header = [field.strip() for field in next(csv.reader(csvfile))]
+
+        records = []
         for row in csv.reader(csvfile):
             if not row:  # Skip empty rows
                 continue
-            trimmed_row = [field.strip() for field in row]
-            inputs.append(trimmed_row)
-        return inputs
+            if all(element is None for element in row):  # Skip rows with all None values
+                continue
+            row_trimmed = [field.strip() for field in row]
+            row_data = {h: v for h, v in zip(header, row_trimmed)}
+            records.append(row_data)
+
+        return records
 
 
 def load_batchfile(batchfile_path: str) -> list[dict[str, str]]:

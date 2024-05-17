@@ -19,7 +19,7 @@ import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 
 from DAJIN2.utils import io
-from DAJIN2.core.preprocess import homopolymer_handler
+from DAJIN2.core.preprocess.homopolymer_handler import extract_sequence_errors_in_homopolymer_loci
 
 
 def count_indels(midsv_sample: Generator[dict], sequence: str) -> dict[str, list[int]]:
@@ -84,20 +84,33 @@ def split_kmer(indels: dict[str, np.array], kmer: int = 11) -> dict[str, np.arra
 ###########################################################
 
 
-def cosine_similarity(x, y):
-    return np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y))
+def cosine_distance(x: list[float], y: list[float]) -> float:
+    # Add 1e-6 to avoid division by zero when calculating cosine similarity
+    x = np.array(x) + 1e-6
+    y = np.array(y) + 1e-6
+    return 1 - float(np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y)))
 
 
-def identify_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> int:
+def is_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> bool:
     # If 'sample' has more than 20% variation compared to 'control' in consensus mode, unconditionally set it to 'dissimilar loci'. This is set to counteract cases where, when evaluating cosine similarity during significant deletions, values exceedingly close to 1 can occur even if not observed in the control (e.g., control = [1,1,1,1,1], sample = [100,100,100,100,100] -> cosine similarity = 1).
-    if is_consensus and values_sample[index] - values_control[index] > 20:
-        return True
+    if values_sample[index] - values_control[index] > 20:
+        if is_consensus:
+            if values_sample[index] > 75:
+                return True
+        else:
+            return True
 
-    # Subset 10 bases around index and add 1e-6 to avoid division by zero when calculating cosine similarity.
-    x = np.array(values_sample[index - 5 : index + 6]) + 1e-6
-    y = np.array(values_control[index - 5 : index + 6]) + 1e-6
+    # Subset 10 bases around index.
+    x = values_sample[index : index + 10]
+    y = values_control[index : index + 10]
 
-    return cosine_similarity(x, y) < 0.95
+    x_slice = values_sample[index + 1 : index + 11]
+    y_slice = values_control[index + 1 : index + 11]
+
+    distance = cosine_distance(x, y)
+    distance_slice = cosine_distance(x_slice, y_slice)
+
+    return distance > 0.05 and distance / (distance + distance_slice) > 0.9
 
 
 def detect_anomalies(values_sample, values_control, threshold: float, is_consensus: bool = False) -> set[int]:
@@ -109,10 +122,11 @@ def detect_anomalies(values_sample, values_control, threshold: float, is_consens
 
     values_subtract_reshaped = values_subtract.reshape(-1, 1)
     kmeans = MiniBatchKMeans(n_clusters=2, random_state=0, n_init="auto").fit(values_subtract_reshaped)
-    threshold_kmeans = kmeans.cluster_centers_.mean()
+    # Set the maximum threshold to 10 to prevent missing relatively minor mutations due to the k-means centers being overly influenced by obvious mutations.
+    threshold_kmeans = min(20, kmeans.cluster_centers_.mean())
     candidate_loci = {i for i, v in enumerate(values_subtract_reshaped) if v > threshold_kmeans}
 
-    return {i for i in candidate_loci if identify_dissimilar_loci(values_sample, values_control, i, is_consensus)}
+    return {i for i in candidate_loci if is_dissimilar_loci(values_sample, values_control, i, is_consensus)}
 
 
 def extract_anomal_loci(
@@ -121,13 +135,14 @@ def extract_anomal_loci(
     thresholds: dict[str, float],
     is_consensus: bool = False,
 ) -> dict[str, set[int]]:
-    results = dict()
+    """Extract outlier loci compareing indel counts between sample and control."""
+    anomal_loci = dict()
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
         idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut], is_consensus)
-        results[mut] = idx_outliers
-    return results
+        anomal_loci[mut] = idx_outliers
+    return anomal_loci
 
 
 ###########################################################
@@ -277,12 +292,12 @@ def extract_mutation_loci(
 
     """Extract candidate mutation loci"""
     indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
-    anomal_loci = extract_anomal_loci(
+    anomal_loci: dict[str, set[int]] = extract_anomal_loci(
         indels_normalized_sample, indels_normalized_minimize_control, thresholds, is_consensus
     )
 
     """Extract error loci in homopolymer regions"""
-    errors_in_homopolymer = homopolymer_handler.extract_errors(
+    errors_in_homopolymer = extract_sequence_errors_in_homopolymer_loci(
         sequence, indels_normalized_sample, indels_normalized_control, anomal_loci
     )
     mutation_loci = discard_errors_in_homopolymer(anomal_loci, errors_in_homopolymer)
@@ -319,7 +334,7 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         path_indels_normalized_sample = Path(path_mutation_sample, f"{allele}_normalized.pickle")
         path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", f"{allele}.pickle")
 
-        mutation_loci = extract_mutation_loci(
+        mutation_loci: list[set[str]] = extract_mutation_loci(
             sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin
         )
 

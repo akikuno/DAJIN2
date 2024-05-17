@@ -2,32 +2,108 @@
 # v0.0.0 (yyyy-mm-dd)
 ## 💥 Breaking
 ## 📝 Documentation
-## 🚀 New Features
+## 🚀 Performance
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-- XXX [Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
 -->
 
 <!-- 💡 ToDo
-- logにDAJIN2のバージョンを出力する
+- consensus.similarity_searcher.onehot_by_mutationsでは、コントロールアレルに対して、何度も同一のものを生成している可能性がある。
+  - 一箇所にまとめられるようにする
+- リード数が多すぎる場合には、平均的なPhread scoreが高いものを優先して解析する、といったsubsetを行っても良い気が
+
+- deletions_to_fasta.pyを加える
+
 - VCF、PDFを出力する
 - 逆位アレルでの検証を加える
 - nCATSがほしい…
 - Docker imageにして、darwin-arm64でも動くようにする
 - Flaskではなく、streamlitでGUIを作る
+
  -->
 
-v0.4.5 (2024-04-24)
+<!-- ############################################################# # -->
+
+# v0.4.6 (2024-MM-DD)
+
+## 💥 Breaking
+
++ Update the log file [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f179c264193391e27f16c66d0f0153f8ae366005)
+  + Add the version of DAJIN2 to the log file to track the version of the analysis.
+  + Rename the log file to `DAJIN2_log_<current time>.txt` from `<current time>_DAJIN2.log` to enabling open the file in any text editor.
+
+Update `mutation_extractor.is_dissimilar_loci` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/2e141bfbbf41a8fe72d11acf159e1974143b7f4e)
+  - Rename to `is_dissimilar_loci` from `identify_dissimilar_loci` to explicitly indicate that a boolean is returned.
+  - Changed to use cosine distance instead of cosine similarity to make "difference from control" more intuitive.
+  - Added a condition to ensure that the cosine distance is not dependent on the specific index: Calculate the cosine distance for 10 bases starting from the neighbor of the corresponding indel, and add the condition that the cosine distances of these adjacent 10 bases should be similar.
+
++ Update `preprocess.insertions_to_fasta.py` which detects unintended insertion alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d8bbd9f50b163b6099a5e77c9f7f4de2f5fc08f7)
+  + `clustering_insertions`: To accelerate MeanShift clustering, set `bin_seeding=True`. Additionally, because clustering decoys without variation becomes extremely slow, we have switched to using decoys that include slight variations.
+  + `extract_unique_insertions`: Within `unintended insertion alleles`, alleles similar to the `intended allele` provided by the user are now excluded.
+    + The similarity is defined as there being differences of more than 10 bases
+
++ Update `preprocess.insertions_to_fasta.clustering_insertions` to consider the length of each insertion sequence during clustering. This allows two alleles, such as `N,(30-base Insertion)` and `(30-base Insertion),N`, to be weighted with different scores as [(1, 30), (30, 1)], enabling correct clustering. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d41617d8386aa2a4f057cf44c293a1097fa146b6)
+
++ Update `preprocess.homopolymer_handler`: Scaling data to [0, 1] for cosine similarity, normalizing to match scales due to significant differences in mutation rates between samples and controls. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0ad27ca2fa7a12ce0cb80e938bc55c903113018f)
+
+## 📝 Documentation
+
++ Add the descriptions about required Python version supporting from 3.8 to 3.10 due to a Bioconda issue to the README.md. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0b2f9bf8354e7ff72cc8f8925e1cae6dfba67468)
+
+
++ Enhance the descriptions in GitHub Issue templates to clarify their purpose. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/08f3c71bf9f8b755e718eea79dd4a2562aa59297)
+
+
+## 🔧 Maintenance
+
++ Move `DAJIN2_VERSION` to `utils.config.py` from `main.py` to make it easier to recognize its location. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f179c264193391e27f16c66d0f0153f8ae366005)
+
++ Update `io.read_csv` to return a `list[dict[str, str]]`, not `list[str]` to align the output format with `read_xlsx`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d406d34fe990776b6dcecc306ba6fb521c9d0ea0)
+
++ Update `utils.input_validator` and `preprocess.genome_fetcher` to temporarily disable SSL certificate verification, allowing access to UCSC servers. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0392fb3fd5c7b87a0773c249ea6e496f69c5af35)
+
++ Add an example of flox knockin design to the `examples` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/972c3e1b0d9cf04f9ff0d07dd0aaf29deef3b814)
+
+
++ Update `preprocess.insertions_to_fasta.py`: The label names for the insertions were not starting from 1, so they have been revised to begin at 1. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/64721e353983447450357b26e0ce5b1ff949d865)
+
++ Change installer from pip to conda to install mappy in macos-latest (macos-14-arm64) in Github Action [Commit Detail](https://github.com/akikuno/DAJIN2/commit/e1bf83d8f356b5ab5144501de432f83a8394fb16)
+
+## 🚀 Performance
+
++ Update `consensus.similarity_searcher` to cache onehot encoded controls to avoid redundant computations and increase processing speed. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0f96c69099cf97e2f4f5a795e224a887c4c667f9)
 
 ## 🐛 Bug Fixes
 
-+ In version 0.4.4 of strand_bias_handler.remove_biased_clusters, there was an error in the continuation condition for removing biased clusters, which has now been corrected. The correct condition should be 'there are alleles with and without strand bias **and** the iteration count is less than or equal to 1000'. Instead, it was incorrectly set to 'there are alleles with and without strand bias **or** the iteration count is less than or equal to 1000'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b72b3855121d0da6ac80636089315ecc26464657)
++ Debug `clustering.strand_bias_handler` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/33e955f4afbfa5c30e3494ee97d1fffe33769778)
+  + For `positive_strand_counts_by_labels: dict`, there was a bug that caused an error and halted execution when accessing a non-existent key. It has been fixed to output 0 instead.
+  + Created a wrapper function `annotate_strand_bias_by_labels` for outputting strand bias. Fixed a bug where the second and subsequent arguments were not being correctly passed when reallocating clusters with strand bias.
+
++ Fix `preprocess.knockin_handler` to correctly identify the flox knock-in sites as deletions not present in the control.  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d4d267c99f8c51d3a3f88f67882bead66685f710)
+
++ Bug fix of `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7cafabf3a89b75af73f1a40da16e6390d47b48d5)
+
+  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. Therefore, the region between two deletions is now defined only if the size of both deletions is equal to or greater than the specified threshold (default = 3).
+
+
+<!-- ############################################################# # -->
+
 
 
 -------------------------------------------------------------
 
 # Past Releases
+
+<details>
+<summary> v0.4.5 (2024-04-24) </summary>
+
+## 🐛 Bug Fixes
+
++ In version 0.4.4 of strand_bias_handler.remove_biased_clusters, there was an error in the continuation condition for removing biased clusters, which has now been corrected. The correct condition should be 'there are alleles with and without strand bias **and** the iteration count is less than or equal to 1000'. Instead, it was incorrectly set to 'there are alleles with and without strand bias **or** the iteration count is less than or equal to 1000'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b72b3855121d0da6ac80636089315ecc26464657)
+<details>
+
 
 <details>
 <summary> v0.4.4 (2024-04-23) </summary>

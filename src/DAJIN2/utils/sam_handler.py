@@ -94,7 +94,7 @@ def count_mutations_in_microhomology(cigar_split: list, len_microhomology: int) 
     return count_mutation
 
 
-def trim_cigar_on_microhomology(cigar_split: list, len_microhomology: int) -> tuple(str, int):
+def trim_cigar_on_microhomology(cigar_split: list, len_microhomology: int) -> tuple[str, int]:
     """Trim CIGAR based on the length of the microhomology."""
     cigar_trimmed = cigar_split[::-1]
     total_num = 0

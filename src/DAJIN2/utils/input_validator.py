@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import ssl
 import hashlib
 
 from pathlib import Path
@@ -10,6 +11,12 @@ from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 
 import mappy
+
+########################################################################
+# To accommodate cases where a user might input negative values or
+# excessively large values, update the number of threads
+# from "1" to "max cpu threads - 1".
+########################################################################
 
 
 def update_threads(threads: int) -> int:
@@ -107,13 +114,10 @@ def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool)
 ########################################################################
 
 
-def get_html(url: str) -> str:
-    try:
-        with urlopen(url, timeout=10) as response:
-            html = response.read().decode("utf-8")
-        return html
-    except URLError:
-        return ""
+def fetch_html_without_verification(url: str) -> str:
+    context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
+    with urlopen(url, context=context, timeout=10) as response:
+        return response.read().decode("utf-8")
 
 
 def format_url(key: str, url: str) -> str:
@@ -122,28 +126,31 @@ def format_url(key: str, url: str) -> str:
 
 def get_first_available_url(key: str, urls: list[str]) -> str | None:
     search_keys = {"blat": "BLAT Search Genome", "das": "GRCh38/hg38", "goldenpath": "bigZips"}
-    return next((url for url in urls if search_keys[key] in get_html(format_url(key, url))), None)
+    return next(
+        (url for url in urls if search_keys[key] in fetch_html_without_verification(format_url(key, url))), None
+    )
 
 
-def fetch_xml_data(url: str) -> bytes:
+def fetch_xml_without_verification(url: str) -> bytes:
     """Fetch XML data from a given URL."""
-    with urlopen(url) as response:
+    context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
+    with urlopen(url, context=context, timeout=10) as response:
         return response.read()
 
 
-def extract_genome_ids_from_xml(xml_data: bytes) -> set:
+def extract_genome_ids_from_xml(xml_data: bytes) -> set[str]:
     """Extract genome IDs from XML data."""
     root = ET.fromstring(xml_data)
     return {cc.attrib["id"] for child in root for cc in child if cc.tag == "SOURCE"}
 
 
-def get_genome_ids_in_ucsc(url_das: str) -> set:
+def get_genome_ids_in_ucsc(url_das: str) -> set[str]:
     """Get available genome IDs in UCSC."""
-    xml_data = fetch_xml_data(url_das)
+    xml_data = fetch_xml_without_verification(url_das)
     return extract_genome_ids_from_xml(xml_data)
 
 
-def is_genome_in_ucsc_ids(genome: str, url_das: str) -> bool:
+def is_genome_id_available_in_ucsc(genome: str, url_das: str) -> bool:
     genome_ids = get_genome_ids_in_ucsc(url_das)
     return genome in genome_ids
 
@@ -178,7 +185,7 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
         if available_servers[key] is None:
             raise URLError(message)
 
-    if not is_genome_in_ucsc_ids(genome, available_servers["das"]):
+    if not is_genome_id_available_in_ucsc(genome, available_servers["das"]):
         raise ValueError(f"{genome} is not listed. Available genomes are in {available_servers['das']}")
 
     del available_servers["das"]

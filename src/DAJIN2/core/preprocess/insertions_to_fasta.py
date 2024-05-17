@@ -10,6 +10,7 @@ from typing import Generator
 import numpy as np
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
+
 from sklearn.cluster import MeanShift
 
 from DAJIN2.core.preprocess.mapping import to_sam
@@ -21,9 +22,9 @@ config.set_warnings_ignore()
 import cstag
 
 
-def remove_non_alphabets(s: str) -> str:
+def remove_non_alphabets(cssplits: str) -> str:
     """Convert a cssplits to a plain DNA sequence."""
-    return "".join([char for char in s if char.isalpha()])
+    return "".join([char for char in cssplits if char.isalpha()])
 
 
 ###########################################################
@@ -31,17 +32,18 @@ def remove_non_alphabets(s: str) -> str:
 ###########################################################
 
 
-def clustering_insertions(insertions_cssplit: list[str]) -> list[int]:
-    seq_all = [remove_non_alphabets(seq) for seq in insertions_cssplit]
+def clustering_insertions(cssplits_insertion: list[str], n_decoy: int = 1000) -> list[int]:
+    seq_all = [remove_non_alphabets(seq) for seq in cssplits_insertion]
     query = seq_all[0]
     _, distances, _ = zip(*process.extract_iter(query, seq_all, scorer=DamerauLevenshtein.normalized_distance))
 
-    # Add random values from 0 to 1
-    distances = list(distances)
-    rng = np.random.default_rng(1)
-    distances.extend(rng.random(max(100, len(seq_all))))
+    # By adding upper (1) and lower (0) limits, we prevent errors where minor differences are clustered (e.g., 0.1 and 0.2 becoming separate clusters).
 
-    return MeanShift().fit(np.array(distances).reshape(-1, 1)).labels_.tolist()[: len(seq_all)]
+    insertion_lengths = [[len(c) for c in cs.split(",")] for cs in cssplits_insertion]
+
+    scores = [s + [d] for s, d in zip(insertion_lengths, distances)]
+
+    return MeanShift(bin_seeding=True).fit_predict(np.array(scores)).tolist()
 
 
 ###########################################################
@@ -68,8 +70,8 @@ def extract_enriched_insertions(
     enriched_insertions = dict()
     threshold_sample = max(5, int(coverage_sample * 0.5 / 100))
     for i in insertions_sample:
-        ins_sample = insertions_sample[i]
-        ins_control = insertions_control.get(i, [])
+        ins_sample: list[str] = insertions_sample[i]
+        ins_control: list[str] = insertions_control.get(i, [])
 
         labels_all = clustering_insertions(ins_sample + ins_control)
         labels_sample = labels_all[: len(ins_sample)]
@@ -120,6 +122,7 @@ def extract_insertions(
 
 
 def group_index_by_consecutive_insertions(mutation_loci: list[set[str]]) -> list[tuple[int]]:
+    """Groups indices of consecutive locations containing "+" mutations in the input list."""
     index = sorted(i for i, m in enumerate(mutation_loci) if "+" in m)
     index_grouped = []
     for _, group in groupby(enumerate(index), lambda i_x: i_x[0] - i_x[1]):
@@ -161,9 +164,24 @@ def get_merged_insertion(insertion: dict[str, int], labels: np.ndarray) -> dict[
     return insertion_merged
 
 
+def remove_minor_groups(insertions_merged: dict[tuple[int], dict[tuple[str], int]], coverage: int, threshold: float = 0.5) -> dict[tuple[int], dict[tuple[str], int]]:
+    for _, ins in insertions_merged.items():
+        # Create a list of elements to delete
+        to_delete = []
+        for seq, count in ins.items():
+            if count < coverage * threshold // 100:
+                to_delete.append(seq)
+
+        # Delete the collected elements
+        for seq in to_delete:
+            del ins[seq]
+
+    return insertions_merged
+
+
 def merge_similar_insertions(
-    insertions: dict[int, dict[str, int]], mutation_loci: list[set[str]]
-) -> dict[tuple(int), dict[tuple[str], int]]:
+    insertions: dict[int, dict[str, int]], mutation_loci: list[set[str]], coverage: int, threshold: float = 0.5
+) -> dict[tuple[int], dict[tuple[str], int]]:
     index_grouped = group_index_by_consecutive_insertions(mutation_loci)
     insertions_grouped = group_insertions(insertions, index_grouped)
     insertions_merged = dict()
@@ -172,10 +190,10 @@ def merge_similar_insertions(
             seq, count = next(iter(insertion.items()))
             insertions_merged[idx] = {tuple([seq]): count}
             continue
-        labels = clustering_insertions(insertion)
+        labels = clustering_insertions(insertion, n_decoy=1000)
         insertions_merged[idx] = get_merged_insertion(insertion, labels)
 
-    return insertions_merged
+    return remove_minor_groups(insertions_merged, coverage, threshold)
 
 
 ###########################################################
@@ -192,8 +210,8 @@ def flatten_keys_to_set(dict_keys: list[tuple[int]]) -> set[int]:
 
 
 def subset_insertions(
-    insertions_merged: dict[tuple(int), dict[tuple[str], int]], num_subset: int = 100
-) -> dict[tuple(int), dict[tuple[str], int]]:
+    insertions_merged: dict[tuple[int], dict[tuple[str], int]], num_subset: int = 100
+) -> dict[tuple[int], dict[tuple[str], int]]:
     """
     If the number of seqs exceeds `num_subset`, limit it to only the `num_subset` elements with fiexd random sampling.
     """
@@ -212,7 +230,7 @@ def subset_insertions(
 
 
 def extract_score_and_sequence(
-    path_sample, insertions_merged: dict[tuple(int), dict[tuple[str], int]]
+    path_sample, insertions_merged: dict[tuple[int], dict[tuple[str], int]]
 ) -> list[tuple[list[int], str]]:
     scores = []
     sequences = []
@@ -223,7 +241,9 @@ def extract_score_and_sequence(
     cache_score = defaultdict(int)
     for m in io.read_jsonl(path_sample):
         cssplits = m["CSSPLIT"].split(",")
-        if not any(True for i in set_keys if cssplits[i].startswith("+")):
+
+        # Skip if there is no insertion
+        if all(not cssplits[i].startswith("+") for i in set_keys):
             continue
 
         score = [0] * len(insertions_merged)
@@ -233,27 +253,32 @@ def extract_score_and_sequence(
                 if not cssplits[idx].startswith("+"):
                     continue
 
-                for seqs, count in insertions.items():
-                    if cssplits[idx] in seqs:
-                        score[i] = count
-                        sequence[i] = cssplits[idx]
-                        continue
-
+                # Use the cache if there is already a precomputed value
                 if (idx, cssplits[idx]) in cache_score:
                     score[i] = cache_score[(idx, cssplits[idx])]
                     sequence[i] = cssplits[idx]
                     continue
+
+                # Record the insertion sequence and count if the sample and insertion sequences are the same
+                for seqs, count in insertions.items():
+                    if cssplits[idx] in seqs:
+                        score[i] = count
+                        sequence[i] = cssplits[idx]
+                        cache_score[(idx, cssplits[idx])] = count
+                        continue
 
                 flag_break = False
                 for seqs, count in insertions_merged_subset[idx_grouped].items():
                     for _, distance, _ in process.extract_iter(
                         remove_non_alphabets(cssplits[idx]), seqs, scorer=DamerauLevenshtein.normalized_distance
                     ):
+                        # Record the insertion sequence and count if the sample and insertion sequences are similar
                         if distance < 0.1:
                             score[i] = count
                             sequence[i] = cssplits[idx]
                             flag_break = True
                             break
+
                     if flag_break:
                         cache_score[(idx, cssplits[idx])] = count
                         break
@@ -266,14 +291,13 @@ def extract_score_and_sequence(
 
 
 def filter_minor_label(
-    path_sample: str,
     labels: list[int],
     insertions_scores_sequences: list[tuple[list[int], str]],
+    coverage: int,
     threshold: float = 0.5,
-) -> tuple(list[int], list[str]):
-    coverage = io.count_newlines(path_sample)
-    _, counts = np.unique(labels, return_counts=True)
-    minor_labels = {label for label, count in enumerate(counts) if count / coverage * 100 < threshold}
+) -> tuple[list[int], list[str]]:
+    labels_, counts_ = np.unique(labels, return_counts=True)
+    minor_labels = {label for label, count in zip(labels_, counts_) if count < coverage * threshold // 100}
     index_minor_labels = {i for i, label in enumerate(labels) if label in minor_labels}
     labels_filtered = [label for i, label in enumerate(labels) if i not in index_minor_labels]
     score_seq_filterd = [
@@ -318,17 +342,17 @@ def get_cstag_position(sam_insertions: list[str]) -> tuple[list[str], list[int]]
 
 
 def mapping_insertion(
-    TEMPDIR: Path, SAMPLE_NAME: str, cs_transposed: list[str], consensus_length: int
+    TEMPDIR: Path, SAMPLE_NAME: str, cs_transposed: list[str], consensus_length: int, uuid4: str
 ) -> Generator[str]:
     # Temporarily cache the reference sequence
     cs_insertion = next(cs for cs in cs_transposed if cs != "N" and len(cs) == consensus_length)
     ref_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
 
-    path_reference = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"reference-{str(uuid.uuid4())}.fasta")
+    path_reference = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"reference-{uuid4}.fasta")
     Path(path_reference).write_text(f">reference_insertion\n{ref_seq}\n")
 
     # Temporarily cache the query sequences
-    path_query = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"query-{str(uuid.uuid4())}.fasta")
+    path_query = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"query-{uuid4}.fasta")
     with Path(path_query).open("w") as file:
         for i, cs_insertion in enumerate(cs_transposed):
             que_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
@@ -367,7 +391,7 @@ def generate_consensus_insertions(TEMPDIR: Path, SAMPLE_NAME: str, cssplits: lis
             consensus_insertion.append("N")
             continue
 
-        sam_insertions = mapping_insertion(TEMPDIR, SAMPLE_NAME, cs_transposed, consensus_length)
+        sam_insertions = mapping_insertion(TEMPDIR, SAMPLE_NAME, cs_transposed, consensus_length, str(uuid.uuid4()))
 
         cs_tags, positions = get_cstag_position(sam_insertions)
         if cs_tags == []:  # When not mapped at all, append `N`.
@@ -384,6 +408,7 @@ def generate_consensus_insertions(TEMPDIR: Path, SAMPLE_NAME: str, cssplits: lis
 
 
 def remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
+    """Remove all `N` sequences."""
     cons_sequence_removed = dict()
     for label, seq in cons_sequence.items():
         if all(True if s == "N" else False for s in seq.split(",")):
@@ -392,27 +417,7 @@ def remove_all_n(cons_sequence: dict[int, str]) -> dict[int, str]:
     return cons_sequence_removed
 
 
-def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
-    """
-    Update labels to avoid duplicating user-specified alleles
-    (insertion1 -> insertion01 -> insertion001...)
-    """
-    user_defined_alleles = set(FASTA_ALLELES)
-    d_values = list(d.values())
-    len_d = len(d_values)
-    digits_up = 0
-    while True:
-        digits = len(str(len_d)) + digits_up
-        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
-        if user_defined_alleles.isdisjoint(set(d_updated)):
-            break
-        digits_up += 1
-    return d_updated
-
-
-def call_consensus_of_insertion(
-    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, insertion_sequences_subset: list[dict]
-) -> dict[int, str]:
+def call_consensus_of_insertion(TEMPDIR: Path, SAMPLE_NAME: str, insertion_sequences_subset: list[dict]) -> dict[int, str]:
     """Generate consensus cssplits."""
     consensus_insertion_cssplits = dict()
     insertion_sequences_subset.sort(key=lambda x: x["LABEL"])
@@ -420,7 +425,7 @@ def call_consensus_of_insertion(
         cssplits = [cs["CSSPLIT"].split(",") for cs in group]
         consensus_insertion_cssplits[label] = generate_consensus_insertions(TEMPDIR, SAMPLE_NAME, cssplits)
 
-    return update_labels(remove_all_n(consensus_insertion_cssplits), FASTA_ALLELES)
+    return remove_all_n(consensus_insertion_cssplits)
 
 
 ###########################################################
@@ -429,10 +434,11 @@ def call_consensus_of_insertion(
 
 
 def extract_index_of_insertions(
-    insertions: dict[int, dict[str, int]], insertions_merged: dict[tuple(int), dict[tuple[str], int]]
+    insertions: dict[int, dict[str, int]], insertions_merged: dict[tuple[int], dict[tuple[str], int]]
 ) -> list[int]:
     """`insertions_merged` contains multiple surrounding indices for a single insertion allele. Among them, select the one index where the insertion allele is most frequent."""
     index_of_insertions = []
+    max_idx = -1
     for idx_group in insertions_merged:
         max_val = -1
         for idx in idx_group:
@@ -441,7 +447,8 @@ def extract_index_of_insertions(
             if max_val < sum(insertions[idx].values()):
                 max_val = sum(insertions[idx].values())
                 max_idx = idx
-        index_of_insertions.append(max_idx)
+        if max_idx != -1:
+            index_of_insertions.append(max_idx)
     return index_of_insertions
 
 
@@ -467,8 +474,41 @@ def generate_fasta(cstag_insertions: dict[str, str]) -> dict[str, str]:
     return fasta_insertions
 
 
+def extract_unique_insertions(FASTA_ALLELES: dict[str, str], fasta_insertions: dict[str, str]) -> dict[str, str]:
+    """
+    Extract unique insertion alleles if they are dissimilar to the FASTA_ALLELES input by the user.
+    "Unique insertion alleles" are defined as sequences that have a difference of more than 10 bases compared to the sequences in FASTA_ALLELES
+    """
+    to_keep = []
+    for query_key, query_seq in fasta_insertions.items():
+        _, distances, _ = zip(*process.extract_iter(query_seq, FASTA_ALLELES.values(), scorer=DamerauLevenshtein.distance))
+        if all(d > 10 for d in distances):
+            to_keep.append(query_key)
+
+    return {key: fasta_insertions[key] for key in to_keep if key in fasta_insertions}
+
+
+def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
+    """
+    Update labels to avoid duplicating user-specified alleles.
+    If the allele 'insertion1' exists in FASTA_ALLELES, increment the digits.
+    (insertion1 -> insertion01 -> insertion001...)
+    """
+    user_defined_alleles = set(FASTA_ALLELES)
+    d_values = list(d.values())
+    len_d = len(d_values)
+    digits_up = 0
+    while True:
+        digits = len(str(len_d)) + digits_up
+        d_updated = {f"insertion{i+1:0{digits}}": seq for i, seq in enumerate(d_values)}
+        if user_defined_alleles.isdisjoint(set(d_updated)):
+            break
+        digits_up += 1
+    return d_updated
+
+
 ###########################################################
-# Save cstag (HTML) and fasta
+# Save cstag and fasta
 ###########################################################
 
 
@@ -481,52 +521,70 @@ def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_insertions: dict[str
     for header, cs_tag in cstag_insertions.items():
         Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
 
-
-# def save_html(TEMPDIR: Path, SAMPLE_NAME: str, cstag_insertions: dict[int, str]) -> None:
-#     for header, cs_tag in cstag_insertions.items():
-#         html = cstag.to_html(cs_tag, f"{SAMPLE_NAME} {header}")
-#         Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{header}.html").write_text(html)
-
-
 ###########################################################
 # main
 ###########################################################
 
 
+def remove_temporal_files(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
+    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("reference-*.fasta")]
+    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("query-*.fasta")]
+
+
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
     PATH_SAMPLE = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
     PATH_CONTROL = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
-    SEQUENCE = FASTA_ALLELES["control"]
     MUTATION_LOCI = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
 
     insertions = extract_insertions(PATH_SAMPLE, PATH_CONTROL, MUTATION_LOCI)
     if insertions == dict():
+        """If there is no insertion, return None"""
         return None
-    insertions_merged = merge_similar_insertions(insertions, MUTATION_LOCI)
+
+    coverage: int = io.count_newlines(PATH_SAMPLE)
+
+    insertions_merged = merge_similar_insertions(insertions, MUTATION_LOCI, coverage, threshold=0.5)
+    if all(True if v == {} else False for v in insertions_merged.values()):
+        """"If all the insertion alleles were minor, return None"""
+        return None
+
+    # Clustering similar insertion alleles
     insertions_scores_sequences = extract_score_and_sequence(PATH_SAMPLE, insertions_merged)
-    labels = clustering_insertions([cssplit for _, cssplit in insertions_scores_sequences])
+    cssplits_insertion = [cssplit for _, cssplit in insertions_scores_sequences]
+    labels = clustering_insertions(cssplits_insertion, n_decoy=1000)
     labels_filtered, insertion_scores_sequences_filtered = filter_minor_label(
-        PATH_SAMPLE, labels, insertions_scores_sequences, threshold=0.5
+        labels, insertions_scores_sequences, coverage, threshold=0.5
     )
+
+    # Consensus calling
     insertion_sequences_subset = subset_sequences(
         [seq for _, seq in insertion_scores_sequences_filtered], labels_filtered, num=1000
     )
-    consensus_of_insertions = call_consensus_of_insertion(
-        TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, insertion_sequences_subset
-    )
+    consensus_of_insertions = call_consensus_of_insertion(TEMPDIR, SAMPLE_NAME, insertion_sequences_subset)
     if consensus_of_insertions == dict():
         """
         If there is no insertion sequence, return None
         It is possible when all insertion sequence annotated as `N` that is filtered out
         """
+        remove_temporal_files(TEMPDIR, SAMPLE_NAME)
         return None
+
+    # Format the insertion sequences as cstag and fasta
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
-    cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, SEQUENCE)
+    cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, FASTA_ALLELES["control"])
     fasta_insertions = generate_fasta(cstag_insertions)
+    fasta_insertions_unique = extract_unique_insertions(FASTA_ALLELES, fasta_insertions)
 
-    save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions)
-    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions)
-    # save_html(TEMPDIR, SAMPLE_NAME, cstag_insertions)
+    if fasta_insertions_unique == dict():
+        remove_temporal_files(TEMPDIR, SAMPLE_NAME)
+        return None
 
-    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("reference-*.fasta")]
-    _ = [path.unlink() for path in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("query-*.fasta")]
+    # Update labels
+    cstag_insertions_update = {key: cstag_insertions[key] for key in fasta_insertions_unique.keys()}
+    cstag_insertions_update = update_labels(cstag_insertions_update, FASTA_ALLELES)
+    fasta_insertions_update = update_labels(fasta_insertions_unique, FASTA_ALLELES)
+
+    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions_update)
+    save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions_update)
+
+    remove_temporal_files(TEMPDIR, SAMPLE_NAME)

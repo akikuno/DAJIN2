@@ -9,7 +9,7 @@ from pathlib import Path
 
 from sklearn.exceptions import ConvergenceWarning
 
-
+DAJIN_VERSION = "0.4.6"
 DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
 
@@ -28,7 +28,7 @@ class DeferredFileHandler(logging.FileHandler):
 
 def get_logfile() -> Path:
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    return Path(f"{current_time}_DAJIN2.log")
+    return Path(f"DAJIN2_log_{current_time}.txt")
 
 
 def set_logging(path_logfile: Path) -> None:
