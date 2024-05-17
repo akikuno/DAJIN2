@@ -181,9 +181,9 @@ def convert_consecutive_indels(midsv_sample: Generator) -> Generator[list[dict]]
         yield m
 
 
-def detect_insertion_within_deletion(midsv_sample: Generator) -> Generator[list[dict]]:
+def reallocate_insertions_within_deletion(midsv_sample: Generator) -> Generator[list[dict]]:
     for m in midsv_sample:
-        m["CSSPLIT"] = cssplits_handler.detect_insertion_within_deletion(m["CSSPLIT"])
+        m["CSSPLIT"] = cssplits_handler.reallocate_insertion_within_deletion(m["CSSPLIT"])
         yield m
 
 
@@ -224,5 +224,5 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
-        midsv_sample = detect_insertion_within_deletion(midsv_sample)
+        midsv_sample = reallocate_insertions_within_deletion(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output_midsv)
