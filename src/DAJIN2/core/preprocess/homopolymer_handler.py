@@ -19,8 +19,11 @@ def get_repeat_regions(sequence: str, loci: set[int]) -> list[tuple[int, int]]:
     return repeat_regions
 
 
-def cosine_simirarity(X, Y) -> float:
-    return np.dot(X, Y) / (np.linalg.norm(X) * np.linalg.norm(Y))
+def cosine_similarity(X, Y) -> float:
+    # Add 1e-6 to avoid division by zero when calculating cosine similarity
+    X += 1e-6
+    Y += 1e-6
+    return float(np.dot(X, Y) / (np.linalg.norm(X) * np.linalg.norm(Y)))
 
 
 ###########################################################
@@ -28,24 +31,40 @@ def cosine_simirarity(X, Y) -> float:
 ###########################################################
 
 
-def extract_errors(
+def extract_sequence_errors_in_homopolymer_loci(
     sequence: str,
     indels_normalized_sample: dict[str, np.array],
     indels_normalized_control: dict[str, np.array],
     anomal_loci: dict[set],
 ) -> dict[str, set[int]]:
-    errors_in_homopolymer = dict()
+    sequence_errors_in_homopolymer = dict()
     for mut in ["+", "-", "*"]:
         repeat_regions = get_repeat_regions(sequence, anomal_loci[mut])
         if len(repeat_regions) == 0:
-            errors_in_homopolymer[mut] = set()
+            sequence_errors_in_homopolymer[mut] = set()
             continue
-        errors = set()
+        sequence_errors = set()
         for start, end in repeat_regions:
-            x = indels_normalized_sample[mut][start:end]
-            y = indels_normalized_control[mut][start:end]
-            if cosine_simirarity(x, y) > 0.95:
-                errors.update(range(start, end + 1))
-        errors_in_homopolymer[mut] = errors
+            x = np.array(indels_normalized_sample[mut][start:end])
+            y = np.array(indels_normalized_control[mut][start:end])
 
-    return errors_in_homopolymer
+            # Scaling data to [0, 1] for cosine similarity
+
+            # Check if the range of x is zero
+            if x.max() - x.min() == 0:
+                x_scaled = np.zeros_like(x)
+            else:
+                x_scaled = (x - x.min()) / (x.max() - x.min())
+
+            # Check if the range of y is zero
+            if y.max() - y.min() == 0:
+                y_scaled = np.zeros_like(y)
+            else:
+                y_scaled = (y - y.min()) / (y.max() - y.min())
+
+            if cosine_similarity(x_scaled, y_scaled) > 0.95:
+                sequence_errors.update(range(start, end + 1))
+
+        sequence_errors_in_homopolymer[mut] = sequence_errors
+
+    return sequence_errors_in_homopolymer
