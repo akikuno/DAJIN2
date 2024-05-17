@@ -32,23 +32,18 @@ def remove_non_alphabets(cssplits: str) -> str:
 ###########################################################
 
 
-def clustering_insertions(insertions_cssplit: list[str], n_decoy: int = 1000) -> list[int]:
-    seq_all = [remove_non_alphabets(seq) for seq in insertions_cssplit]
+def clustering_insertions(cssplits_insertion: list[str], n_decoy: int = 1000) -> list[int]:
+    seq_all = [remove_non_alphabets(seq) for seq in cssplits_insertion]
     query = seq_all[0]
     _, distances, _ = zip(*process.extract_iter(query, seq_all, scorer=DamerauLevenshtein.normalized_distance))
 
     # By adding upper (1) and lower (0) limits, we prevent errors where minor differences are clustered (e.g., 0.1 and 0.2 becoming separate clusters).
-    distances = list(distances)
 
-    # As MeanShift becomes extremely slow with values that have no variation, we add appropriate variation.
+    insertion_lengths = [[len(c) for c in cs.split(",")] for cs in cssplits_insertion]
 
-    rng = np.random.default_rng(1)
-    distances.extend(rng.uniform(0.0, 0.001, n_decoy // 2).tolist())
-    distances.extend(rng.uniform(0.999, 1.0, 500).tolist())
+    scores = [s + [d] for s, d in zip(insertion_lengths, distances)]
 
-    # Currently, MeanShift is the preferred algorithm. Other clustering methods like HDBSCAN, OPTICS, and Birch tend to produce overly fine clusters, even though they operate faster than MeanShift.
-
-    return MeanShift(bin_seeding=True).fit_predict(np.array(distances).reshape(-1, 1)).tolist()[:len(seq_all)]
+    return MeanShift(bin_seeding=True).fit_predict(np.array(scores)).tolist()
 
 
 ###########################################################
