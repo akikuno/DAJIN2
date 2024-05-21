@@ -50,9 +50,8 @@ jobs:
           # ==========================================
           # Remove kaleido from requirements.txt because it has a different name in conda (python-kaleido).
           # ==========================================
-          grep -v kaleido requirements.txt > requirements_.txt 
-          conda install --yes --file requirements_.txt
-          pip install -U pip pytest kaleido
+          pip install -U pip pytest
+          pip install -e .
 
       - name: Execute tests
         env:
