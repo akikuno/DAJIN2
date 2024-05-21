@@ -13,6 +13,20 @@ license = "MIT"
 packages = [
     { include = "DAJIN2", from = "src" }
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+include = [
+    "src/DAJIN2/template_igvjs.html", 
+    "src/DAJIN2/templates/**", 
+    "src/DAJIN2/static/**", 
+    "src/DAJIN2/utils/**",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -36,11 +50,3 @@ wslPath = ">=0.4.1"
 [tool.poetry.scripts]
 DAJIN2 = "DAJIN2.main:execute"
 
-[tool.poetry.include]
-files = [
-    "requirements.txt", 
-    "src/DAJIN2/template_igvjs.html", 
-    "src/DAJIN2/templates/**", 
-    "src/DAJIN2/static/**", 
-    "src/DAJIN2/utils/**",
-]
