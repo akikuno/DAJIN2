@@ -43,12 +43,17 @@ jobs:
           conda activate env-dajin2
           conda config --env --set subdir osx-64
 
+      - name: Install weasyprint on macos-latest🍎
+        if: runner.os == 'macOS'
+        run: |
+          conda install -n env-dajin2 weasyprint
+
       - name: Install dependencies
         run: |
           conda activate env-dajin2
 
           # ==========================================
-          # Remove kaleido from requirements.txt because it has a different name in conda (python-kaleido).
+          # Use pip because conda does not support pyproject.toml.
           # ==========================================
           pip install -U pip pytest
           pip install -e .
