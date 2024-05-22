@@ -9,9 +9,9 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 2
+      max-parallel: 1
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         python-version: ['3.10']
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
@@ -33,21 +33,6 @@ jobs:
         run: |
           conda create -y -n env-dajin2 python=${{ matrix.python-version }}
 
-      - name: Setup conda environment on macos-latest🍎
-        if: runner.os == 'macOS'
-        run: |
-          # ==========================================
-          # Use Rosseta for macOS because the Bioconda channel does not yet support Apple Silicon
-          # ==========================================
-          CONDA_SUBDIR=osx-64 conda create -y -n env-dajin2 python=${{ matrix.python-version }}
-          conda activate env-dajin2
-          conda config --env --set subdir osx-64
-
-      - name: Install weasyprint on macos-latest🍎
-        if: runner.os == 'macOS'
-        run: |
-          conda install -n env-dajin2 weasyprint
-
       - name: Install dependencies
         run: |
           conda activate env-dajin2
@@ -63,4 +48,6 @@ jobs:
       ##########################################
 
       - name: Run tests version
-        run: sh tests/test_version.sh
+        run: |
+          conda activate env-dajin2
+          sh tests/test_version.sh

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-pip install -qU pip . || exit 1
-
 PIP_VERSION=$(echo $(DAJIN2 --version) | awk '{print $NF}')
 UTIL_VERSION=$(grep "DAJIN_VERSION" src/DAJIN2/utils/config.py | awk '{print $NF}' | tr -d '"')
 
