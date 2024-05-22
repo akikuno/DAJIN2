@@ -110,6 +110,9 @@ def update_sam(sam: list, GENOME_COODINATES: dict = {}) -> list:
 
 def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, UUID, RESULT_SAMPLE=None, is_control=False) -> None:
     path_sam_input = Path(TEMPDIR, NAME, "sam", "map-ont_control.sam")
+    if not path_sam_input.exists():  # In the case of short-read.
+        path_sam_input = Path(TEMPDIR, NAME, "sam", "sr_control.sam")
+
     sam_records = list(io.read_sam(path_sam_input))
 
     # Update sam
