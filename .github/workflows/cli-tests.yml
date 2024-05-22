@@ -12,16 +12,18 @@ jobs:
       max-parallel: 2
       matrix:
         os: [ubuntu-latest, macos-latest]
-    name: Bash on ${{ matrix.os }}
-    steps:
-      ##########################################
-      # Setup DAJIN2
-      ##########################################
+        python-version: ['3.10']
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
       - uses: actions/checkout@v4
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
           miniconda-version: "latest"
           activate-environment: test-env
           channels: bioconda, conda-forge, defaults, anaconda
@@ -29,7 +31,7 @@ jobs:
       - name: Setup conda environment on ubuntu-latest🐧
         if: runner.os == 'Linux'
         run: |
-          conda create -y -n env-dajin2 python=3.10
+          conda create -y -n env-dajin2 python=${{ matrix.python-version }}
 
       - name: Setup conda environment on macos-latest🍎
         if: runner.os == 'macOS'
@@ -37,7 +39,7 @@ jobs:
           # ==========================================
           # Use Rosseta for macOS because the Bioconda channel does not yet support Apple Silicon
           # ==========================================
-          CONDA_SUBDIR=osx-64 conda create -y -n env-dajin2 python=3.10
+          CONDA_SUBDIR=osx-64 conda create -y -n env-dajin2 python=${{ matrix.python-version }}
           conda activate env-dajin2
           conda config --env --set subdir osx-64
 
