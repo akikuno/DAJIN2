@@ -4,6 +4,8 @@ import re
 import gzip
 from pathlib import Path
 
+import random
+
 import mappy
 
 
@@ -60,15 +62,15 @@ def export_fasta_files(TEMPDIR: Path, FASTA_ALLELES: dict, NAME: str) -> None:
 #################################################
 
 
-def extract_extention(path_file: Path) -> str:
-    suffixes = path_file.suffixes
+def extract_extention(path_file: str | Path) -> str:
+    suffixes = Path(path_file).suffixes
     return "".join(suffixes)
 
 
-def is_gzip_file(path_file: Path) -> bool:
+def is_gzip_file(path_file: str | Path) -> bool:
     """Check if a file is a GZip compressed file."""
     try:
-        with path_file.open("rb") as f:
+        with Path(path_file).open("rb") as f:
             return f.read(2) == b"\x1f\x8b"
     except IOError:
         return False
@@ -86,9 +88,56 @@ def save_fastq_as_gzip(TEMPDIR: Path, path_fastx: list[Path], barcode: str) -> N
                     merged_file.write(f.read().encode())
 
 
-def save_concatenated_fastx(TEMPDIR: Path, directory: str) -> None:
+def save_concatenated_fastx(TEMPDIR: Path, path_fastq_directory: str | Path) -> None:
     fastx_suffix = {".fa", ".fq", ".fasta", ".fastq", ".fa.gz", ".fq.gz", ".fasta.gz", ".fastq.gz"}
-    path_directory = Path(directory)
-    barcode = path_directory.stem
+
+    path_directory = Path(path_fastq_directory)
     path_fastx = [path for path in path_directory.iterdir() if extract_extention(path) in fastx_suffix]
+
+    barcode = path_directory.stem
     save_fastq_as_gzip(TEMPDIR, path_fastx, barcode)
+
+
+#################################################
+# save_subsetted_fastx
+#################################################
+
+
+def read_lines(path_file) -> list[str]:
+    if is_gzip_file(path_file):
+        with gzip.open(path_file, "rt") as f:
+            return [line.strip() for line in f]
+    else:
+        with open(path_file, "r") as f:
+            return [line.strip() for line in f]
+
+
+def parse_fastq(fastq) -> list[dict]:
+    fastq_parsed = []
+    iterator = iter(fastq)
+    try:
+        while True:
+            header = next(iterator).strip()
+            sequence = next(iterator).strip()
+            annotate = next(iterator).strip()
+            quality = next(iterator).strip()
+            fastq_parsed.append({"header": header, "sequence": sequence, "annotate": annotate, "quality": quality})
+    except StopIteration:
+        pass
+    return fastq_parsed
+
+
+def save_subsetted_fastx(path_fastq: str | Path, num_reads: int = 10_000) -> None:
+    """If the number of control reads is too high, it unnecessarily slows down the computation speed. Therefore, we perform random sampling to reduce the number of reads to below 10,000."""
+
+    fastq: list[str] = read_lines(path_fastq)
+    if len(fastq) // 4 <= 10_000:
+        return None
+
+    fastq: list[dict] = parse_fastq(fastq)
+
+    random.seed(1)
+    fastq_subset = random.sample(fastq, num_reads)
+    with gzip.open(path_fastq, "wt") as f:
+        for read in fastq_subset:
+            f.write(f"{read['header']}\n{read['sequence']}\n{read['annotate']}\n{read['quality']}\n")

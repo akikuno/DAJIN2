@@ -34,21 +34,24 @@ def execute_control(arguments: dict):
     ###########################################################
     if Path(ARGS.tempdir, "report", "BAM", ARGS.control_name, f"{ARGS.control_name}.bam").exists():
         logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
-        return
+        return None
+
     logger.info(f"Preprocess {arguments['control']}...")
 
     ###########################################################
     # Merge fastq files
     ###########################################################
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control)
 
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control)
+    # Save subsetted fastq if the read number is too large (> 10,000 reads)
+    fastx_handler.save_subsetted_fastx(
+        Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz"), num_reads=10_000
+    )
     ###########################################################
     # Mapping
     ###########################################################
 
-    # ============================================================
     # Export fasta files as single-FASTA format
-    # ============================================================
     fastx_handler.export_fasta_files(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
 
     # ============================================================
@@ -112,6 +115,7 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
+
     preprocess.generate_midsv(ARGS, is_control=False, is_insertion=False)
 
     # ============================================================
