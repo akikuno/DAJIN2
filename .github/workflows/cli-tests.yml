@@ -1,0 +1,64 @@
+name: cli-tests
+
+on:
+  push:
+  schedule:
+    - cron: "0 2 * * 1" # The task runs at 2 a.m. every Monday.
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    name: Bash on ${{ matrix.os }}
+    steps:
+      ##########################################
+      # Setup DAJIN2
+      ##########################################
+
+      - uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: 3.10
+          miniconda-version: "latest"
+          activate-environment: test-env
+          channels: bioconda, conda-forge, defaults, anaconda
+
+      - name: Setup conda environment on ubuntu-latest🐧
+        if: runner.os == 'Linux'
+        run: |
+          conda create -y -n env-dajin2 python=3.10
+
+      - name: Setup conda environment on macos-latest🍎
+        if: runner.os == 'macOS'
+        run: |
+          # ==========================================
+          # Use Rosseta for macOS because the Bioconda channel does not yet support Apple Silicon
+          # ==========================================
+          CONDA_SUBDIR=osx-64 conda create -y -n env-dajin2 python=3.10
+          conda activate env-dajin2
+          conda config --env --set subdir osx-64
+
+      - name: Install weasyprint on macos-latest🍎
+        if: runner.os == 'macOS'
+        run: |
+          conda install -n env-dajin2 weasyprint
+
+      - name: Install dependencies
+        run: |
+          conda activate env-dajin2
+
+          # ==========================================
+          # Use pip because conda does not support pyproject.toml.
+          # ==========================================
+          pip install -U pip pytest
+          pip install -e .
+
+      ##########################################
+      # Execute tests
+      ##########################################
+
+      - name: Run tests version
+        run: sh tests/test_version.sh
