@@ -6,12 +6,10 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+[[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 -->
 
 <!-- 💡 ToDo
-- consensus.similarity_searcher.onehot_by_mutationsでは、コントロールアレルに対して、何度も同一のものを生成している可能性がある。
-  - 一箇所にまとめられるようにする
 - リード数が多すぎる場合には、平均的なPhread scoreが高いものを優先して解析する、といったsubsetを行っても良い気が
 
 - deletions_to_fasta.pyを加える
@@ -19,13 +17,24 @@
 - VCF、PDFを出力する
 - 逆位アレルでの検証を加える
 - nCATSがほしい…
-- Docker imageにして、darwin-arm64でも動くようにする
 - Flaskではなく、streamlitでGUIを作る
 
  -->
 
 <!-- ############################################################# # -->
 
+# v0.5.0 (2024-MM-DD)
+
+## 🔧 Maintenance
+
++ Update `deploy_pypi.yml` to use the latest version of Actions. Refer to [the latest official YAML for guidance](https://docs.github.com/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1a54b40146acd21eee30a3a373c44b419d170ad4)]
+
+
++ Integrate `requirements.txt` and `MANIFEST.in` into `pyproject.toml` by replacing `setup.py` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/12f255c3a280098f0310755c51e966031c724932)]
+
++ Modify to record the execution command of DAJIN2 in the log file [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/38c97a725f6dd3f00162325bf504142f8f8d6594)]
+
++ Add a test to check if the version in `test_version.sh` matches the version in `pyproject.toml` and `utils.config`
 
 <!-- ############################################################# # -->
 
