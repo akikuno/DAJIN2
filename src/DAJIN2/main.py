@@ -11,6 +11,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import sys
 import shutil
+import logging
 import argparse
 from pathlib import Path
 from copy import deepcopy
@@ -21,12 +22,9 @@ from DAJIN2.core import core
 from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
 
 
-def generate_report(name: str) -> None:
+def generate_report(name: str, logger: logging.Logger) -> None:
     report_generator.report(name)
-    print(
-        f"\N{party popper} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.",
-        file=sys.stderr,
-    )
+    logger.info(f"\N{party popper} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.")
 
 
 ################################################################################
@@ -35,18 +33,26 @@ def generate_report(name: str) -> None:
 
 
 def execute_single_mode(arguments: dict[str]):
-    # set logging to export log to stderr and file
+    # Set logging to export log to stderr and file
     path_logfile = config.get_logfile()
-    config.set_logging(path_logfile)
+    logger = config.set_logging(path_logfile)
+    logger.info(f"\N{runner} Start running DAJIN2 version {config.DAJIN_VERSION}")
+    logger.info(f"\N{Personal Computer} {' '.join(sys.argv)}")
+
+    # Validate input files
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
     if arguments.get("genome"):
         arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
-    # run DAJIN2
+
+    # Run DAJIN2
     core.execute_control(arguments)
     core.execute_sample(arguments)
-    # finish
-    generate_report(arguments["name"])
+
+    # Finish call
+    generate_report(arguments["name"], logger)
     shutil.move(path_logfile, Path("DAJIN_Results", arguments["name"]))
+
+    # Remove temporary files
     if not arguments["debug"]:
         shutil.rmtree(Path("DAJIN_Results", ".tempdir", arguments["name"]))
 
@@ -137,14 +143,16 @@ def execute_batch_mode(arguments: dict[str]):
         # Set logging to export log to stderr and file
         config.reset_logging()
         path_logfile = config.get_logfile()
-        config.set_logging(path_logfile)
+        logger = config.set_logging(path_logfile)
+        logger.info(f"\N{runner} Start running DAJIN2 version {config.DAJIN_VERSION}")
+        logger.info(f"\N{Personal Computer} {' '.join(sys.argv)}")
 
-        # Start DAJIN2
+        # Run DAJIN2
         run_DAJIN2(groups, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
         run_DAJIN2(groups, cache_urls_genome, is_control=False, num_workers=arguments["threads"])
 
         # Finish call
-        generate_report(name)
+        generate_report(name, logger)
         shutil.move(path_logfile, Path("DAJIN_Results", name))
         if not arguments["debug"]:
             shutil.rmtree(Path("DAJIN_Results", ".tempdir", name))

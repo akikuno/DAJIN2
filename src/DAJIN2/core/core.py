@@ -5,7 +5,7 @@ import logging
 
 from pathlib import Path
 
-from DAJIN2.utils import io, config, fastx_handler
+from DAJIN2.utils import io, fastx_handler
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.input_formatter import FormattedInputs
 
@@ -18,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 def execute_control(arguments: dict):
-
-    logger.info(f"\N{runner} Start running DAJIN2 version {config.DAJIN_VERSION}")
 
     logger.info(f"{arguments['control']} is now processing...")
 
