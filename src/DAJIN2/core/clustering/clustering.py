@@ -23,12 +23,14 @@ config.set_warnings_ignore()
 
 
 def count_number_of_clusters(labels_control: list[int], coverage_control: int) -> int:
-    """Reads < 1% in the control are considered clustering errors and are not counted"""
-    return sum(1 for reads in Counter(labels_control).values() if reads / coverage_control > 0.01)
+    """If there is less than 1% lead within a cluster, they are considered clustering errors and are not counted"""
+    return sum(1 for control_reads in Counter(labels_control).values() if control_reads / coverage_control > 0.01)
 
 
 def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) -> list[int]:
     labels_previous = list(range(coverage_sample))
+    min_cluster_size = int(coverage_sample * 0.005)  # 0.5% of the reads
+
     for i in range(1, coverage_sample):
         np.random.seed(seed=1)
         labels_all = BisectingKMeans(n_clusters=i, random_state=1).fit_predict(X).tolist()
@@ -45,11 +47,14 @@ def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) ->
         Return the number of clusters when:
             - the number of clusters in control is split into more than one.
             - the mutual information between the current and previous labels is high enough (= similar).
+            - the minimum cluster size is reached.
         To reduce the allele number, previous labels are returned.
         """
-        if num_labels_control >= 2 or rand_index >= 0.95:
+        if num_labels_control >= 2 or rand_index >= 0.95 or min_cluster_size > min(Counter(labels_current).values()):
             return labels_previous
+
         labels_previous = labels_current
+
     return labels_previous
 
 
