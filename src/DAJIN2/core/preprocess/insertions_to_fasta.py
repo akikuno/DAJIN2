@@ -32,12 +32,10 @@ def remove_non_alphabets(cssplits: str) -> str:
 ###########################################################
 
 
-def clustering_insertions(cssplits_insertion: list[str], n_decoy: int = 1000) -> list[int]:
+def clustering_insertions(cssplits_insertion: list[str]) -> list[int]:
     seq_all = [remove_non_alphabets(seq) for seq in cssplits_insertion]
     query = seq_all[0]
     _, distances, _ = zip(*process.extract_iter(query, seq_all, scorer=DamerauLevenshtein.normalized_distance))
-
-    # By adding upper (1) and lower (0) limits, we prevent errors where minor differences are clustered (e.g., 0.1 and 0.2 becoming separate clusters).
 
     insertion_lengths = [[len(c) for c in cs.split(",")] for cs in cssplits_insertion]
 
@@ -190,7 +188,8 @@ def merge_similar_insertions(
             seq, count = next(iter(insertion.items()))
             insertions_merged[idx] = {tuple([seq]): count}
             continue
-        labels = clustering_insertions(insertion, n_decoy=1000)
+
+        labels = clustering_insertions(insertion)
         insertions_merged[idx] = get_merged_insertion(insertion, labels)
 
     return remove_minor_groups(insertions_merged, coverage, threshold)
@@ -449,6 +448,7 @@ def extract_index_of_insertions(
                 max_idx = idx
         if max_idx != -1:
             index_of_insertions.append(max_idx)
+
     return index_of_insertions
 
 
@@ -464,6 +464,7 @@ def generate_cstag(
                 continue
             list_sequence[idx] = convert_cssplits_to_cstag([seq]) + "="
         cstag_insertions[label] = "cs:Z:=" + "".join(list_sequence)
+
     return cstag_insertions
 
 
@@ -471,6 +472,7 @@ def generate_fasta(cstag_insertions: dict[str, str]) -> dict[str, str]:
     fasta_insertions = dict()
     for label, cs_tag in cstag_insertions.items():
         fasta_insertions[label] = cstag.to_sequence(cs_tag)
+
     return fasta_insertions
 
 
@@ -504,6 +506,7 @@ def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
         if user_defined_alleles.isdisjoint(set(d_updated)):
             break
         digits_up += 1
+
     return d_updated
 
 
@@ -551,7 +554,7 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     # Clustering similar insertion alleles
     insertions_scores_sequences = extract_score_and_sequence(PATH_SAMPLE, insertions_merged)
     cssplits_insertion = [cssplit for _, cssplit in insertions_scores_sequences]
-    labels = clustering_insertions(cssplits_insertion, n_decoy=1000)
+    labels = clustering_insertions(cssplits_insertion)
     labels_filtered, insertion_scores_sequences_filtered = filter_minor_label(
         labels, insertions_scores_sequences, coverage, threshold=0.5
     )
