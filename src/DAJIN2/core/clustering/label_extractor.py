@@ -17,6 +17,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
     max_label = 1
     strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
     classif_sample.sort(key=lambda x: x["ALLELE"])
+    min_samples = int(len(classif_sample) * 0.5 // 100)  # 0.5% of the samples
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         """Cache data to temporary files"""
         if Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json").exists():
@@ -37,9 +38,9 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         """Skip clustering when the number of reads is too small or there is no mutation."""
         read_numbers = io.count_newlines(path_sample)
         is_no_mutation = all(m == set() for m in mutation_loci)
-        if read_numbers <= 5 or is_no_mutation:
-            max_label += 1
+        if read_numbers < max(5, min_samples) or is_no_mutation:
             labels_result.extend([max_label] * read_numbers)
+            max_label += 1
             continue
 
         """Calculate scores to temporary files."""
@@ -54,7 +55,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         io.write_jsonl(data=scores_control, file_path=path_score_control)
 
         """Extract labels."""
-        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
+        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias, min_samples)
         labels_result += relabel_with_consective_order(labels, start=max_label)
 
         """Remove temporary files."""
