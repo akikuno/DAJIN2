@@ -183,18 +183,21 @@ def execute_sample(arguments: dict):
 
     logger.info(f"Consensus calling of {arguments['sample']}...")
 
+    # Remove minor alleles with fewer than 5 reads or less than 0.5%
+    clust_sample_removed = consensus.remove_minor_alleles(clust_sample)
+
     # Downsampling to 1000 reads in each LABEL
-    clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
+    clust_downsampled = consensus.downsample_by_label(clust_sample_removed, 1000)
 
-    consensus.cache_mutation_loci(ARGS, clust_subset_sample)
+    consensus.cache_mutation_loci(ARGS, clust_downsampled)
 
-    cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_subset_sample)
+    cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_downsampled)
 
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
 
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
     io.save_pickle(cons_percentage, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
