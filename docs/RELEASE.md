@@ -25,6 +25,17 @@
 
 # v0.5.0 (2024-MM-DD)
 
+## 💥 Breaking
+
++ Extremely low-frequency alleles (less than 0.05%) are considered Nanopore sequence errors and are not clustered #36.
+  + Configure `clustering.extract_labels` so that alleles with a low number of reads (0.05% or fewer or 5 reads or fewer) are not clustered. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/e671b5c84b4cf522faf51823e36fe075b049efcf)]
+  + Change `clustering.clustering` to stop if the minimum value of the elements in the cluster is 0.5% or less. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/74609d5048a4ad8d7004886bf411b2ed4be7fa4b)]
+
+
++ Save subsetted fastq of a control sample if the read number is too large (> 10,000 reads). The control will have a maximum of 10,000 reads to avoid excessive computational load. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d21827f8bbeec326fa2aa4f28feadd6fdecaf554)]
+
++ If the read length is 500 bases or less, change the mappy preset to `sr`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6e56804ad40780e200f4e9c9ea23294b95443aba)]
+
 ## 🔧 Maintenance
 
 + Update `deploy_pypi.yml` to use the latest version of Actions. Refer to [the latest official YAML for guidance](https://docs.github.com/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1a54b40146acd21eee30a3a373c44b419d170ad4)]
@@ -34,7 +45,8 @@
 
 + Modify to record the execution command of DAJIN2 in the log file [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/38c97a725f6dd3f00162325bf504142f8f8d6594)]
 
-+ Add a test to check if the version in `test_version.sh` matches the version in `pyproject.toml` and `utils.config`
++ Add a test to check if the version in `test_version.sh` matches the version in `pyproject.toml` and `utils.config` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a06cb4593ef1a11b3c9826f7ca5532a1bf83f67f)]
+
 
 <!-- ############################################################# # -->
 
