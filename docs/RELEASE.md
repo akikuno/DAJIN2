@@ -30,6 +30,7 @@
 + Extremely low-frequency alleles (less than 0.05%) are considered Nanopore sequence errors and are not clustered #36.
   + Configure `clustering.extract_labels` so that alleles with a low number of reads (0.05% or fewer or 5 reads or fewer) are not clustered. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/e671b5c84b4cf522faf51823e36fe075b049efcf)]
   + Change `clustering.clustering` to stop if the minimum value of the elements in the cluster is 0.5% or less. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/74609d5048a4ad8d7004886bf411b2ed4be7fa4b)]
+  + Add `consensus.remove_minor_alleles` to remove minor alleles with fewer than 5 reads or less than 0.5% [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/70f675d6a8ea90e9fca51639ddb2b4609e0f4c80)]
 
 
 + Save subsetted fastq of a control sample if the read number is too large (> 10,000 reads). The control will have a maximum of 10,000 reads to avoid excessive computational load. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d21827f8bbeec326fa2aa4f28feadd6fdecaf554)]
@@ -47,6 +48,8 @@
 
 + Add a test to check if the version in `test_version.sh` matches the version in `pyproject.toml` and `utils.config` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a06cb4593ef1a11b3c9826f7ca5532a1bf83f67f)]
 
+
++ Rename `consensus.subset_clust` to `consensus.downsample_by_label` to clarify the function's purpose. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f6e3f0bc2982996a7dbbc4126a80a7dedd076430)]
 
 <!-- ############################################################# # -->
 
