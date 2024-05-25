@@ -6,7 +6,7 @@ import mappy
 from pathlib import Path
 from typing import Generator
 
-from DAJIN2.utils import dna_handler, sam_handler
+from DAJIN2.utils import dna_handler
 
 
 def to_sam(
@@ -122,14 +122,12 @@ def generate_sam(
         for preset in presets:
             sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads, options=mappy_options)
 
-            sam_removed = sam_handler.remove_overlapped_reads([record.split("\t") for record in sam])
-
             if is_control and is_insertion:
                 path_sam = Path(out_directory, f"{preset}_{name_fasta}_{ARGS.sample_name}.sam")
             else:
                 path_sam = Path(out_directory, f"{preset}_{name_fasta}.sam")
 
-            path_sam.write_text("\n".join("\t".join(record) for record in sam_removed))
+            path_sam.write_text("\n".join(sam))
 
 
 ########################################################################
