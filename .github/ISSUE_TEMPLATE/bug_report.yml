@@ -1,8 +1,6 @@
----
 name: 🐞 Bug Report
-about: Create a report to help us improve
-labels: bug
----
+description: Create a report to help us improve
+labels: ['bug']
 
 body:
   - type: textarea
@@ -13,34 +11,34 @@ body:
     validations:
       required: true
 
-- type: textarea
-  attributes:
-    label: Current Behavior
-    description: |
-      Optional: A concise description of what you're experiencing.
-  validations:
-    required: false
+  - type: textarea
+    attributes:
+      label: Current Behavior
+      description: |
+        Optional: A concise description of what you're experiencing.
+    validations:
+      required: false
 
-- type: textarea
-  attributes:
-    label: Expected Behavior
-    description: |
-      Optional: A concise description of what you expected to happen.
-  validations:
-    required: false
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: |
+        Optional: A concise description of what you expected to happen.
+    validations:
+      required: false
 
-- type: textarea
-  attributes:
-    label: Steps To Reproduce
-    description: |
-      Optional: Steps to reproduce the behavior.
-    placeholder: |
-      1. In this environment...
-      1. With this config...
-      1. Run '...'
-      1. See error...
-  validations:
-    required: false
+  - type: textarea
+    attributes:
+      label: Steps To Reproduce
+      description: |
+        Optional: Steps to reproduce the behavior.
+      placeholder: |
+        1. In this environment...
+        1. With this config...
+        1. Run '...'
+        1. See error...
+    validations:
+      required: false
 
   - type: textarea
     id: environment

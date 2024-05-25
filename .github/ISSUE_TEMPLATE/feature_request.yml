@@ -1,8 +1,6 @@
----
 name: 💡 Feature Request
-about: Suggest an idea for this project
-labels: request
----
+description: Suggest an idea for this project
+labels: ['request']
 
 body:
   - type: textarea
@@ -12,7 +10,6 @@ body:
       description: A clear and concise description of the request.
     validations:
       required: true
-
 
   - type: textarea
     id: environment
