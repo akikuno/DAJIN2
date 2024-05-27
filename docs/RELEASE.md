@@ -51,6 +51,12 @@
 
 + Rename `consensus.subset_clust` to `consensus.downsample_by_label` to clarify the function's purpose. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f6e3f0bc2982996a7dbbc4126a80a7dedd076430)]
 
+
+## 🐛 Bug Fixes
+
++ Fix `preprocess.insertions_to_fasta.remove_minor_groups` to delete the keys (insertion loci) when insertions are removed and result in an empty dict. This prevents errors when accessing non-existent keys in `subset_insertions`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ae8d887282035552c8fbe5c587e43844d5199952)]
+
+
 <!-- ############################################################# # -->
 
 
