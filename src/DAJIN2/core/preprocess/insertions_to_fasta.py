@@ -174,7 +174,7 @@ def remove_minor_groups(insertions_merged: dict[tuple[int], dict[tuple[str], int
         for seq in to_delete:
             del ins[seq]
 
-    return insertions_merged
+    return {k: v for k, v in insertions_merged.items() if v != dict()}
 
 
 def merge_similar_insertions(
