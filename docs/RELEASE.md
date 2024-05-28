@@ -25,6 +25,11 @@
 
 # v0.5.0 (2024-MM-DD)
 
+## 📝 Documentation
+
++ Update the issue template from md to yml and modify it to make it easier for users to fill out each item.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee2c1784e3cb0e72fd09b7c7df577082c19c1a88)]
+
+
 ## 💥 Breaking
 
 + Extremely low-frequency alleles (less than 0.05%) are considered Nanopore sequence errors and are not clustered #36.
@@ -36,6 +41,7 @@
 + Save subsetted fastq of a control sample if the read number is too large (> 10,000 reads). The control will have a maximum of 10,000 reads to avoid excessive computational load. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d21827f8bbeec326fa2aa4f28feadd6fdecaf554)]
 
 + If the read length is 500 bases or less, change the mappy preset to `sr`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6e56804ad40780e200f4e9c9ea23294b95443aba)]
+
 
 ## 🔧 Maintenance
 
@@ -50,6 +56,12 @@
 
 
 + Rename `consensus.subset_clust` to `consensus.downsample_by_label` to clarify the function's purpose. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f6e3f0bc2982996a7dbbc4126a80a7dedd076430)]
+
+
+## 🐛 Bug Fixes
+
++ Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
+
 
 <!-- ############################################################# # -->
 
