@@ -10,9 +10,6 @@
 -->
 
 <!-- 💡 ToDo
-- リード数が多すぎる場合には、平均的なPhread scoreが高いものを優先して解析する、といったsubsetを行っても良い気が
-
-- deletions_to_fasta.pyを加える
 
 - VCF、PDFを出力する
 - 逆位アレルでの検証を加える
@@ -42,6 +39,12 @@
 
 + If the read length is 500 bases or less, change the mappy preset to `sr`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6e56804ad40780e200f4e9c9ea23294b95443aba)]
 
++ Update `extract_best_preset` to prioritize `map-ont` and remove `splice` preset if inversion is observed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/aa7f6925d6ef4a80a1ba0bbf2b75d8e549ae9863)]
+
+
+Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` to automate change point detection by incorporating temporal changes. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7ed8ac8404d18b86c163c71ded6dd1ba784bce79)]
+
+
 
 ## 🔧 Maintenance
 
@@ -58,13 +61,13 @@
 + Rename `consensus.subset_clust` to `consensus.downsample_by_label` to clarify the function's purpose. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f6e3f0bc2982996a7dbbc4126a80a7dedd076430)]
 
 
++ Update `extract_unique_insertions` to merge highly similar extracted insertion sequences. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/50fe99f42bcd0bae85bcd0eb4ee371a65f38ea14)]
+
 ## 🐛 Bug Fixes
 
-<<<<<<< HEAD
 + Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
-=======
+
 + Fix `preprocess.insertions_to_fasta.remove_minor_groups` to delete the keys (insertion loci) when insertions are removed and result in an empty dict. This prevents errors when accessing non-existent keys in `subset_insertions`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ae8d887282035552c8fbe5c587e43844d5199952)]
->>>>>>> 582f74619740271feea76056f710298d7cd40635
 
 
 <!-- ############################################################# # -->
