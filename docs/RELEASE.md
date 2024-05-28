@@ -60,7 +60,11 @@
 
 ## 🐛 Bug Fixes
 
+<<<<<<< HEAD
 + Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
+=======
++ Fix `preprocess.insertions_to_fasta.remove_minor_groups` to delete the keys (insertion loci) when insertions are removed and result in an empty dict. This prevents errors when accessing non-existent keys in `subset_insertions`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ae8d887282035552c8fbe5c587e43844d5199952)]
+>>>>>>> 582f74619740271feea76056f710298d7cd40635
 
 
 <!-- ############################################################# # -->
