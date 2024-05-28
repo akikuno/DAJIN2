@@ -22,17 +22,19 @@ def has_inversion_in_splice(CIGAR: str) -> bool:
     return False
 
 
-def extract_preset_and_cigar_by_qname(path_sam_files: Generator[Path]) -> dict[dict[str, str]]:
+def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[str, str]]:
     preset_cigar_by_qname = defaultdict(dict)
     # Extract preset and CIGAR
     for path in path_sam_files:
         preset = path.stem.split("_")[0]
-        sam = io.read_sam(path)
+        sam: list[list[str]] = io.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
                 continue
             qname = record[0]
             cigar = record[5]
+            if qname in preset_cigar_by_qname and preset in preset_cigar_by_qname[qname]:
+                cigar += preset_cigar_by_qname[qname][preset]
             preset_cigar_by_qname[qname].update({preset: cigar})
     return dict(preset_cigar_by_qname)
 
@@ -40,9 +42,16 @@ def extract_preset_and_cigar_by_qname(path_sam_files: Generator[Path]) -> dict[d
 def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dict[str, str]:
     best_preset = defaultdict(str)
     for qname in preset_cigar_by_qname:
+        preset_cigar = preset_cigar_by_qname[qname]
+        # If there is an inversion in the splice preset, remove it
+        if "splice" in preset_cigar and has_inversion_in_splice(preset_cigar["splice"]):
+            preset_cigar.pop("splice")
+
+        if preset_cigar == {}:
+            continue
+
         alignment_lengths = {
-            preset: sam_handler.calculate_alignment_length(cigar)
-            for preset, cigar in preset_cigar_by_qname[qname].items()
+            preset: sam_handler.calculate_alignment_length(cigar) for preset, cigar in preset_cigar.items()
         }
 
         # If all alignment lengths are the same, prioritize map-ont
@@ -61,7 +70,7 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
 
 
 def extract_best_alignment_length_from_sam(
-    path_sam_files: Generator[Path], best_preset: dict[str, str]
+    path_sam_files: list[Path], best_preset: dict[str, str]
 ) -> Generator[list[str]]:
     flag_header = False
     for path in path_sam_files:
@@ -73,14 +82,10 @@ def extract_best_alignment_length_from_sam(
                     yield record
             else:
                 qname = record[0]
-                if best_preset[qname] == preset:
+                if best_preset.get(qname) == preset:
                     yield record
         flag_header = True
 
-
-def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]]:
-    for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep=set(["FLAG"])):
-        yield midsv_sample
 
 
 def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
@@ -188,17 +193,6 @@ def convert_consecutive_indels(midsv_sample: Generator) -> Generator[list[dict]]
 
 
 ###########################################################
-# reallocate_insertions_within_deletion
-###########################################################
-
-
-def reallocate_insertions_within_deletion(midsv_sample: Generator) -> Generator[list[dict]]:
-    for m in midsv_sample:
-        m["CSSPLIT"] = cssplits_handler.reallocate_insertion_within_deletion(m["CSSPLIT"])
-        yield m
-
-
-###########################################################
 # main
 ###########################################################
 
@@ -231,5 +225,4 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
-        midsv_sample = reallocate_insertions_within_deletion(midsv_sample)
         midsv.write_jsonl(midsv_sample, path_output_midsv)
