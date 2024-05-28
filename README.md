@@ -127,7 +127,7 @@ Options:
 -c, --control             Specify the path to the directory containing control FASTQ files.
 -a, --allele              Specify the path to the FASTA file.
 -n, --name (Optional)     Set the output directory name. Default: 'Results'.
--g, --genome (Optional)   Specify the reference genome ID (e.g., hg38, mm39). Default: '' (empty string).
+-g, --genome (Optional)   Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -t, --threads (Optional)  Set the number of threads. Default: 1.
 -h, --help                Display this help message and exit.
 -v, --version             Display the version number and exit.
