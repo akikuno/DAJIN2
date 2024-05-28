@@ -1,6 +1,8 @@
 from __future__ import annotations
 import re
 import cstag
+import numpy as np
+import ruptures as rpt
 
 
 def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
@@ -142,10 +144,9 @@ def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     return standardize_case(cssplits_concatenated)
 
 
-# convert position weight matrix (cons_pergentage) to sequence
-
-
 def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str:
+    """convert position weight matrix (cons_pergentage) to sequence"""
+
     consensus_sequence = []
     for cons_per in cons_percentage:
         cssplits = max(cons_per, key=cons_per.get)
@@ -156,60 +157,64 @@ def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str
 
 
 ###########################################################
-# detect_insertion_within_deletion
+# reallocate_insertion_within_deletion
 ###########################################################
 
 
-def is_start_of_consecutive_deletions(cssplits: list[str], i: int, del_range: int = 3) -> bool:
-    """Determine if the current index is the start of a consective deletion."""
-    if i + del_range > len(cssplits):
-        return False
+def extract_candidate_index_of_large_deletions(cssplits: list[str], bin_size: int = 500) -> list[int]:
+    range_of_large_deletions = []
+    threshold = int(bin_size / 2)
+    previous_end = None
+    for current_start in range(0, len(cssplits), bin_size):
+        current_end = current_start + bin_size
+        counts_deletion = "".join(cssplits[current_start:current_end]).count("-")
+        if counts_deletion >= threshold:
+            if current_start != previous_end:
+                range_of_large_deletions.append({"start": current_start, "end": current_end})
+            else:
+                range_of_large_deletions[-1]["end"] = current_start
+            previous_end = current_end
+    return range_of_large_deletions
 
-    for j in range(del_range):
-        if not cssplits[i + j].startswith("-"):
-            return False
 
-    return True
+def extract_break_points_of_large_deletions(
+    cssplits: list[str], range_of_large_deletions: list[dict[str, int]], bin_size: int = 500
+):
+    cssplits_match_bool = np.array([1 if cs.startswith("=") else 0 for cs in cssplits], dtype=bool)
+    break_points = []
+    len_cssplits = len(cssplits)
+    for range_of_deletion in range_of_large_deletions:
+        break_point = {}
+        for key, index in range_of_deletion.items():
+            window_start = max(0, index - bin_size)
+            window_end = min(len_cssplits, index + bin_size * 2)
+            signal = cssplits_match_bool[window_start:window_end]
+            model = "ar"
+            bks = rpt.Window(model=model).fit(signal).predict(n_bkps=10)[:-1]
+            if key == "start":
+                break_point[key] = bks[0] + window_start
+            else:
+                break_point[key] = bks[-1] + window_start
+        if break_point["start"] == break_point["end"]:
+            continue
+        break_points.append(break_point)
+
+    return break_points
 
 
-def get_range_of_inclusive_deletions(cssplits: list[str], del_range: int = 3, distance: int = 10) -> set[int]:
-    inclusive_deletion_range: set[int] = set()
-    n: int = len(cssplits)
-    i: int = 0
-    while i < n:
-        # Check for start of deletion
-        if cssplits[i].startswith("-"):
-            start: int = i
-            while i < n and cssplits[i].startswith("-"):
-                i += 1
-            # We have found the end of a deletion range
-            end: int = i
-            # Check if deletion length is enough to be considered
+def convert_break_points_to_index(break_points: list[dict[str, int]]) -> set[int]:
+    index_of_large_deletions = set()
+    for break_point in break_points:
+        start = break_point["start"]
+        end = break_point["end"]
+        index_of_large_deletions |= set(range(start, end))
+    return index_of_large_deletions
 
-            if end - start >= del_range:
-                # Now check for matching sequence within 'distance'
-                match_count: int = 0
-                while i < n and match_count <= distance:
-                    if cssplits[i].startswith("="):
-                        match_count += 1
-                    elif cssplits[i].startswith("-"):
-                        # If another deletion is found, reset match count and update range
-                        next_start: int = i
-                        while i < n and cssplits[i].startswith("-"):
-                            i += 1
-                            next_end: int = i
-                        if next_end - next_start >= del_range:
-                            inclusive_deletion_range.update(range(start, next_end))
 
-                            start = next_start
-                            end = next_end
-                            match_count = 0
-                            break
-                    i += 1
-
-        i += 1
-
-    return inclusive_deletion_range
+def get_index_of_large_deletions(cssplits: list[str], bin_size: int = 500) -> set[int]:
+    range_of_large_deletions = extract_candidate_index_of_large_deletions(cssplits, bin_size)
+    break_points = extract_break_points_of_large_deletions(cssplits, range_of_large_deletions, bin_size)
+    return convert_break_points_to_index(break_points)
 
 
 def adjust_cs_insertion(cs: str) -> str:
@@ -224,18 +229,17 @@ def adjust_cs_insertion(cs: str) -> str:
     return cs_insertion
 
 
-def reallocate_insertion_within_deletion(cssplit: str, del_range: int = 3, distance: int = 10) -> str:
+def reallocate_insertion_within_deletion(cssplits: list[str], bin_size: int = 500) -> list[str]:
     """
     Since the mapping in minimap2 is local alignment, insertion bases within large deletions may be partially mapped to the reference genome and not detected as insertion bases. Therefore, update cssplits to detect insertions within large deletions as insertions.
     """
-    cssplits = cssplit.split(",")
     cssplits_updated = cssplits.copy()
 
-    range_of_inclusive_deletion: set[int] = get_range_of_inclusive_deletions(cssplits, del_range, distance)
+    index_of_large_deletions: set[int] = get_index_of_large_deletions(cssplits, bin_size=bin_size)
 
     insertion_within_deletion = []
     for i, cs in enumerate(cssplits):
-        if i in range_of_inclusive_deletion:
+        if i in index_of_large_deletions:
             if cs.startswith("-"):
                 continue
             if cs.startswith("N") or cs.startswith("n"):
@@ -255,4 +259,4 @@ def reallocate_insertion_within_deletion(cssplit: str, del_range: int = 3, dista
             cssplits_updated[i] = "".join(insertion_within_deletion) + cs
             insertion_within_deletion = []
 
-    return ",".join(cssplits_updated)
+    return cssplits_updated
