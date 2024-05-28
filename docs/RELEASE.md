@@ -25,6 +25,11 @@
 
 # v0.5.0 (2024-MM-DD)
 
+## 📝 Documentation
+
++ Update the issue template from md to yml and modify it to make it easier for users to fill out each item.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee2c1784e3cb0e72fd09b7c7df577082c19c1a88)]
+
+
 ## 💥 Breaking
 
 + Extremely low-frequency alleles (less than 0.05%) are considered Nanopore sequence errors and are not clustered #36.
@@ -36,6 +41,7 @@
 + Save subsetted fastq of a control sample if the read number is too large (> 10,000 reads). The control will have a maximum of 10,000 reads to avoid excessive computational load. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d21827f8bbeec326fa2aa4f28feadd6fdecaf554)]
 
 + If the read length is 500 bases or less, change the mappy preset to `sr`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6e56804ad40780e200f4e9c9ea23294b95443aba)]
+
 
 ## 🔧 Maintenance
 
@@ -54,7 +60,11 @@
 
 ## 🐛 Bug Fixes
 
+<<<<<<< HEAD
++ Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
+=======
 + Fix `preprocess.insertions_to_fasta.remove_minor_groups` to delete the keys (insertion loci) when insertions are removed and result in an empty dict. This prevents errors when accessing non-existent keys in `subset_insertions`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ae8d887282035552c8fbe5c587e43844d5199952)]
+>>>>>>> 582f74619740271feea76056f710298d7cd40635
 
 
 <!-- ############################################################# # -->
