@@ -4,12 +4,11 @@ import pytest
 from DAJIN2.utils.cssplits_handler import (
     find_n_boundaries,
     add_match_operator_to_n,
-    concatenate_cssplits,
+    convert_cssplits_to_cstag,
     standardize_case,
     call_sequence,
     get_index_of_large_deletions,
     adjust_cs_insertion,
-    reallocate_insertion_within_deletion,
 )
 
 
@@ -31,76 +30,46 @@ def test_find_n_boundaries(cssplits, expected):
 ###########################################################
 
 
-def test_add_match_operator_to_n_empty_input():
-    assert add_match_operator_to_n([]) == []
-
-
-def test_add_match_operator_to_n_no_n_starting_strings():
-    cssplits = ["=A", "=C", "=G"]
-    assert add_match_operator_to_n(cssplits) == cssplits
-
-
-def test_add_match_operator_to_n_with_n_starting_strings():
-    cssplits = ["N", "=C", "N"]
-    expected_output = ["=N", "=C", "=N"]
-    assert add_match_operator_to_n(cssplits) == expected_output
-
-
-def test_concatenate_cssplits_empty_input():
-    assert concatenate_cssplits([]) == ""
-
-
-def test_concatenate_cssplits_single_element():
-    assert concatenate_cssplits(["=ACGT"]) == "=ACGT"
-
-
-def test_concatenate_cssplits_same_symbols():
-    cssplits = ["=AC", "=GT", "-CC", "-GG"]
-    assert concatenate_cssplits(cssplits) == "=ACGT-CCGG"
-
-
-def test_concatenate_cssplits_plus_symbol():
-    cssplits = ["+A|*GC|=T", "+A|+C|=G"]
-    assert concatenate_cssplits(cssplits) == "+AC=T+AC=G"
-
-
-def test_concatenate_cssplits_plus_symbol_torio():
-    cssplits = ["+A|*GC|=T", "+A|+C|=G", "+A|+C|=G"]
-    assert concatenate_cssplits(cssplits) == "+AC=T+AC=G+AC=G"
-
-
-def test_concatenate_cssplits_mixed():
-    cssplits = ["=AC", "=GT", "+A|+C|=G", "-CC", "-GG"]
-    assert concatenate_cssplits(cssplits) == "=ACGT+AC=G-CCGG"
-
-
-def test_standardize_case_empty_input():
-    assert standardize_case("") == ""
-
-
-def test_standardize_case_special_characters():
-    assert standardize_case("*AG-DEF+GHI~jkl=XYZ") == "*ag-def+ghi~jkl=XYZ"
-
-
-def test_standardize_case_no_special_characters():
-    assert standardize_case("=ABCDEF") == "=ABCDEF"
-
-
-def test_standardize_case_mixed():
-    assert standardize_case("*abcDEF+ghi-JKL=XYZ123*AC") == "*abcdef+ghi-jkl=XYZ123*ac"
+@pytest.mark.parametrize(
+    "cssplits, expected", [([], []), (["=A", "=C", "=G"], ["=A", "=C", "=G"]), (["N", "=C", "N"], ["=N", "=C", "=N"])]
+)
+def test_add_match_operator_to_n(cssplits, expected):
+    assert add_match_operator_to_n(cssplits) == expected
 
 
 @pytest.mark.parametrize(
-    "input, expected",
+    "input_str, expected",
     [
+        ("", ""),
+        ("*AG-DEF+GHI~jkl=XYZ", "*ag-def+ghi~jkl=XYZ"),
+        ("=ABCDEF", "=ABCDEF"),
+        ("*abcDEF+ghi-JKL=XYZ123*AC", "*abcdef+ghi-jkl=XYZ123*ac"),
         ("*abc", "*abc"),
         ("-DEF", "-def"),
         ("+GHI", "+ghi"),
         ("=XYZ", "=XYZ"),
     ],
 )
-def test_standardize_case_parametrized(input, expected):
-    assert standardize_case(input) == expected
+def test_standardize_case(input_str, expected):
+    assert standardize_case(input_str) == expected
+
+
+@pytest.mark.parametrize(
+    "cssplits, expected",
+    [
+        ([], ""),
+        (["=A", "C", "G", "T"], "=ACGT"),
+        (["=A", "*GT", "=A"], "=A*gt=A"),
+        (["-C", "-G"], "-cg"),
+        (["*GC", "*TA"], "*gc*ta"),
+        (["+A|+A|=C", "=G"], "+aa=CG"),
+        (["+A|*GC|=T", "+A|+C|=G"], "+ac=T+ac=G"),
+        (["+A|*GC|=T", "+A|+C|=G", "+A|+C|=G"], "+ac=T+ac=G+ac=G"),
+        (["=A", "=C", "+A|+C|=G", "-C", "-G", "*CG"], "=AC+ac=G-cg*cg"),
+    ],
+)
+def test_convert_cssplits_to_cstag(cssplits, expected):
+    assert convert_cssplits_to_cstag(cssplits) == expected
 
 
 ###########################################################

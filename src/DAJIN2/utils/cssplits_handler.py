@@ -83,37 +83,51 @@ def add_match_operator_to_n(cssplits: list[str]) -> list[str]:
     return ["=" + seq if seq.startswith("N") or seq.startswith("n") else seq for seq in cssplits]
 
 
-def format_insertion(cs: str) -> str:
+def format_substitution_withtin_insertion(cssplits: list[str]) -> str:
     """Reformat insertion sequence by consolidating variants."""
-    # Remove "+" and split by "|"
-    variants = cs.replace("+", "").split("|")
-    # Extract the last character from all but the last variant
-    consolidated_variants = "".join([variant[-1] for variant in variants[:-1]])
-    # Combine consolidated variants with the last variant
-    formatted_insertion = "+" + consolidated_variants + variants[-1]
+    cssplits_replaced = []
+    for cs in cssplits:
+        if not cs.startswith("+"):
+            cssplits_replaced.append(cs)
+            continue
 
-    return formatted_insertion
+        cs_split = cs.split("|")
+        cs_replaced = "|".join("+" + c[-1] if c.startswith("*") else c for c in cs_split)
+        cssplits_replaced.append(cs_replaced)
+
+    return cssplits_replaced
 
 
-def concatenate_cssplits(cssplits: list[str]) -> str:
-    """Concatenate list of sequences based on certain variants."""
-    if not cssplits:
-        return ""
-    concatenated = []
-    prev = cssplits[0]
-    if prev[0] == "+":
-        concatenated.append(format_insertion(prev))
-    else:
-        concatenated.append(prev)
-    for prev, current in zip(cssplits, cssplits[1:]):
-        if prev[0] == current[0] and current[0] in {"=", "-"}:
-            concatenated.append(current[1:])
-        elif current[0] == "+":
-            concatenated.append(format_insertion(current))
+def split_cssplits_by_delimiter(cssplits: list[str]) -> list[str]:
+    cssplits_break = []
+    for cs in cssplits:
+        if cs.startswith("+"):
+            cssplits_break.extend(cs.split("|"))
         else:
-            concatenated.append(current)
+            cssplits_break.append(cs)
+    return cssplits_break
 
-    return "".join(concatenated)
+
+def concatenate_cssplits(cssplits_break: list[str]) -> str:
+    cssplits_concatenated = []
+    i = 0
+    while i < len(cssplits_break):
+        current_cs = cssplits_break[i]
+        if i + 1 == len(cssplits_break):
+            cssplits_concatenated.append(current_cs)
+            break
+        next_cs = cssplits_break[i + 1]
+        if current_cs[0] == next_cs[0]:
+            if not current_cs.startswith("*"):
+                cssplits_concatenated.append(current_cs + next_cs[1:])
+            else:
+                cssplits_concatenated.append(current_cs + next_cs)
+            i += 1
+        else:
+            cssplits_concatenated.append(current_cs)
+        i += 1
+
+    return "".join(cssplits_concatenated)
 
 
 def standardize_case(sequence: str) -> str:
@@ -140,6 +154,8 @@ def standardize_case(sequence: str) -> str:
 
 def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     cssplits = add_match_operator_to_n(cssplits)
+    cssplits = format_substitution_withtin_insertion(cssplits)
+    cssplits = split_cssplits_by_delimiter(cssplits)
     cssplits_concatenated = concatenate_cssplits(cssplits)
     return standardize_case(cssplits_concatenated)
 
