@@ -54,8 +54,9 @@ def export_fasta_files(TEMPDIR: Path, FASTA_ALLELES: dict, NAME: str) -> None:
     """Save multiple FASTAs in separate single-FASTA format files."""
     for identifier, sequence in FASTA_ALLELES.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
-        output_fasta = Path(TEMPDIR, NAME, "fasta", f"{identifier}.fasta")
-        Path(sanitize_filename(output_fasta)).write_text(contents)
+        path_output_fasta = Path(TEMPDIR, NAME, "fasta", f"{identifier}.fasta")
+        path_output_fasta = Path(sanitize_filename(path_output_fasta))
+        path_output_fasta.write_text(contents)
 
 
 #################################################
