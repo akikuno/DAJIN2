@@ -63,6 +63,10 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 
 + Update `extract_unique_insertions` to merge highly similar extracted insertion sequences. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/50fe99f42bcd0bae85bcd0eb4ee371a65f38ea14)]
 
+
++ Add control characters for `fastx_handler.sanitize_filename` as forbidden chars. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6b74fce0caa0580c4629a132406206c27a66274d)]
+
+
 ## 🐛 Bug Fixes
 
 + Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
