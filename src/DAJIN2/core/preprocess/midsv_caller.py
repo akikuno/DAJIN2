@@ -87,6 +87,10 @@ def extract_best_alignment_length_from_sam(
         flag_header = True
 
 
+def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]]:
+    for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep=set(["FLAG"])):
+        yield midsv_sample
+
 
 def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
     """
