@@ -69,6 +69,9 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 
 + Fix `preprocess.insertions_to_fasta.remove_minor_groups` to delete the keys (insertion loci) when insertions are removed and result in an empty dict. This prevents errors when accessing non-existent keys in `subset_insertions`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ae8d887282035552c8fbe5c587e43844d5199952)]
 
++ Fix the bug in `cssplits_handler.convert_cssplits_to_cstag` where the insertion cs tag is not merged with the next cs tag if they have the same operator (e.g., `+A|+A|=T, =T`: before: `+aa=T=T`, after: `+aa=TT`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/02d1b4c128004e02671e833136508328d699f53f)]
+
+
 
 <!-- ############################################################# # -->
 
