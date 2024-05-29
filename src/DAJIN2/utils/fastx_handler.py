@@ -21,7 +21,8 @@ def sanitize_filename(path_file: Path | str) -> str:
     path_file = str(path_file).lstrip()
     if not path_file:
         raise ValueError("Provided FASTA/FASTQ is empty or consists only of whitespace")
-    return re.sub(r'[\\/:?.,\'"<>| ]', "-", path_file)
+    forbidden_chars = r'[<>:"/\\|?*\x00-\x1F .]'
+    return re.sub(forbidden_chars, "-", path_file)
 
 
 #################################################
@@ -50,11 +51,11 @@ def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
 
 
 def export_fasta_files(TEMPDIR: Path, FASTA_ALLELES: dict, NAME: str) -> None:
-    """+ Save multiple FASTAs in separate single-FASTA format files."""
+    """Save multiple FASTAs in separate single-FASTA format files."""
     for identifier, sequence in FASTA_ALLELES.items():
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         output_fasta = Path(TEMPDIR, NAME, "fasta", f"{identifier}.fasta")
-        output_fasta.write_text(contents)
+        Path(sanitize_filename(output_fasta)).write_text(contents)
 
 
 #################################################
