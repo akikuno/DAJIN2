@@ -67,6 +67,8 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 + Add control characters for `fastx_handler.sanitize_filename` as forbidden chars. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6b74fce0caa0580c4629a132406206c27a66274d)]
 
 
++ Changed the naming convention for the temporary directory: `<sample_name>/<process_content>/<allele_name>/(<label_name>)/file_name`. Example: `flox/consensus/control/1/mutation_loci.pickle`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54fee2f48564c6a29fd5c4151126ba4246e9547c)]
+
 ## 🐛 Bug Fixes
 
 + Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
@@ -76,7 +78,7 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 + Fix the bug in `cssplits_handler.convert_cssplits_to_cstag` where the insertion cs tag is not merged with the next cs tag if they have the same operator (e.g., `+A|+A|=T, =T`: before: `+aa=T=T`, after: `+aa=TT`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/02d1b4c128004e02671e833136508328d699f53f)]
 
 + Replace `_` to `-` for file name [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f70948315a114e0c182895ba4320233f26fc1025)]
-+ + Thank you @geedrn for reporting the issue #39!
+  + Thank you @geedrn for reporting the issue #39!
 
 
 
