@@ -35,7 +35,8 @@ def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:
             continue
 
         allele = knockin_fasta.stem
-        path_output = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
+        path_output = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele, "knockin.pickle")
+        path_output.parent.mkdir(parents=True, exist_ok=True)
         if path_output.exists():
             continue
 

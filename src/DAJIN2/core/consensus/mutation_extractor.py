@@ -36,11 +36,11 @@ def get_thresholds(path_indels_normalized_sample, path_indels_normalized_control
     return thresholds
 
 
-def extract_path_control(ARGS, allele: str) -> Path:
+def extract_path_control(tempdir: Path, control_name: str, sample_name: str, allele: str) -> Path:
     # Define potential file paths
     paths = [
-        Path(ARGS.tempdir, ARGS.control_name, "midsv", f"{allele}.json"),
-        Path(ARGS.tempdir, ARGS.control_name, "midsv", f"{allele}_{ARGS.sample_name}.json"),
+        Path(tempdir, control_name, "midsv", allele, f"{control_name}.jsonl"),
+        Path(tempdir, control_name, "midsv", allele, f"{sample_name}.jsonl"),
     ]
     # Return the first path that exists
     for path in paths:
@@ -48,64 +48,66 @@ def extract_path_control(ARGS, allele: str) -> Path:
             return path
 
 
-def extract_path_n_filtered_control(ARGS, path_midsv_control: Path) -> Path:
+def extract_path_n_filtered_control(
+    tempdir: Path, control_name: str, sample_name: str, path_control: Path, allele: str
+) -> Path:
     """
     Filter out reads with N enriched in the control.
     """
-    path_output = Path(ARGS.tempdir, ARGS.control_name, "consensus", f"{path_midsv_control.stem}_n_filtered.jsonl")
+    path_output = Path(tempdir, control_name, "consensus", allele, f"{sample_name}_n_filtered.jsonl")
     if path_output.exists():
         return path_output
 
-    midsv_control = io.read_jsonl(path_midsv_control)
+    path_output.parent.mkdir(parents=True, exist_ok=True)
+
+    midsv_control = io.read_jsonl(path_control)
     n_counts = np.array([sum(1 if cs == "N" else 0 for cs in c["CSSPLIT"].split(",")) for c in midsv_control])
 
     kmeans = MiniBatchKMeans(n_clusters=2, random_state=0).fit(n_counts.reshape(-1, 1))
     threshold = kmeans.cluster_centers_.mean()
     labels = np.where(n_counts <= threshold, True, False)
-    midsv_filtered_control = (m for m, label in zip(io.read_jsonl(path_midsv_control), labels) if label)
+    midsv_filtered_control = (m for m, label in zip(io.read_jsonl(path_control), labels) if label)
     io.write_jsonl(midsv_filtered_control, path_output)
 
     return path_output
 
 
-def cache_normalized_indels(ARGS, path_midsv_sample: Path) -> None:
-    allele, label, *_ = path_midsv_sample.stem.split("_")
+def cache_normalized_indels(ARGS, path_consensus_sample: Path, allele: str) -> None:
     sequence = ARGS.fasta_alleles[allele]
 
-    path_midsv_control = extract_path_control(ARGS, allele)
-    path_midsv_n_filtered_control = extract_path_n_filtered_control(ARGS, path_midsv_control)
-
-    cache_selected_control_by_similarity(
-        ARGS, path_midsv_n_filtered_control, path_midsv_sample, path_midsv_sample.parent
+    path_control = extract_path_control(ARGS.tempdir, ARGS.control_name, ARGS.sample_name, allele)
+    path_control_filtered = extract_path_n_filtered_control(
+        ARGS.tempdir, ARGS.control_name, ARGS.sample_name, path_control, allele
     )
 
-    path_midsv_similar_control = Path(path_midsv_sample.parent, f"{allele}_{label}_control.jsonl")
+    cache_selected_control_by_similarity(ARGS, path_control_filtered, path_consensus_sample, allele)
 
-    _, indels_normalized_sample = summarize_indels(path_midsv_sample, sequence)
+    path_midsv_similar_control = Path(path_consensus_sample.parent, "control.jsonl")
+
+    _, indels_normalized_sample = summarize_indels(path_consensus_sample, sequence)
     _, indels_normalized_control = summarize_indels(path_midsv_similar_control, sequence)
 
-    path_consensus = Path(ARGS.tempdir, ARGS.sample_name, "consensus")
-    io.save_pickle(indels_normalized_sample, Path(path_consensus, f"{allele}_{label}_normalized_sample.pickle"))
-    io.save_pickle(indels_normalized_control, Path(path_consensus, f"{allele}_{label}_normalized_control.pickle"))
+    io.save_pickle(indels_normalized_sample, Path(path_consensus_sample.parent, "normalized_sample.pickle"))
+    io.save_pickle(indels_normalized_control, Path(path_consensus_sample.parent, "normalized_control.pickle"))
 
 
 def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
     # Separate clusters by label and cache them
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
-    path_consensus = Path(ARGS.tempdir, ARGS.sample_name, "consensus")
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
-        io.write_jsonl(group, Path(path_consensus, f"{allele}_{label}_sample.jsonl"))
+        path_consensus = Path(ARGS.tempdir, ARGS.sample_name, "consensus", allele, str(label))
+        path_consensus.mkdir(parents=True, exist_ok=True)
 
-    # Cache normalized indels counts
-    for path_midsv_sample in path_consensus.glob("*_sample.jsonl"):
-        cache_normalized_indels(ARGS, path_midsv_sample)
+        path_consensus_sample = Path(path_consensus, f"{ARGS.sample_name}_sample.jsonl")
+        io.write_jsonl(group, path_consensus_sample)
 
-    # Extract and cache mutation loci
-    for path_indels_normalized_sample in path_consensus.glob("*_normalized_sample.pickle"):
-        allele, label, *_ = path_indels_normalized_sample.stem.split("_")
-        path_indels_normalized_control = Path(path_consensus, f"{allele}_{label}_normalized_control.pickle")
+        cache_normalized_indels(ARGS, path_consensus_sample, allele)
+
+        # Extract and cache mutation loci
+        path_indels_normalized_sample = Path(path_consensus, "normalized_sample.pickle")
+        path_indels_normalized_control = Path(path_consensus, "normalized_control.pickle")
         sequence = ARGS.fasta_alleles[allele]
-        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", f"{allele}.pickle")
+        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele, "knockin.pickle")
 
         thresholds = get_thresholds(path_indels_normalized_sample, path_indels_normalized_control)
 
@@ -120,4 +122,4 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
             is_consensus,
         )
 
-        io.save_pickle(mutation_loci, Path(path_consensus, f"{allele}_{label}_mutation_loci.pickle"))
+        io.save_pickle(mutation_loci, Path(path_consensus, "mutation_loci.pickle"))

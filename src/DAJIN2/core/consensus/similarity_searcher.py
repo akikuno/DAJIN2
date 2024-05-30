@@ -72,21 +72,21 @@ def identify_normal_reads(
 ###########################################################
 
 
-def filter_control(ARGS, path_midsv_control: Path, path_midsv_sample: Path) -> list[bool]:
+def filter_control(ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str) -> list[bool]:
     """
     find similar control reads compared to sample reads
     """
-    cssplits = (m["CSSPLIT"].split(",") for m in io.read_jsonl(path_midsv_sample))
+    cssplits = (m["CSSPLIT"].split(",") for m in io.read_jsonl(path_consensus_sample))
     coverage_match = np.array([sum(1 for cs in cssplit if cs.startswith("=")) for cssplit in zip(*cssplits)])
-    mut_onehot_sample = onehot_by_mutations(io.read_jsonl(path_midsv_sample))
+    mut_onehot_sample = onehot_by_mutations(io.read_jsonl(path_consensus_sample))
 
     path_mut_onehot_control = Path(
-        ARGS.tempdir, ARGS.control_name, "consensus", f"{path_midsv_control.stem}_onehot.pickle"
+        ARGS.tempdir, ARGS.control_name, "consensus", allele, f"{ARGS.sample_name}_onehot.pickle"
     )
     if path_mut_onehot_control.exists():
         mut_onehot_control = io.load_pickle(path_mut_onehot_control)
     else:
-        mut_onehot_control = onehot_by_mutations(io.read_jsonl(path_midsv_control))
+        mut_onehot_control = onehot_by_mutations(io.read_jsonl(path_consensus_control))
         io.save_pickle(mut_onehot_control, path_mut_onehot_control)
 
     mut_percentage_sample = calculate_percentage(mut_onehot_sample, coverage_match)
@@ -99,11 +99,10 @@ def filter_control(ARGS, path_midsv_control: Path, path_midsv_sample: Path) -> l
 
 
 def cache_selected_control_by_similarity(
-    ARGS, path_midsv_control: Path, path_midsv_sample: Path, path_output: Path
+    ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str
 ) -> None:
-    normal_reads_flags = filter_control(ARGS, path_midsv_control, path_midsv_sample)
-    midsv_control = io.read_jsonl(path_midsv_control)
+    normal_reads_flags = filter_control(ARGS, path_consensus_control, path_consensus_sample, allele)
+    midsv_control = io.read_jsonl(path_consensus_control)
     midsv_filtered = (m for m, flag in zip(midsv_control, normal_reads_flags) if flag is True)
 
-    allele, label, *_ = Path(path_midsv_sample).stem.split("_")
-    io.write_jsonl(midsv_filtered, Path(path_output, f"{allele}_{label}_control.jsonl"))
+    io.write_jsonl(midsv_filtered, Path(path_consensus_sample.parent, "control.jsonl"))

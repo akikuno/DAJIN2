@@ -109,8 +109,6 @@ def generate_sam(
         path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
         name = ARGS.sample_name
 
-    out_directory = Path(ARGS.tempdir, name, "sam")
-
     for path_fasta in paths_fasta:
         name_fasta = Path(path_fasta).stem
         len_sequence = len(Path(path_fasta).read_text().split("\n")[1])
@@ -119,15 +117,18 @@ def generate_sam(
         else:
             presets = ["map-ont", "splice"]
 
+        path_sam_directory = Path(ARGS.tempdir, name, "sam", name_fasta)
+        path_sam_directory.mkdir(parents=True, exist_ok=True)
+
         for preset in presets:
             sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads, options=mappy_options)
 
             if is_control and is_insertion:
-                path_sam = Path(out_directory, f"{preset}_{name_fasta}_{ARGS.sample_name}.sam")
+                path_sam_file = Path(path_sam_directory, f"{ARGS.sample_name}_{preset}.sam")
             else:
-                path_sam = Path(out_directory, f"{preset}_{name_fasta}.sam")
+                path_sam_file = Path(path_sam_directory, f"{preset}.sam")
 
-            path_sam.write_text("\n".join(sam))
+            path_sam_file.write_text("\n".join(sam))
 
 
 ########################################################################

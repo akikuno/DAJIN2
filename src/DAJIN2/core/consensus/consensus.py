@@ -98,7 +98,6 @@ class ConsensusKey:
 
 
 def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) -> tuple[dict[list], dict[str]]:
-    path_consensus = Path(tempdir, sample_name, "consensus")
 
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
 
@@ -108,10 +107,11 @@ def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) ->
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
 
-        mutation_loci = io.load_pickle(Path(path_consensus, f"{allele}_{label}_mutation_loci.pickle"))
+        path_consensus = Path(tempdir, sample_name, "consensus", allele, str(label))
+        cons_mutation_loci = io.load_pickle(Path(path_consensus, "mutation_loci.pickle"))
 
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
-        cons_percentage = call_percentage(cssplits, mutation_loci)
+        cons_percentage = call_percentage(cssplits, cons_mutation_loci)
 
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage

@@ -45,7 +45,7 @@ def extract_alleles_with_max_score(score_of_each_alleles: list[dict]) -> list[di
 def classify_alleles(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str) -> list[dict]:
     score_of_each_alleles = []
     for allele in FASTA_ALLELES:
-        path_midsv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"{allele}.json")
+        path_midsv = Path(TEMPDIR, SAMPLE_NAME, "midsv", allele, f"{SAMPLE_NAME}.jsonl")
         score_of_each_alleles.extend(score_allele(path_midsv, allele))
 
     score_of_each_alleles_merged = merge_minor_alleles(score_of_each_alleles)

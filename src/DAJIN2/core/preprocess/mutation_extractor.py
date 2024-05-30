@@ -261,19 +261,24 @@ def transpose_mutation_loci(mutation_loci: dict[str, set[int]], sequence: str) -
 
 
 def cache_indels_count(ARGS, is_control: bool = False) -> None:
+    dirname = ARGS.control_name if is_control else ARGS.sample_name
     for allele, sequence in ARGS.fasta_alleles.items():
-        if is_control and Path(ARGS.tempdir, ARGS.control_name, "midsv", f"{allele}_{ARGS.sample_name}.json").exists():
-            prefix = f"{allele}_{ARGS.sample_name}"
-        else:
-            prefix = allele
+        path_mutation_loci = Path(ARGS.tempdir, dirname, "mutation_loci", allele)
+        path_mutation_loci.mkdir(parents=True, exist_ok=True)
 
-        path_mutation_loci = Path(ARGS.tempdir, ARGS.control_name if is_control else ARGS.sample_name, "mutation_loci")
+        if not is_control:
+            prefix = ARGS.sample_name
+        else:
+            path_insertion = Path(ARGS.tempdir, ARGS.control_name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
+            if path_insertion.exists():
+                prefix = ARGS.sample_name
+            else:
+                prefix = ARGS.control_name
+
         if Path(path_mutation_loci, f"{prefix}_count.pickle").exists():
             continue
 
-        path_midsv = Path(
-            ARGS.tempdir, ARGS.control_name if is_control else ARGS.sample_name, "midsv", f"{prefix}.json"
-        )
+        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele, f"{prefix}.jsonl")
         indels_count, indels_normalized = summarize_indels(path_midsv, sequence)
         io.save_pickle(indels_count, Path(path_mutation_loci, f"{prefix}_count.pickle"))
         io.save_pickle(indels_normalized, Path(path_mutation_loci, f"{prefix}_normalized.pickle"))
@@ -318,24 +323,25 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
     if is_control:
         return
 
-    path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci")
-    path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci")
-
     for allele, sequence in ARGS.fasta_alleles.items():
-        path_output = Path(path_mutation_sample, f"{allele}.pickle")
-        if path_output.exists():
+        path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele)
+        path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci", allele)
+
+        path_output_mutation_loci = Path(path_mutation_sample, "mutation_loci.pickle")
+        if path_output_mutation_loci.exists():
             continue
 
-        file_name = f"{allele}_{ARGS.sample_name}_normalized.pickle"
+        file_name = f"{ARGS.sample_name}_normalized.pickle"
         if not Path(path_mutation_control, file_name).exists():
-            file_name = f"{allele}_normalized.pickle"
+            file_name = f"{ARGS.control_name}_normalized.pickle"
+
         path_indels_normalized_control = Path(path_mutation_control, file_name)
 
-        path_indels_normalized_sample = Path(path_mutation_sample, f"{allele}_normalized.pickle")
-        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", f"{allele}.pickle")
+        path_indels_normalized_sample = Path(path_mutation_sample, f"{ARGS.sample_name}_normalized.pickle")
+        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele, "knockin.pickle")
 
         mutation_loci: list[set[str]] = extract_mutation_loci(
             sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin
         )
 
-        io.save_pickle(mutation_loci, path_output)
+        io.save_pickle(mutation_loci, path_output_mutation_loci)

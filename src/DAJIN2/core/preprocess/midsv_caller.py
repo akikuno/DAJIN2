@@ -26,7 +26,7 @@ def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[s
     preset_cigar_by_qname = defaultdict(dict)
     # Extract preset and CIGAR
     for path in path_sam_files:
-        preset = path.stem.split("_")[0]
+        preset = path.stem
         sam: list[list[str]] = io.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
@@ -74,7 +74,7 @@ def extract_best_alignment_length_from_sam(
 ) -> Generator[list[str]]:
     flag_header = False
     for path in path_sam_files:
-        preset = path.stem.split("_")[0]
+        preset = path.stem
         sam = io.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
@@ -205,21 +205,24 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
-        if Path(ARGS.tempdir, name, "midsv", f"{allele}.json").exists():
+        path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele)
+        path_midsv_directory.mkdir(parents=True, exist_ok=True)
+
+        if Path(path_midsv_directory, f"{name}.jsonl").exists():
             continue
 
         if is_control and is_insertion:
             """
             Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.json` when control is barcode01, sample is barcode02, and the allele is insertion1.
             """
-            path_sam_files = list(Path(ARGS.tempdir, name, "sam").glob(f"*_{allele}_{ARGS.sample_name}.sam"))
-            path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}_{ARGS.sample_name}.json")
+            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"{ARGS.sample_name}_*.sam"))
+            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
         else:
             """
             Set the destination for midsv as `barcode02/midsv/insertion1.json` when the sample is barcode02 and the allele is insertion1.
             """
-            path_sam_files = list(Path(ARGS.tempdir, name, "sam").glob(f"*{allele}.sam"))
-            path_output_midsv = Path(ARGS.tempdir, name, "midsv", f"{allele}.json")
+            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"*.sam"))
+            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}.jsonl")
 
         preset_cigar_by_qname = extract_preset_and_cigar_by_qname(path_sam_files)
         best_preset = extract_best_preset(preset_cigar_by_qname)
@@ -229,4 +232,4 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
-        midsv.write_jsonl(midsv_sample, path_output_midsv)
+        midsv.write_jsonl(midsv_sample, path_midsv_output)

@@ -551,9 +551,9 @@ def remove_temporal_files(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
 
 
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
-    PATH_SAMPLE = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
-    PATH_CONTROL = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
-    MUTATION_LOCI = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
+    PATH_SAMPLE = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
+    PATH_CONTROL = Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl")
+    MUTATION_LOCI = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control", "mutation_loci.pickle"))
 
     insertions = extract_insertions(PATH_SAMPLE, PATH_CONTROL, MUTATION_LOCI)
     if insertions == dict():
