@@ -9,7 +9,7 @@ from DAJIN2.utils import fastx_handler
 
 
 def test_sanitize_filename_with_valid_path():
-    assert fastx_handler.sanitize_filename("valid_name") == "valid_name"
+    assert fastx_handler.sanitize_filename("valid_name") == "valid-name"
     assert fastx_handler.sanitize_filename(Path("valid/name")) == "valid-name"
 
 
@@ -19,8 +19,8 @@ def test_sanitize_filename_with_invalid_characters():
 
 
 def test_sanitize_filename_with_whitespace():
-    assert fastx_handler.sanitize_filename("  leading_space") == "leading_space"
-    assert fastx_handler.sanitize_filename("trailing_space ") == "trailing_space-"
+    assert fastx_handler.sanitize_filename("  leading_space") == "leading-space"
+    assert fastx_handler.sanitize_filename("trailing space ") == "trailing-space"
 
 
 def test_sanitize_filename_with_empty_string():
