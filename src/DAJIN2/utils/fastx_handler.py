@@ -7,23 +7,7 @@ from pathlib import Path
 import random
 
 import mappy
-
-
-#################################################
-# Helper function
-#################################################
-
-
-def sanitize_filename(path_file: Path | str) -> str:
-    """
-    Sanitize the path_file by replacing invalid characters on Windows OS with '-'
-    """
-    path_file = str(path_file).strip()
-    if not path_file:
-        raise ValueError("Provided FASTA/FASTQ is empty or consists only of whitespace")
-    forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ._]'
-    return re.sub(forbidden_chars, "-", path_file)
-
+from DAJIN2.utils.io import sanitize_name
 
 #################################################
 # Extract filename
@@ -33,7 +17,7 @@ def sanitize_filename(path_file: Path | str) -> str:
 def extract_filename(path_fasta: Path | str) -> str:
     filename = Path(path_fasta).name
     filename = re.sub(r"\..*$", "", filename)  # Remove file extension
-    return sanitize_filename(filename)
+    return sanitize_name(filename)
 
 
 #################################################
@@ -42,7 +26,7 @@ def extract_filename(path_fasta: Path | str) -> str:
 
 
 def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
-    return {sanitize_filename(name): seq.upper() for name, seq, _ in mappy.fastx_read(str(path_fasta))}
+    return {sanitize_name(name): seq.upper() for name, seq, _ in mappy.fastx_read(str(path_fasta))}
 
 
 #################################################
@@ -53,7 +37,7 @@ def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
 def export_fasta_files(TEMPDIR: Path, FASTA_ALLELES: dict, NAME: str) -> None:
     """Save multiple FASTAs in separate single-FASTA format files."""
     for identifier, sequence in FASTA_ALLELES.items():
-        identifier = sanitize_filename(identifier)
+        identifier = sanitize_name(identifier)
         contents = "\n".join([">" + identifier, sequence]) + "\n"
         path_output_fasta = Path(TEMPDIR, NAME, "fasta", f"{identifier}.fasta")
         path_output_fasta.write_text(contents)
@@ -90,14 +74,10 @@ def save_fastq_as_gzip(TEMPDIR: Path, path_fastx: list[Path], barcode: str) -> N
                     merged_file.write(f.read().encode())
 
 
-def save_concatenated_fastx(TEMPDIR: Path, path_fastq_directory: str | Path) -> None:
+def save_concatenated_fastx(TEMPDIR: Path, path_directory: Path, name: str) -> None:
     fastx_suffix = {".fa", ".fq", ".fasta", ".fastq", ".fa.gz", ".fq.gz", ".fasta.gz", ".fastq.gz"}
-
-    path_directory = Path(path_fastq_directory)
     path_fastx = [path for path in path_directory.iterdir() if extract_extention(path) in fastx_suffix]
-
-    barcode = path_directory.stem
-    save_fastq_as_gzip(TEMPDIR, path_fastx, barcode)
+    save_fastq_as_gzip(TEMPDIR, path_fastx, name)
 
 
 #################################################

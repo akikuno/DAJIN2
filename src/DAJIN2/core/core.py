@@ -42,7 +42,7 @@ def execute_control(arguments: dict):
     # Merge fastq files
     ###########################################################
 
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control)
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control, ARGS.control_name)
     # Save subsetted fastq if the read number is too large (> 10,000 reads)
     fastx_handler.save_subsetted_fastx(
         Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz"), num_reads=10_000
@@ -100,7 +100,7 @@ def execute_sample(arguments: dict):
     # Merge fastq files
     # ============================================================
 
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_sample)
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_sample, ARGS.sample_name)
 
     # ============================================================
     # Mapping with mappy

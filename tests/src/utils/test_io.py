@@ -1,8 +1,39 @@
 from __future__ import annotations
 
-from src.DAJIN2.utils import io
 import os
 import json
+import pytest
+from pathlib import Path
+
+from src.DAJIN2.utils import io
+
+
+def test_sanitize_name_with_valid_path():
+    assert io.sanitize_name("valid_name") == "valid-name"
+    assert io.sanitize_name(Path("valid/name")) == "valid-name"
+
+
+def test_sanitize_name_with_invalid_characters():
+    assert io.sanitize_name("inva/lid:name?") == "inva-lid-name-"
+    assert io.sanitize_name(Path("/inva>lid|name.")) == "-inva-lid-name-"
+
+
+def test_sanitize_name_with_whitespace():
+    assert io.sanitize_name("  leading_space") == "leading-space"
+    assert io.sanitize_name("trailing space ") == "trailing-space"
+
+
+def test_sanitize_name_with_empty_string():
+    with pytest.raises(ValueError) as e:
+        io.sanitize_name(" ")
+    assert str(e.value) == "Provided name is empty or consists only of whitespace"
+
+
+def test_sanitize_name_with_empty_path():
+    with pytest.raises(ValueError) as e:
+        io.sanitize_name("")
+    assert str(e.value) == "Provided name is empty or consists only of whitespace"
+
 
 ########################################################################
 # Convert Path
