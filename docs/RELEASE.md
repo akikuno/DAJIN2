@@ -62,12 +62,16 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 
 
 + Update `extract_unique_insertions` to merge highly similar extracted insertion sequences. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/50fe99f42bcd0bae85bcd0eb4ee371a65f38ea14)]
+  + Fix `extract_unique_insertions`: There is a bug where removing the key twice in fasta_insertions_unique caused the index and key to become misaligned in enumerate(distances) if i != key. Therefore, the removal of keys from fasta_insertions_unique is now done all at once at the end. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/162f248b4deee8c35512b84ec428baec65fd8466)]
 
 
 + Add control characters for `fastx_handler.sanitize_filename` as forbidden chars. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6b74fce0caa0580c4629a132406206c27a66274d)]
 
 
 + Changed the naming convention for the temporary directory: `<sample_name>/<process_content>/<allele_name>/(<label_name>)/file_name`. Example: `flox/consensus/control/1/mutation_loci.pickle`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54fee2f48564c6a29fd5c4151126ba4246e9547c)]
+
++ Move `sanitze_name` function from `utils.fastx_handler`to `utils.io` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a78bd5c0ad8f26bafe369da69607faf9a467c039)]
+
 
 ## 🐛 Bug Fixes
 
