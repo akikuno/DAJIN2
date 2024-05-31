@@ -38,9 +38,8 @@ def clustering_insertions(cssplits_insertion: list[str]) -> list[int]:
     _, distances, _ = zip(*process.extract_iter(query, seq_all, scorer=DamerauLevenshtein.normalized_distance))
 
     insertion_lengths = [[len(c) for c in cs.split(",")] for cs in cssplits_insertion]
-    
+
     scores = [length + [distance] for length, distance in zip(insertion_lengths, distances)]
-    
 
     return MeanShift(bin_seeding=True).fit_predict(np.array(scores)).tolist()
 
@@ -486,24 +485,23 @@ def extract_unique_insertions(fasta_insertions: dict[str, str], FASTA_ALLELES: d
     "Unique insertion alleles" are defined as sequences that have a difference of more than 10 bases compared to the sequences in FASTA_ALLELES
     """
     fasta_insertions_unique = fasta_insertions.copy()
-    
-    to_keep = []
-    for query_key, query_seq in fasta_insertions_unique.items():
-        _, distances, _ = zip(*process.extract_iter(query_seq, FASTA_ALLELES.values(), scorer=DamerauLevenshtein.distance))
-        if all(d > 10 for d in distances):
-            to_keep.append(query_key)    
-    fasta_insertions_unique = {key: fasta_insertions_unique[key] for key in to_keep if key in fasta_insertions_unique}
 
+    # Remove insertion alleles that are similar to the FASTA_ALLELES input by the user
     to_delete = set()
+    for key, seq in fasta_insertions_unique.items():
+        _, distances, _ = zip(*process.extract_iter(seq, FASTA_ALLELES.values(), scorer=DamerauLevenshtein.distance))
+        if any(d < 10 for d in distances):
+            to_delete |= {key}
+
+    # Remove insertion alleles that are similar to each other
     for key, seq in fasta_insertions_unique.items():
         if key in to_delete:
             continue
         _, distances, _ = zip(*process.extract_iter(seq, fasta_insertions_unique.values(), scorer=DamerauLevenshtein.distance))
         similar_index = {i if d < 10 else None for i, d in enumerate(distances) if i != key}
         to_delete |= similar_index
-    fasta_insertions_unique = {k: v for k, v in fasta_insertions_unique.items() if k not in to_delete}
 
-    return fasta_insertions_unique
+    return {k: v for k, v in fasta_insertions_unique.items() if k not in to_delete}
 
 
 def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
