@@ -9,7 +9,7 @@ from src.DAJIN2.utils import io
 
 
 def test_sanitize_name_with_valid_path():
-    assert io.sanitize_name("valid_name") == "valid-name"
+    assert io.sanitize_name("valid_name") == "valid_name"
     assert io.sanitize_name(Path("valid/name")) == "valid-name"
 
 
@@ -19,7 +19,7 @@ def test_sanitize_name_with_invalid_characters():
 
 
 def test_sanitize_name_with_whitespace():
-    assert io.sanitize_name("  leading_space") == "leading-space"
+    assert io.sanitize_name("  leading_space") == "leading_space"
     assert io.sanitize_name("trailing space ") == "trailing-space"
 
 
