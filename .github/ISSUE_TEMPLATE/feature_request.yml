@@ -1,0 +1,37 @@
+name: 💡 Feature Request
+description: Suggest an idea for this project
+labels: ['request']
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: '📋 Description'
+      description: A clear and concise description of the request.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: '🔍 Environment'
+      description: |
+          Optional: The environment information.
+          - **OS**: WSL (Ubuntu 22.04)
+          - **DAJIN2**: 0.4.6
+      value: |
+          - OS:
+          - DAJIN2:
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: anything_else
+    attributes:
+      label: Anything else?
+      description: |
+        Optional: Add any other contexts, links, or screenshots about the feature request here.
+    validations:
+      required: false
+

@@ -5,7 +5,7 @@ import logging
 
 from pathlib import Path
 
-from DAJIN2.utils import io, config, fastx_handler
+from DAJIN2.utils import io, fastx_handler
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.input_formatter import FormattedInputs
 
@@ -18,8 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 def execute_control(arguments: dict):
-
-    logger.info(f"\N{runner} Start running DAJIN2 version {config.DAJIN_VERSION}")
 
     logger.info(f"{arguments['control']} is now processing...")
 
@@ -36,21 +34,24 @@ def execute_control(arguments: dict):
     ###########################################################
     if Path(ARGS.tempdir, "report", "BAM", ARGS.control_name, f"{ARGS.control_name}.bam").exists():
         logger.info(f"{arguments['control']} is already preprocessed and reuse the results for the current run...")
-        return
+        return None
+
     logger.info(f"Preprocess {arguments['control']}...")
 
     ###########################################################
     # Merge fastq files
     ###########################################################
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control)
 
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control, ARGS.control_name)
+    # Save subsetted fastq if the read number is too large (> 10,000 reads)
+    fastx_handler.save_subsetted_fastx(
+        Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz"), num_reads=10_000
+    )
     ###########################################################
     # Mapping
     ###########################################################
 
-    # ============================================================
     # Export fasta files as single-FASTA format
-    # ============================================================
     fastx_handler.export_fasta_files(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
 
     # ============================================================
@@ -99,7 +100,7 @@ def execute_sample(arguments: dict):
     # Merge fastq files
     # ============================================================
 
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_sample)
+    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_sample, ARGS.sample_name)
 
     # ============================================================
     # Mapping with mappy
@@ -114,6 +115,7 @@ def execute_sample(arguments: dict):
     # ============================================================
     # MIDSV conversion
     # ============================================================
+
     preprocess.generate_midsv(ARGS, is_control=False, is_insertion=False)
 
     # ============================================================
@@ -181,18 +183,21 @@ def execute_sample(arguments: dict):
 
     logger.info(f"Consensus calling of {arguments['sample']}...")
 
+    # Remove minor alleles with fewer than 5 reads or less than 0.5%
+    clust_sample_removed = consensus.remove_minor_alleles(clust_sample)
+
     # Downsampling to 1000 reads in each LABEL
-    clust_subset_sample = consensus.subset_clust(clust_sample, 1000)
+    clust_downsampled = consensus.downsample_by_label(clust_sample_removed, 1000)
 
-    consensus.cache_mutation_loci(ARGS, clust_subset_sample)
+    consensus.cache_mutation_loci(ARGS, clust_downsampled)
 
-    cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_subset_sample)
+    cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, clust_downsampled)
 
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
     cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
 
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample, allele_names)
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
     io.save_pickle(cons_percentage, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))

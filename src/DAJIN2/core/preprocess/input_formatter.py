@@ -19,9 +19,9 @@ def parse_arguments(arguments: dict) -> tuple:
         )
 
     return (
-        arguments["sample"],
-        arguments["control"],
-        arguments["allele"],
+        Path(arguments["sample"]),
+        Path(arguments["control"]),
+        Path(arguments["allele"]),
         arguments["name"],
         arguments["threads"],
         genome_urls,
@@ -73,9 +73,9 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
 
 @dataclass(frozen=True)
 class FormattedInputs:
-    path_sample: str
-    path_control: str
-    path_allele: str
+    path_sample: Path
+    path_control: Path
+    path_allele: Path
     sample_name: str
     control_name: str
     fasta_alleles: dict[str, str]
@@ -99,8 +99,8 @@ def format_inputs(arguments: dict) -> FormattedInputs:
         path_sample,
         path_control,
         path_allele,
-        sample_name,
-        control_name,
+        io.sanitize_name(sample_name),
+        io.sanitize_name(control_name),
         fasta_alleles,
         tempdir,
         genome_coordinates,

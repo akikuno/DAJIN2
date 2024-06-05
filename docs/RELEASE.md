@@ -6,25 +6,84 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)
+[[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 -->
 
 <!-- 💡 ToDo
-- consensus.similarity_searcher.onehot_by_mutationsでは、コントロールアレルに対して、何度も同一のものを生成している可能性がある。
-  - 一箇所にまとめられるようにする
-- リード数が多すぎる場合には、平均的なPhread scoreが高いものを優先して解析する、といったsubsetを行っても良い気が
-
-- deletions_to_fasta.pyを加える
 
 - VCF、PDFを出力する
 - 逆位アレルでの検証を加える
 - nCATSがほしい…
-- Docker imageにして、darwin-arm64でも動くようにする
 - Flaskではなく、streamlitでGUIを作る
 
  -->
 
 <!-- ############################################################# # -->
+
+# v0.5.0 (2024-MM-DD)
+
+## 📝 Documentation
+
++ Update the issue template from md to yml and modify it to make it easier for users to fill out each item.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee2c1784e3cb0e72fd09b7c7df577082c19c1a88)]
+
+
+## 💥 Breaking
+
++ Extremely low-frequency alleles (less than 0.05%) are considered Nanopore sequence errors and are not clustered #36.
+  + Configure `clustering.extract_labels` so that alleles with a low number of reads (0.05% or fewer or 5 reads or fewer) are not clustered. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/e671b5c84b4cf522faf51823e36fe075b049efcf)]
+  + Change `clustering.clustering` to stop if the minimum value of the elements in the cluster is 0.5% or less. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/74609d5048a4ad8d7004886bf411b2ed4be7fa4b)]
+  + Add `consensus.remove_minor_alleles` to remove minor alleles with fewer than 5 reads or less than 0.5% [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/70f675d6a8ea90e9fca51639ddb2b4609e0f4c80)]
+
+
++ Save subsetted fastq of a control sample if the read number is too large (> 10,000 reads). The control will have a maximum of 10,000 reads to avoid excessive computational load. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d21827f8bbeec326fa2aa4f28feadd6fdecaf554)]
+
++ If the read length is 500 bases or less, change the mappy preset to `sr`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6e56804ad40780e200f4e9c9ea23294b95443aba)]
+
++ Update `extract_best_preset` to prioritize `map-ont` and remove `splice` preset if inversion is observed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/aa7f6925d6ef4a80a1ba0bbf2b75d8e549ae9863)]
+
+
+Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` to automate change point detection by incorporating temporal changes. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7ed8ac8404d18b86c163c71ded6dd1ba784bce79)]
+
+
+
+## 🔧 Maintenance
+
++ Update `deploy_pypi.yml` to use the latest version of Actions. Refer to [the latest official YAML for guidance](https://docs.github.com/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1a54b40146acd21eee30a3a373c44b419d170ad4)]
+
+
++ Integrate `requirements.txt` and `MANIFEST.in` into `pyproject.toml` by replacing `setup.py` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/12f255c3a280098f0310755c51e966031c724932)]
+
++ Modify to record the execution command of DAJIN2 in the log file [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/38c97a725f6dd3f00162325bf504142f8f8d6594)]
+
++ Add a test to check if the version in `test_version.sh` matches the version in `pyproject.toml` and `utils.config` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a06cb4593ef1a11b3c9826f7ca5532a1bf83f67f)]
+
+
++ Rename `consensus.subset_clust` to `consensus.downsample_by_label` to clarify the function's purpose. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f6e3f0bc2982996a7dbbc4126a80a7dedd076430)]
+
+
++ Update `extract_unique_insertions` to merge highly similar extracted insertion sequences. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/50fe99f42bcd0bae85bcd0eb4ee371a65f38ea14)]
+  + Fix `extract_unique_insertions`: There is a bug where removing the key twice in fasta_insertions_unique caused the index and key to become misaligned in enumerate(distances) if i != key. Therefore, the removal of keys from fasta_insertions_unique is now done all at once at the end. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/162f248b4deee8c35512b84ec428baec65fd8466)]
+
+
++ Add control characters for `fastx_handler.sanitize_filename` as forbidden chars. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/6b74fce0caa0580c4629a132406206c27a66274d)]
+
+
++ Changed the naming convention for the temporary directory: `<sample_name>/<process_content>/<allele_name>/(<label_name>)/file_name`. Example: `flox/consensus/control/1/mutation_loci.pickle`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54fee2f48564c6a29fd5c4151126ba4246e9547c)]
+
++ Move `sanitze_name` function from `utils.fastx_handler`to `utils.io` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a78bd5c0ad8f26bafe369da69607faf9a467c039)]
+
+
+## 🐛 Bug Fixes
+
++ Removed `sam_handler.remove_overlapped_reads` to prevent unnecessary trimming of reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8991edc0620412c384760d0862e34cc4ea6c0f1)]
+
++ Fix `preprocess.insertions_to_fasta.remove_minor_groups` to delete the keys (insertion loci) when insertions are removed and result in an empty dict. This prevents errors when accessing non-existent keys in `subset_insertions`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ae8d887282035552c8fbe5c587e43844d5199952)]
+
++ Fix the bug in `cssplits_handler.convert_cssplits_to_cstag` where the insertion cs tag is not merged with the next cs tag if they have the same operator (e.g., `+A|+A|=T, =T`: before: `+aa=T=T`, after: `+aa=TT`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/02d1b4c128004e02671e833136508328d699f53f)]
+
++ Modified the system to separate intermediate files using a directory structure instead of underscores (`_`), ensuring that no errors occur even if users use allele names containing underscores [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f70948315a114e0c182895ba4320233f26fc1025)]
+  + Thank you @geedrn for reporting the issue #39!
+
 
 
 <!-- ############################################################# # -->
@@ -95,8 +154,10 @@
 
 + Fix `preprocess.knockin_handler` to correctly identify the flox knock-in sites as deletions not present in the control.  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d4d267c99f8c51d3a3f88f67882bead66685f710)
 
-+ Bug fix of `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7cafabf3a89b75af73f1a40da16e6390d47b48d5)
-  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. Therefore, the region between two deletions is now defined only if the size of both deletions is equal to or greater than the specified threshold (default = 3).
++ Bug fix and update `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/2f356546999f645a8cb8d33a1fc2f64bc6742113)
+  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. 
+  - Therefore, the region between two deletions is now defined as (1) identifying bins where deletions are enriched within appropriate bins (500 bp) continuously, and (2) extracting the precise break points from the start and end of these bins, implementing an algorithm to extract the large deletion region.
+
 
 </details>
 

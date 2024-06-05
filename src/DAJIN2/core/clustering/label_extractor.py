@@ -15,31 +15,36 @@ from DAJIN2.core.clustering.clustering import return_labels
 def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
     labels_result = []
     max_label = 1
-    strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json"))
+
+    strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl"))
     classif_sample.sort(key=lambda x: x["ALLELE"])
+    min_samples = max(5, int(len(classif_sample) * 0.5 // 100))  # 0.5% of the samples
+
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         """Cache data to temporary files"""
-        if Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json").exists():
-            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}.json")
-        else:
-            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", f"{allele}_{SAMPLE_NAME}.json")
+
+        # Insertion/Inversion allele
+        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}.jsonl")
+        if not path_control.exists():
+            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}.jsonl")
 
         unique_id = str(uuid.uuid4())
         path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_{unique_id}.jsonl")
         io.write_jsonl(data=group, file_path=path_sample)
 
         """Load mutation_loci and knockin_loci."""
-        path_mutation_loci = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", f"{allele}.pickle")
+        path_mutation_loci = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", allele, "mutation_loci.pickle")
+        path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele, "knockin.pickle")
+
         mutation_loci: list[set[str]] = io.load_pickle(path_mutation_loci)
-        path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", f"{allele}.pickle")
         knockin_loci: set[int] = io.load_pickle(path_knockin_loci) if path_knockin_loci.exists() else set()
 
         """Skip clustering when the number of reads is too small or there is no mutation."""
         read_numbers = io.count_newlines(path_sample)
         is_no_mutation = all(m == set() for m in mutation_loci)
-        if read_numbers <= 5 or is_no_mutation:
-            max_label += 1
+        if read_numbers < max(5, min_samples) or is_no_mutation:
             labels_result.extend([max_label] * read_numbers)
+            max_label += 1
             continue
 
         """Calculate scores to temporary files."""
@@ -54,7 +59,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         io.write_jsonl(data=scores_control, file_path=path_score_control)
 
         """Extract labels."""
-        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
+        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias, min_samples)
         labels_result += relabel_with_consective_order(labels, start=max_label)
 
         """Remove temporary files."""

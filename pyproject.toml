@@ -1,0 +1,53 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "DAJIN2"
+version = "0.5.0"
+description = "One-step genotyping tools for targeted long-read sequencing"
+authors = ["Akihiro Kuno <akuno@md.tsukuba.ac.jp>"]
+readme = "README.md"
+homepage = "https://github.com/akikuno/DAJIN2"
+license = "MIT"
+packages = [
+    { include = "DAJIN2", from = "src" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+include = [
+    "src/DAJIN2/template_igvjs.html", 
+    "src/DAJIN2/templates/**", 
+    "src/DAJIN2/static/**", 
+    "src/DAJIN2/utils/**",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = ">=1.24.0"
+scipy = ">=1.10.0"
+pandas = ">=1.0.0"
+openpyxl = ">=3.1.0"
+rapidfuzz = ">=3.6.0"
+scikit-learn = ">=1.3.0"
+mappy = ">=2.24"
+pysam = ">=0.21.0"
+Flask = ">=2.2.0"
+waitress = ">=2.1.0"
+Jinja2 = ">=3.1.0"
+plotly = ">=5.19.0"
+kaleido = ">=0.2.0"
+cstag = ">=1.0.0"
+midsv = ">=0.11.0"
+wslPath = ">=0.4.1"
+ruptures = ">=1.1.8"
+
+[tool.poetry.scripts]
+DAJIN2 = "DAJIN2.main:execute"
+

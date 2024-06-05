@@ -100,7 +100,6 @@ def write_sam_to_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str |
 
 def update_sam(sam: list, GENOME_COODINATES: dict = {}) -> list:
     sam_records = sam.copy()
-    sam_records = sam_handler.remove_overlapped_reads(sam_records)
     sam_records = sam_handler.remove_microhomology(sam_records)
     if GENOME_COODINATES["genome"]:
         return recalculate_sam_coodinates_to_reference(sam_records, GENOME_COODINATES)
@@ -109,7 +108,10 @@ def update_sam(sam: list, GENOME_COODINATES: dict = {}) -> list:
 
 
 def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, UUID, RESULT_SAMPLE=None, is_control=False) -> None:
-    path_sam_input = Path(TEMPDIR, NAME, "sam", "map-ont_control.sam")
+    path_sam_input = Path(TEMPDIR, NAME, "sam", "control", "map-ont.sam")
+    if not path_sam_input.exists():  # In the case of short-read.
+        path_sam_input = Path(TEMPDIR, NAME, "sam", "control", "sr.sam")
+
     sam_records = list(io.read_sam(path_sam_input))
 
     # Update sam

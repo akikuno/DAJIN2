@@ -9,7 +9,7 @@ from pathlib import Path
 
 from sklearn.exceptions import ConvergenceWarning
 
-DAJIN_VERSION = "0.4.6"
+DAJIN_VERSION = "0.5.0"
 DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
 
@@ -31,7 +31,7 @@ def get_logfile() -> Path:
     return Path(f"DAJIN2_log_{current_time}.txt")
 
 
-def set_logging(path_logfile: Path) -> None:
+def set_logging(path_logfile: Path) -> logging.Logger:
     log_format = "%(asctime)s, %(levelname)s, %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
 
@@ -52,8 +52,10 @@ def set_logging(path_logfile: Path) -> None:
 
     sys.excepthook = handle_uncaught_exception
 
+    return logging.getLogger(__name__)
 
-def reset_logging():
+
+def reset_logging() -> None:
     """
     Reset the logging system to its default state.
     """

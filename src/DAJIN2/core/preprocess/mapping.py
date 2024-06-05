@@ -6,7 +6,7 @@ import mappy
 from pathlib import Path
 from typing import Generator
 
-from DAJIN2.utils.dna_handler import revcomp
+from DAJIN2.utils import dna_handler
 
 
 def to_sam(
@@ -55,7 +55,7 @@ def to_sam(
 
             # Handle reverse complement for negative strand
             if hit.strand == -1:
-                query_seq = revcomp(query_seq)
+                query_seq = dna_handler.revcomp(query_seq)
                 if query_qual:
                     query_qual = query_qual[::-1]
 
@@ -109,17 +109,26 @@ def generate_sam(
         path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
         name = ARGS.sample_name
 
-    out_directory = Path(ARGS.tempdir, name, "sam")
-
     for path_fasta in paths_fasta:
         name_fasta = Path(path_fasta).stem
-        for preset in ["map-ont", "splice"]:
+        len_sequence = len(Path(path_fasta).read_text().split("\n")[1])
+        if len_sequence < 500:
+            presets = ["sr"]
+        else:
+            presets = ["map-ont", "splice"]
+
+        path_sam_directory = Path(ARGS.tempdir, name, "sam", name_fasta)
+        path_sam_directory.mkdir(parents=True, exist_ok=True)
+
+        for preset in presets:
             sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads, options=mappy_options)
+
             if is_control and is_insertion:
-                path_sam = Path(out_directory, f"{preset}_{name_fasta}_{ARGS.sample_name}.sam")
+                path_sam_file = Path(path_sam_directory, f"{ARGS.sample_name}_{preset}.sam")
             else:
-                path_sam = Path(out_directory, f"{preset}_{name_fasta}.sam")
-            path_sam.write_text("\n".join(sam))
+                path_sam_file = Path(path_sam_directory, f"{preset}.sam")
+
+            path_sam_file.write_text("\n".join(sam))
 
 
 ########################################################################

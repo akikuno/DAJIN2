@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import csv
 import json
 import pickle
@@ -164,6 +165,18 @@ def convert_to_posix(path: str) -> str:
     if wslPath.is_windows_path(path):
         path = wslPath.to_posix(path)
     return path
+
+
+def sanitize_name(file_name: Path | str) -> str:
+    """
+    Sanitize the file name by replacing invalid characters on Windows OS with '-'
+    """
+    file_name = str(file_name).strip()
+    if not file_name:
+        raise ValueError("Provided name is empty or consists only of whitespace")
+    forbidden_chars = r'[<>:"/\\|?*\x00-\x1F .]'
+
+    return re.sub(forbidden_chars, "-", file_name)
 
 
 ###########################################################

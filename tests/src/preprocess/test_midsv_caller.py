@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import pytest
-import midsv
 
 from DAJIN2.core.preprocess.midsv_caller import has_inversion_in_splice
-from DAJIN2.core.preprocess.midsv_caller import extract_qname_of_map_ont
 from DAJIN2.core.preprocess.midsv_caller import replace_internal_n_to_d
 from DAJIN2.core.preprocess.midsv_caller import convert_flag_to_strand
 from DAJIN2.core.preprocess.midsv_caller import convert_consecutive_indels_to_match
@@ -60,47 +58,6 @@ def test_has_inversion_in_splice_random_deletion():
 #     test = [s.split("\t") for s in test]
 #     test_cigar = [s[5] for s in test if not s[0].startswith("@")]
 #     assert not has_inversion_in_splice(test_cigar[0])
-
-###########################################################
-# extract_qname_of_map_ont
-###########################################################
-
-
-def test_extract_qname_of_map_ont_simulation():
-    sam_ont = [["@header"], ["read1", "", "", "", "", "5M"]]
-    sam_splice = [["@header"], ["read1", "", "", "", "", "5M"]]
-    qname_of_map_ont = extract_qname_of_map_ont(iter(sam_ont), iter(sam_splice))
-    assert qname_of_map_ont == {"read1"}
-
-    # Large deletion
-    sam_ont = [["@header"], ["read1", "", "", "", "", "5M"], ["read1", "", "", "", "", "5M"]]
-    sam_splice = [["@header"], ["read1", "", "", "", "", "5M100D5M"]]
-    qname_of_map_ont = extract_qname_of_map_ont(iter(sam_ont), iter(sam_splice))
-    assert qname_of_map_ont == set()
-
-    # Inversion
-    sam_ont = [
-        ["@header"],
-        ["read1", "", "", "", "", "5M"],
-        ["read1", "", "", "", "", "100M"],
-        ["read1", "", "", "", "", "5M"],
-    ]
-    sam_splice = [["@header"], ["read1", "", "", "", "", "5M100I100N5M"]]
-    qname_of_map_ont = extract_qname_of_map_ont(iter(sam_ont), iter(sam_splice))
-    assert qname_of_map_ont == {"read1"}
-
-    # Inversion with single read in map-ont
-    sam_ont = [["@header"], ["read1", "", "", "", "", "5M10N5M"]]
-    sam_splice = [["@header"], ["read1", "", "", "", "", "5M100I100N5M"]]
-    qname_of_map_ont = extract_qname_of_map_ont(iter(sam_ont), iter(sam_splice))
-    assert qname_of_map_ont == {"read1"}
-
-
-def test_extract_qname_of_map_ont_real():
-    sam_ont = list(midsv.read_sam(Path("tests", "data", "preprocess", "midsv_caller", "stx2-ont_deletion.sam")))
-    sam_splice = list(midsv.read_sam(Path("tests", "data", "preprocess", "midsv_caller", "stx2-splice_deletion.sam")))
-    qname_of_map_ont = extract_qname_of_map_ont(iter(sam_ont), iter(sam_splice))
-    assert qname_of_map_ont == {"stx2-small-deletion"}
 
 
 ###########################################################
@@ -201,7 +158,7 @@ def test_convert_flag_to_strand(input_sample, expected_output):
         # no change
         ("=A,=C,=G,=T,=A", "=A,=C,=G,=T,=A"),
         # empty
-        ("", "")
+        ("", ""),
     ],
 )
 def test_convert_consecutive_indels_to_match(cons, expected):

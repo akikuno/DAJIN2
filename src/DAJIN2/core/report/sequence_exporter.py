@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import textwrap
 import cstag
+import textwrap
 from pathlib import Path
-from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
+
+from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, reallocate_insertion_within_deletion
 from DAJIN2.core.report.insertion_reflector import reflect_ref_insertion_to_query
 
 
@@ -16,8 +17,9 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 
 
 def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, header: str, cons_per: list[dict]) -> str:
-    cons_cssplit = [max(cons, key=cons.get) for cons in cons_per]
-    cons_cstag = convert_cssplits_to_cstag(cons_cssplit)
+    cons_cssplits = [max(cons, key=cons.get) for cons in cons_per]
+    cons_cssplits_reallocated = reallocate_insertion_within_deletion(cons_cssplits, bin_size=500, percentage=50)
+    cons_cstag = convert_cssplits_to_cstag(cons_cssplits_reallocated)
 
     allele = header.split("_")[1]
     if Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{allele}.txt").exists():
