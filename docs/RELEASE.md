@@ -154,8 +154,10 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 
 + Fix `preprocess.knockin_handler` to correctly identify the flox knock-in sites as deletions not present in the control.  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d4d267c99f8c51d3a3f88f67882bead66685f710)
 
-+ Bug fix of `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7cafabf3a89b75af73f1a40da16e6390d47b48d5)
-  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. Therefore, the region between two deletions is now defined only if the size of both deletions is equal to or greater than the specified threshold (default = 3).
++ Bug fix and update `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7cafabf3a89b75af73f1a40da16e6390d47b48d5)
+  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. 
+  - Therefore, the region between two deletions is now defined as (1) identifying bins where deletions are enriched within appropriate bins (500 bp) continuously, and (2) extracting the precise break points from the start and end of these bins, implementing an algorithm to extract the large deletion region.
+
 
 </details>
 

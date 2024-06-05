@@ -18,7 +18,7 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 
 def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, header: str, cons_per: list[dict]) -> str:
     cons_cssplits = [max(cons, key=cons.get) for cons in cons_per]
-    cons_cssplits_reallocated = reallocate_insertion_within_deletion(cons_cssplits)
+    cons_cssplits_reallocated = reallocate_insertion_within_deletion(cons_cssplits, bin_size=500, percentage=50)
     cons_cstag = convert_cssplits_to_cstag(cons_cssplits_reallocated)
 
     allele = header.split("_")[1]

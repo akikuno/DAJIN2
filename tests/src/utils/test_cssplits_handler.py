@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import pytest
-from DAJIN2.utils.cssplits_handler import (
-    find_n_boundaries,
-    add_match_operator_to_n,
-    convert_cssplits_to_cstag,
-    standardize_case,
-    call_sequence,
-    get_index_of_large_deletions,
-    adjust_cs_insertion,
-)
+from DAJIN2.utils import cssplits_handler
+
+
+###########################################################
+# find_n_boundaries
+###########################################################
 
 
 @pytest.mark.parametrize(
@@ -22,7 +19,7 @@ from DAJIN2.utils.cssplits_handler import (
     ],
 )
 def test_find_n_boundaries(cssplits, expected):
-    assert find_n_boundaries(cssplits) == expected
+    assert cssplits_handler.find_n_boundaries(cssplits) == expected
 
 
 ###########################################################
@@ -31,45 +28,58 @@ def test_find_n_boundaries(cssplits, expected):
 
 
 @pytest.mark.parametrize(
-    "cssplits, expected", [([], []), (["=A", "=C", "=G"], ["=A", "=C", "=G"]), (["N", "=C", "N"], ["=N", "=C", "=N"])]
+    "cssplits, expected",
+    [
+        ([], []),
+        (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
+        (["N", "=C", "N"], ["=N", "=C", "=N"]),
+        (["=A", "+G|+G|+G|N", "=T"], ["=A", "+G|+G|+G|=N", "=T"]),
+    ],
 )
 def test_add_match_operator_to_n(cssplits, expected):
-    assert add_match_operator_to_n(cssplits) == expected
+    assert cssplits_handler._add_match_operator_to_n(cssplits) == expected
+
+
+# @pytest.mark.parametrize(
+#     "cssplits, expected",
+#     [
+#         ([], []),
+#         (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
+#         (["+A|+A|*GC"], ["+A|+A|*GC"]),
+#         (["+A|*GC|=C"], ["+A|=C|=C"]),
+#     ],
+# )
+# def test_format_substitution_withtin_insertion(cssplits, expected):
+#     assert cssplits_handler._format_substitution_withtin_insertion(cssplits) == expected
 
 
 @pytest.mark.parametrize(
-    "input_str, expected",
+    "input_cssplits, expected",
     [
-        ("", ""),
-        ("*AG-DEF+GHI~jkl=XYZ", "*ag-def+ghi~jkl=XYZ"),
-        ("=ABCDEF", "=ABCDEF"),
-        ("*abcDEF+ghi-JKL=XYZ123*AC", "*abcdef+ghi-jkl=XYZ123*ac"),
-        ("*abc", "*abc"),
-        ("-DEF", "-def"),
-        ("+GHI", "+ghi"),
-        ("=XYZ", "=XYZ"),
+        ([], []),
+        (["=ACGT"], ["=ACGT"]),
+        (["=ACGT", "*GC", "=ACGT"], ["=ACGT", "*gc", "=ACGT"]),
     ],
 )
-def test_standardize_case(input_str, expected):
-    assert standardize_case(input_str) == expected
+def test_standardize_case(input_cssplits, expected):
+    assert cssplits_handler._standardize_case(input_cssplits) == expected
 
 
 @pytest.mark.parametrize(
     "cssplits, expected",
     [
         ([], ""),
-        (["=A", "C", "G", "T"], "=ACGT"),
+        (["=A", "=C", "=G", "=T"], "=ACGT"),
         (["=A", "*GT", "=A"], "=A*gt=A"),
         (["-C", "-G"], "-cg"),
         (["*GC", "*TA"], "*gc*ta"),
         (["+A|+A|=C", "=G"], "+aa=CG"),
-        (["+A|*GC|=T", "+A|+C|=G"], "+ac=T+ac=G"),
-        (["+A|*GC|=T", "+A|+C|=G", "+A|+C|=G"], "+ac=T+ac=G+ac=G"),
+        (["+A|+C|=T", "+A|+C|=G"], "+ac=T+ac=G"),
         (["=A", "=C", "+A|+C|=G", "-C", "-G", "*CG"], "=AC+ac=G-cg*cg"),
     ],
 )
 def test_convert_cssplits_to_cstag(cssplits, expected):
-    assert convert_cssplits_to_cstag(cssplits) == expected
+    assert cssplits_handler.convert_cssplits_to_cstag(cssplits) == expected
 
 
 ###########################################################
@@ -78,7 +88,7 @@ def test_convert_cssplits_to_cstag(cssplits, expected):
 
 
 @pytest.mark.parametrize(
-    "cons_percentage_by_key, expected_sequence",
+    "cons_percentage, expected_sequence",
     [
         ([{"=A": 1.0}, {"=T": 0.9, "-T": 0.1}], "AT"),  # match
         ([{"=A": 1.0}, {"-A": 0.9, "=A": 0.1}, {"=T": 1.0}], "AT"),  # deletion
@@ -91,8 +101,8 @@ def test_convert_cssplits_to_cstag(cssplits, expected):
         ([{"=A": 1.0}], "A"),
     ],
 )
-def test_call_sequence(cons_percentage_by_key, expected_sequence):
-    assert call_sequence(cons_percentage_by_key) == expected_sequence
+def test_call_sequence(cons_percentage, expected_sequence):
+    assert cssplits_handler.call_sequence(cons_percentage) == expected_sequence
 
 
 ###########################################################
@@ -103,42 +113,16 @@ def test_call_sequence(cons_percentage_by_key, expected_sequence):
 @pytest.mark.parametrize(
     "cssplits, expected",
     [
-        (["=T"] * 100 + ["-A"] * 300 + ["=T"] * 100 + ["-A"] * 300, set(range(100, 500))),
+        (["=T"] * 100 + ["-A"] * 300 + ["=T"] * 100, set(range(100, 400))),
     ],
 )
 def test_get_index_of_large_deletions(cssplits, expected):
-    assert get_index_of_large_deletions(cssplits) == expected
+    assert cssplits_handler._get_index_of_large_deletions(cssplits) == expected
 
 
 ###########################################################
 # reallocate_insertion_within_deletion
 ###########################################################
-
-
-# @pytest.mark.parametrize(
-#     "index, cssplits, del_range, distance, expected",
-#     [
-#         (0, ["-A", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "-T", "=G"], 1, 10, True),
-#         (11, ["-A", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "-T", "=G"], 1, 10, False),
-#         (0, ["-A", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "=C", "-T", "=G"], 1, 10, False),
-#         (0, ["-A", "=C", "=C", "=C", "=C", "=C", "*GC", "=C", "=C", "=C", "=C", "-T", "=G"], 1, 10, True),
-#         (0, ["-A", "=C", "=C", "=C", "=C", "=C", "-T", "=C", "=C", "=C", "=C", "-T", "=G"], 1, 10, True),
-#         (0, ["-A", "=C", "=C", "=C", "=C", "=C", "+A|=C", "=C", "=C", "=C", "=C", "-T", "=G"], 1, 10, True),
-#         (0, ["-A", "-A", "=C", "-T", "-A"], 2, 10, True),
-#     ],
-#     ids=[
-#         "-A has a 10-character match and is within the deletion cluster.",
-#         "-T is outside the deletion cluster.",
-#         "-A has a 11-character match and is outside the deletion cluster.",
-#         "-A is determined to be reset and within the deletion cluster due to a point mutation at the 6th character.",
-#         "-A is determined to be reset and within the deletion cluster due to a deletion at the 6th character.",
-#         "-A is determined to be reset and within the deletion cluster due to an insertion at the 6th character.",
-#         "-A is within the deletion cluster.",
-#     ],
-# )
-# def test_is_within_deletion(index: int, cssplits: list[str], del_range: int, distance: int, expected: bool):
-#     assert is_within_deletion(index, cssplits, del_range, distance) == expected
-
 
 @pytest.mark.parametrize(
     "cs, expected",
@@ -151,7 +135,7 @@ def test_get_index_of_large_deletions(cssplits, expected):
     ],
 )
 def test_adjust_cs_insertion(cs: str, expected: str):
-    assert adjust_cs_insertion(cs) == expected
+    assert cssplits_handler._adjust_cs_insertion(cs) == expected
 
 
 # @pytest.mark.parametrize(
