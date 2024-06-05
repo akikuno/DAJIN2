@@ -174,7 +174,7 @@ def sanitize_name(file_name: Path | str) -> str:
     file_name = str(file_name).strip()
     if not file_name:
         raise ValueError("Provided name is empty or consists only of whitespace")
-    forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ._]'
+    forbidden_chars = r'[<>:"/\\|?*\x00-\x1F .]'
 
     return re.sub(forbidden_chars, "-", file_name)
 
