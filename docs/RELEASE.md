@@ -11,16 +11,23 @@
 
 <!-- 💡 ToDo
 
-- VCF、PDFを出力する
-- 逆位アレルでの検証を加える
-- nCATSがほしい…
-- Flaskではなく、streamlitでGUIを作る
-
  -->
 
 <!-- ############################################################# # -->
 
-# v0.5.0 (2024-MM-DD)
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!--  ------------------------------------------------------------- -->
+
+<details>
+<summary> v0.5.0 (2024-06-05) </summary>
 
 ## 📝 Documentation
 
@@ -84,17 +91,7 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 + Modified the system to separate intermediate files using a directory structure instead of underscores (`_`), ensuring that no errors occur even if users use allele names containing underscores [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f70948315a114e0c182895ba4320233f26fc1025)]
   + Thank you @geedrn for reporting the issue #39!
 
-
-
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!--  ------------------------------------------------------------- -->
+</details>
 
 <details>
 <summary> v0.4.6 (2024-05-17) </summary>
