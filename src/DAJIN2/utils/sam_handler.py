@@ -61,13 +61,15 @@ def remove_overlapped_reads(sam: list[list[str]]) -> list[list[str]]:
 ###########################################################
 
 
-def trim_softclip(CIGAR: str, SEQ: str) -> str:
-    cigar_split = split_cigar(CIGAR)
+def trim_softclip(cigar: str, sequence: str) -> str:
+    if sequence == "*":  # In the case of FASTA format, the qual (= sequence) will be "*".
+        return "*"
+    cigar_split = split_cigar(cigar)
     if cigar_split[0].endswith("S"):
-        SEQ = SEQ[int(cigar_split[0][:-1]) :]
+        sequence = sequence[int(cigar_split[0][:-1]) :]
     if cigar_split[-1].endswith("S"):
-        SEQ = SEQ[: -int(cigar_split[-1][:-1])]
-    return SEQ
+        sequence = sequence[: -int(cigar_split[-1][:-1])]
+    return sequence
 
 
 def check_microhomology(curr_seq_trimmed: str, next_seq_trimmed: str) -> int:
@@ -141,12 +143,12 @@ def trim(alignments: list[list[str]]) -> list[list[str]]:
             alignments[idx + 1][5], num_del = trim_cigar_on_microhomology(next_cigar_splitted, len_microhomology)
             alignments[idx + 1][3] = str(int(next_align[3]) + len_microhomology + num_del)
             alignments[idx + 1][9] = next_seq_trimmed[len_microhomology:]
-            alignments[idx + 1][10] = next_qual_trimmed[len_microhomology:]
+            alignments[idx + 1][10] = next_qual_trimmed[len_microhomology:] if next_qual_trimmed != "*" else "*"
         else:
             alignments[idx][5], num_del = trim_cigar_on_microhomology(next_cigar_splitted, len_microhomology)
             alignments[idx][3] = str(int(alignments[idx][3]) + num_del)
             alignments[idx][9] = next_seq_trimmed[:-len_microhomology]
-            alignments[idx][10] = next_qual_trimmed[:-len_microhomology:]
+            alignments[idx][10] = next_qual_trimmed[:-len_microhomology:] if next_qual_trimmed != "*" else "*"
         idx += 1
 
 

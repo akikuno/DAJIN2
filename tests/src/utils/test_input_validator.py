@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import pytest
+from pathlib import Path
 from DAJIN2.utils import input_validator
 
 
 ###############################################################################
-# validate File existance
+# validate File existance and the extentions
 ###############################################################################
 
 
@@ -16,16 +17,19 @@ def test_exists():
     assert str(e.value) == f"{test} is not found"
 
 
+def test_return_file_extension():
+    with pytest.raises(ValueError) as e:
+        test = Path("test.fqq")
+        expected = (
+            f"{test} requires extensions either .fastq, .fastq.gz, .fq, .fq.gz, .fasta, .fasta.gz, .fa, .fa.gz, or .bam"
+        )
+        input_validator.return_file_extension(test)
+    assert str(e.value) == expected
+
+
 ###############################################################################
 # validate FASTQ
 ###############################################################################
-
-
-def test_fastq_extension():
-    with pytest.raises(ValueError) as e:
-        test = "test.fqq"
-        input_validator.validate_fastq_extension("test.fqq")
-    assert str(e.value) == f"{test} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'"
 
 
 def test_validate_fastq_content_empty():
@@ -74,7 +78,7 @@ def test_fasta_error_duplicated_sequences():
 def test_fasta_error_without_control():
     with pytest.raises(ValueError) as e:
         fasta_path = "tests/data/utils/validate_inputs/no_control.fa"
-        _ = input_validator.validate_fasta_content(fasta_path)
+        _ = input_validator.validate_fasta_content(fasta_path, allele_file=True)
     assert str(e.value) == f"One of the headers in the {fasta_path} must be '>control'"
 
 
