@@ -15,6 +15,14 @@
 
 <!-- ############################################################# # -->
 
+## 💥 Breaking
+
++ Enable to accept FASTA files as an input #37 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
+
+## 🔧 Maintenance
+
++ Specify the Python version to be between 3.8 and 3.10. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5fae947eff7da0f7e1ed5e4ff3f95c911fd9f646)]
+
 
 <!-- ############################################################# # -->
 
