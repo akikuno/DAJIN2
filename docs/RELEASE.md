@@ -23,6 +23,8 @@
 
 + Specify the Python version to be between 3.8 and 3.10. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5fae947eff7da0f7e1ed5e4ff3f95c911fd9f646)]
 
++ Change `mutation_exporter.report_mutations` to return list[list[str]]. Update the tests accordingly. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
+
 ## 🐛 Bug Fixes
 
 + Add `reallocate_insertion_within_deletion` into `report.mutation_exporter` and reflected it in the mutation info. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ed6a96e01bb40c77df9cd3a17a4c29524684b6f1)]

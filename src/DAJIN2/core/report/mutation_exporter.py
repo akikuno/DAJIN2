@@ -24,13 +24,13 @@ def group_by_mutation(cssplits: list[str]) -> list[list[str]]:
 ###########################################################
 
 
-def _handle_match(group, genome, start, end, header, chromosome):
+def _handle_match(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
     end += len(group)
     start = end
-    return None, start, end
+    return [None], start, end
 
 
-def _handle_substitution(group, genome, start, end, header, chromosome):
+def _handle_substitution(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
     result = []
     for g in group:
         ref = g[1]
@@ -38,22 +38,20 @@ def _handle_substitution(group, genome, start, end, header, chromosome):
         result.append([header, genome, chromosome, start, end, f"substitution: {ref}>{mut}"])
         end += 1
         start = end
-    if len(result) == 1:
-        result = result[0]
     return result, start, end
 
 
-def _handle_deletion(group, genome, start, end, header, chromosome):
+def _handle_deletion(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
     end += len(group) - 1
     size = len(group)
     seq = "".join([g[-1] for g in group])
     result = [header, genome, chromosome, start, end, f"{size}bp deletion: {seq}"]
     end += 1
     start = end
-    return result, start, end
+    return [result], start, end
 
 
-def _handle_insertion(group, genome, start, end, header, chromosome):
+def _handle_insertion(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
     group = group[0]
     size = group.count("|")
     seq_insertion = "".join([g[-1] for g in group.split("|")[:-1]])
@@ -64,33 +62,31 @@ def _handle_insertion(group, genome, start, end, header, chromosome):
         pass
     elif seq_last.startswith("-"):
         result.append([header, genome, chromosome, start, end, f"1bp deletion: {seq_last[-1]}"])
-    if len(result) == 1:
-        result = result[0]
     end += 1
     start = end
     return result, start, end
 
 
-def _handle_inversion(group, genome, start, end, header, chromosome):
+def _handle_inversion(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
     end += len(group) - 1
     size = len(group)
     seq = "".join([g[-1].upper() for g in group])
     result = [header, genome, chromosome, start, end, f"{size}bp inversion: {seq}"]
     end += 1
     start = end
-    return result, start, end
+    return [result], start, end
 
 
-def _handle_unknown(group, genome, start, end, header, chromosome):
+def _handle_unknown(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
     end += len(group) - 1
     size = len(group)
     result = [header, genome, chromosome, start, end, f"{size}bp unknown bases"]
     end += 1
     start = end
-    return result, start, end
+    return [result], start, end
 
 
-def report_mutations(cssplits_grouped, GENOME_COORDINATES, header):
+def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, header) -> list[list[str]]:
     genome = GENOME_COORDINATES["genome"]
     chromosome = GENOME_COORDINATES["chrom"]
     start = end = GENOME_COORDINATES["start"]
@@ -109,8 +105,8 @@ def report_mutations(cssplits_grouped, GENOME_COORDINATES, header):
                 result, start, end = handler(group, genome, start, end, header, chromosome)
                 if prefix == "=":
                     continue
-                results.append(result)
-    return results
+                results.extend(result)
+    return [list(map(str, r)) for r in results]
 
 
 ###########################################################
