@@ -23,7 +23,7 @@
 
 + Specify the Python version to be between 3.8 and 3.10. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5fae947eff7da0f7e1ed5e4ff3f95c911fd9f646)]
 
-+ Change `mutation_exporter.report_mutations` to return list[list[str]]. Update the tests accordingly. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
++ Change `mutation_exporter.report_mutations` to return list[list[str]]. Update the tests accordingly. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7153cb143d621e136ca94bfe6b391f1d7b61d438)]
 
 ## 🐛 Bug Fixes
 
