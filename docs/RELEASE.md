@@ -25,7 +25,8 @@
 
 ## 🐛 Bug Fixes
 
-+ Add `reallocate_insertion_within_deletion` into `report.mutation_exporter` and reflected it in the mutation info.
++ Add `reallocate_insertion_within_deletion` into `report.mutation_exporter` and reflected it in the mutation info. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ed6a96e01bb40c77df9cd3a17a4c29524684b6f1)]
+
 
 <!-- ############################################################# # -->
 
