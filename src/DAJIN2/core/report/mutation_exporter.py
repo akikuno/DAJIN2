@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from itertools import groupby
-from DAJIN2.utils.cssplits_handler import revcomp_cssplits
+from DAJIN2.utils.cssplits_handler import revcomp_cssplits, reallocate_insertion_within_deletion
 
-# import midsv
-# from DAJIN2.core import preprocess
 
 ###########################################################
 # group by mutation
@@ -21,19 +19,8 @@ def group_by_mutation(cssplits: list[str]) -> list[list[str]]:
     return [list(group) for _, group in groupby(cssplits, key=lambda x: x[0])]
 
 
-def flatten(lst: list[list]) -> list:
-    results_flattend = []
-    for result in lst:
-        if isinstance(result[0], list):
-            for res in result:
-                results_flattend.append(res)
-        else:
-            results_flattend.append(result)
-    return results_flattend
-
-
 ###########################################################
-# report mutations
+# Report mutations
 ###########################################################
 
 
@@ -123,7 +110,7 @@ def report_mutations(cssplits_grouped, GENOME_COORDINATES, header):
                 if prefix == "=":
                     continue
                 results.append(result)
-    return flatten(results)
+    return results
 
 
 ###########################################################
@@ -131,16 +118,19 @@ def report_mutations(cssplits_grouped, GENOME_COORDINATES, header):
 ###########################################################
 
 
-def export_to_csv(TEMPDIR: Path | str, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_percentage: dict[list]) -> None:
+def export_to_csv(TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_percentage: dict[str, list]) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
     for header, cons in cons_percentage.items():
         cssplits = [max(c, key=c.get) for c in cons]
         if GENOME_COORDINATES.get("strand") == "-":
             cssplits = revcomp_cssplits(cssplits)
+        cssplits = reallocate_insertion_within_deletion(cssplits, bin_size=500, percentage=50)
         cssplits_inversion = annotate_inversion(cssplits)
         cssplits_grouped = group_by_mutation(cssplits_inversion)
         result = report_mutations(cssplits_grouped, GENOME_COORDINATES, header)
         results.extend(result)
+
     results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
+
     path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")
     path_output.write_text(results_csv)

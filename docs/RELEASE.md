@@ -23,6 +23,9 @@
 
 + Specify the Python version to be between 3.8 and 3.10. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5fae947eff7da0f7e1ed5e4ff3f95c911fd9f646)]
 
+## 🐛 Bug Fixes
+
++ Add `reallocate_insertion_within_deletion` into `report.mutation_exporter` and reflected it in the mutation info.
 
 <!-- ############################################################# # -->
 
