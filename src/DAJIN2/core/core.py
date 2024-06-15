@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import shutil
 import logging
-
+import shutil
 from pathlib import Path
 
-from DAJIN2.utils import io, fastx_handler
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.input_formatter import FormattedInputs
+from DAJIN2.utils import fastx_handler, io
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def execute_control(arguments: dict):
-
     logger.info(f"{arguments['control']} is now processing...")
 
     ###########################################################
@@ -42,7 +40,7 @@ def execute_control(arguments: dict):
     # Merge fastq files
     ###########################################################
 
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_control, ARGS.control_name)
+    fastx_handler.save_inputs_as_single_fastx(ARGS.tempdir, ARGS.path_control, ARGS.control_name)
     # Save subsetted fastq if the read number is too large (> 10,000 reads)
     fastx_handler.save_subsetted_fastx(
         Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz"), num_reads=10_000
@@ -80,7 +78,7 @@ def execute_control(arguments: dict):
     ###########################################################
     # Finish call
     ###########################################################
-    logger.info(f"\N{teacup without handle} {arguments['control']} is finished!")
+    logger.info(f"\N{TEACUP WITHOUT HANDLE} {arguments['control']} is finished!")
 
 
 def execute_sample(arguments: dict):
@@ -100,7 +98,7 @@ def execute_sample(arguments: dict):
     # Merge fastq files
     # ============================================================
 
-    fastx_handler.save_concatenated_fastx(ARGS.tempdir, ARGS.path_sample, ARGS.sample_name)
+    fastx_handler.save_inputs_as_single_fastx(ARGS.tempdir, ARGS.path_sample, ARGS.sample_name)
 
     # ============================================================
     # Mapping with mappy
@@ -231,4 +229,4 @@ def execute_sample(arguments: dict):
     # Finish call
     ###########################################################
 
-    logger.info(f"\N{teacup without handle} {arguments['sample']} is finished!")
+    logger.info(f"\N{TEACUP WITHOUT HANDLE} {arguments['sample']} is finished!")
