@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import pytest
 
-from pathlib import Path
 from src.DAJIN2.core.preprocess import genome_fetcher
 from src.DAJIN2.utils.input_validator import validate_genome_and_fetch_urls
 

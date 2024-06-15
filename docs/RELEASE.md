@@ -17,13 +17,17 @@
 
 ## 💥 Breaking
 
-+ Enable to accept FASTA files as an input #37 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
++ Enable to accept additional file formats as an input #37 
+  + FASTA [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
+  + BAM [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
 
 ## 🔧 Maintenance
 
 + Specify the Python version to be between 3.8 and 3.10. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5fae947eff7da0f7e1ed5e4ff3f95c911fd9f646)]
 
 + Change `mutation_exporter.report_mutations` to return list[list[str]]. Update the tests accordingly. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7153cb143d621e136ca94bfe6b391f1d7b61d438)]
+
++ Apply formatting with Ruff [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
 
 ## 🐛 Bug Fixes
 

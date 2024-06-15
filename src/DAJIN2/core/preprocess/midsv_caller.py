@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import midsv
-
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Generator
-from collections import Counter, defaultdict
 
-from DAJIN2.utils import io, sam_handler, cssplits_handler
+import midsv
+
+from DAJIN2.utils import cssplits_handler, io, sam_handler
 
 
 def has_inversion_in_splice(CIGAR: str) -> bool:
@@ -88,8 +88,7 @@ def extract_best_alignment_length_from_sam(
 
 
 def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]]:
-    for midsv_sample in midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep=set(["FLAG"])):
-        yield midsv_sample
+    yield from midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep={"FLAG"})
 
 
 def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
@@ -178,7 +177,7 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
         cssplit_reversed[i] = current_cs.split("|")[-1]
 
         # Format deletions
-        for k, insertion in enumerate(insertions, 1):
+        for k, _ in enumerate(insertions, 1):
             cssplit_reversed[i + k] = cssplit_reversed[i + k].replace("-", "=")
 
         i += len(insertions) + 1
@@ -221,7 +220,7 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
             """
             Set the destination for midsv as `barcode02/midsv/insertion1.json` when the sample is barcode02 and the allele is insertion1.
             """
-            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"*.sam"))
+            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob("*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}.jsonl")
 
         preset_cigar_by_qname = extract_preset_and_cigar_by_qname(path_sam_files)

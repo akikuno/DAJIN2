@@ -98,7 +98,10 @@ def write_sam_to_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str |
     pysam.index("-@", f"{threads}", str(path_bam))
 
 
-def update_sam(sam: list, GENOME_COODINATES: dict = {}) -> list:
+def update_sam(sam: list, GENOME_COODINATES: dict = None) -> list:
+    if GENOME_COODINATES is None:
+        GENOME_COODINATES = {}
+
     sam_records = sam.copy()
     sam_records = sam_handler.remove_microhomology(sam_records)
     if GENOME_COODINATES["genome"]:
@@ -126,8 +129,8 @@ def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, UUID, RESULT_SAMPLE
     sam_headers = [s for s in sam_updated if s[0].startswith("@")]
     sam_contents = [s for s in sam_updated if not s[0].startswith("@")]
     if is_control:
-        qnames: set[str] = set(list(set(s[0] for s in sam_contents[:10000]))[:100])
-        sam_subset = [s for s in sam_updated if s[0] in qnames]
+        qnames_100reads: set[str] = set(list({s[0] for s in sam_contents[:10000]})[:100])  # subset 100 reads
+        sam_subset = [s for s in sam_updated if s[0] in qnames_100reads]
         path_sam_output = Path(TEMPDIR, "report", "BAM", f"temp_{UUID}_{NAME}_control_cache.sam")
         path_bam_output = Path(TEMPDIR, "cache", ".igvjs", NAME, "control.bam")
         write_sam_to_bam(sam_headers + sam_subset, path_sam_output, path_bam_output, THREADS)

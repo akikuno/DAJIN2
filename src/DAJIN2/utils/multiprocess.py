@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import io
-import sys
 import logging
+import sys
 import traceback
-
+from collections.abc import Callable
 from itertools import islice
 from multiprocessing import Process, Queue
-
 from typing import Generator
-from collections.abc import Callable
 
 
 def get_error_message_prefix(arg: dict) -> str:

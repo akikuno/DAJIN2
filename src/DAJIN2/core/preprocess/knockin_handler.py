@@ -7,7 +7,6 @@ import midsv
 
 from DAJIN2.core.preprocess import mapping
 
-
 ###########################################################
 # Consider all mutations are possible in the knockin region
 # For large deletion alleles, the deleted sequence becomes the knock-in region, so all mutations within this region are taken into consideration.

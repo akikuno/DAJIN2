@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import tempfile
+from multiprocessing import Queue
+
 import pytest
 
-import tempfile
 from src.DAJIN2.utils import multiprocess
-
-from multiprocessing import Queue
 
 ###########################################################
 # generate_chunks
@@ -125,7 +125,7 @@ def test_multiprocessing_execution():
         multiprocess.run(write_value_to_file, values_to_write, num_workers=3)
 
         # Verify if all values are written correctly
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             written_values = set(map(int, map(str.strip, f.readlines())))
 
         assert written_values == set(range(1, 11))

@@ -9,22 +9,22 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 
-import sys
-import shutil
-import logging
 import argparse
-from pathlib import Path
+import logging
+import shutil
+import sys
 from copy import deepcopy
 from itertools import groupby
+from pathlib import Path
 
 from DAJIN2 import gui, view
 from DAJIN2.core import core
-from DAJIN2.utils import io, config, report_generator, input_validator, multiprocess
+from DAJIN2.utils import config, input_validator, io, multiprocess, report_generator
 
 
 def generate_report(name: str, logger: logging.Logger) -> None:
     report_generator.report(name)
-    logger.info(f"\N{party popper} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.")
+    logger.info(f"\N{PARTY POPPER} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.")
 
 
 ################################################################################
@@ -36,8 +36,8 @@ def execute_single_mode(arguments: dict[str]):
     # Set logging to export log to stderr and file
     path_logfile = config.get_logfile()
     logger = config.set_logging(path_logfile)
-    logger.info(f"\N{runner} Start running DAJIN2 version {config.DAJIN_VERSION}")
-    logger.info(f"\N{Personal Computer} {' '.join(sys.argv)}")
+    logger.info(f"\N{RUNNER} Start running DAJIN2 version {config.DAJIN_VERSION}")
+    logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
 
     # Validate input files
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
@@ -71,7 +71,9 @@ def validate_headers_of_batch_file(headers: set[str], filepath: str) -> None:
         raise ValueError(f'{filepath} must contain "sample", "control", "allele" and "name" in the header')
 
     if not headers.issubset(accepted_headers):
-        raise ValueError(f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome".')
+        raise ValueError(
+            f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome".'
+        )
 
 
 def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) -> dict[str, str]:
@@ -103,7 +105,7 @@ def run_DAJIN2(
             contents.append(args)
 
     # Return a list of unique dictionaries
-    contents_unique = [dict(item) for item in set(frozenset(d.items()) for d in contents)]
+    contents_unique = [dict(item) for item in {frozenset(d.items()) for d in contents}]
 
     contents_unique.sort(key=lambda x: x["sample"])
 
@@ -126,7 +128,7 @@ def execute_batch_mode(arguments: dict[str]):
     validate_headers_of_batch_file(headers, path_batchfile)
 
     # Validate contents and fetch genome urls
-    cache_urls_genome = dict()
+    cache_urls_genome = {}
     records.sort(key=lambda x: x["name"])
     for _, groups in groupby(records, key=lambda x: x["name"]):
         for args in groups:
@@ -144,8 +146,8 @@ def execute_batch_mode(arguments: dict[str]):
         config.reset_logging()
         path_logfile = config.get_logfile()
         logger = config.set_logging(path_logfile)
-        logger.info(f"\N{runner} Start running DAJIN2 version {config.DAJIN_VERSION}")
-        logger.info(f"\N{Personal Computer} {' '.join(sys.argv)}")
+        logger.info(f"\N{RUNNER} Start running DAJIN2 version {config.DAJIN_VERSION}")
+        logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
 
         # Run DAJIN2
         run_DAJIN2(groups, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
@@ -181,7 +183,7 @@ def execute():
     ###############################################################################
 
     def batchmode(args):
-        arguments = dict()
+        arguments = {}
         arguments["file"] = args.file
         arguments["threads"] = input_validator.update_threads(int(args.threads))
         arguments["debug"] = args.debug
@@ -232,7 +234,7 @@ def execute():
             raise ValueError("the following arguments are required: -a/--allele")
         if args.name is None:
             raise ValueError("the following arguments are required: -n/--name")
-        arguments = dict()
+        arguments = {}
         arguments["sample"] = args.sample
         arguments["control"] = args.control
         arguments["allele"] = args.allele

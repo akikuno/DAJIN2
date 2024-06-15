@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import random
-from itertools import groupby
 from collections import defaultdict
+from itertools import groupby
 
 
 def remove_minor_alleles(clust_sample: list[dict]) -> list[dict]:

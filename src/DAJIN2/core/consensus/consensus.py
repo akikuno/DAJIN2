@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
+from collections import defaultdict
 from dataclasses import dataclass
 from itertools import groupby
-from collections import defaultdict
+from pathlib import Path
 
 from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import call_sequence
-
 
 ###########################################################
 # call position weight matrix (cons_pergentage)
@@ -98,11 +97,10 @@ class ConsensusKey:
 
 
 def call_consensus(tempdir: Path, sample_name: str, clust_sample: list[dict]) -> tuple[dict[list], dict[str]]:
-
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
 
-    cons_percentages = dict()
-    cons_sequences = dict()
+    cons_percentages = {}
+    cons_sequences = {}
 
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)

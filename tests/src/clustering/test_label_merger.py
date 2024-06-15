@@ -1,6 +1,4 @@
-from DAJIN2.core.clustering.label_merger import merge_mixed_cluster
-from DAJIN2.core.clustering.label_merger import map_clusters_to_previous
-from DAJIN2.core.clustering.label_merger import merge_minor_cluster
+from DAJIN2.core.clustering.label_merger import map_clusters_to_previous, merge_minor_cluster, merge_mixed_cluster
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 
 

@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import ssl
-import pysam
-
-import hashlib
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
-import xml.etree.ElementTree as ET
 
 import mappy
+import pysam
 
 ########################################################################
 # To accommodate cases where a user might input negative values or
@@ -98,7 +97,7 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
     for path_directory in [CONTROL, SAMPLE]:
         extentions = {return_file_extension(path_fastx) for path_fastx in Path(path_directory).iterdir()}
         if len(extentions) == 1:
-            extention = next(iter((extentions)))
+            extention = next(iter(extentions))
         else:
             raise ValueError(
                 f"{path_directory} contains multiple extensions. Please check if there are any incorrect files."

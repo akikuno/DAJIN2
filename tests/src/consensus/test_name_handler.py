@@ -1,15 +1,14 @@
-import pytest
-
 from collections import defaultdict
 from typing import NamedTuple
 
+import pytest
 from DAJIN2.core.consensus.name_handler import (
     _detect_sv,
-    _format_allele_label,
     _determine_suffix,
+    _format_allele_label,
+    add_key_by_allele_name,
     call_allele_name,
     update_key_by_allele_name,
-    add_key_by_allele_name,
 )
 
 ###########################################################
@@ -103,7 +102,11 @@ def test_call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES, thres
 @pytest.mark.parametrize(
     "cons, allele_names, expected_output",
     [
-        ({ConsensusKey("control", 1, 100): "value1", ConsensusKey("control", 2, 100): "value2"}, {1: "name1", 2: "name2"}, {"name1": "value1", "name2": "value2"}),
+        (
+            {ConsensusKey("control", 1, 100): "value1", ConsensusKey("control", 2, 100): "value2"},
+            {1: "name1", 2: "name2"},
+            {"name1": "value1", "name2": "value2"},
+        ),
     ],
 )
 def test_update_key_by_allele_name(cons, allele_names, expected_output):

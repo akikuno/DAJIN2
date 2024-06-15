@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import cstag
 import textwrap
 from pathlib import Path
 
-from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, reallocate_insertion_within_deletion
+import cstag
+
 from DAJIN2.core.report.insertion_reflector import reflect_ref_insertion_to_query
+from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, reallocate_insertion_within_deletion
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:
@@ -42,7 +43,7 @@ def export_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str, cons_sequence: dict) -> Non
 
 def parse_fasta(file_path: Path) -> tuple[str, str]:
     """Parses a FASTA file and returns the header and concatenated sequence."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         lines = f.readlines()
 
     header = lines[0].strip().lstrip(">")

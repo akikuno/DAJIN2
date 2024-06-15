@@ -37,7 +37,7 @@ def extract_sequence_errors_in_homopolymer_loci(
     indels_normalized_control: dict[str, np.array],
     anomal_loci: dict[set],
 ) -> dict[str, set[int]]:
-    sequence_errors_in_homopolymer = dict()
+    sequence_errors_in_homopolymer = {}
     for mut in ["+", "-", "*"]:
         repeat_regions = get_repeat_regions(sequence, anomal_loci[mut])
         if len(repeat_regions) == 0:

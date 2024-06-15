@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
-from itertools import chain
 from collections import Counter
+from itertools import chain
+from pathlib import Path
 
 import numpy as np
+from scipy.sparse import csr_matrix, spmatrix
 from sklearn import metrics
 from sklearn.cluster import BisectingKMeans
-from scipy.sparse import csr_matrix, spmatrix
 
-from DAJIN2.utils import io, config
 from DAJIN2.core.clustering.label_merger import merge_labels
 from DAJIN2.core.clustering.score_handler import subset_scores
 from DAJIN2.core.clustering.strand_bias_handler import remove_biased_clusters
+from DAJIN2.utils import config, io
 
 config.set_warnings_ignore()
 

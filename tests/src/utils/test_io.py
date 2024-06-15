@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import os
 import json
-import pytest
+import os
 from pathlib import Path
+
+import pytest
 
 from src.DAJIN2.utils import io
 
@@ -71,7 +72,7 @@ def test_write_jsonl():
     test_filename = "test_output.json"
     io.write_jsonl(file_path=test_filename, data=data_list)
     # Verify if the file has been written correctly
-    with open(test_filename, "r") as f:
+    with open(test_filename) as f:
         lines = f.readlines()
         assert len(lines) == 2
         loaded_data1 = json.loads(lines[0].strip())

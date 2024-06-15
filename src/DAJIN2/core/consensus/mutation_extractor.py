@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from pathlib import Path
 from itertools import groupby
+from pathlib import Path
 
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 
-from DAJIN2.utils import io
-from DAJIN2.core.preprocess.mutation_extractor import summarize_indels, extract_mutation_loci, minimize_mutation_counts
 from DAJIN2.core.consensus.similarity_searcher import cache_selected_control_by_similarity
+from DAJIN2.core.preprocess.mutation_extractor import extract_mutation_loci, minimize_mutation_counts, summarize_indels
+from DAJIN2.utils import io
 
 """
 Most of the code reuses `preprocess.cache_mutation_loci`.
@@ -25,7 +25,7 @@ def get_thresholds(path_indels_normalized_sample, path_indels_normalized_control
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
     indels_normalized_control = io.load_pickle(path_indels_normalized_control)
     indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
-    thresholds = dict()
+    thresholds = {}
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_minimize_control[mut]

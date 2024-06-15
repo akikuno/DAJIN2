@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import re
 import bisect
+import re
+from collections import defaultdict
 from pathlib import Path
 from typing import Generator
-from collections import defaultdict
 
 from DAJIN2.utils import config
 
@@ -18,8 +18,8 @@ config.set_warnings_ignore()
 import numpy as np
 from sklearn.cluster import MiniBatchKMeans
 
-from DAJIN2.utils import io
 from DAJIN2.core.preprocess.homopolymer_handler import extract_sequence_errors_in_homopolymer_loci
+from DAJIN2.utils import io
 
 
 def count_indels(midsv_sample: Generator[dict], sequence: str) -> dict[str, list[int]]:
@@ -41,7 +41,7 @@ def count_indels(midsv_sample: Generator[dict], sequence: str) -> dict[str, list
 
 
 def normalize_indels(count: dict[str, list[int]]) -> dict[str, np.array]:
-    count_normalized = dict()
+    count_normalized = {}
     match_count = np.array(count["="])
     for mut, indel_count in count.items():
         numerator = np.array(indel_count)
@@ -56,7 +56,7 @@ def minimize_mutation_counts(
     """
     In cases where control has a larger value than sample, adjust the value of sample to match that of control.
     """
-    indels_control_minimized = dict()
+    indels_control_minimized = {}
     for mut in {"+", "-", "*"}:
         indels_control_minimized[mut] = np.minimum(indels_control[mut], indels_sample[mut])
     return indels_control_minimized
@@ -136,7 +136,7 @@ def extract_anomal_loci(
     is_consensus: bool = False,
 ) -> dict[str, set[int]]:
     """Extract outlier loci compareing indel counts between sample and control."""
-    anomal_loci = dict()
+    anomal_loci = {}
     for mut in {"+", "-", "*"}:
         values_sample = indels_normalized_sample[mut]
         values_control = indels_normalized_control[mut]
@@ -171,7 +171,7 @@ def count_elements_within_range(arr, lower_bound, upper_bound):
 
 def merge_index_of_consecutive_indel(mutation_loci: dict[str, set[int]]) -> dict[str, set[int]]:
     """Treat as contiguous indels if there are insertions/deletions within five bases of each other"""
-    mutation_loci_merged = dict()
+    mutation_loci_merged = {}
 
     """Reflect point mutations as they are"""
     mutation_loci_merged["*"] = mutation_loci["*"]
@@ -232,14 +232,14 @@ def summarize_indels(path_midsv: Path, sequence: str) -> tuple:
 
 
 def merge_loci(dissimilar_loci: dict[str, set], anomal_loci: dict[str, set]) -> dict[str, set]:
-    mutation_loci = dict()
+    mutation_loci = {}
     for mut in {"+", "-", "*"}:
         mutation_loci[mut] = dissimilar_loci[mut] | anomal_loci[mut]
     return mutation_loci
 
 
 def add_knockin_loci(candidate_loci: dict[str, set], knockin_loci: set):
-    mutation_loci = dict()
+    mutation_loci = {}
     for mut in {"+", "-", "*"}:
         mutation_loci[mut] = candidate_loci[mut] | knockin_loci
     return mutation_loci
@@ -289,9 +289,11 @@ def extract_mutation_loci(
     path_indels_normalized_sample: Path,
     path_indels_normalized_control: Path,
     path_knockin: Path,
-    thresholds: dict[str, float] = {"*": 0.5, "-": 0.5, "+": 0.5},
+    thresholds: dict[str, float] = None,
     is_consensus: bool = False,
 ) -> list[set[str]]:
+    if thresholds is None:
+        thresholds = {"*": 0.5, "-": 0.5, "+": 0.5}
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
     indels_normalized_control = io.load_pickle(path_indels_normalized_control)
 

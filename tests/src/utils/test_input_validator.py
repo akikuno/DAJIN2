@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
-from DAJIN2.utils import input_validator
 
+import pytest
+from DAJIN2.utils import input_validator
 
 ###############################################################################
 # validate File existance and the extentions
@@ -20,9 +20,7 @@ def test_exists():
 def test_return_file_extension():
     with pytest.raises(ValueError) as e:
         test = Path("test.fqq")
-        expected = (
-            f"{test} requires extensions either .fastq, .fastq.gz, .fq, .fq.gz, .fasta, .fasta.gz, .fa, .fa.gz, or .bam"
-        )
+        expected = f"{test} requires extensions either .fastq, .fastq.gz, .fq, .fq.gz, .fasta, .fasta.gz, .fa, .fa.gz, or .bam"
         input_validator.return_file_extension(test)
     assert str(e.value) == expected
 

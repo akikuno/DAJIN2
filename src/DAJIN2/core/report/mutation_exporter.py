@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-
-from pathlib import Path
 from itertools import groupby
-from DAJIN2.utils.cssplits_handler import revcomp_cssplits, reallocate_insertion_within_deletion
+from pathlib import Path
 
+from DAJIN2.utils.cssplits_handler import reallocate_insertion_within_deletion, revcomp_cssplits
 
 ###########################################################
 # group by mutation

@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 from DAJIN2.utils import cssplits_handler
 
-
 ###########################################################
 # find_n_boundaries
 ###########################################################
@@ -123,6 +122,7 @@ def test_get_index_of_large_deletions(cssplits, expected):
 ###########################################################
 # reallocate_insertion_within_deletion
 ###########################################################
+
 
 @pytest.mark.parametrize(
     "cs, expected",

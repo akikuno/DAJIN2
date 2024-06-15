@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-
 from itertools import groupby
+
 from DAJIN2.utils.dna_handler import revcomp
 
 

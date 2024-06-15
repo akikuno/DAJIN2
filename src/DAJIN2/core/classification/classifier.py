@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
 from itertools import groupby
+from pathlib import Path
 
-from DAJIN2.utils import io
 from DAJIN2.core.classification.allele_merger import merge_minor_alleles
+from DAJIN2.utils import io
 
 
 def calc_match(cssplit: str) -> float:

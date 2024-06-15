@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import uuid
-
-from pathlib import Path
 from itertools import groupby
+from pathlib import Path
 
-from DAJIN2.utils import io
-from DAJIN2.core.clustering.score_handler import make_score, annotate_score
-from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
-from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias
 from DAJIN2.core.clustering.clustering import return_labels
+from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
+from DAJIN2.core.clustering.score_handler import annotate_score, make_score
+from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias
+from DAJIN2.utils import io
 
 
 def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
