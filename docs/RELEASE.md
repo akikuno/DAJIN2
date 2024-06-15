@@ -27,7 +27,7 @@
 
 + Change `mutation_exporter.report_mutations` to return list[list[str]]. Update the tests accordingly. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7153cb143d621e136ca94bfe6b391f1d7b61d438)]
 
-+ Apply formatting with Ruff [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
++ Apply formatting with Ruff [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxaec9b697863ef06b4e86e248bebde6616f4eb54ex)]
 
 ## 🐛 Bug Fixes
 
