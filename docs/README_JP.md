@@ -62,10 +62,10 @@ pip install DAJIN2
 
 ### 必要なファイル
 
-#### サンプルおよびコントロールのFASTQファイル
+#### サンプルおよびコントロールファイル
 
 DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロール**が必要です。  
-ゲノム編集サンプルとコントロールのFASTQファイル（Gzip圧縮・非圧縮どちらも対応可能）を含むディレクトリを指定します。
+ゲノム編集サンプルとコントロールのFASTQ/FASTA（gzip圧縮・非圧縮どちらも対応可能）、またはBAMファイルを含むディレクトリを指定します。
 
 <!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
 Guppyによるベースコール処理後、以下のようなファイル構成が出力されます：
@@ -120,8 +120,8 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 引数:
-  -c, --control             コントロールのFASTQファイルが格納されたディレクトリのパス
-  -s, --sample              サンプルのFASTQファイルが格納されたディレクトリのパス
+  -c, --control             コントロールのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
+  -s, --sample              サンプルのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
   -a, --allele              ゲノム編集によって想定されるアレルを記載したFASTAファイルのパス
   -n, --name (オプション)     出力ディレクトリの名前 [デフォルト: Results]
   -g, --genome (オプション)   参照ゲノムのID (e.g hg38, mm39) [デフォルト: '']

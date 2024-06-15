@@ -66,9 +66,9 @@ pip install DAJIN2
 
 ### Required Files
 
-#### FASTQ Files for Sample and Control
+#### FASTQ/FASTA/BAM Files for Sample and Control
 
-In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ files (both gzip compressed and uncompressed) of the genome editing sample and control.
+In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
 <!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
 After base calling with Guppy, the following file structure will be output:
@@ -123,8 +123,8 @@ DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
   [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 Options:
--s, --sample              Specify the path to the directory containing sample FASTQ files.
--c, --control             Specify the path to the directory containing control FASTQ files.
+-s, --sample              Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+-c, --control             Specify the path to the directory containing control FASTQ/FASTA/BAM files.
 -a, --allele              Specify the path to the FASTA file.
 -n, --name (Optional)     Set the output directory name. Default: 'Results'.
 -g, --genome (Optional)   Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
@@ -181,7 +181,7 @@ DAJIN2 \
 
 ### Batch Processing
 
-By using the `batch` subcommand, you can process multiple FASTQ files simultaneously.  
+By using the `batch` subcommand, you can process multiple files simultaneously.  
 For this purpose, a CSV or Excel file consolidating the sample information is required.  
 
 > [!NOTE]

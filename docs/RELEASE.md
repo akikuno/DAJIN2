@@ -17,7 +17,7 @@
 
 ## 💥 Breaking
 
-+ Enable to accept additional file formats as an input #37 
++ Enable to accept additional file formats as an input. #37 
   + FASTA [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
   + BAM [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
 
