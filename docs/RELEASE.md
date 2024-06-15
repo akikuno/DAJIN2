@@ -15,11 +15,15 @@
 
 <!-- ############################################################# # -->
 
+# Current Release
+
+## v0.5.1 (2024-06-15)
+
 ## 💥 Breaking
 
 + Enable to accept additional file formats as an input. Issue: #37
   + FASTA [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
-  + BAM [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
+  + BAM [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f3a9812756f0a2607ece3551740e4c67955324c)]
 
 ## 📝 Documentation
 
@@ -32,7 +36,7 @@
 
 + Change `mutation_exporter.report_mutations` to return list[list[str]]. Update the tests accordingly. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7153cb143d621e136ca94bfe6b391f1d7b61d438)]
 
-+ Apply formatting with Ruff [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxaec9b697863ef06b4e86e248bebde6616f4eb54ex)]
++ Apply formatting with Ruff [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/aec9b697863ef06b4e86e248bebde6616f4eb54e)]
 
 ## 🐛 Bug Fixes
 
