@@ -124,8 +124,8 @@ dorado_correct
 
 Assuming barcode01 is the control and barcode02 is the sample, the respective directories are specified as follows:
 
-+ コントロール: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
-+ サンプル: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
++ Control: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
++ Sample: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
 
 #### FASTA File Including Anticipated Allele Sequences
 

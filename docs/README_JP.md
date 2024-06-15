@@ -40,7 +40,7 @@ conda activate env-dajin2
 > 現状、[BiocondaがPython 3.11以上に対応していない](https://github.com/bioconda/bioconda-recipes/issues/37805)ため、DAJIN2はPython 3.8 から 3.10までをサポートしています。
 
 > [!NOTE]
-> [Apple SiliconはBiocondaチャンネルに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールをしてください
+> 現状、[BiocondaがApple Siliconに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールを行ってください
 > ```bash
 > CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 > conda activate env-dajin2
