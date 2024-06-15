@@ -64,12 +64,12 @@ pip install DAJIN2
 
 #### サンプルおよびコントロールファイル
 
-DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロール**が必要です。  
+DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロールサンプル**が必要です。  
 ゲノム編集サンプルとコントロールのFASTQ/FASTA（gzip圧縮・非圧縮どちらも対応可能）、またはBAMファイルを含むディレクトリを指定します。
 
-<!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
-Guppyによるベースコール処理後、以下のようなファイル構成が出力されます：
+##### [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)によるベースコール
 
+Guppyによるベースコール後、以下のようなファイル構成が出力されます：
 
 ```text
 fastq_pass
@@ -86,9 +86,46 @@ fastq_pass
 上記のbarcode01をコントロール、barcode02をサンプルと仮定すると、それぞれのディレクトリは下記の通りに指定します：
 
 + コントロール: `fastq_pass/barcode01`
-+ サンプル: `fastq_pass/barcode01`
++ サンプル: `fastq_pass/barcode02`
 
-#### FASTAファイル
+##### [Dorado](https://github.com/nanoporetech/dorado)によるベースコール
+
+Doradoによるベースコール（[`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)）においては、BAMファイルが出力されます：
+
+```text
+dorado_demultiplex
+├── EXP-PBC096_barcode01.bam
+└── EXP-PBC096_barcode02.bam
+```
+
+> [!IMPORTANT]
+> 各bamファイルを別々のディレクトリに格納してください。ディレクトリ名は任意です。
+
+```text
+dorado_demultiplex
+├── barcode01
+│   └── EXP-PBC096_barcode01.bam
+└── barcode02
+    └── EXP-PBC096_barcode02.bam
+```
+
+[`dorado correct`](https://github.com/nanoporetech/dorado)によるシークエンスエラー補正後に出力されるFASTAファイルも同様に、別々のディレクトリに格納してください。
+
+```text
+dorado_correct
+├── barcode01
+│   └── EXP-PBC096_barcode01.fasta
+└── barcode02
+    └── EXP-PBC096_barcode02.fasta
+```
+
+上記のbarcode01をコントロール、barcode02をサンプルと仮定すると、それぞれのディレクトリは下記の通りに指定します：
+
++ コントロール: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
++ サンプル: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
+
+
+#### 想定されるアレル配列を含むFASTAファイル
 
 FASTAファイルには、ゲノム編集によって想定されるアレルを記述します。
 

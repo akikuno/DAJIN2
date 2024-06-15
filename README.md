@@ -70,9 +70,8 @@ pip install DAJIN2
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
-<!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
-After base calling with Guppy, the following file structure will be output:
-
+##### [Basecalling with Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
+After basecalling with Guppy, the following file structure will be output:
 
 ```text
 fastq_pass
@@ -86,12 +85,49 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
-Assuming barcode01 as the control and barcode02 as the sample, specify each directory as follows:
+Assuming barcode01 is the control and barcode02 is the sample, the respective directories are specified as follows:
 
-+ Control: fastq_pass/barcode01
-+ Sample: fastq_pass/barcode01
++ Control: `fastq_pass/barcode01`
++ Sample: `fastq_pass/barcode02`
 
-#### FASTA File for Allele
+
+##### [Basecalling with Dorado](https://github.com/nanoporetech/dorado)
+
+For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
+
+```text
+dorado_demultiplex
+├── EXP-PBC096_barcode01.bam
+└── EXP-PBC096_barcode02.bam
+```
+
+> [!IMPORTANT]
+> Store each BAM file in a separate directory. The directory names can be set arbitrarily.
+
+```text
+dorado_demultiplex
+├── barcode01
+│   └── EXP-PBC096_barcode01.bam
+└── barcode02
+    └── EXP-PBC096_barcode02.bam
+```
+
+Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://github.com/nanoporetech/dorado) in separate directories.
+
+```text
+dorado_correct
+├── barcode01
+│   └── EXP-PBC096_barcode01.fasta
+└── barcode02
+    └── EXP-PBC096_barcode02.fasta
+```
+
+Assuming barcode01 is the control and barcode02 is the sample, the respective directories are specified as follows:
+
++ コントロール: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
++ サンプル: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
+
+#### FASTA File Including Anticipated Allele Sequences
 
 The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
 
