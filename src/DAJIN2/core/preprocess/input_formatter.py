@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import uuid
-
-from pathlib import Path
-from dataclasses import dataclass
 from collections import defaultdict
-
-from DAJIN2.utils import io, config, fastx_handler
+from dataclasses import dataclass
+from pathlib import Path
 
 from DAJIN2.core import preprocess
+from DAJIN2.utils import config, fastx_handler, io
 
 
 def parse_arguments(arguments: dict) -> tuple:
@@ -64,7 +62,9 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
         if is_cache_genome:
             genome_coordinates = next(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))
         else:
-            genome_coordinates = preprocess.fetch_coordinates(genome_coordinates, genome_urls, fasta_alleles["control"])
+            genome_coordinates = preprocess.fetch_coordinates(
+                genome_coordinates, genome_urls, fasta_alleles["control"]
+            )
             genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(genome_coordinates, genome_urls)
             io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
 

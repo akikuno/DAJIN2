@@ -1,4 +1,4 @@
-from src.DAJIN2.core.clustering.appender import add_readnum, add_percent
+from src.DAJIN2.core.clustering.appender import add_percent, add_readnum
 
 
 def test_add_readnum():

@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from pathlib import Path
+from typing import Generator
+
+from sklearn.tree import DecisionTreeClassifier
+
+from DAJIN2.utils import io
+
 """
 Nanopore sequencing results often results in strand specific mutations even though the mutation is not strand specific, thus they are considered as sequencing errors and should be removed.
 
@@ -7,13 +15,6 @@ This module provides functions to determine whether each allele obtained after c
 
 Re-allocates reads belonging to clusters with strand bias to clusters without strand bias.
 """
-
-from pathlib import Path
-from typing import Generator
-from collections import defaultdict
-from sklearn.tree import DecisionTreeClassifier
-
-from DAJIN2.utils import io
 
 # Constants
 STRAND_BIAS_LOWER_LIMIT = 0.1

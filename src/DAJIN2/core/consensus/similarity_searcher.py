@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
-
 from sklearn.neighbors import LocalOutlierFactor
 
 from DAJIN2.utils import io
@@ -28,7 +27,7 @@ def onehot_by_mutations(midsv_sample: list[dict]) -> dict[str, np.ndarray]:
 def calculate_percentage(
     mut_onehot_sample: dict[str, np.ndarray], coverage_match: np.ndarray[int]
 ) -> dict[str, np.ndarray]:
-    mut_percentage = dict()
+    mut_percentage = {}
     for mut, onehot in mut_onehot_sample.items():
         x = np.sum(onehot, axis=0) / coverage_match
         mut_percentage[mut] = np.where(np.isnan(x), 0, x)
@@ -36,14 +35,14 @@ def calculate_percentage(
 
 
 def get_values_to_mask(mut_percentage_sample: dict[str, np.ndarray], threshold=0.5) -> dict[str, np.ndarray[float]]:
-    mask = dict()
+    mask = {}
     for mut, percentage in mut_percentage_sample.items():
         mask[mut] = np.where(percentage > threshold, 0, percentage)
     return mask
 
 
 def apply_mask(mut_onehot: dict[str, np.ndarray], mask_sample: dict[str, np.ndarray[float]]):
-    mut_onehot_masked = dict()
+    mut_onehot_masked = {}
     for mut, onehot in mut_onehot.items():
         mut_onehot_masked[mut] = onehot * mask_sample[mut]
     return mut_onehot_masked
@@ -52,7 +51,7 @@ def apply_mask(mut_onehot: dict[str, np.ndarray], mask_sample: dict[str, np.ndar
 def identify_normal_reads(
     mut_onehot_sample_masked: dict[str, np.ndarray], mut_onehot_control_masked: dict[str, np.ndarray]
 ) -> list[bool]:
-    mutation_comparisons = dict()
+    mutation_comparisons = {}
     for mut in {"+", "-", "*"}:
         values_sample = mut_onehot_sample_masked[mut]
         values_control = mut_onehot_control_masked[mut]

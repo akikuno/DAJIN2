@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Generator
-from itertools import groupby
 from collections import Counter
+from itertools import groupby
+from typing import Generator
 
 from DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 

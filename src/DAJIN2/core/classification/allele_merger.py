@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from itertools import groupby
 from collections import defaultdict
-
+from itertools import groupby
 
 ##########################################################
 # merge minor alleles

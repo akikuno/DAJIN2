@@ -21,9 +21,9 @@ config.set_warnings_ignore()
 import cstag
 
 
-def remove_non_alphabets(cssplits: str) -> str:
-    """Convert a cssplits to a plain DNA sequence."""
-    return "".join([char for char in cssplits if char.isalpha()])
+def remove_non_alphabets(cssplit: str) -> str:
+    """Convert a cssplit to a plain DNA sequence."""
+    return "".join([char for char in cssplit if char.isalpha()])
 
 
 ###########################################################
@@ -38,7 +38,7 @@ def clustering_insertions(cssplits_insertion: list[str]) -> list[int]:
 
     insertion_lengths = [[len(c) for c in cs.split(",")] for cs in cssplits_insertion]
 
-    scores = [length + [distance] for length, distance in zip(insertion_lengths, distances)]
+    scores = [s + [d] for s, d in zip(insertion_lengths, distances)]
 
     return MeanShift(bin_seeding=True).fit_predict(np.array(scores)).tolist()
 
@@ -48,20 +48,35 @@ def clustering_insertions(cssplits_insertion: list[str]) -> list[int]:
 ###########################################################
 
 
-def extract_all_insertions(midsv_sample: Generator, mutation_loci: list[set[str]]) -> dict[int, list[str]]:
-    """To extract insertion sequences of **10 base pairs or more** at each index."""
-    insertion_index_sequences_control = defaultdict(list)
+def extract_all_inversions(midsv_sample: Generator[list[str]]) -> list[list[int, int, str]]:
+    """Extract sequence of inversions and their start and end indices."""
+    inversions_index_sequence = []
     for m_sample in midsv_sample:
         cssplits = m_sample["CSSPLIT"].split(",")
-        insertion_loci = (i for i, mut in enumerate(mutation_loci) if "+" in mut)
-        for idx in insertion_loci:
-            if cssplits[idx].startswith("+") and cssplits[idx].count("|") > 10:
-                insertion_index_sequences_control[idx].append(cssplits[idx])
+        min_idx = float("inf")
+        max_idx = -1
+        cs_inversion = []
+        for i, cs in enumerate(cssplits):
+            if cs[-1].islower():
+                min_idx = min(min_idx, i)
+                max_idx = max(max_idx, i)
+                cs_inversion.append(cs)
+        if cs_inversion:
+            inversions_index_sequence.append([min_idx, max_idx, remove_non_alphabets(",".join(cs_inversion))])
 
-    return dict(insertion_index_sequences_control)
+    return inversions_index_sequence
 
 
-def extract_enriched_insertions(
+def cluster_index_of_inversions(
+    inversions_index_sequence: list[list[int, int, str]], coverage: int
+) -> list[tuple[int]]:
+    indexes = [(start, end) for start, end, _ in inversions_index_sequence]
+    min_cluster_size = max(5, int(coverage * 0.5 / 100))
+
+    return MeanShift(bin_seeding=True, min_bin_freq=min_cluster_size).fit_predict(np.array(indexes)).tolist()
+
+
+def extract_enriched_inversions(
     insertions_sample: dict, insertions_control: dict, coverage_sample: int
 ) -> dict[int, dict[str, int]]:
     enriched_insertions = {}
@@ -103,14 +118,15 @@ def extract_enriched_insertions(
     return enriched_insertions
 
 
-def extract_insertions(
+def extract_inversions(
     path_sample: Path, path_control: Path, mutation_loci: list[set[str]]
 ) -> dict[int, dict[str, int]]:
-    insertions_sample = extract_all_insertions(io.read_jsonl(path_sample), mutation_loci)
-    insertions_control = extract_all_insertions(io.read_jsonl(path_control), mutation_loci)
+    inversions_sample = extract_all_inversions(io.read_jsonl(path_sample))
+    inversions_control = extract_all_inversions(io.read_jsonl(path_control))
     coverage_sample = io.count_newlines(path_sample)
+    # coverage_control = io.count_newlines(path_control)
 
-    return extract_enriched_insertions(insertions_sample, insertions_control, coverage_sample)
+    return extract_enriched_inversions(inversions_sample, inversions_control, coverage_sample)
 
 
 ###########################################################
@@ -162,15 +178,13 @@ def get_merged_insertion(insertion: dict[str, int], labels: np.ndarray) -> dict[
 
 
 def remove_minor_groups(
-    insertions_merged: dict[tuple[int], dict[tuple[str], int]], coverage: int, percentage: float = 0.5
+    insertions_merged: dict[tuple[int], dict[tuple[str], int]], coverage: int, threshold: float = 0.5
 ) -> dict[tuple[int], dict[tuple[str], int]]:
-    """Remove minor groups with less than {percentage} % coverage or less than 5 reads."""
-    threshold = max(5, int(coverage * percentage // 100))
     for _, ins in insertions_merged.items():
         # Create a list of elements to delete
         to_delete = []
         for seq, count in ins.items():
-            if count < threshold:
+            if count < coverage * threshold // 100:
                 to_delete.append(seq)
 
         # Delete the collected elements
@@ -181,7 +195,7 @@ def remove_minor_groups(
 
 
 def merge_similar_insertions(
-    insertions: dict[int, dict[str, int]], mutation_loci: list[set[str]], coverage: int, percentage: float = 0.5
+    insertions: dict[int, dict[str, int]], mutation_loci: list[set[str]], coverage: int, threshold: float = 0.5
 ) -> dict[tuple[int], dict[tuple[str], int]]:
     index_grouped = group_index_by_consecutive_insertions(mutation_loci)
     insertions_grouped = group_insertions(insertions, index_grouped)
@@ -189,13 +203,13 @@ def merge_similar_insertions(
     for idx, insertion in insertions_grouped.items():
         if len(insertion) == 1:
             seq, count = next(iter(insertion.items()))
-            insertions_merged[idx] = {(seq,): count}
+            insertions_merged[idx] = {tuple([seq]): count}
             continue
 
         labels = clustering_insertions(insertion)
         insertions_merged[idx] = get_merged_insertion(insertion, labels)
 
-    return remove_minor_groups(insertions_merged, coverage, percentage)
+    return remove_minor_groups(insertions_merged, coverage, threshold)
 
 
 ###########################################################
@@ -289,18 +303,17 @@ def extract_score_and_sequence(
             scores.append(score)
             sequences.append(",".join(sequence))
 
-    return list(zip(scores, sequences))
+    return [(score, sequence) for score, sequence in zip(scores, sequences)]
 
 
 def filter_minor_label(
     labels: list[int],
     insertions_scores_sequences: list[tuple[list[int], str]],
     coverage: int,
-    percentage: float = 0.5,
+    threshold: float = 0.5,
 ) -> tuple[list[int], list[str]]:
-    threshold = max(5, int(coverage * percentage // 100))
     labels_, counts_ = np.unique(labels, return_counts=True)
-    minor_labels = {label for label, count in zip(labels_, counts_) if count < threshold}
+    minor_labels = {label for label, count in zip(labels_, counts_) if count < coverage * threshold // 100}
     index_minor_labels = {i for i, label in enumerate(labels) if label in minor_labels}
     labels_filtered = [label for i, label in enumerate(labels) if i not in index_minor_labels]
     score_seq_filterd = [
@@ -482,31 +495,20 @@ def generate_fasta(cstag_insertions: dict[str, str]) -> dict[str, str]:
     return fasta_insertions
 
 
-def extract_unique_insertions(fasta_insertions: dict[str, str], FASTA_ALLELES: dict[str, str]) -> dict[str, str]:
+def extract_unique_insertions(FASTA_ALLELES: dict[str, str], fasta_insertions: dict[str, str]) -> dict[str, str]:
     """
     Extract unique insertion alleles if they are dissimilar to the FASTA_ALLELES input by the user.
     "Unique insertion alleles" are defined as sequences that have a difference of more than 10 bases compared to the sequences in FASTA_ALLELES
     """
-    fasta_insertions_unique = fasta_insertions.copy()
-
-    # Remove insertion alleles that are similar to the FASTA_ALLELES input by the user
-    to_delete = set()
-    for key, seq in fasta_insertions_unique.items():
-        _, distances, _ = zip(*process.extract_iter(seq, FASTA_ALLELES.values(), scorer=DamerauLevenshtein.distance))
-        if any(d < 10 for d in distances):
-            to_delete |= {key}
-
-    # Remove insertion alleles that are similar to each other
-    for key, seq in fasta_insertions_unique.items():
-        if key in to_delete:
-            continue
+    to_keep = []
+    for query_key, query_seq in fasta_insertions.items():
         _, distances, _ = zip(
-            *process.extract_iter(seq, fasta_insertions_unique.values(), scorer=DamerauLevenshtein.distance)
+            *process.extract_iter(query_seq, FASTA_ALLELES.values(), scorer=DamerauLevenshtein.distance)
         )
-        similar_index = {i if d < 10 else None for i, d in enumerate(distances) if i != key}
-        to_delete |= similar_index
+        if all(d > 10 for d in distances):
+            to_keep.append(query_key)
 
-    return {k: v for k, v in fasta_insertions_unique.items() if k not in to_delete}
+    return {key: fasta_insertions[key] for key in to_keep if key in fasta_insertions}
 
 
 def update_labels(d: dict, FASTA_ALLELES: dict) -> dict:
@@ -555,18 +557,18 @@ def remove_temporal_files(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
 
 
 def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
-    PATH_SAMPLE = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
-    PATH_CONTROL = Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl")
-    MUTATION_LOCI = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control", "mutation_loci.pickle"))
+    PATH_SAMPLE = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control.json")
+    PATH_CONTROL = Path(TEMPDIR, CONTROL_NAME, "midsv", "control.json")
+    MUTATION_LOCI = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control.pickle"))
 
-    insertions = extract_insertions(PATH_SAMPLE, PATH_CONTROL, MUTATION_LOCI)
+    insertions = extract_inversions(PATH_SAMPLE, PATH_CONTROL, MUTATION_LOCI)
     if insertions == {}:
         """If there is no insertion, return None"""
         return None
 
     coverage: int = io.count_newlines(PATH_SAMPLE)
 
-    insertions_merged = merge_similar_insertions(insertions, MUTATION_LOCI, coverage, percentage=0.5)
+    insertions_merged = merge_similar_insertions(insertions, MUTATION_LOCI, coverage, threshold=0.5)
     if all(True if v == {} else False for v in insertions_merged.values()):
         """"If all the insertion alleles were minor, return None"""
         return None
@@ -576,7 +578,7 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     cssplits_insertion = [cssplit for _, cssplit in insertions_scores_sequences]
     labels = clustering_insertions(cssplits_insertion)
     labels_filtered, insertion_scores_sequences_filtered = filter_minor_label(
-        labels, insertions_scores_sequences, coverage, percentage=0.5
+        labels, insertions_scores_sequences, coverage, threshold=0.5
     )
 
     # Consensus calling
@@ -596,7 +598,7 @@ def generate_insertion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
     index_of_insertions = extract_index_of_insertions(insertions, insertions_merged)
     cstag_insertions = generate_cstag(consensus_of_insertions, index_of_insertions, FASTA_ALLELES["control"])
     fasta_insertions = generate_fasta(cstag_insertions)
-    fasta_insertions_unique = extract_unique_insertions(fasta_insertions, FASTA_ALLELES)
+    fasta_insertions_unique = extract_unique_insertions(FASTA_ALLELES, fasta_insertions)
 
     if fasta_insertions_unique == {}:
         remove_temporal_files(TEMPDIR, SAMPLE_NAME)

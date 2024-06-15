@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import cstag
-import mappy
-
 from pathlib import Path
 from typing import Generator
+
+import cstag
+import mappy
 
 from DAJIN2.utils import dna_handler
 
@@ -14,7 +14,7 @@ def to_sam(
     path_query_fastx: Path,
     preset: str = "map-ont",
     threads: int = 1,
-    options: dict = {},
+    options: dict = None,
     cslong: bool = True,
 ) -> Generator[str]:
     """Align sequences using mappy and Convert PAF to SAM.
@@ -29,6 +29,9 @@ def to_sam(
     Yields:
         str: SAM formatted alignment.
     """
+    if options is None:
+        options = {}
+
     path_reference_fasta = str(path_reference_fasta)
     path_query_fastx = str(path_query_fastx)
 
@@ -90,8 +93,7 @@ def to_sam(
 
             SAM.append("\t".join(alignment))
 
-    for record in SAM:
-        yield record
+    yield from SAM
 
 
 ########################################################################
@@ -100,8 +102,11 @@ def to_sam(
 
 
 def generate_sam(
-    ARGS, paths_fasta: list[str], mappy_options: dict = {}, is_control: bool = False, is_insertion: bool = False
+    ARGS, paths_fasta: list[str], mappy_options: dict = None, is_control: bool = False, is_insertion: bool = False
 ) -> None:
+    if mappy_options is None:
+        mappy_options = {}
+
     if is_control:
         path_fastq = Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz")
         name = ARGS.control_name

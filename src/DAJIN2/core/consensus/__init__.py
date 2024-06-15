@@ -1,6 +1,4 @@
+from DAJIN2.core.consensus.clust_formatter import downsample_by_label, remove_minor_alleles
 from DAJIN2.core.consensus.consensus import call_consensus
-from DAJIN2.core.consensus.name_handler import call_allele_name
-from DAJIN2.core.consensus.name_handler import update_key_by_allele_name
-from DAJIN2.core.consensus.name_handler import add_key_by_allele_name
-from DAJIN2.core.consensus.clust_formatter import remove_minor_alleles, downsample_by_label
 from DAJIN2.core.consensus.mutation_extractor import cache_mutation_loci
+from DAJIN2.core.consensus.name_handler import add_key_by_allele_name, call_allele_name, update_key_by_allele_name

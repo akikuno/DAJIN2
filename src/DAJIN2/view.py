@@ -32,7 +32,7 @@ def execute(name: str):
     env = Environment(loader=FileSystemLoader(path_view, encoding="utf8"))
     template = env.get_template("template_igvjs.html")
     params_genome = {"genome": {"exist": False}}
-    params_reference = dict()
+    params_reference = {}
     path_genome = Path(DIR_IGVJS, "genome_symbol.txt")
     if path_genome.exists():
         path_coordinates = Path(DIR_IGVJS, "genome_coordinates.jsonl")

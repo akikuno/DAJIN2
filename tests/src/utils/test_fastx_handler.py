@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from DAJIN2.utils import fastx_handler
 
 ########################################################################

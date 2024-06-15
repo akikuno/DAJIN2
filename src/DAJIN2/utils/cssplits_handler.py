@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import re
+
 import cstag
 import numpy as np
 import ruptures as rpt
@@ -220,10 +222,10 @@ def _extract_break_points_of_large_deletions(
             signal_subset = signal[max(0, approximate_bp - 50) : min(approximate_bp + 50, len(signal))]
             bp = -1
             for i, sig in enumerate(signal_subset):
-                if key == "start" and sig == False:
+                if key == "start" and not sig:
                     bp = i + max(0, approximate_bp - 50) + window_start
                     break
-                if key == "end" and sig == True:
+                if key == "end" and sig:
                     bp = i + max(0, approximate_bp - 50) + window_start - 1
                     break
             if bp == -1:

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import pytest
-
-from DAJIN2.core.preprocess.midsv_caller import has_inversion_in_splice
-from DAJIN2.core.preprocess.midsv_caller import replace_internal_n_to_d
-from DAJIN2.core.preprocess.midsv_caller import convert_flag_to_strand
-from DAJIN2.core.preprocess.midsv_caller import convert_consecutive_indels_to_match
-
 from pathlib import Path
+
+import pytest
 from DAJIN2.core.preprocess.mapping import to_sam
+from DAJIN2.core.preprocess.midsv_caller import (
+    convert_consecutive_indels_to_match,
+    convert_flag_to_strand,
+    has_inversion_in_splice,
+    replace_internal_n_to_d,
+)
 
 
 ###########################################################

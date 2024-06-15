@@ -1,6 +1,6 @@
-import pytest
-
 from typing import Generator
+
+import pytest
 
 from src.DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 

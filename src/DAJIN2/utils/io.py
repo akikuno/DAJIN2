@@ -1,19 +1,16 @@
 from __future__ import annotations
 
-import re
 import csv
+import hashlib
 import json
 import pickle
-import hashlib
-
-import wslPath
-
-from pathlib import Path
-
+import re
 from io import BufferedReader
+from pathlib import Path
 from typing import Generator
 
-from openpyxl import load_workbook, Workbook
+import wslPath
+from openpyxl import Workbook, load_workbook
 
 ###########################################################
 # Input/Output
@@ -37,7 +34,7 @@ def save_pickle(data: object, file_path: Path) -> None:
 
 
 def read_jsonl(file_path: str | Path) -> Generator[dict]:
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         for line in f:
             yield json.loads(line)
 
@@ -100,7 +97,7 @@ def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
     wb = load_workbook(filename=file_path)
     ws = wb.active
 
-    headers = [cell for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+    headers = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
 
     records = []
     for row in ws.iter_rows(min_row=2, values_only=True):
@@ -114,8 +111,7 @@ def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
 
 def read_csv(file_path: str | Path) -> list[dict[str, str]]:
     """Load data from a CSV file."""
-    with open(file_path, "r") as csvfile:
-
+    with open(file_path) as csvfile:
         header = [field.strip() for field in next(csv.reader(csvfile))]
 
         records = []
@@ -125,7 +121,7 @@ def read_csv(file_path: str | Path) -> list[dict[str, str]]:
             if all(element is None for element in row):  # Skip rows with all None values
                 continue
             row_trimmed = [field.strip() for field in row]
-            row_data = {h: v for h, v in zip(header, row_trimmed)}
+            row_data = dict(zip(header, row_trimmed))
             records.append(row_data)
 
         return records

@@ -4,16 +4,14 @@ import os
 import shutil
 import socket
 import webbrowser
-
-import pandas as pd
-
+from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
-from contextlib import closing, redirect_stderr
 
+import pandas as pd
+from flask import Flask, render_template, request
 from waitress import serve
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request
 
 from DAJIN2 import main
 from DAJIN2.utils import config

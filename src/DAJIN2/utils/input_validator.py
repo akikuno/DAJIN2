@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import os
-import re
-import ssl
 import hashlib
-
+import os
+import ssl
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
-import xml.etree.ElementTree as ET
 
 import mappy
+import pysam
 
 ########################################################################
 # To accommodate cases where a user might input negative values or
@@ -30,18 +29,26 @@ def update_threads(threads: int) -> int:
 ########################################################################
 
 
-def validate_file_existence(path_file: str):
+def validate_file_existence(path_file: str) -> None:
     if not Path(path_file).exists():
         raise FileNotFoundError(f"{path_file} is not found")
 
 
-def validate_fastq_extension(path_fastq: str):
-    if not re.search(r".fastq$|.fastq.gz$|.fq$|.fq.gz$", path_fastq):
-        raise ValueError(f"{path_fastq} requires extensions either 'fastq', 'fastq.gz', 'fq' or 'fq.gz'")
+def return_file_extension(path_file: Path) -> str:
+    extensions = [".fastq", ".fastq.gz", ".fq", ".fq.gz", ".fasta", ".fasta.gz", ".fa", ".fa.gz", ".bam"]
+    file_suffixes = "".join(path_file.suffixes)  # Combine all suffixes into a single string
+
+    for ext in extensions:
+        if file_suffixes == ext:
+            return ext
+
+    raise ValueError(
+        f"{path_file} requires extensions either .fastq, .fastq.gz, .fq, .fq.gz, .fasta, .fasta.gz, .fa, .fa.gz, or .bam"
+    )
 
 
 # Varidate if the file is in the proper format viewing top 100 lines
-def validate_fastq_content(path_fastq: str):
+def validate_fastq_content(path_fastq: str) -> None:
     try:
         headers, seqs, quals = zip(*[(n, s, q) for i, (n, s, q) in enumerate(mappy.fastx_read(path_fastq)) if i < 100])
         # Remove empty elements
@@ -56,7 +63,7 @@ def validate_fastq_content(path_fastq: str):
         raise ValueError(f"{path_fastq} is not a proper FASTQ format")
 
 
-def validate_fasta_content(path_fasta: str):
+def validate_fasta_content(path_fasta: str, allele_file: bool = False) -> None:
     try:
         headers, seqs = zip(*[(n, s) for n, s, _ in mappy.fastx_read(path_fasta)])
         # Remove empty elements
@@ -71,18 +78,42 @@ def validate_fasta_content(path_fasta: str):
 
     if len(headers) != len(set(headers)):
         raise ValueError(f"{path_fasta} must include unique identifiers")
+
     if len(seqs) != len(set(seqs)):
         raise ValueError(f"{path_fasta} must include unique DNA sequences")
-    if "control" not in headers:
+
+    if allele_file and "control" not in headers:
         raise ValueError(f"One of the headers in the {path_fasta} must be '>control'")
+
+
+def validate_bam_content(path_bam: str) -> None:
+    try:
+        _ = pysam.AlignmentFile(path_bam, "rb")
+    except ValueError:
+        raise ValueError(f"{path_bam} is not a proper BAM format")
 
 
 def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
     for path_directory in [CONTROL, SAMPLE]:
-        _ = [validate_fastq_extension(str(path_fastx)) for path_fastx in Path(path_directory).iterdir()]
-        _ = [validate_fastq_content(str(path_fastx)) for path_fastx in Path(path_directory).iterdir()]
+        extentions = {return_file_extension(path_fastx) for path_fastx in Path(path_directory).iterdir()}
+        if len(extentions) == 1:
+            extention = next(iter(extentions))
+        else:
+            raise ValueError(
+                f"{path_directory} contains multiple extensions. Please check if there are any incorrect files."
+            )
+
+        fasta_extensions = {".fasta", ".fa", ".fasta.gz", ".fa.gz"}
+        fastq_extentions = {".fastq", ".fq", ".fastq.gz", ".fq.gz"}
+        if extention in fasta_extensions:
+            _ = [validate_fasta_content(str(path_fastx)) for path_fastx in Path(path_directory).iterdir()]
+        elif extention in fastq_extentions:
+            _ = [validate_fastq_content(str(path_fastx)) for path_fastx in Path(path_directory).iterdir()]
+        else:
+            _ = [validate_bam_content(str(path_bam)) for path_bam in Path(path_directory).iterdir()]
+
     validate_file_existence(ALLELE)
-    validate_fasta_content(ALLELE)
+    validate_fasta_content(ALLELE, allele_file=True)
 
 
 ########################################################################

@@ -1,13 +1,19 @@
 from __future__ import annotations
 
-import midsv
 from pathlib import Path
 
-from DAJIN2.utils.sam_handler import split_cigar
-from DAJIN2.utils.sam_handler import calculate_alignment_length
-from DAJIN2.utils.sam_handler import is_header, is_mapped, is_overlapping, remove_overlapped_reads
-from DAJIN2.utils.sam_handler import remove_microhomology
-from DAJIN2.utils.sam_handler import reverse_flag, revcomp_sam
+import midsv
+from DAJIN2.utils.sam_handler import (
+    calculate_alignment_length,
+    is_header,
+    is_mapped,
+    is_overlapping,
+    remove_microhomology,
+    remove_overlapped_reads,
+    revcomp_sam,
+    reverse_flag,
+    split_cigar,
+)
 
 
 def test_split_cigar():

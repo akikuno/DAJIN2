@@ -120,7 +120,7 @@ def test_report_mutations_substitution():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chr1", 1, 1, "substitution: A>G"]]
+    answer = [["test", "mm10", "chr1", "1", "1", "substitution: A>G"]]
     assert test == answer
 
 
@@ -131,7 +131,10 @@ def test_report_mutations_consecutive_substitution():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chr1", 1, 1, "substitution: A>G"], ["test", "mm10", "chr1", 2, 2, "substitution: C>T"]]
+    answer = [
+        ["test", "mm10", "chr1", "1", "1", "substitution: A>G"],
+        ["test", "mm10", "chr1", "2", "2", "substitution: C>T"],
+    ]
     assert test == answer
 
 
@@ -142,7 +145,7 @@ def test_report_mutations_deletion():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chr1", 1, 2, "2bp deletion: GT"]]
+    answer = [["test", "mm10", "chr1", "1", "2", "2bp deletion: GT"]]
     assert test == answer
 
 
@@ -153,7 +156,7 @@ def test_report_mutations_insertion():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chr1", 1, 1, "2bp insertion: GT"]]
+    answer = [["test", "mm10", "chr1", "1", "1", "2bp insertion: GT"]]
     assert test == answer
 
 
@@ -164,7 +167,7 @@ def test_report_mutations_insertion_with_substitution():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chr1", 1, 1, "2bp insertion: GT"]]
+    answer = [["test", "mm10", "chr1", "1", "1", "2bp insertion: GT"]]
     assert test == answer
 
 
@@ -175,7 +178,7 @@ def test_report_mutations_inversion():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chr1", 1, 2, "2bp inversion: AT"]]
+    answer = [["test", "mm10", "chr1", "1", "2", "2bp inversion: AT"]]
     assert test == answer
 
 
@@ -187,14 +190,14 @@ def test_report_mutations_various():
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
     answer = [
-        ["test", "mm10", "chr1", 1, 1, "substitution: A>G"],
-        ["test", "mm10", "chr1", 2, 2, "2bp insertion: AA"],
-        ["test", "mm10", "chr1", 2, 2, "1bp deletion: A"],
-        ["test", "mm10", "chr1", 3, 3, "1bp unknown bases"],
-        ["test", "mm10", "chr1", 4, 4, "1bp deletion: G"],
-        ["test", "mm10", "chr1", 5, 5, "substitution: C>G"],
-        ["test", "mm10", "chr1", 6, 6, "substitution: A>G"],
-        ["test", "mm10", "chr1", 7, 8, "2bp inversion: AT"],
+        ["test", "mm10", "chr1", "1", "1", "substitution: A>G"],
+        ["test", "mm10", "chr1", "2", "2", "2bp insertion: AA"],
+        ["test", "mm10", "chr1", "2", "2", "1bp deletion: A"],
+        ["test", "mm10", "chr1", "3", "3", "1bp unknown bases"],
+        ["test", "mm10", "chr1", "4", "4", "1bp deletion: G"],
+        ["test", "mm10", "chr1", "5", "5", "substitution: C>G"],
+        ["test", "mm10", "chr1", "6", "6", "substitution: A>G"],
+        ["test", "mm10", "chr1", "7", "8", "2bp inversion: AT"],
     ]
     assert test == answer
 
@@ -206,5 +209,5 @@ def test_report_mutations_genome_coodinates():
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
     cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
     test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
-    answer = [["test", "mm10", "chrX", 101, 101, "substitution: A>G"]]
+    answer = [["test", "mm10", "chrX", "101", "101", "substitution: A>G"]]
     assert test == answer

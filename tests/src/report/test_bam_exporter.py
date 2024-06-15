@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
+
 from src.DAJIN2.core.report import bam_exporter
 
 ###############################################################################

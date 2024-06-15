@@ -40,7 +40,7 @@ conda activate env-dajin2
 > 現状、[BiocondaがPython 3.11以上に対応していない](https://github.com/bioconda/bioconda-recipes/issues/37805)ため、DAJIN2はPython 3.8 から 3.10までをサポートしています。
 
 > [!NOTE]
-> [Apple SiliconはBiocondaチャンネルに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールをしてください
+> 現状、[BiocondaがApple Siliconに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールを行ってください
 > ```bash
 > CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 > conda activate env-dajin2
@@ -62,14 +62,14 @@ pip install DAJIN2
 
 ### 必要なファイル
 
-#### サンプルおよびコントロールのFASTQファイル
+#### サンプルおよびコントロールファイル
 
-DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロール**が必要です。  
-ゲノム編集サンプルとコントロールのFASTQファイル（Gzip圧縮・非圧縮どちらも対応可能）を含むディレクトリを指定します。
+DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロールサンプル**が必要です。  
+ゲノム編集サンプルとコントロールのFASTQ/FASTA（gzip圧縮・非圧縮どちらも対応可能）、またはBAMファイルを含むディレクトリを指定します。
 
-<!-- [Nanopore Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol) -->
-Guppyによるベースコール処理後、以下のようなファイル構成が出力されます：
+##### [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)によるベースコール
 
+Guppyによるベースコール後、以下のようなファイル構成が出力されます：
 
 ```text
 fastq_pass
@@ -86,9 +86,46 @@ fastq_pass
 上記のbarcode01をコントロール、barcode02をサンプルと仮定すると、それぞれのディレクトリは下記の通りに指定します：
 
 + コントロール: `fastq_pass/barcode01`
-+ サンプル: `fastq_pass/barcode01`
++ サンプル: `fastq_pass/barcode02`
 
-#### FASTAファイル
+##### [Dorado](https://github.com/nanoporetech/dorado)によるベースコール
+
+Doradoによるベースコール（[`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)）においては、BAMファイルが出力されます：
+
+```text
+dorado_demultiplex
+├── EXP-PBC096_barcode01.bam
+└── EXP-PBC096_barcode02.bam
+```
+
+> [!IMPORTANT]
+> 各bamファイルを別々のディレクトリに格納してください。ディレクトリ名は任意です。
+
+```text
+dorado_demultiplex
+├── barcode01
+│   └── EXP-PBC096_barcode01.bam
+└── barcode02
+    └── EXP-PBC096_barcode02.bam
+```
+
+[`dorado correct`](https://github.com/nanoporetech/dorado)によるシークエンスエラー補正後に出力されるFASTAファイルも同様に、別々のディレクトリに格納してください。
+
+```text
+dorado_correct
+├── barcode01
+│   └── EXP-PBC096_barcode01.fasta
+└── barcode02
+    └── EXP-PBC096_barcode02.fasta
+```
+
+上記のbarcode01をコントロール、barcode02をサンプルと仮定すると、それぞれのディレクトリは下記の通りに指定します：
+
++ コントロール: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
++ サンプル: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
+
+
+#### 想定されるアレル配列を含むFASTAファイル
 
 FASTAファイルには、ゲノム編集によって想定されるアレルを記述します。
 
@@ -120,8 +157,8 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
 
 引数:
-  -c, --control             コントロールのFASTQファイルが格納されたディレクトリのパス
-  -s, --sample              サンプルのFASTQファイルが格納されたディレクトリのパス
+  -c, --control             コントロールのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
+  -s, --sample              サンプルのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
   -a, --allele              ゲノム編集によって想定されるアレルを記載したFASTAファイルのパス
   -n, --name (オプション)     出力ディレクトリの名前 [デフォルト: Results]
   -g, --genome (オプション)   参照ゲノムのID (e.g hg38, mm39) [デフォルト: '']

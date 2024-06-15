@@ -1,9 +1,8 @@
 from src.DAJIN2.core.consensus.consensus import (
-    replace_sequence_error,
     adjust_to_100_percent,
     call_percentage,
+    replace_sequence_error,
 )
-
 
 ###########################################################
 # replace_sequence
