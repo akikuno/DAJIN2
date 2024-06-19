@@ -43,10 +43,12 @@ body:
           Optional: The environment information.
           Example:
           - OS: WSL (Ubuntu 22.04)
-          - DAJIN2's version: x.x.x
+          - DAJIN2 version: x.x.x
+          - Python version: x.x.x
       value: |
           - OS:
-          - DAJIN2's version:
+          - DAJIN2 version:
+          - Python version:
       render: markdown
     validations:
       required: false
