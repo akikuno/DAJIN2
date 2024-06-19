@@ -28,7 +28,7 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 
 ### Prerequisites
 
-- Python 3.8 to 3.10
+- Python >= 3.8
 - Unix-like environment (Linux, macOS, WSL2, etc.)
 
 ### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
@@ -37,9 +37,6 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 conda activate env-dajin2
 ```
-
-> [!IMPORTANT]
-> DAJIN2 supports Python versions 3.8 to 3.10, but not Python 3.11 yet due to a [Bioconda issue](https://github.com/bioconda/bioconda-recipes/issues/37805).
 
 
 > [!NOTE]
