@@ -3,23 +3,44 @@
 ## 💥 Breaking
 ## 📝 Documentation
 ## 🚀 Performance
+## 🌟 New Features
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 -->
 
-<!-- 💡 ToDo
-
- -->
-
 <!-- ############################################################# # -->
 
 # Current Release
 
-## v0.5.1 (2024-06-15)
+## v0.5.2 (2024-XX-XX)
 
-## 💥 Breaking
+## 🔧 Maintenance
+
++ Make DAJIN2 compatible with Python 3.11 and 3.12. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8da9118f5c0f584ed1ab12541d5e410d1b9f0da8)]
+  + pysam and mappy builds with Python 3.11 and 3.12 are now available on Bioconda.
+
+
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!--  ------------------------------------------------------------- -->
+
+<!-- <details>
+<summary> v0.5.0 (2024-06-05) </summary>
+</details> -->
+
+<details>
+<summary> v0.5.1 (2024-06-15) </summary>
+
+## 🌟 New Features
 
 + Enable to accept additional file formats as an input. Issue: #37
   + FASTA [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
@@ -42,16 +63,7 @@
 
 + Add `reallocate_insertion_within_deletion` into `report.mutation_exporter` and reflected it in the mutation info. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ed6a96e01bb40c77df9cd3a17a4c29524684b6f1)]
 
-
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!--  ------------------------------------------------------------- -->
+</details>
 
 <details>
 <summary> v0.5.0 (2024-06-05) </summary>
