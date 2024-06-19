@@ -18,8 +18,10 @@
 
 ## 🔧 Maintenance
 
-+ Make DAJIN2 compatible with Python 3.11 and 3.12. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8da9118f5c0f584ed1ab12541d5e410d1b9f0da8)]
++ Make DAJIN2 compatible with Python 3.11 and 3.12. Issue: #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8da9118f5c0f584ed1ab12541d5e410d1b9f0da8)]
   + pysam and mappy builds with Python 3.11 and 3.12 are now available on Bioconda.
+
++ Update GitHub Actions to test with Python 3.11 and 3.12. Issue: #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54df79e60b484da429c1cbf6f12b0c19196452cc)]
 
 
 
