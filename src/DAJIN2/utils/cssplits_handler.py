@@ -242,21 +242,47 @@ def _extract_break_points_of_large_deletions(
     return break_points
 
 
-def _convert_break_points_to_index(break_points: list[dict[str, int]]) -> set[int]:
-    index_of_large_deletions = set()
+def _convert_break_points_to_index(break_points: list[dict[str, int]]) -> list[int]:
+    index_of_large_deletions = []
     for break_point in break_points:
         start = break_point["start"]
         end = break_point["end"]
-        index_of_large_deletions |= set(range(start, end + 1))
+        index_of_large_deletions += list(range(start, end + 1))
 
     return index_of_large_deletions
+
+
+def _find_matched_indexes(cssplits: list[str], index_of_large_deletions: list[int]) -> list[int]:
+    matched_index = []
+    count_matches = 0
+    start_match = -1
+
+    index_of_large_deletions.sort()
+    for i in index_of_large_deletions:
+        if cssplits[i].startswith("="):
+            if start_match == -1:
+                start_match = i
+            count_matches += 1
+        else:
+            if count_matches >= 10:
+                matched_index += list(range(start_match, i))
+            count_matches = 0
+            start_match = -1
+
+    return matched_index
+
+
+def _remove_matched_indexes(index_of_large_deletions: list[int], matched_index: list[int]) -> set[int]:
+    return set(index_of_large_deletions) - set(matched_index)
 
 
 def _get_index_of_large_deletions(cssplits: list[str], bin_size: int = 500, percentage: int = 50) -> set[int]:
     range_of_large_deletions = _extract_candidate_index_of_large_deletions(cssplits, bin_size, percentage)
     break_points = _extract_break_points_of_large_deletions(cssplits, range_of_large_deletions, bin_size)
 
-    return _convert_break_points_to_index(break_points)
+    index_of_large_deletions = _convert_break_points_to_index(break_points)
+    matched_index = _find_matched_indexes(cssplits, index_of_large_deletions)
+    return _remove_matched_indexes(index_of_large_deletions, matched_index)
 
 
 def _adjust_cs_insertion(cs: str) -> str:

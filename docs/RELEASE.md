@@ -23,6 +23,9 @@
 
 + Update GitHub Actions to test with Python 3.11 and 3.12. Issue: #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54df79e60b484da429c1cbf6f12b0c19196452cc)]
 
+## 🐛 Bug Fixes
+
++ Update `cssplits_handler._get_index_of_large_deletions`: Modified to split large deletions when a match of 10 or more bases is found within the identified large deletion. Issue: #42 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 
 
 <!-- ############################################################# # -->
