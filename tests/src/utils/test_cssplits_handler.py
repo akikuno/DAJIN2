@@ -39,19 +39,6 @@ def test_add_match_operator_to_n(cssplits, expected):
     assert cssplits_handler._add_match_operator_to_n(cssplits) == expected
 
 
-# @pytest.mark.parametrize(
-#     "cssplits, expected",
-#     [
-#         ([], []),
-#         (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
-#         (["+A|+A|*GC"], ["+A|+A|*GC"]),
-#         (["+A|*GC|=C"], ["+A|=C|=C"]),
-#     ],
-# )
-# def test_format_substitution_withtin_insertion(cssplits, expected):
-#     assert cssplits_handler._format_substitution_withtin_insertion(cssplits) == expected
-
-
 @pytest.mark.parametrize(
     "input_cssplits, expected",
     [
@@ -180,7 +167,6 @@ def test_adjust_cs_insertion(cs: str, expected: str):
             + ["+A|+A|+A|+A|+A|+A|+A|+A|+A|+A|=T"]
             + ["=T"] * 99,
         ),
-        
     ],
     ids=[
         "insertion within deletion",
