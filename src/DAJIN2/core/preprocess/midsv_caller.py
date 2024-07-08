@@ -60,7 +60,7 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
             continue
 
         # Define a custom key function to prioritize map-ont
-        def custom_key(key: str) -> tuple[int, bool]:
+        def custom_key(key: str, alignment_lengths=alignment_lengths) -> tuple[int, bool]:
             return (alignment_lengths[key], key == "map-ont")
 
         max_key = max(alignment_lengths, key=custom_key)
