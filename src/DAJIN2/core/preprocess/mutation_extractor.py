@@ -16,7 +16,7 @@ config.set_warnings_ignore()
 
 
 import numpy as np
-from sklearn.cluster import MiniBatchKMeans
+from sklearn.neural_network import MLPClassifier
 
 from DAJIN2.core.preprocess.homopolymer_handler import extract_sequence_errors_in_homopolymer_loci
 from DAJIN2.utils import io
@@ -94,18 +94,17 @@ def cosine_distance(x: list[float], y: list[float]) -> float:
 def is_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> bool:
     # If 'sample' has more than 20% variation compared to 'control' in consensus mode, unconditionally set it to 'dissimilar loci'. This is set to counteract cases where, when evaluating cosine similarity during significant deletions, values exceedingly close to 1 can occur even if not observed in the control (e.g., control = [1,1,1,1,1], sample = [100,100,100,100,100] -> cosine similarity = 1).
     if values_sample[index] - values_control[index] > 20:
-        if is_consensus:
-            if values_sample[index] > 75:
-                return True
-        else:
+        if not is_consensus or values_sample[index] > 50:
             return True
+        else:
+            return False
 
     # Subset 10 bases around index.
     x = values_sample[index : index + 10]
     y = values_control[index : index + 10]
 
-    x_slice = values_sample[index + 1 : index + 11]
-    y_slice = values_control[index + 1 : index + 11]
+    x_slice = x[1:]
+    y_slice = y[1:]
 
     distance = cosine_distance(x, y)
     distance_slice = cosine_distance(x_slice, y_slice)
@@ -117,14 +116,37 @@ def detect_anomalies(values_sample, values_control, threshold: float, is_consens
     """
     Detect anomalies and return indices of outliers.
     """
-    values_subtract = values_sample - values_control
-    values_subtract = np.where(values_subtract <= threshold, 0, values_subtract)
 
-    values_subtract_reshaped = values_subtract.reshape(-1, 1)
-    kmeans = MiniBatchKMeans(n_clusters=2, random_state=0, n_init="auto").fit(values_subtract_reshaped)
-    # Set the maximum threshold to 10 to prevent missing relatively minor mutations due to the k-means centers being overly influenced by obvious mutations.
-    threshold_kmeans = min(20, kmeans.cluster_centers_.mean())
-    candidate_loci = {i for i, v in enumerate(values_subtract_reshaped) if v > threshold_kmeans}
+    rng = np.random.default_rng(seed=1)
+
+    random_size = 10_000
+    control_size = len(values_control)
+    total_size = random_size + control_size
+
+    randoms = rng.uniform(0, 100, random_size)
+    randoms_error = np.clip(randoms + rng.uniform(0, threshold, random_size), 0, 100)
+    randoms_mutation = np.clip(randoms + rng.uniform(threshold, 100, random_size), 0, 100)
+
+    values_error = np.clip(values_control + rng.uniform(0, threshold, control_size), 0, 100)
+    values_mutation = np.clip(values_control + rng.uniform(threshold, 100, control_size), 0, 100)
+
+    matrix_error_randoms = np.array([randoms, randoms_error]).T
+    matrix_error_control = np.array([values_control, values_error]).T
+    matrix_error = np.concatenate([matrix_error_randoms, matrix_error_control], axis=0)
+
+    matrix_mutation_randoms = np.array([randoms, randoms_mutation]).T
+    matrix_mutation_control = np.array([values_control, values_mutation]).T
+    matrix_mutation = np.concatenate([matrix_mutation_randoms, matrix_mutation_control], axis=0)
+
+    X = np.concatenate([matrix_error, matrix_mutation], axis=0)
+    y = [0] * (total_size) + [1] * (total_size)
+
+    clf = MLPClassifier(solver="lbfgs", alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1)
+    clf.fit(X, y)
+
+    results = clf.predict(np.array([values_control, values_sample]).T)
+
+    candidate_loci = {i for i, v in enumerate(results) if v == 1}
 
     return {i for i in candidate_loci if is_dissimilar_loci(values_sample, values_control, i, is_consensus)}
 
@@ -173,17 +195,17 @@ def merge_index_of_consecutive_indel(mutation_loci: dict[str, set[int]]) -> dict
     """Treat as contiguous indels if there are insertions/deletions within five bases of each other"""
     mutation_loci_merged = {}
 
-    """Reflect point mutations as they are"""
+    # Reflect point mutations as they are
     mutation_loci_merged["*"] = mutation_loci["*"]
 
-    """Merge if indels are within 10 bases"""
+    # Merge if indels are within 10 bases
     for mut in ["+", "-"]:
         idx_indel = sorted(mutation_loci[mut])
         idx_indel_merged = set(idx_indel)
         for i in range(len(idx_indel) - 1):
             idx_1 = idx_indel[i]
             idx_2 = idx_indel[i + 1]
-            """If everything from idx_1 to idx_2 is already considered as indels, then skip it."""
+            # If everything from idx_1 to idx_2 is already considered as indels, then skip it.
             if count_elements_within_range(idx_indel, idx_1 + 1, idx_2 - 1) == idx_2 - idx_1 + 1:
                 continue
             if idx_1 + 10 > idx_2:
@@ -191,25 +213,25 @@ def merge_index_of_consecutive_indel(mutation_loci: dict[str, set[int]]) -> dict
                     idx_indel_merged.add(i)
         mutation_loci_merged[mut] = idx_indel_merged
 
-    """Additional logic for mutation enrichment within 10 bases on both ends"""
+    # Additional logic for mutation enrichment within 10 bases on both ends
     for mut in ["+", "-"]:
         idx_indel = sorted(mutation_loci_merged[mut])
         idx_indel_merged = set(idx_indel)
         for i in range(len(idx_indel) - 1):
             idx_1 = idx_indel[i]
             idx_2 = idx_indel[i + 1]
-            """If everything from idx_1 to idx_2 is already considered as indels, then skip it."""
+            # If everything from idx_1 to idx_2 is already considered as indels, then skip it.
             if count_elements_within_range(idx_indel, idx_1 + 1, idx_2 - 1) == idx_2 - idx_1 + 1:
                 continue
-            """If the distance between idx_1 and idx_2 is more than 20 bases, then skip it."""
+            # If the distance between idx_1 and idx_2 is more than 20 bases, then skip it.
             if idx_1 + 20 < idx_2:
                 continue
             count_left = count_elements_within_range(idx_indel, idx_1 - 11, idx_1 - 1)
             count_right = count_elements_within_range(idx_indel, idx_2 + 1, idx_2 + 11)
-            """
-            If 8 out of the 10 bases at both ends are indels,
-            then everything from idx_1 to idx_2 will be considered as indels.
-            """
+
+            # If 8 out of the 10 bases at both ends are indels,
+            # then everything from idx_1 to idx_2 will be considered as indels.
+
             if count_left >= 8 and count_right >= 8:
                 for i in range(idx_1 + 1, idx_2):
                     idx_indel_merged.add(i)
@@ -295,21 +317,22 @@ def extract_mutation_loci(
     if thresholds is None:
         thresholds = {"*": 0.5, "-": 0.5, "+": 0.5}
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
-    indels_normalized_control = io.load_pickle(path_indels_normalized_control)
 
-    """Extract candidate mutation loci"""
-    indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
+    # Extract candidate mutation loci
+    indels_normalized_control = minimize_mutation_counts(
+        io.load_pickle(path_indels_normalized_control), indels_normalized_sample
+    )
     anomal_loci: dict[str, set[int]] = extract_anomal_loci(
-        indels_normalized_sample, indels_normalized_minimize_control, thresholds, is_consensus
+        indels_normalized_sample, indels_normalized_control, thresholds, is_consensus
     )
 
-    """Extract error loci in homopolymer regions"""
+    # Extract error loci in homopolymer regions
     errors_in_homopolymer = extract_sequence_errors_in_homopolymer_loci(
         sequence, indels_normalized_sample, indels_normalized_control, anomal_loci
     )
     mutation_loci = discard_errors_in_homopolymer(anomal_loci, errors_in_homopolymer)
 
-    """Merge all mutations and knockin loci"""
+    # Merge all mutations and knockin loci
     if path_knockin.exists():
         knockin_loci = io.load_pickle(path_knockin)
         mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
@@ -323,7 +346,7 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
     cache_indels_count(ARGS, is_control)
 
     if is_control:
-        return
+        return None
 
     for allele, sequence in ARGS.fasta_alleles.items():
         path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele)
