@@ -311,12 +311,18 @@ The **Allele type** includes:
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
-## 📣Feedback and Support
+## 📣 Feedback and Support
 
-For questions, bug reports, or other forms of feedback, we'd love to hear from you!  
+> [!NOTE]
+> For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
+
+
+For more questions, bug reports, or other forms of feedback, we'd love to hear from you!  
 Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) for all reporting purposes.  
 
 Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
+
+
 
 ## 🤝 Code of Conduct
 
