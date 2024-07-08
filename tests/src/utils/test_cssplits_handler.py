@@ -39,19 +39,6 @@ def test_add_match_operator_to_n(cssplits, expected):
     assert cssplits_handler._add_match_operator_to_n(cssplits) == expected
 
 
-# @pytest.mark.parametrize(
-#     "cssplits, expected",
-#     [
-#         ([], []),
-#         (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
-#         (["+A|+A|*GC"], ["+A|+A|*GC"]),
-#         (["+A|*GC|=C"], ["+A|=C|=C"]),
-#     ],
-# )
-# def test_format_substitution_withtin_insertion(cssplits, expected):
-#     assert cssplits_handler._format_substitution_withtin_insertion(cssplits) == expected
-
-
 @pytest.mark.parametrize(
     "input_cssplits, expected",
     [
@@ -113,6 +100,10 @@ def test_call_sequence(cons_percentage, expected_sequence):
     "cssplits, expected",
     [
         (["=T"] * 100 + ["-A"] * 300 + ["=T"] * 100, set(range(100, 400))),
+        (
+            ["=T"] * 100 + ["-A"] * 300 + ["=T"] * 10 + ["-A"] * 300 + ["=T"] * 100,
+            set(range(100, 400)) | set(range(410, 710)),
+        ),
     ],
 )
 def test_get_index_of_large_deletions(cssplits, expected):
@@ -138,24 +129,50 @@ def test_adjust_cs_insertion(cs: str, expected: str):
     assert cssplits_handler._adjust_cs_insertion(cs) == expected
 
 
-# @pytest.mark.parametrize(
-#     "input_str, expected_output",
-#     [
-#         ("-A,-A,-A,=C,=C,=C,-T,-T,-T,=G", "-A,-A,-A,-C,-C,-C,-T,-T,-T,+C|+C|+C|=G"),
-#         ("-A,-A,-A,=C,=C,=C,=C,-T,-T,-T", "-A,-A,-A,=C,=C,=C,=C,-T,-T,-T"),
-#         ("-A,-A,-A,N,=C,n,-T,-T,-T,=G", "-A,-A,-A,N,-C,n,-T,-T,-T,+N|+C|+n|=G"),
-#         ("-A,-A,-A,=C,+T|+T|=C,=C,-T,-T,-T,=G", "-A,-A,-A,-C,-C,-C,-T,-T,-T,+C|+T|+T|+C|+C|=G"),
-#         ("-A,-A,-A,=C,+T|+T|*CG,=C,-T,-T,-T,=G", "-A,-A,-A,-C,-C,-C,-T,-T,-T,+C|+T|+T|+G|+C|=G"),
-#         ("-G,-G,-C,=A,=C,=C,*CA,=A,-T,-T,*AC", "-G,-G,-C,=A,=C,=C,*CA,=A,-T,-T,*AC"),
-#     ],
-#     ids=[
-#         "insertion within deletion",
-#         "4-character match",
-#         "N and n",
-#         "Insertion",
-#         "Insertion followed by substitution",
-#         "Should not be adjusted",
-#     ],
-# )
-# def test_reallocate_insertion_within_deletion(input_str: str, expected_output: str):
-#     assert reallocate_insertion_within_deletion(input_str, del_range=3, distance=3) == expected_output
+@pytest.mark.parametrize(
+    "cssplits, expected",
+    [
+        (
+            ["=T"] * 100 + ["-A"] * 300 + ["*TA"] * 10 + ["-A"] * 300 + ["=T"] * 100,
+            ["=T"] * 100
+            + ["-A"] * 300
+            + ["-T"] * 10
+            + ["-A"] * 300
+            + ["+A|+A|+A|+A|+A|+A|+A|+A|+A|+A|=T"]
+            + ["=T"] * 99,
+        ),
+        (
+            ["=T"] * 100 + ["-A"] * 150 + ["=T"] * 10 + ["-A"] * 150 + ["=T"] * 100,
+            ["=T"] * 100 + ["-A"] * 150 + ["=T"] * 10 + ["-A"] * 150 + ["=T"] * 100,
+        ),
+        (
+            ["=T"] * 100
+            + ["-A"] * 100
+            + ["*TA"] * 10
+            + ["-A"] * 100
+            + ["=T"] * 10
+            + ["-A"] * 100
+            + ["*TA"] * 10
+            + ["-A"] * 100
+            + ["=T"] * 100,
+            ["=T"] * 100
+            + ["-A"] * 100
+            + ["-T"] * 10
+            + ["-A"] * 100
+            + ["+A|+A|+A|+A|+A|+A|+A|+A|+A|+A|=T"]
+            + ["=T"] * 9
+            + ["-A"] * 100
+            + ["-T"] * 10
+            + ["-A"] * 100
+            + ["+A|+A|+A|+A|+A|+A|+A|+A|+A|+A|=T"]
+            + ["=T"] * 99,
+        ),
+    ],
+    ids=[
+        "insertion within deletion",
+        "matched region within deletion",
+        "insertions within deletion and matched region",
+    ],
+)
+def test_reallocate_insertion_within_deletion(cssplits: str, expected: str):
+    assert cssplits_handler.reallocate_insertion_within_deletion(cssplits) == expected

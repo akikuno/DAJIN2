@@ -28,7 +28,7 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 
 ### Prerequisites
 
-- Python 3.8 to 3.10
+- Python >= 3.8
 - Unix-like environment (Linux, macOS, WSL2, etc.)
 
 ### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
@@ -37,9 +37,6 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 conda activate env-dajin2
 ```
-
-> [!IMPORTANT]
-> DAJIN2 supports Python versions 3.8 to 3.10, but not Python 3.11 yet due to a [Bioconda issue](https://github.com/bioconda/bioconda-recipes/issues/37805).
 
 
 > [!NOTE]
@@ -314,12 +311,18 @@ The **Allele type** includes:
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
-## 📣Feedback and Support
+## 📣 Feedback and Support
 
-For questions, bug reports, or other forms of feedback, we'd love to hear from you!  
+> [!NOTE]
+> For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
+
+
+For more questions, bug reports, or other forms of feedback, we'd love to hear from you!  
 Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) for all reporting purposes.  
 
 Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
+
+
 
 ## 🤝 Code of Conduct
 
