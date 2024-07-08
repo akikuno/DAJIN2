@@ -14,7 +14,17 @@
 
 # Current Release
 
-## v0.5.2 (2024-XX-XX)
+# v0.5.2 (2024-XX-XX)
+
+## 📝 Documentation
+
++ Add `FAQ.md` and `FAQ_JP.md` to provide answers to questions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1172fddd34c382f92b6778d6f30fd733b458cc04)]
+
+## 🌟 New Features
+
+- Update `mutation_extractor` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9444ee701ee52adeb6271552eff70667fb49b854)]
+  - Simplified the logic of the `is_dissimilar_loci` if statement. Additionally, changed the threshold for determining a mutation in Consensus from 75% to 50% (to accommodate the insertion allele in Cas3 Tyr Barcode10).
+  - Updated `detect_anomalies` to use MLPClassifier to detect mutations more flexibly and accurately compared to the previous threshold setting with MiniBatchKMeans.
 
 ## 🔧 Maintenance
 
@@ -24,6 +34,9 @@
 + Update GitHub Actions to test with Python 3.11 and 3.12. Issue: #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54df79e60b484da429c1cbf6f12b0c19196452cc)]
 
 + Resolve the B023 Function definition does not bind loop variable `alignment_lengths` issue. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9c85d2f0410494a9b71d9905fad2f9e4efe30ed7)]
+
++ Add `question.yml` in GitHub Issue template. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1172fddd34c382f92b6778d6f30fd733b458cc04)]
+
 
 ## 🐛 Bug Fixes
 
