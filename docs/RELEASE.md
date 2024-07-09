@@ -14,11 +14,11 @@
 
 # Current Release
 
-# v0.5.2 (2024-XX-XX)
+# v0.5.2 (2024-07-08)
 
 ## 📝 Documentation
 
-+ Add `FAQ.md` and `FAQ_JP.md` to provide answers to questions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1172fddd34c382f92b6778d6f30fd733b458cc04)]
++ Add `FAQ.md` and `FAQ_JP.md` to provide answers to questions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c2217b006494ae73fda422a17edaf39fb97e8898)]
 
 ## 🌟 New Features
 
@@ -40,7 +40,7 @@
 
 ## 🐛 Bug Fixes
 
-+ Update `cssplits_handler._get_index_of_large_deletions`: Modified to split large deletions when a match of 10 or more bases is found within the identified large deletion. Issue: #42 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
++ Update `cssplits_handler._get_index_of_large_deletions`: Modified to split large deletions when a match of 10 or more bases is found within the identified large deletion. Issue: #42 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0c97a9b5fb8cad2ebdaf91b796eed3ce80f5eeee)]
 
 
 <!-- ############################################################# # -->
