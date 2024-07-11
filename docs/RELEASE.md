@@ -14,7 +14,29 @@
 
 # Current Release
 
-# v0.5.2 (2024-07-08)
+# v0.5.3 (2024-XX-XX)
+
+## 🐛 Bug Fixes
+
+- Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue: #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
+
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!--  ------------------------------------------------------------- -->
+
+<!-- <details>
+<summary> v0.5.0 (2024-06-05) </summary>
+</details> -->
+
+<details>
+<summary> v0.5.2 (2024-07-08) </summary>
 
 ## 📝 Documentation
 
@@ -42,20 +64,7 @@
 
 + Update `cssplits_handler._get_index_of_large_deletions`: Modified to split large deletions when a match of 10 or more bases is found within the identified large deletion. Issue: #42 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0c97a9b5fb8cad2ebdaf91b796eed3ce80f5eeee)]
 
-
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!--  ------------------------------------------------------------- -->
-
-<!-- <details>
-<summary> v0.5.0 (2024-06-05) </summary>
-</details> -->
+</details>
 
 <details>
 <summary> v0.5.1 (2024-06-15) </summary>
