@@ -18,6 +18,9 @@
 
 ## 🐛 Bug Fixes
 
+- Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
+
+
 - Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue: #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
 
 
