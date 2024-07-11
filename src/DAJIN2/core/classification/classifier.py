@@ -7,12 +7,13 @@ from DAJIN2.core.classification.allele_merger import merge_minor_alleles
 from DAJIN2.utils import io
 
 
-def calc_match(cssplit: str) -> float:
+def calc_match(cssplit: str) -> int:
     match_score = cssplit.count("=")
     match_score -= cssplit.count("+")  # insertion
+    match_score -= cssplit.count("-")  # deletion
     match_score -= sum(cs.islower() for cs in cssplit)  # inversion
 
-    return match_score / len(cssplit.split(","))
+    return match_score
 
 
 def score_allele(path_midsv: Path, allele: str) -> list[dict]:
