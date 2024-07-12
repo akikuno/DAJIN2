@@ -1,19 +1,7 @@
 from src.DAJIN2.core.consensus.consensus import (
     adjust_to_100_percent,
     call_percentage,
-    replace_sequence_error,
 )
-
-###########################################################
-# replace_sequence
-###########################################################
-
-
-def test_replace_sequence_error():
-    cons_percentage = [{"A": 25, "C": 25, "SEQERROR": 50}, {"SEQERROR": 100}]
-    expected_output = [{"A": 25, "C": 25}, {"N": 100}]
-    assert replace_sequence_error(cons_percentage) == expected_output
-
 
 ###########################################################
 # adjust_to_100_percent
@@ -38,13 +26,14 @@ def test_adjust_to_100_percent_float():
 
 
 def test_call_percentage():
-    cssplits = [["+A|=C", "-T", "=C", "=A", "=T"], ["-C", "=T", "=C", "*AT", "*AT"]]
+    cssplits = [["+A|=C", "-T", "=C", "=A", "=T"], ["-C", "=T", "=C", "*AT", "*TA"]]
     mutation_loci = [{"+", "-"}, {"-"}, {}, {}, {"*"}]
+    sequence = "CTCAT"
     expected_output = [
         {"+A|=C": 50.0, "-C": 50.0},
         {"-T": 50.0, "=T": 50.0},
         {"=C": 100.0},
         {"=A": 100.0},
-        {"=T": 50.0, "*AT": 50.0},
+        {"=T": 50.0, "*TA": 50.0},
     ]
-    assert call_percentage(cssplits, mutation_loci) == expected_output
+    assert call_percentage(cssplits, mutation_loci, sequence) == expected_output
