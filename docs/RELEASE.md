@@ -18,6 +18,11 @@
 
 ## 💥 Breaking
 
+- Update `clustering.clustering`: Use Constrained Kmeans clustering to address the issue of cluster imbalance where extremely minor clusters were preferentially separated. Set `min_cluster_size` to 0.5% of the sample read count. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c1b14e73d8a95fdb39e510a7a90e501d596b7f3a)]
+  - As a result, `clustering.label_merger.py` is no longer needed and has been removed.
+
+
+
 - Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
 
 
