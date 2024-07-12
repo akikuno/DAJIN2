@@ -16,6 +16,12 @@
 
 # v0.5.3 (2024-XX-XX)
 
+## 💥 Breaking
+
+- Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
+
+
+
 ## 🐛 Bug Fixes
 
 - Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
