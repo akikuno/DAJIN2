@@ -47,7 +47,7 @@ cstag = ">=1.0.0"
 midsv = ">=0.11.0"
 wslPath = ">=0.4.1"
 ruptures = ">=1.1.8"
-
+ortools = ">=9.0"
 [tool.poetry.scripts]
 DAJIN2 = "DAJIN2.main:execute"
 
