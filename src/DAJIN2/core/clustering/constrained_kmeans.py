@@ -4,6 +4,8 @@ Bradley, Paul S., Kristin P. Bennett, and Ayhan Demiriz. "Constrained k-means cl
 The implementation is referenced from @kuga-qiita. (https://qiita.com/kuga-qiita/items/5588d5469f3268b7fd39#constrained-k-means-1)
 """
 
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
@@ -115,7 +117,7 @@ class ConstrainedKMeans:
         mask = solution_flows[: -self.n_clusters].reshape((-1, self.n_clusters))
         return mask
 
-    def fit(self, X: np.ndarray) -> "ConstrainedKMeans":
+    def fit(self, X: np.ndarray) -> ConstrainedKMeans:
         self.valid_tr(X)
         if X.ndim == 1:
             X = X[:, np.newaxis]
