@@ -189,7 +189,9 @@ def execute_sample(arguments: dict):
 
     consensus.cache_mutation_loci(ARGS, clust_downsampled)
 
-    cons_percentage, cons_sequence = consensus.call_consensus(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled)
+    cons_percentage, cons_sequence = consensus.call_consensus(
+        ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
+    )
 
     allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
     cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)

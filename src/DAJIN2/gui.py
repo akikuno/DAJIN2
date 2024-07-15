@@ -81,7 +81,7 @@ def submit():
         df["genome"] = genome
     df.to_csv(Path(TEMPDIR, "upload", "batch.csv"), index=False)
 
-    arguments = dict()
+    arguments = {}
     arguments["file"] = str(Path(TEMPDIR, "upload", "batch.csv"))
     arguments["threads"] = threads
     arguments["debug"] = False

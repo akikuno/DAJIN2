@@ -112,7 +112,7 @@ class ConstrainedKMeans:
         smcf = min_cost_flow.SimpleMinCostFlow()
         all_arcs = smcf.add_arcs_with_capacity_and_unit_cost(start_nodes, end_nodes, capacities, unit_costs)
         smcf.set_nodes_supplies(np.arange(len(supplies)), supplies)
-        status = smcf.solve()
+        smcf.solve()
         solution_flows = smcf.flows(all_arcs)
         mask = solution_flows[: -self.n_clusters].reshape((-1, self.n_clusters))
         return mask
@@ -137,14 +137,16 @@ class ConstrainedKMeans:
 
         unit_costs, dist_sq = self.calc_unit_costs(X, centers)
 
-        for iter_ in range(self.max_iter):
+        for i in range(self.max_iter):
             mask = self.clustering(*params, unit_costs)
             centers_ = np.dot(mask.T, X) / np.sum(mask, axis=0)[:, np.newaxis]
             unit_costs, dist_sq = self.calc_unit_costs(X, centers_)
             centers_squared_diff = np.sum((centers_ - centers) ** 2)
             centers = centers_
+            iter_ = i
             if centers_squared_diff <= self.tol:
                 break
+
         self.inertia = np.sum(mask * dist_sq)
         self.centers = centers
         self.labels = np.argmax(mask, axis=-1)

@@ -203,7 +203,7 @@ def merge_similar_insertions(
     for idx, insertion in insertions_grouped.items():
         if len(insertion) == 1:
             seq, count = next(iter(insertion.items()))
-            insertions_merged[idx] = {tuple([seq]): count}
+            insertions_merged[idx] = {tuple(seq): count}
             continue
 
         labels = clustering_insertions(insertion)
@@ -303,7 +303,7 @@ def extract_score_and_sequence(
             scores.append(score)
             sequences.append(",".join(sequence))
 
-    return [(score, sequence) for score, sequence in zip(scores, sequences)]
+    return list(zip(scores, sequences))
 
 
 def filter_minor_label(
