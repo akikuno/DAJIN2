@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix, spmatrix
 from sklearn import metrics
 from sklearn.cluster import BisectingKMeans
 
-from DAJIN2.core.clustering.label_merger import merge_labels
+from DAJIN2.core.clustering.constrained_kmeans import ConstrainedKMeans
 from DAJIN2.core.clustering.score_handler import subset_scores
 from DAJIN2.core.clustering.strand_bias_handler import remove_biased_clusters
 from DAJIN2.utils import config, io
@@ -29,31 +29,33 @@ def count_number_of_clusters(labels_control: list[int], coverage_control: int) -
 
 def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int, min_cluster_size: int) -> list[int]:
     labels_previous = [1 for _ in range(coverage_sample)]
+    positive_silhouette_previous = 1
 
     for i in range(2, coverage_sample):
         np.random.seed(seed=1)
-        labels_all = BisectingKMeans(n_clusters=i, random_state=1).fit_predict(X).tolist()
+        labels_all = (
+            ConstrainedKMeans(n_clusters=i, min_cluster_size=min_cluster_size, random_state=1).fit_predict(X).tolist()
+        )
 
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
-        labels_current = merge_labels(labels_control, labels_sample, labels_previous)
-        # print(i, Counter(labels_sample), Counter(labels_control), Counter(labels_current))  # ! DEBUG
 
         num_labels_control = count_number_of_clusters(labels_control, coverage_control)
-        rand_index = metrics.adjusted_rand_score(labels_previous, labels_current)
+        rand_index = metrics.adjusted_rand_score(labels_previous, labels_sample)
+        if len(Counter(labels_sample)) == 1:
+            positive_silhouette_current = positive_silhouette_previous
+        else:
+            silhouette_vals = metrics.silhouette_samples(X[:coverage_sample], labels_sample, metric="euclidean")
+            positive_silhouette_current = len(silhouette_vals[silhouette_vals > 0.25])
+        ratio_silhoutte = positive_silhouette_current / positive_silhouette_previous
 
-        """
-        Return the number of clusters when:
-            - the number of clusters in control is split into more than one.
-            - the mutual information between the current and previous labels is high enough (= similar).
-            - the minimum cluster size is reached.
-        To reduce the allele number, previous labels are returned.
-        """
-        if num_labels_control >= 2 or rand_index >= 0.95 or min_cluster_size > min(Counter(labels_current).values()):
+        # print(i, Counter(labels_control), Counter(labels_sample), rand_index, ratio_silhoutte, positive_silhouette_current, positive_silhouette_previous)  # ! DEBUG
+
+        if num_labels_control >= 2 or rand_index >= 0.95 or ratio_silhoutte < 0.95:
             return labels_previous
 
-        labels_previous = labels_current
-
+        labels_previous = labels_sample
+        positive_silhouette_previous = max(positive_silhouette_previous, positive_silhouette_current)
     return labels_previous
 
 
@@ -79,7 +81,7 @@ def return_labels(
     scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
 
     scores_sample = list(io.read_jsonl(path_score_sample))
-    X = csr_matrix(list(chain(scores_sample, scores_control_subset)))
+    X = np.array(list(chain(scores_sample, scores_control_subset)))
 
     coverage_sample = io.count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
