@@ -21,16 +21,11 @@
 - Update `clustering.clustering`: Use Constrained Kmeans clustering to address the issue of cluster imbalance where extremely minor clusters were preferentially separated. Set `min_cluster_size` to 0.5% of the sample read count. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c1b14e73d8a95fdb39e510a7a90e501d596b7f3a)]
   - As a result, `clustering.label_merger.py` is no longer needed and has been removed.
 
-
-
 - Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
-
-
 
 ## 🐛 Bug Fixes
 
 - Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
-
 
 - Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue: #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
 
