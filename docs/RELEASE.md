@@ -25,6 +25,11 @@
   + The following termination criterion has been removed:
     - Adjusted Rand Index >= 0.95, as it led to early termination when minor clusters were generated.
 
++ The threshold for `clustering.strand bias` determination has been loosened. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5bbaa7d363bce03d6fbd4ba7fdf1c00e938d9809)]
+  + This adjustment addresses cases like `+:13, -:2` (0.87) observed in `example_flox/flox-1nt-deletion`.
+  + Since the minor allele is particularly susceptible, further adjustments may be necessary in the future.
+
+
 <!-- ############################################################# # -->
 
 
