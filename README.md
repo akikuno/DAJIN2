@@ -38,17 +38,6 @@ conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
 conda activate env-dajin2
 ```
 
-
-> [!NOTE]
-> To Apple Silicon (ARM64) users:  
-> [Since the Bioconda channel does not yet support Apple Silicon](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919), please use the following command to install `DAJIN2` through Rosetta.
-> ```bash
-> CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
-> conda activate env-dajin2
-> conda config --env --set subdir osx-64
-> python -c "import platform; print(platform.machine())" # Confirm that the output is 'x86_64', not 'arm64'
-> ```
-
 ### From [PyPI](https://pypi.org/project/DAJIN2/)
 
 ```bash
@@ -67,7 +56,7 @@ pip install DAJIN2
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
-##### [Basecalling with Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
+##### Basecalling with [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
 After basecalling with Guppy, the following file structure will be output:
 
 ```text
@@ -88,7 +77,7 @@ Assuming barcode01 is the control and barcode02 is the sample, the respective di
 + Sample: `fastq_pass/barcode02`
 
 
-##### [Basecalling with Dorado](https://github.com/nanoporetech/dorado)
+##### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
 
 For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
 
