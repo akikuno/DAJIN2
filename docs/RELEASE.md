@@ -11,7 +11,8 @@
 -->
 
 <!-- ############################################################# # -->
-# v0.5.4 (2024-XX-XX)
+
+# v0.5.4 (2024-07-23)
 
 ## 💥 Breaking
 
@@ -29,6 +30,9 @@
   + This adjustment addresses cases like `+:13, -:2` (0.87) observed in `example_flox/flox-1nt-deletion`.
   + Since the minor allele is particularly susceptible, further adjustments may be necessary in the future.
 
+## 🌟 New Features
+
++ Support for Apple Silicon (osx-arm64) in Bioconda. Issue: #46
 
 <!-- ############################################################# # -->
 
