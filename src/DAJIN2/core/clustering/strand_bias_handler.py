@@ -17,8 +17,8 @@ Re-allocates reads belonging to clusters with strand bias to clusters without st
 """
 
 # Constants
-STRAND_BIAS_LOWER_LIMIT = 0.1
-STRAND_BIAS_UPPER_LIMIT = 0.9
+STRAND_BIAS_LOWER_LIMIT = 0.2
+STRAND_BIAS_UPPER_LIMIT = 0.8
 
 
 def is_strand_bias(path_control: Path) -> bool:

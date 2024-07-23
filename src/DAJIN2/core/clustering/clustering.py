@@ -40,19 +40,26 @@ def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int, mi
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
 
+        min_cluster_size_ = min(Counter(labels_sample).values())
+
         num_labels_control = count_number_of_clusters(labels_control, coverage_control)
-        rand_index = metrics.adjusted_rand_score(labels_previous, labels_sample)
-        if len(Counter(labels_sample)) == 1:
-            positive_silhouette_current = positive_silhouette_previous
-        else:
-            silhouette_vals = metrics.silhouette_samples(X[:coverage_sample], labels_sample, metric="euclidean")
-            positive_silhouette_current = len(silhouette_vals[silhouette_vals > 0.25])
-        ratio_silhoutte = positive_silhouette_current / positive_silhouette_previous
 
-        # print(i, Counter(labels_control), Counter(labels_sample), rand_index, ratio_silhoutte, positive_silhouette_current, positive_silhouette_previous)  # ! DEBUG
+        silhouette_scores = metrics.silhouette_samples(X, labels_all, metric="euclidean")
+        positive_silhouette_current = sum(silhouette_scores > 0.25)
+        silhouette_ratio = positive_silhouette_current / positive_silhouette_previous
 
-        if num_labels_control >= 2 or rand_index >= 0.95 or ratio_silhoutte < 0.95:
-            return labels_previous
+        # print(
+        #     i,
+        #     min_cluster_size,
+        #     Counter(labels_control),
+        #     Counter(labels_sample),
+        #     silhouette_ratio,
+        #     positive_silhouette_current,
+        #     positive_silhouette_previous,
+        # )  # ! DEBUG
+
+        if min_cluster_size_ < min_cluster_size - 1 or num_labels_control >= 2 or silhouette_ratio < 0.95:
+            break
 
         labels_previous = labels_sample
         positive_silhouette_previous = max(positive_silhouette_previous, positive_silhouette_current)

@@ -11,23 +11,23 @@
 -->
 
 <!-- ############################################################# # -->
-
-# Current Release
-
-# v0.5.3 (2024-XX-XX)
+# v0.5.4 (2024-XX-XX)
 
 ## 💥 Breaking
 
-- Update `clustering.clustering`: Use Constrained Kmeans clustering to address the issue of cluster imbalance where extremely minor clusters were preferentially separated. Set `min_cluster_size` to 0.5% of the sample read count. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c1b14e73d8a95fdb39e510a7a90e501d596b7f3a)]
-  - As a result, `clustering.label_merger.py` is no longer needed and has been removed.
++ Use simulated annealing to optimize cluster assignments in `clustering.constrained_kmenas` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b07b626c1def93022e79840e1e6e393fa400cefb)]
+  + Since `ortools` is not installable on osx-arm64 in Bioconda, I implemented alternative smethods to calculate min_cost_flow.
 
-- Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
++ Change the criteria for terminating clustering. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/db6ec7245d0d1a7ff7204574cffdfd945ee5e854)]
+  + The following termination criteria have been added:
+    - Minimum cluster size is less than or equal to 0.5% of the sample's read number.
+    - Decrease in the proportion of samples with a silhouette score of 0.25 or higher.
+  + The following termination criterion has been removed:
+    - Adjusted Rand Index >= 0.95, as it led to early termination when minor clusters were generated.
 
-## 🐛 Bug Fixes
-
-- Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
-
-- Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue: #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
++ The threshold for `clustering.strand bias` determination has been loosened. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/5bbaa7d363bce03d6fbd4ba7fdf1c00e938d9809)]
+  + This adjustment addresses cases like `+:13, -:2` (0.87) observed in `example_flox/flox-1nt-deletion`.
+  + Since the minor allele is particularly susceptible, further adjustments may be necessary in the future.
 
 
 <!-- ############################################################# # -->
@@ -41,8 +41,26 @@
 <!--  ------------------------------------------------------------- -->
 
 <!-- <details>
-<summary> v0.5.0 (2024-06-05) </summary>
+<summary> v0.5.3 (2024-07-16) </summary>
 </details> -->
+
+<details>
+<summary> v0.5.3 (2024-07-16) </summary>
+
+## 💥 Breaking
+
+- Update `clustering.clustering`: Use Constrained Kmeans clustering to address the issue of cluster imbalance where extremely minor clusters were preferentially separated. Set `min_cluster_size` to 0.5% of the sample read count. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c1b14e73d8a95fdb39e510a7a90e501d596b7f3a)]
+  - As a result, `clustering.label_merger.py` is no longer needed and has been removed.
+
+- Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
+
+## 🐛 Bug Fixes
+
+- Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
+
+- Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue: #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
+</details>
+
 
 <details>
 <summary> v0.5.2 (2024-07-08) </summary>

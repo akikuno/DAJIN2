@@ -20,9 +20,9 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
     min_cluster_size = max(5, int(len(classif_sample) * 0.5 // 100))  # 0.5% of the samples
 
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
-        """Cache data to temporary files"""
+        # Cache data to temporary files
 
-        # Insertion/Inversion allele
+        # FOr Insertion/Inversion allele
         path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}.jsonl")
         if not path_control.exists():
             path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}.jsonl")
@@ -31,14 +31,14 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_{unique_id}.jsonl")
         io.write_jsonl(data=group, file_path=path_sample)
 
-        """Load mutation_loci and knockin_loci."""
+        # Load mutation_loci and knockin_loci
         path_mutation_loci = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", allele, "mutation_loci.pickle")
         path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele, "knockin.pickle")
 
         mutation_loci: list[set[str]] = io.load_pickle(path_mutation_loci)
         knockin_loci: set[int] = io.load_pickle(path_knockin_loci) if path_knockin_loci.exists() else set()
 
-        """Skip clustering when the number of reads is too small or there is no mutation."""
+        # Skip clustering when the number of reads is too small or there is no mutation
         read_numbers = io.count_newlines(path_sample)
         is_no_mutation = all(m == set() for m in mutation_loci)
         if read_numbers < max(5, min_cluster_size) or is_no_mutation:
@@ -46,7 +46,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
             max_label += 1
             continue
 
-        """Calculate scores to temporary files."""
+        # Calculate scores to temporary files
         mutation_score: list[dict[str, float]] = make_score(path_sample, path_control, mutation_loci, knockin_loci)
 
         scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
@@ -57,11 +57,11 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         io.write_jsonl(data=scores_sample, file_path=path_score_sample)
         io.write_jsonl(data=scores_control, file_path=path_score_control)
 
-        """Extract labels."""
+        # Extract labels
         labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias, min_cluster_size)
         labels_result += relabel_with_consective_order(labels, start=max_label)
 
-        """Remove temporary files."""
+        # Remove temporary files
         path_sample.unlink()
         path_score_sample.unlink()
         path_score_control.unlink()
