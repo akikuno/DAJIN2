@@ -128,8 +128,12 @@ def execute_sample(arguments: dict):
     paths_predefined_fasta = {
         str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
     }
+
     preprocess.generate_insertion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
+    preprocess.generate_inversion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
+
     paths_insertion_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
+    paths_insertion_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
     paths_insertion_fasta -= paths_predefined_fasta
 
     if paths_insertion_fasta:

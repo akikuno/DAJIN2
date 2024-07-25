@@ -3,6 +3,7 @@ from DAJIN2.core.preprocess.directory_manager import create_report_directories, 
 from DAJIN2.core.preprocess.genome_fetcher import fetch_chromosome_size, fetch_coordinates
 from DAJIN2.core.preprocess.input_formatter import format_inputs
 from DAJIN2.core.preprocess.insertions_to_fasta import generate_insertion_fasta
+from DAJIN2.core.preprocess.inversions_to_fasta import generate_inversion_fasta
 from DAJIN2.core.preprocess.knockin_handler import extract_knockin_loci
 from DAJIN2.core.preprocess.mapping import generate_sam
 from DAJIN2.core.preprocess.midsv_caller import generate_midsv
