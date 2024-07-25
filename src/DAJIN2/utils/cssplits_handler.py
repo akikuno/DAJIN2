@@ -150,7 +150,7 @@ def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     return "".join(_standardize_case(cssplits_combined))
 
 
-def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str:
+def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     """convert position weight matrix (cons_pergentage) to sequence"""
 
     consensus_sequence = []
@@ -159,7 +159,7 @@ def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str
         cs_tag = convert_cssplits_to_cstag([cssplits])
         seq = cstag.to_sequence(cs_tag)
         consensus_sequence.append(seq)
-    return f"{sep}".join(consensus_sequence)
+    return "".join(consensus_sequence)
 
 
 ###########################################################
