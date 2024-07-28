@@ -20,6 +20,15 @@
 
   + Add `example_inversion` to example directory
 
+## 🔧 Maintenance
+
++ Integrating insertion and inversion detection: Issue #31
+  + Add sv_handler [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d994d845b0b8ed0fa8affed7992f1d95bf163073)]
+
+  + Modify arguments of `is_insertion` to `is_sv` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f2d3dc4ca2dff60fc869fb1f5b6b08f54490b564)]
+
+  + Remame `insertions_to_fasta.generate_insertions_fasta` to `insertion_detector.detect_insertions` because the function is not only for generating fasta files but also for generating csv tag. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/63c9d63bad627f529f272ea90c035e236f9dd1fb)]
+
 
 <!-- ############################################################# # -->
 
