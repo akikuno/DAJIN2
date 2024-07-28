@@ -10,19 +10,13 @@ from rapidfuzz.distance import DamerauLevenshtein
 from sklearn.cluster import MeanShift
 
 from DAJIN2.core.consensus.consensus import call_percentage
-from DAJIN2.core.preprocess.insertions_to_fasta import extract_unique_insertions
+from DAJIN2.core.preprocess.sv_handler import add_unique_allele_keys, extract_unique_sv, save_cstag, save_fasta
 from DAJIN2.utils import config, io
-from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, revcomp_cssplits
+from DAJIN2.utils.cssplits_handler import convert_cssplit_to_dna, convert_cssplits_to_cstag, revcomp_cssplits
 
 config.set_warnings_ignore()
 
 import cstag
-
-
-def remove_non_alphabets(cssplit: str) -> str:
-    """Convert a cssplit to a plain DNA sequence."""
-    return "".join([char for char in cssplit if char.isalpha()])
-
 
 ###########################################################
 # Detect insertion sequences
@@ -47,7 +41,7 @@ def extract_inversions(midsv_sample: Generator[list[str]]) -> list[dict[int, int
                 {
                     "start": min_idx,
                     "end": max_idx,
-                    "seq": remove_non_alphabets(",".join(cs_inversion)),
+                    "seq": convert_cssplit_to_dna(",".join(cs_inversion)),
                     "CSSPLIT": m_sample["CSSPLIT"],
                 }
             )
@@ -128,58 +122,11 @@ def call_consensus_of_inversion(
 
 
 ###########################################################
-# Update keys
-###########################################################
-
-
-def _check_duplicates_of_sets(set1: set[str], set2: set[str]) -> bool:
-    """if True, there are duplicates."""
-    union_set = set1.union(set2)
-    total_elements = len(set1) + len(set2)
-    return len(union_set) != total_elements
-
-
-def update_labels(ALLELES: dict[str, str], FASTA_ALLELES: dict[str, set], key: str) -> dict:
-    """
-    Update labels to avoid duplicating user-specified alleles.
-    If the allele 'insertion1' exists in FASTA_ALLELES, increment the digits.
-    (insertion1 -> insertion01 -> insertion001...)
-    """
-    user_defined_alleles = set(FASTA_ALLELES)
-    key_alleles = {allele for allele in user_defined_alleles if key in allele}
-    if key_alleles == set():
-        return {f"inversion{i+1}": value for i, value in enumerate(ALLELES.values())}
-
-    key_candidates = set()
-    digits = 2
-    while _check_duplicates_of_sets(key_candidates, key_alleles):
-        key_candidates = {f"{key}{i+1:0{digits}}" for i, _ in enumerate(ALLELES)}
-        digits += 1
-
-    return dict(zip(key_candidates, ALLELES.values()))
-
-
-###########################################################
-# Save cstag and fasta
-###########################################################
-
-
-def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_insertions: dict[str, str]) -> None:
-    for header, seq in fasta_insertions.items():
-        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}\n")
-
-
-def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_insertions: dict[str, str]) -> None:
-    for header, cs_tag in cstag_insertions.items():
-        Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
-
-
-###########################################################
 # main
 ###########################################################
 
 
-def generate_inversion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
+def detect_inversions(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None:
     path_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
     # path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl")
     mutation_loci = io.load_pickle(Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control", "mutation_loci.pickle"))
@@ -197,12 +144,12 @@ def generate_inversion_fasta(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) 
 
     seq_inversions = {key: d["SEQ"] for key, d in consensus_of_inversions.items()}
     consensus_of_unique_inversions = {
-        key: consensus_of_inversions[key] for key in extract_unique_insertions(seq_inversions, FASTA_ALLELES)
+        key: consensus_of_inversions[key] for key in extract_unique_sv(seq_inversions, FASTA_ALLELES)
     }
     if consensus_of_unique_inversions == {}:
         return None
 
-    consensus_of_unique_inversions = update_labels(consensus_of_unique_inversions, FASTA_ALLELES, "inversion")
+    consensus_of_unique_inversions = add_unique_allele_keys(consensus_of_unique_inversions, FASTA_ALLELES, "inversion")
 
     save_fasta(TEMPDIR, SAMPLE_NAME, {key: d["SEQ"] for key, d in consensus_of_unique_inversions.items()})
     save_cstag(TEMPDIR, SAMPLE_NAME, {key: d["CSTAG"] for key, d in consensus_of_unique_inversions.items()})
