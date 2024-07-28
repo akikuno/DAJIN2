@@ -56,12 +56,12 @@ def execute_control(arguments: dict):
     # Mapping using mappy
     # ============================================================
     paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
-    preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_insertion=False)
+    preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_sv=False)
 
     ###########################################################
     # MIDSV conversion
     ###########################################################
-    preprocess.generate_midsv(ARGS, is_control=True, is_insertion=False)
+    preprocess.generate_midsv(ARGS, is_control=True, is_sv=False)
 
     ###########################################################
     # Prepare data to `extract mutaion loci`
@@ -108,13 +108,13 @@ def execute_sample(arguments: dict):
         shutil.copy(path_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
 
     paths_fasta = Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")
-    preprocess.generate_sam(ARGS, paths_fasta, is_control=False, is_insertion=False)
+    preprocess.generate_sam(ARGS, paths_fasta, is_control=False, is_sv=False)
 
     # ============================================================
     # MIDSV conversion
     # ============================================================
 
-    preprocess.generate_midsv(ARGS, is_control=False, is_insertion=False)
+    preprocess.generate_midsv(ARGS, is_control=False, is_sv=False)
 
     # ============================================================
     # Extract mutation loci
@@ -123,31 +123,31 @@ def execute_sample(arguments: dict):
     preprocess.cache_mutation_loci(ARGS, is_control=False)
 
     # ============================================================
-    # Detect and align insertion alleles
+    # Detect and mapping SV (insertion/inversion) alleles
     # ============================================================
-    paths_predefined_fasta = {
+    paths_predefined_fasta: set[str] = {
         str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
     }
 
-    preprocess.generate_insertion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
-    preprocess.generate_inversion_fasta(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
+    preprocess.detect_insertions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
+    preprocess.detect_inversions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
 
-    paths_insertion_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_insertion_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
-    paths_insertion_fasta -= paths_predefined_fasta
+    paths_sv_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
+    paths_sv_fasta -= paths_predefined_fasta
 
-    if paths_insertion_fasta:
-        # mapping to insertion alleles
-        preprocess.generate_sam(ARGS, paths_insertion_fasta, is_control=True, is_insertion=True)
-        preprocess.generate_sam(ARGS, paths_insertion_fasta, is_control=False, is_insertion=True)
-        # add insertions to ARGS.fasta_alleles
-        for path_fasta in paths_insertion_fasta:
-            allele, seq = Path(path_fasta).read_text().strip().split("\n")
+    if paths_sv_fasta:
+        # mapping to SV (insertion/inversion) alleles
+        preprocess.generate_sam(ARGS, paths_sv_fasta, is_control=True, is_sv=True)
+        preprocess.generate_sam(ARGS, paths_sv_fasta, is_control=False, is_sv=True)
+        # add SV (insertion/inversion) alleles to ARGS.fasta_alleles
+        for path_fasta_sv in paths_sv_fasta:
+            allele, seq = Path(path_fasta_sv).read_text().strip().split("\n")
             allele = allele.replace(">", "")
             ARGS.fasta_alleles[allele] = seq
         # MIDSV conversion
-        preprocess.generate_midsv(ARGS, is_control=True, is_insertion=True)
-        preprocess.generate_midsv(ARGS, is_control=False, is_insertion=True)
+        preprocess.generate_midsv(ARGS, is_control=True, is_sv=True)
+        preprocess.generate_midsv(ARGS, is_control=False, is_sv=True)
         # Reculculate mutation loci
         preprocess.cache_mutation_loci(ARGS, is_control=True)
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
