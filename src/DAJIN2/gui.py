@@ -13,7 +13,7 @@ from flask import Flask, render_template, request
 from waitress import serve
 from werkzeug.utils import secure_filename
 
-from DAJIN2.main import execute_batch_mode
+from DAJIN2 import main
 from DAJIN2.utils import config
 
 
@@ -93,7 +93,7 @@ def submit():
     arguments["threads"] = threads
     arguments["debug"] = False
 
-    execute_batch_mode(arguments)
+    main.execute_batch_mode(arguments)
 
     return f"""
     name={name}
