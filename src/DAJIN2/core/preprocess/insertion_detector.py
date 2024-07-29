@@ -7,6 +7,7 @@ from itertools import groupby
 from pathlib import Path
 from typing import Generator
 
+import cstag
 import numpy as np
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
@@ -19,7 +20,6 @@ from DAJIN2.utils.cssplits_handler import convert_cssplit_to_dna, convert_csspli
 
 config.set_warnings_ignore()
 
-import cstag
 
 ###########################################################
 # Cluster insertion alleles
