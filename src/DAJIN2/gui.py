@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import os
 import shutil
 import socket
@@ -8,12 +9,11 @@ from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
 
-import pandas as pd
 from flask import Flask, render_template, request
 from waitress import serve
 from werkzeug.utils import secure_filename
 
-from DAJIN2 import main
+from DAJIN2.main import execute_batch_mode
 from DAJIN2.utils import config
 
 
@@ -73,19 +73,27 @@ def submit():
     if threads is None:
         threads = 1
 
-    df = pd.DataFrame({"sample": PATH_SAMPLE})
-    df["name"] = name
-    df["control"] = PATH_CONTROL[0]
-    df["allele"] = PATH_ALLELE[0]
-    if genome:
-        df["genome"] = genome
-    df.to_csv(Path(TEMPDIR, "upload", "batch.csv"), index=False)
+    data = []
+    for sample in PATH_SAMPLE:
+        row = {"sample": sample, "name": name, "control": PATH_CONTROL[0], "allele": PATH_ALLELE[0]}
+        if genome:
+            row["genome"] = genome
+        data.append(row)
+
+    output_path = Path("TEMPDIR", "upload", "batch.csv")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, mode="w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=data[0].keys())
+        writer.writeheader()
+        writer.writerows(data)
 
     arguments = {}
     arguments["file"] = str(Path(TEMPDIR, "upload", "batch.csv"))
     arguments["threads"] = threads
     arguments["debug"] = False
-    main.execute_batch_mode(arguments)
+
+    execute_batch_mode(arguments)
 
     return f"""
     name={name}
