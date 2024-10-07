@@ -35,7 +35,6 @@
 
 + Remove unused dependencies
   + `networkx`: Issue #49 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/524186bdce9e28d6357378d0baeb45670d2e22ed)]
-  + `pandas`: Issue #51 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/021bff26e04316524d955e9b0ec56a280f9ad64e)]
 
 
 <!-- ############################################################# # -->
