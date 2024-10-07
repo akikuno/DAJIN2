@@ -12,7 +12,7 @@
 
 <!-- ############################################################# # -->
 
-# v0.5.5 (2024-XX-XX)
+# v0.5.5 (2024-10-08)
 
 ## 📝 Documentation
 
@@ -29,7 +29,6 @@
 
 + Remove unused dependencies
   + `networkx`: Issue #49 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/524186bdce9e28d6357378d0baeb45670d2e22ed)]
-
 
 <!-- ############################################################# # -->
 
