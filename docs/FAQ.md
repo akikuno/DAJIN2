@@ -14,3 +14,8 @@ If the length is below 10kb, when reading PCR amplicons with Nanopore, the reads
 
 **Yes, it is possible.**  
 DAJIN2 accepts common file formats (FASTA, FASTQ, BAM) as input, allowing the analysis of data from platforms other than Nanopore. However, since we do not have experience using DAJIN2 with non-Nanopore data, please contact us [here](https://github.com/akikuno/DAJIN2/issues/new/choose) if you encounter any issues.
+
+## Why is the read count of the Control sample lower in the output BAM file?
+
+In DAJIN2 (version 0.5.4 and later), if the read count of the Control sample exceeds 10,000, it is randomly subsampled to 10,000 reads to reduce computational load. As a result, the BAM file contains fewer reads than the original count due to this filtering.  
+It has been confirmed that limiting the read count to 10,000 does not affect the analysis results.

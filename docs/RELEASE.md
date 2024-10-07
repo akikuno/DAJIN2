@@ -14,6 +14,10 @@
 
 # v0.5.5 (2024-XX-XX)
 
+## 📝 Documentation
+
++ Add `FAQ.md` and `FAQ_JP.md` to address the question: "Why is the read count of the Control sample lower in the output BAM file?". [[Commit Detail](
+
 ## 🌟 New Features
 
 + Add `preprocess.inversions_to_fasta` to detect unintended inversion: Issue #31 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/bfa27505cfc47d793904f9f8abfca8c9ad118afa)]
