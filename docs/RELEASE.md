@@ -12,7 +12,31 @@
 
 <!-- ############################################################# # -->
 
-# v0.5.5 (2024-10-08)
+# v0.5.6 (2024-MM-DD)
+
+## 💥 Breaking
+## 📝 Documentation
+## 🚀 Performance
+## 🌟 New Features
+## 🐛 Bug Fixes
+## 🔧 Maintenance
+## ⛔️ Deprecated
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2024-MM-DD) </summary>
+
+</details> -->
+
+<details>
+<summary> v0.5.5 (2024-10-08) </summary>
 
 ## 📝 Documentation
 
@@ -30,19 +54,9 @@
 + Remove unused dependencies
   + `networkx`: Issue #49 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/524186bdce9e28d6357378d0baeb45670d2e22ed)]
 
-<!-- ############################################################# # -->
+</details>
 
 
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!--  ------------------------------------------------------------- -->
-
-<!-- <details>
-<summary> v0.5.3 (2024-07-16) </summary>
-</details> -->
 
 <details>
 <summary> v0.5.4 (2024-07-23) </summary>
