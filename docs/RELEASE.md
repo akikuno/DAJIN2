@@ -16,7 +16,7 @@
 
 ## 📝 Documentation
 
-+ Add `FAQ.md` and `FAQ_JP.md` to address the question: "Why is the read count of the Control sample lower in the output BAM file?". [[Commit Detail](
++ Add `FAQ.md` and `FAQ_JP.md` to address the question: "Why is the read count of the Control sample lower in the output BAM file?". [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b238d21fbb7cd3330a147bdde65b726278447649)]
 
 ## 🌟 New Features
 
@@ -32,6 +32,10 @@
   + Modify arguments of `is_insertion` to `is_sv` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f2d3dc4ca2dff60fc869fb1f5b6b08f54490b564)]
 
   + Remame `insertions_to_fasta.generate_insertions_fasta` to `insertion_detector.detect_insertions` because the function is not only for generating fasta files but also for generating csv tag. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/63c9d63bad627f529f272ea90c035e236f9dd1fb)]
+
++ Remove unused dependencies
+  + `networkx`: Issue #49 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/524186bdce9e28d6357378d0baeb45670d2e22ed)]
+  + `pandas`: Issue #51 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/021bff26e04316524d955e9b0ec56a280f9ad64e)]
 
 
 <!-- ############################################################# # -->
