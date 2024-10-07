@@ -26,6 +26,11 @@ def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
 
     return left_idx_n - 1, right_idx_n + 1
 
+# ToDo: 点変異が扱えていない。convert_cssplits_to_cstagをinversion検出用に改変すれば、必要なくなる。
+def convert_cssplit_to_dna(cssplit: str) -> str:
+    """Convert a cssplit to a plain DNA sequence."""
+    return "".join([char for char in cssplit if char.isalpha()])
+
 
 ###########################################################
 # reverse complement to cssplits
@@ -150,7 +155,7 @@ def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     return "".join(_standardize_case(cssplits_combined))
 
 
-def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str:
+def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     """convert position weight matrix (cons_pergentage) to sequence"""
 
     consensus_sequence = []
@@ -159,7 +164,7 @@ def call_sequence(cons_percentage: list[dict[str, float]], sep: str = "") -> str
         cs_tag = convert_cssplits_to_cstag([cssplits])
         seq = cstag.to_sequence(cs_tag)
         consensus_sequence.append(seq)
-    return f"{sep}".join(consensus_sequence)
+    return "".join(consensus_sequence)
 
 
 ###########################################################

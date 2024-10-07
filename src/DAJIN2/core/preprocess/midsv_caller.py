@@ -200,7 +200,7 @@ def convert_consecutive_indels(midsv_sample: Generator) -> Generator[list[dict]]
 ###########################################################
 
 
-def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -> None:
+def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
@@ -210,7 +210,7 @@ def generate_midsv(ARGS, is_control: bool = False, is_insertion: bool = False) -
         if Path(path_midsv_directory, f"{name}.jsonl").exists():
             continue
 
-        if is_control and is_insertion:
+        if is_control and is_sv:
             """
             Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.json` when control is barcode01, sample is barcode02, and the allele is insertion1.
             """

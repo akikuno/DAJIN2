@@ -60,9 +60,7 @@ def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[
 
 
 def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]], sequence: str) -> list[dict[str, float]]:
-    """call position weight matrix in defferent loci.
-    - non defferent loci are annotated to "Match" or "Unknown(N)"
-    """
+    """Call position weight matrix in different loci. Non-different loci are annotated as "Match"."""
     cons_percentage = convert_to_percentage(cssplits, mutation_loci, sequence)
     cons_percentage = remove_all_n(cons_percentage)
     return adjust_to_100_percent(cons_percentage)

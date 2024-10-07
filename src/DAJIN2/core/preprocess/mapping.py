@@ -102,7 +102,7 @@ def to_sam(
 
 
 def generate_sam(
-    ARGS, paths_fasta: list[str], mappy_options: dict = None, is_control: bool = False, is_insertion: bool = False
+    ARGS, paths_fasta: list[str], mappy_options: dict = None, is_control: bool = False, is_sv: bool = False
 ) -> None:
     if mappy_options is None:
         mappy_options = {}
@@ -127,7 +127,7 @@ def generate_sam(
         for preset in presets:
             sam = to_sam(path_fasta, path_fastq, preset=preset, threads=ARGS.threads, options=mappy_options)
 
-            if is_control and is_insertion:
+            if is_control and is_sv:
                 path_sam_file = Path(path_sam_directory, f"{ARGS.sample_name}_{preset}.sam")
             else:
                 path_sam_file = Path(path_sam_directory, f"{preset}.sam")

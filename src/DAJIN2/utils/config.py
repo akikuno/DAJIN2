@@ -8,7 +8,7 @@ from pathlib import Path
 
 from sklearn.exceptions import ConvergenceWarning
 
-DAJIN_VERSION = "0.5.4"
+DAJIN_VERSION = "0.5.5"
 DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
 
