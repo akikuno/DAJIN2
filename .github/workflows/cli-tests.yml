@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           miniconda-version: "latest"
           activate-environment: test-env
-          channels: bioconda, conda-forge, defaults, anaconda
+          channels: bioconda, conda-forge, defaults
 
       - name: Setup conda environment on ubuntu-latest🐧
         if: runner.os == 'Linux'
