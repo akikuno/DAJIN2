@@ -15,6 +15,10 @@
 # v0.5.6 (2024-MM-DD)
 
 ## 💥 Breaking
+
++ Add sr presets to all execusions Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
+
+
 ## 📝 Documentation
 ## 🚀 Performance
 ## 🌟 New Features
