@@ -116,10 +116,7 @@ def generate_sam(
 
     for path_fasta in paths_fasta:
         name_fasta = Path(path_fasta).stem
-        len_sequence = len(Path(path_fasta).read_text().split("\n")[1])
-        presets = ["map-ont", "splice"]
-        if len_sequence < 500:
-            presets += ["sr"]
+        presets = ["map-ont", "splice", "sr"]
 
         path_sam_directory = Path(ARGS.tempdir, name, "sam", name_fasta)
         path_sam_directory.mkdir(parents=True, exist_ok=True)
