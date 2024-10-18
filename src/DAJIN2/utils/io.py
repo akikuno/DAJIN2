@@ -5,9 +5,9 @@ import hashlib
 import json
 import pickle
 import re
+from collections.abc import Iterator
 from io import BufferedReader
 from pathlib import Path
-from typing import Generator
 
 import wslPath
 from openpyxl import Workbook, load_workbook
@@ -17,7 +17,7 @@ from openpyxl import Workbook, load_workbook
 ###########################################################
 
 
-def read_sam(path_of_sam: str | Path) -> Generator[list]:
+def read_sam(path_of_sam: str | Path) -> Iterator[list]:
     with open(path_of_sam) as f:
         for line in f:
             yield line.strip().split("\t")
@@ -33,7 +33,7 @@ def save_pickle(data: object, file_path: Path) -> None:
         pickle.dump(data, f)
 
 
-def read_jsonl(file_path: str | Path) -> Generator[dict]:
+def read_jsonl(file_path: str | Path) -> Iterator[dict]:
     with open(file_path) as f:
         for line in f:
             yield json.loads(line)
@@ -142,8 +142,8 @@ def load_batchfile(batchfile_path: str) -> list[dict[str, str]]:
 
 
 def count_newlines(filepath: str | Path) -> int:
-    def read_in_chunks(file: BufferedReader, chunk_size: int = 2**16) -> Generator[bytes, None, None]:
-        """Get a generator that reads a file in chunks and yields each chunk."""
+    def read_in_chunks(file: BufferedReader, chunk_size: int = 2**16) -> Iterator[bytes, None, None]:
+        """Get a Iterator that reads a file in chunks and yields each chunk."""
         while True:
             chunk = file.read(chunk_size)
             if not chunk:

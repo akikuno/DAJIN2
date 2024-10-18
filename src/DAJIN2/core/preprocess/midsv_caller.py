@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Generator
 
 import midsv
 
@@ -71,7 +71,7 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
 
 def extract_best_alignment_length_from_sam(
     path_sam_files: list[Path], best_preset: dict[str, str]
-) -> Generator[list[str]]:
+) -> Iterator[list[str]]:
     flag_header = False
     for path in path_sam_files:
         preset = path.stem
@@ -87,11 +87,11 @@ def extract_best_alignment_length_from_sam(
         flag_header = True
 
 
-def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]]:
+def transform_to_midsv_format(sam: Iterator[list[str]]) -> Iterator[list[dict]]:
     yield from midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep={"FLAG"})
 
 
-def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
+def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -> Iterator[list[dict]]:
     """
     Replace internal 'N's with 'D' in a given sequence.
     This function modifies the 'CSSPLIT' field in the input sample. It identifies
@@ -120,7 +120,7 @@ def is_reverse_strand(flag: int) -> bool:
     return bool(flag & 16)
 
 
-def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[list[dict]]:
+def convert_flag_to_strand(midsv_sample: Iterator[list[dict]]) -> Iterator[list[dict]]:
     """Convert FLAG to STRAND (+ or -)"""
     for samp in midsv_sample:
         samp["STRAND"] = "-" if is_reverse_strand(int(samp["FLAG"])) else "+"
@@ -128,8 +128,8 @@ def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[lis
         yield samp
 
 
-def filter_samples_by_n_proportion(midsv_sample: Generator[dict], threshold: int = 95) -> Generator[list[dict]]:
-    """Filters out the samples from the input generator where the proportion of 'N' in the 'CSSPLIT' field is 95% or higher."""
+def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int = 95) -> Iterator[list[dict]]:
+    """Filters out the samples from the input Iterator where the proportion of 'N' in the 'CSSPLIT' field is 95% or higher."""
     for samp in midsv_sample:
         cssplits = samp.get("CSSPLIT", "").split(",")
         count = Counter(cssplits)
@@ -185,7 +185,7 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
     return ",".join(cssplit_reversed[::-1])
 
 
-def convert_consecutive_indels(midsv_sample: Generator) -> Generator[list[dict]]:
+def convert_consecutive_indels(midsv_sample: Iterator) -> Iterator[list[dict]]:
     """
     Due to alignment errors, there can be instances where a true match is mistakenly replaced with "insertion following a deletion".
     For example, although it should be "=C,=T", it gets replaced by "-C,+C|=T". In such cases, a process is performed to revert it back to "=C,=T".

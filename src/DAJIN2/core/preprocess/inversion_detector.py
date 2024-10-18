@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from itertools import groupby
 from pathlib import Path
-from typing import Generator
 
 import numpy as np
 from rapidfuzz import process
@@ -23,7 +23,7 @@ import cstag
 ###########################################################
 
 
-def extract_inversions(midsv_sample: Generator[list[str]]) -> list[dict[int, int, str, str]]:
+def extract_inversions(midsv_sample: Iterator[list[str]]) -> list[dict[int, int, str, str]]:
     """Extract sequence of inversions and their start and end indices."""
     inversions = []
     for m_sample in midsv_sample:
@@ -56,7 +56,7 @@ def _convert_sequences_to_distances(sequences: list[str]) -> list[float]:
     return distances
 
 
-def _convert_to_scores(start_end: Generator[int, int], distances: list[float]) -> list[int, int, float]:
+def _convert_to_scores(start_end: Iterator[int, int], distances: list[float]) -> list[int, int, float]:
     scores = []
     for (start, end), dist in zip(start_end, distances):
         scores.append([start, end, dist])

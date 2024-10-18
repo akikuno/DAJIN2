@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Generator
 
 from sklearn.tree import DecisionTreeClassifier
 
@@ -42,7 +42,7 @@ def is_strand_bias(path_control: Path) -> bool:
 ###############################################################################
 
 
-def count_strand(labels: list[int], samples: Generator[dict[str, str]]) -> tuple[dict[str, int], dict[str, int]]:
+def count_strand(labels: list[int], samples: Iterator[dict[str, str]]) -> tuple[dict[str, int], dict[str, int]]:
     """Count the occurrences of each strand type by label."""
     positive_strand_counts_by_labels = defaultdict(int)
     total_counts_by_labels = defaultdict(int)

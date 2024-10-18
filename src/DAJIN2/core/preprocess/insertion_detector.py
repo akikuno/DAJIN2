@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 import uuid
 from collections import Counter, defaultdict
+from collections.abc import Iterator
 from itertools import groupby
 from pathlib import Path
-from typing import Generator
 
 import cstag
 import numpy as np
@@ -43,7 +43,7 @@ def clustering_insertions(cssplits_insertion: list[str]) -> list[int]:
 ###########################################################
 
 
-def extract_all_insertions(midsv_sample: Generator, mutation_loci: list[set[str]]) -> dict[int, list[str]]:
+def extract_all_insertions(midsv_sample: Iterator, mutation_loci: list[set[str]]) -> dict[int, list[str]]:
     """To extract insertion sequences of **10 base pairs or more** at each index."""
     insertion_index_sequences_control = defaultdict(list)
     for m_sample in midsv_sample:
@@ -341,7 +341,7 @@ def get_cstag_position(sam_insertions: list[str]) -> tuple[list[str], list[int]]
 
 def mapping_insertion(
     TEMPDIR: Path, SAMPLE_NAME: str, cs_transposed: list[str], consensus_length: int, uuid4: str
-) -> Generator[str]:
+) -> Iterator[str]:
     # Temporarily cache the reference sequence
     cs_insertion = next(cs for cs in cs_transposed if cs != "N" and len(cs) == consensus_length)
     ref_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))

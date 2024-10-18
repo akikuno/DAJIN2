@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Iterator
 from itertools import groupby
-from typing import Generator
 
 from DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 
@@ -12,7 +12,7 @@ def subset_scores(labels: list[int], scores: list[int], label_most: int, length:
     return subset[:length]
 
 
-def call_count(cssplits: Generator[list[str]]) -> list[dict[str, int]]:
+def call_count(cssplits: Iterator[list[str]]) -> list[dict[str, int]]:
     return [dict(Counter(cssplit)) for cssplit in zip(*cssplits)]
 
 
@@ -133,7 +133,7 @@ def make_score(
 ###############################################################################
 
 
-def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Generator[list[float]]:
+def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Iterator[list[float]]:
     for cssplit_kmer in generate_mutation_kmers(path_sample, mutation_loci):
         score = [0 for _ in range(len(cssplit_kmer))]
         for i, (cs_kmer, mut_score) in enumerate(zip(cssplit_kmer, mutation_score)):
