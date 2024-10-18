@@ -27,6 +27,7 @@
 
 + With the end of security support for Python 3.8 in October 2024, we have updated DAJIN2 to support Python 3.9 or later. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0967c463386a48639a614849b3d3e4453079c8b1)]
 
++ Replace typing.Generator to collections.abc.Iterator Since typing.Generator is deprecated. Issue: #53 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f85964a4b8027b547b7b3e370b9e86ff8dda36be)]
 
 ## ⛔️ Deprecated
 
