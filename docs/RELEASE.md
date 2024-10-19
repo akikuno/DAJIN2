@@ -21,6 +21,10 @@
 
 ## 📝 Documentation
 ## 🚀 Performance
+
++ Downsampling the sample reads to a maximum of 10,000. Issue: #58 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/33c2120b59c80afe7f76165b2410b8ffe51410bd)]
+
+
 ## 🌟 New Features
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
