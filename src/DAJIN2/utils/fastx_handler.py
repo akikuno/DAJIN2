@@ -8,6 +8,7 @@ from pathlib import Path
 
 import mappy
 import pysam
+
 from DAJIN2.utils.io import sanitize_name
 
 #################################################
