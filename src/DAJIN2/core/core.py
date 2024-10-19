@@ -99,7 +99,10 @@ def execute_sample(arguments: dict):
     # ============================================================
 
     fastx_handler.save_inputs_as_single_fastx(ARGS.tempdir, ARGS.path_sample, ARGS.sample_name)
-
+    # Save subsetted fastq if the read number is too large (> 10,000 reads)
+    fastx_handler.save_subsetted_fastx(
+        Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz"), num_reads=10_000
+    )
     # ============================================================
     # Mapping with mappy
     # ============================================================
@@ -130,10 +133,10 @@ def execute_sample(arguments: dict):
     }
 
     preprocess.detect_insertions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
-    preprocess.detect_inversions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
+    # preprocess.detect_inversions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles) #TODO
 
     paths_sv_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
+    # paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
     paths_sv_fasta -= paths_predefined_fasta
 
     if paths_sv_fasta:
