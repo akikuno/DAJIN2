@@ -29,6 +29,8 @@
 
 + Replace typing.Generator to collections.abc.Iterator Since typing.Generator is deprecated. Issue: #53 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f85964a4b8027b547b7b3e370b9e86ff8dda36be)]
 
++ Automatically retrieve version information using `importlib.metadata.version` Issue: #59 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/4cf75078b5e7f487b07650e934d63448bc3a328e)]
+
 ## ⛔️ Deprecated
 
 <!-- ############################################################# # -->
