@@ -23,7 +23,7 @@ config.set_warnings_ignore()
 
 
 def count_number_of_clusters(labels_control: list[int], coverage_control: int) -> int:
-    """If there is less than 1% lead within a cluster, they are considered clustering errors and are not counted"""
+    # If there is less than 1% lead within a cluster, they are considered clustering errors and are not counted
     return sum(1 for control_reads in Counter(labels_control).values() if control_reads / coverage_control > 0.01)
 
 
@@ -82,7 +82,7 @@ def return_labels(
     score_control = list(io.read_jsonl(path_score_control))
     X_control = csr_matrix(score_control)
 
-    """Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time"""
+    # Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
     labels_control = BisectingKMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
     scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
@@ -94,7 +94,7 @@ def return_labels(
     coverage_control = len(scores_control_subset)
     labels = optimize_labels(X, coverage_sample, coverage_control, min_cluster_size)
 
-    """Re-allocate clusters with strand bias to clusters without strand bias"""
+    # Re-allocate clusters with strand bias to clusters without strand bias
     if strand_bias_in_control is False:
         labels = remove_biased_clusters(path_sample, path_score_sample, labels)
 

@@ -40,6 +40,7 @@ def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[s
 
 
 def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dict[str, str]:
+    """Select the preset with the longest alignment length."""
     best_preset = defaultdict(str)
     for qname in preset_cigar_by_qname:
         preset_cigar = preset_cigar_by_qname[qname]
@@ -212,13 +213,13 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
 
         if is_control and is_sv:
             """
-            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.json` when control is barcode01, sample is barcode02, and the allele is insertion1.
+            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.jsonl` when control is barcode01, sample is barcode02, and the allele is insertion1.
             """
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"{ARGS.sample_name}_*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
         else:
             """
-            Set the destination for midsv as `barcode02/midsv/insertion1.json` when the sample is barcode02 and the allele is insertion1.
+            Set the destination for midsv as `barcode02/midsv/insertion1.jsonl` when the sample is barcode02 and the allele is insertion1.
             """
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob("*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}.jsonl")
