@@ -315,7 +315,7 @@ def extract_mutation_loci(
     is_consensus: bool = False,
 ) -> list[set[str]]:
     if thresholds is None:
-        thresholds = {"*": 0.5, "-": 0.5, "+": 0.5}
+        thresholds = {"*": 0.1, "-": 0.1, "+": 0.1}
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
 
     # Extract candidate mutation loci
