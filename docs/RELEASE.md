@@ -16,10 +16,16 @@
 
 ## 💥 Breaking
 
-+ Add sr presets to all execusions Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
++ Add `sr` presets to all execusions Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
+
++ Increase the sensitivity by lowering the mutation detection threshold from 0.5% to 0.1% to detect mutations around 0.75%. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0e19752c1a4100d5a9121d54a563698642dc35c1)]
+
++ Use `AgglomerativeClustering` instead of Constrained KMeans because AgglomerativeClustering provides a more global clustering approach, and Constrained KMeans was not very useful due to the unreliability of its `min_cluster_size`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b81711e553edccaec4d6396cf940081163a18471)]
+
 
 
 ## 📝 Documentation
+
 ## 🚀 Performance
 
 + Downsampling the sample reads to a maximum of 10,000. Issue: #58 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/33c2120b59c80afe7f76165b2410b8ffe51410bd)]
