@@ -537,8 +537,8 @@ def detect_insertions(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None
 
     # Update labels
     cstag_insertions_update = {key: cstag_insertions[key] for key in fasta_insertions_unique.keys()}
-    cstag_insertions_update = add_unique_allele_keys(cstag_insertions_update, FASTA_ALLELES, "insertion")
-    fasta_insertions_update = add_unique_allele_keys(fasta_insertions_unique, FASTA_ALLELES, "insertion")
+    cstag_insertions_update = add_unique_allele_keys(cstag_insertions_update, FASTA_ALLELES, key="insertion")
+    fasta_insertions_update = add_unique_allele_keys(fasta_insertions_unique, FASTA_ALLELES, key="insertion")
 
     save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions_update)
     save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions_update)

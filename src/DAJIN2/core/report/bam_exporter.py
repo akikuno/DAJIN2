@@ -18,25 +18,28 @@ def recalculate_sam_coodinates_to_reference(sam: list[list[str]], GENOME_COODINA
             continue
         s[1] = f'SN:{GENOME_COODINATES["chrom"]}'
         s[2] = f'LN:{GENOME_COODINATES["chrom_size"]}'
+
     for s in sam_contents:
         s[2] = GENOME_COODINATES["chrom"]
+
     if GENOME_COODINATES["strand"] == "-":
         sam_contents = sam_handler.revcomp_sam(sam_contents, GENOME_COODINATES["end"])
     else:
         for s in sam_contents:
             s[3] = str(int(s[3]) + GENOME_COODINATES["start"] - 1)
+
     return sam_headers + sam_contents
 
 
 def convert_pos_to_one_indexed(sam_lines: list[list[str]]) -> list[list[str]]:
     """Convert SAM POS from 0-indexed to 1-indexed"""
 
-    def convert_line(line: list[str]) -> list[str]:
+    def convert_index(line: list[str]) -> list[str]:
         if not line[0].startswith("@") and line[3] == "0":
             line[3] = "1"
         return line
 
-    return [convert_line(line) for line in sam_lines]
+    return [convert_index(line) for line in sam_lines]
 
 
 def group_by_name(sam_contents: list[str], clust_sample: list[dict]) -> dict[list]:
@@ -98,7 +101,7 @@ def write_sam_to_bam(sam: list[list[str]], path_sam: str | Path, path_bam: str |
     pysam.index("-@", f"{threads}", str(path_bam))
 
 
-def update_sam(sam: list, GENOME_COODINATES: dict = None) -> list:
+def update_genome_coodinates(sam: list, GENOME_COODINATES: dict = None) -> list:
     if GENOME_COODINATES is None:
         GENOME_COODINATES = {}
 
@@ -118,7 +121,7 @@ def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, UUID, RESULT_SAMPLE
     sam_records = list(io.read_sam(path_sam_input))
 
     # Update sam
-    sam_updated = update_sam(sam_records, GENOME_COODINATES)
+    sam_updated = update_genome_coodinates(sam_records, GENOME_COODINATES)
 
     # Output SAM and BAM
     path_sam_output = Path(TEMPDIR, "report", "BAM", f"temp_{UUID}_{NAME}_control.sam")

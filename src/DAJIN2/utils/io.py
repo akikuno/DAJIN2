@@ -39,7 +39,7 @@ def read_jsonl(file_path: str | Path) -> Iterator[dict]:
             yield json.loads(line)
 
 
-def write_jsonl(data: list[dict], file_path: str | Path) -> None:
+def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> None:
     with open(file_path, "w") as f:
         for d in data:
             json_str = json.dumps(d)
