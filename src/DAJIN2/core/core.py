@@ -64,6 +64,12 @@ def execute_control(arguments: dict):
     preprocess.generate_midsv(ARGS, is_control=True, is_sv=False)
 
     ###########################################################
+    # Detect sequence error reads
+    ###########################################################
+    preprocess.detect_sequence_error_reads(ARGS, is_control=True)
+    preprocess.split_fastq_by_sequence_error(ARGS, is_control=True)
+
+    ###########################################################
     # Prepare data to `extract mutaion loci`
     ###########################################################
     preprocess.cache_mutation_loci(ARGS, is_control=True)
@@ -118,6 +124,13 @@ def execute_sample(arguments: dict):
     # ============================================================
 
     preprocess.generate_midsv(ARGS, is_control=False, is_sv=False)
+
+    ###########################################################
+    # Remove sequence error reads from MIDSV files
+    ###########################################################
+    preprocess.detect_sequence_error_reads(ARGS, is_control=False)
+    preprocess.split_fastq_by_sequence_error(ARGS, is_control=False)
+    preprocess.replace_midsv_without_sequence_errors(ARGS)
 
     # ============================================================
     # Extract mutation loci
