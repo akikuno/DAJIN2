@@ -8,7 +8,6 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
-
 import argparse
 import importlib.metadata
 import logging
@@ -22,7 +21,10 @@ from DAJIN2 import gui, view
 from DAJIN2.core import core
 from DAJIN2.utils import config, input_validator, io, multiprocess, report_generator
 
-DAJIN_VERSION = importlib.metadata.version("DAJIN2")
+try:
+    DAJIN_VERSION = importlib.metadata.version("DAJIN2")
+except importlib.metadata.PackageNotFoundError:
+    DAJIN_VERSION = "counld not be retrieved"
 
 
 def generate_report(name: str, logger: logging.Logger) -> None:
@@ -74,9 +76,7 @@ def validate_headers_of_batch_file(headers: set[str], filepath: str) -> None:
         raise ValueError(f'{filepath} must contain "sample", "control", "allele" and "name" in the header')
 
     if not headers.issubset(accepted_headers):
-        raise ValueError(
-            f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome".'
-        )
+        raise ValueError(f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome".')
 
 
 def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) -> dict[str, str]:
