@@ -22,9 +22,10 @@
 
 + Increase the sensitivity by lowering the mutation detection threshold from 0.5% to 0.1% to detect mutations around 0.75%. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0e19752c1a4100d5a9121d54a563698642dc35c1)]
 
-+ Use `AgglomerativeClustering` instead of Constrained KMeans because AgglomerativeClustering provides a more global clustering approach, and Constrained KMeans was not very useful due to the unreliability of its `min_cluster_size`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b2e717faa5ed17cdc18217d537cf49de6ca7c0b4)]
++ Use `AgglomerativeClustering` instead of Constrained KMeans because AgglomerativeClustering provides a more global clustering approach, and Constrained KMeans was not very useful due to the unreliability of its `min_cluster_size`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b81711e553edccaec4d6396cf940081163a18471)]
 
-+ Output seqence error reads as `BAM/{name}/sequence_errors.bam`. Issue: #61 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
++ Output seqence error reads as `BAM/{name}/sequence_errors.bam`. Issue: #61 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b2e717faa5ed17cdc18217d537cf49de6ca7c0b4)]
+
 ## 📝 Documentation
 
 ## 🚀 Performance
