@@ -79,7 +79,7 @@ def execute_control(arguments: dict):
     ###########################################################
     logger.info(f"Output BAM files of {arguments['control']}...")
     report.bam_exporter.export_to_bam(
-        ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, ARGS.uuid, is_control=True
+        ARGS.tempdir, ARGS.control_name, ARGS.genome_coordinates, ARGS.threads, is_control=True
     )
     ###########################################################
     # Finish call
@@ -240,7 +240,7 @@ def execute_sample(arguments: dict):
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
     # BAM
     report.bam_exporter.export_to_bam(
-        ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, ARGS.uuid, RESULT_SAMPLE
+        ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE
     )
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
