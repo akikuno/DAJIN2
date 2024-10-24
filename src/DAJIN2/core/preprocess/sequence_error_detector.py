@@ -85,7 +85,7 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     midsv_tags_all = midsv_tags_error + midsv_tags_sample
 
     sample_number = io.count_newlines(path_midsv_sample)
-    min_cluster_size = int(sample_number * error_fraction_control) + len(midsv_tags_error)
+    min_cluster_size = int(sample_number * error_fraction_control)
 
     vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(3, 3)).fit(midsv_tags_all)
     X_all = vectorizer.transform(midsv_tags_all)
