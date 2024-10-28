@@ -5,6 +5,7 @@ from collections import Counter
 from pathlib import Path
 
 import numpy as np
+from scipy.sparse import hstack
 from sklearn.cluster import HDBSCAN, KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -40,6 +41,9 @@ def detect_sequence_error_reads_in_control(ARGS) -> None:
     # Vectorize the MIDSV tags using TF-IDF with character-level 3-grams
     vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(3, 3))
     X = vectorizer.fit_transform(midsv_tags)
+    # Add a feature for the number of matches in the X
+    match_counts = np.array([tag.count("M") for tag in midsv_tags], dtype=int)
+    X = hstack([X, match_counts.reshape(-1, 1)])
 
     # Apply KMeans clustering for binary classification based on the similarity of MIDSV.
     kmeans = KMeans(n_clusters=2, random_state=1)
@@ -55,27 +59,33 @@ def detect_sequence_error_reads_in_control(ARGS) -> None:
     # Determine which label corresponds to the sequences with fewer matches and treat them as sequence errors.
     error_label = 0 if np.median(match_counts[0]) < np.median(match_counts[1]) else 1
 
-    # Collect QNAMEs of sequences with sequence errors
-    qnames_sequence_error = [qname for qname, label in zip(qnames, labels) if label == error_label]
+    # Collect QNAMEs of sequences with or without sequence errors
+    qnames_with_sequence_error = [qname for qname, label in zip(qnames, labels) if label == error_label]
+    qnames_without_sequence_error = [qname for qname, label in zip(qnames, labels) if label != error_label]
 
-    error_fraction = len(qnames_sequence_error) / len(qnames)
+    error_fraction = len(qnames_with_sequence_error) / len(qnames)
 
     # Output QNAMEs of sequences with sequence errors and the fraction of sequence errors
     Path(ARGS.tempdir, ARGS.control_name, "sequence_error").mkdir(parents=True, exist_ok=True)
-    path_qnames_error_control = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_sequence_error.txt")
-    path_qnames_error_control.write_text("\n".join(qnames_sequence_error) + "\n")
+    path_qnames_with_sequence_error = Path(
+        ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_with_sequence_error.txt"
+    )
+    path_qnames_with_sequence_error.write_text("\n".join(qnames_with_sequence_error) + "\n")
+    path_qnames_without_sequence_error = Path(
+        ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_without_sequence_error.txt"
+    )
+    path_qnames_without_sequence_error.write_text("\n".join(qnames_without_sequence_error) + "\n")
     path_error_fraction = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "error_fraction.txt")
     path_error_fraction.write_text(str(error_fraction) + "\n")
 
 
 def detect_sequence_error_reads_in_sample(ARGS) -> None:
-    path_qnames_error_control = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_sequence_error.txt")
-    qnames_error_control = set(path_qnames_error_control.read_text().splitlines())
-    path_error_fraction_control = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "error_fraction.txt")
-    error_fraction_control = float(path_error_fraction_control.read_text())
-
     midsv_control = io.read_jsonl(Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", "control.jsonl"))
-    midsv_errors = (m for m in midsv_control if m["QNAME"] in qnames_error_control)
+    path_qnames_without_sequence_error = Path(
+        ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_with_sequence_error.txt"
+    )
+    qnames_with_sequence_error_control = set(path_qnames_without_sequence_error.read_text().splitlines())
+    midsv_errors = (m for m in midsv_control if m["QNAME"] in qnames_with_sequence_error_control)
     midsv_tags_error = [parse_midsv_from_csv(m["CSSPLIT"].split(",")) for m in midsv_errors]
 
     path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}.jsonl")
@@ -85,23 +95,30 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     midsv_tags_all = midsv_tags_error + midsv_tags_sample
 
     sample_number = io.count_newlines(path_midsv_sample)
-    min_cluster_size = int(sample_number * error_fraction_control)
+    path_error_fraction = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "error_fraction.txt")
+    error_fraction = min(0.9, float(path_error_fraction.read_text()) + 0.1)
+    max_cluster_size = int(sample_number * error_fraction)
 
     vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(3, 3)).fit(midsv_tags_all)
     X_all = vectorizer.transform(midsv_tags_all)
-    labels_hdbscan = HDBSCAN(min_cluster_size=min_cluster_size).fit_predict(X_all).tolist()
+    labels_hdbscan = HDBSCAN(max_cluster_size=max_cluster_size).fit_predict(X_all).tolist()
+
     len_seq_error = len(midsv_tags_error)
     labels_error = labels_hdbscan[:len_seq_error]
     labels_sample = labels_hdbscan[len_seq_error:]
     label_error = Counter(labels_error).most_common()[0][0]
 
     midsv_sample = io.read_jsonl(path_midsv_sample)
-    error_qnames_sample = [m["QNAME"] for m, label in zip(midsv_sample, labels_sample) if label == label_error]
+    qnames_without_sequence_error = [
+        m["QNAME"] for m, label in zip(midsv_sample, labels_sample) if label != label_error
+    ]
 
     # Output QNAMEs of sequences with sequence errors and the fraction of sequence errors
     Path(ARGS.tempdir, ARGS.sample_name, "sequence_error").mkdir(parents=True, exist_ok=True)
-    path_qnames_error_control = Path(ARGS.tempdir, ARGS.sample_name, "sequence_error", "qnames_sequence_error.txt")
-    path_qnames_error_control.write_text("\n".join(error_qnames_sample) + "\n")
+    path_qnames_without_sequence_error = Path(
+        ARGS.tempdir, ARGS.sample_name, "sequence_error", "qnames_without_sequence_error.txt"
+    )
+    path_qnames_without_sequence_error.write_text("\n".join(qnames_without_sequence_error) + "\n")
 
 
 def detect_sequence_error_reads(ARGS, is_control: bool = False) -> None:
@@ -122,22 +139,23 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
     else:
         NAME = ARGS.sample_name
 
-    path_qnames_error_sample = Path(ARGS.tempdir, NAME, "sequence_error", "qnames_sequence_error.txt")
+    path_qnames_without_sequence_error = Path(ARGS.tempdir, NAME, "sequence_error", "qnames_without_sequence_error.txt")
+    qnames_without_error = set(path_qnames_without_sequence_error.read_text().splitlines())
+
     path_fastq = Path(ARGS.tempdir, NAME, "fastq", f"{NAME}.fastq.gz")
     path_fastq_error = Path(ARGS.tempdir, NAME, "fastq", f"{NAME}_sequence_error.fastq.gz")
-    qnames_error_sample = set(path_qnames_error_sample.read_text().splitlines())
 
     fastq: list[dict] = parse_fastq(read_lines(path_fastq))
 
     # -----------------------------------------------------
     # Split FASTQ by sequence error
     # -----------------------------------------------------
-    fastq_filtered = []
+    fastq_passed = []
     fastq_error = []
     for fastq_record in fastq:
         qname = fastq_record["header"].split()[0][1:]
-        if qname not in qnames_error_sample:
-            fastq_filtered.append(fastq_record)
+        if qname in qnames_without_error:
+            fastq_passed.append(fastq_record)
         else:
             fastq_error.append(fastq_record)
 
@@ -145,7 +163,7 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
     # Output FASTQ files
     # -----------------------------------------------------
     with gzip.open(path_fastq, "wt") as f:
-        for read in fastq_filtered:
+        for read in fastq_passed:
             f.write(f"{read['header']}\n{read['sequence']}\n{read['annotate']}\n{read['quality']}\n")
 
     with gzip.open(path_fastq_error, "wt") as f:
@@ -159,10 +177,12 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
 
 
 def replace_midsv_without_sequence_errors(ARGS) -> None:
-    path_qnames_error_sample = Path(ARGS.tempdir, ARGS.sample_name, "sequence_error", "qnames_sequence_error.txt")
-    qnames_error_sample = set(path_qnames_error_sample.read_text().splitlines())
+    path_qnames_without_sequence_error = Path(
+        ARGS.tempdir, ARGS.sample_name, "sequence_error", "qnames_without_sequence_error.txt"
+    )
+    qnames_without_sequence_error = set(path_qnames_without_sequence_error.read_text().splitlines())
 
     for path_midsv in Path(ARGS.tempdir, ARGS.sample_name, "midsv").glob(f"*/{ARGS.sample_name}.jsonl"):
         midsv_sample = io.read_jsonl(path_midsv)
-        midsv_sample_filtered = [m for m in midsv_sample if m["QNAME"] not in qnames_error_sample]
+        midsv_sample_filtered = [m for m in midsv_sample if m["QNAME"] in qnames_without_sequence_error]
         io.write_jsonl(midsv_sample_filtered, path_midsv)
