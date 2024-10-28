@@ -97,6 +97,6 @@ split-on-trailing-comma = true
 [tool.ruff.format]
 quote-style = "double"
 
-
-[tool.ruff.lint.pyupgrade]
-keep-runtime-typing = true # Settings for Python 3.8 compatibility
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = true
