@@ -16,7 +16,7 @@
 
 ## 💥 Breaking
 
-+ Add `preprocess.sequence_error_detector` to exclude Nanopore sequence errors from the analysis. Issue: #60 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/329493dbfe6c0d03a6f8aadaab88911900f35dbb)]
++ Add `preprocess.sequence_error_handler` to exclude Nanopore sequence errors from the analysis. Issue: #60 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/329493dbfe6c0d03a6f8aadaab88911900f35dbb)]
 
 + Add `sr` presets to all execusions in `preprocess.mapping`. Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
 
