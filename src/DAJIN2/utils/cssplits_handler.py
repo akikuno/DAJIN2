@@ -26,6 +26,7 @@ def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
 
     return left_idx_n - 1, right_idx_n + 1
 
+
 # ToDo: 点変異が扱えていない。convert_cssplits_to_cstagをinversion検出用に改変すれば、必要なくなる。
 def convert_cssplit_to_dna(cssplit: str) -> str:
     """Convert a cssplit to a plain DNA sequence."""
