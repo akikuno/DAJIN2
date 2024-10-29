@@ -45,7 +45,9 @@ def _check_duplicates_of_sets(set1: set[str], set2: set[str]) -> bool:
     return len(union_set) != total_elements
 
 
-def add_unique_allele_keys(fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, set], key: str) -> dict[str, str]:
+def add_unique_allele_keys(
+    fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, set], key: str
+) -> dict[str, str]:
     """
     Update keys to avoid duplicating user-specified alleles.
     If the allele 'insertion1' exists in FASTA_ALLELES, increment the digits.
