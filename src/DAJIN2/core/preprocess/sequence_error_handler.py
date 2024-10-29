@@ -10,7 +10,7 @@ from sklearn.cluster import HDBSCAN, KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from DAJIN2.utils import io
-from DAJIN2.utils.fastx_handler import parse_fastq, read_lines
+from DAJIN2.utils.fastx_handler import read_fastq
 
 ###############################################################################
 # Detect sequence errors
@@ -145,7 +145,7 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
     path_fastq = Path(ARGS.tempdir, NAME, "fastq", f"{NAME}.fastq.gz")
     path_fastq_error = Path(ARGS.tempdir, NAME, "fastq", f"{NAME}_sequence_error.fastq.gz")
 
-    fastq: list[dict] = parse_fastq(read_lines(path_fastq))
+    fastq: list[dict] = read_fastq(path_fastq)
 
     # -----------------------------------------------------
     # Split FASTQ by sequence error
@@ -153,7 +153,7 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
     fastq_passed = []
     fastq_error = []
     for fastq_record in fastq:
-        qname = fastq_record["header"].split()[0][1:]
+        qname = fastq_record["identifier"].split()[0][1:]
         if qname in qnames_without_error:
             fastq_passed.append(fastq_record)
         else:
@@ -164,11 +164,11 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
     # -----------------------------------------------------
     with gzip.open(path_fastq, "wt") as f:
         for read in fastq_passed:
-            f.write(f"{read['header']}\n{read['sequence']}\n{read['annotate']}\n{read['quality']}\n")
+            f.write(f"{read['identifier']}\n{read['sequence']}\n{read['separator']}\n{read['quality']}\n")
 
     with gzip.open(path_fastq_error, "wt") as f:
         for read in fastq_error:
-            f.write(f"{read['header']}\n{read['sequence']}\n{read['annotate']}\n{read['quality']}\n")
+            f.write(f"{read['identifier']}\n{read['sequence']}\n{read['separator']}\n{read['quality']}\n")
 
 
 ###############################################################################

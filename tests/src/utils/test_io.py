@@ -83,6 +83,22 @@ def test_write_jsonl():
     os.remove(test_filename)
 
 
+########################################################################
+# is_gip_file
+########################################################################
+
+
+@pytest.mark.parametrize(
+    "path_file, expected",
+    [
+        ("tests/data/utils/io/test.fasta.gz", True),
+        ("tests/data/utils/io/test.fasta", False),
+    ],
+)
+def test_is_gzip_file(path_file, expected):
+    assert io.is_gzip_file(path_file) == expected
+
+
 # Utility function to create a temporary file and write some data into it
 def create_temp_file(tmp_path, filename, content):
     file_path = tmp_path / filename

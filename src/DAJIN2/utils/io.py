@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import gzip
 import hashlib
 import json
 import pickle
@@ -17,10 +18,18 @@ from openpyxl import Workbook, load_workbook
 ###########################################################
 
 
+# =========================================================
+# SAM/BAM
+# =========================================================
 def read_sam(path_of_sam: str | Path) -> Iterator[list]:
     with open(path_of_sam) as f:
         for line in f:
             yield line.strip().split("\t")
+
+
+# =========================================================
+# Pickle
+# =========================================================
 
 
 def load_pickle(file_path: Path):
@@ -31,6 +40,11 @@ def load_pickle(file_path: Path):
 def save_pickle(data: object, file_path: Path) -> None:
     with open(file_path, "wb") as f:
         pickle.dump(data, f)
+
+
+# =========================================================
+# JSONL
+# =========================================================
 
 
 def read_jsonl(file_path: str | Path) -> Iterator[dict]:
@@ -46,50 +60,9 @@ def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> Non
             f.write(json_str + "\n")
 
 
-def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:
-    # Create a workbook and a worksheet
-    wb = Workbook()
-    ws = wb.active
-
-    if not data:
-        wb.save(file_path)
-        return
-
-    # Initialize headers with the keys of the first dictionary, maintaining order
-    headers = list(data[0].keys())
-
-    # Check for new keys in the subsequent dictionaries and append them to the headers list
-    for item in data[1:]:
-        for key in item.keys():
-            if key not in headers:
-                headers.append(key)
-
-    # Write the headers to the first row
-    ws.append(headers)
-
-    # Write the data to Excel
-    for item in data:
-        row = [item.get(header, "") for header in headers]
-        ws.append(row)
-
-    # Save the file
-    wb.save(file_path)
-
-
-###########################################################
-# Load batch file
-###########################################################
-
-
-def determine_file_type(file_path: str) -> str | None:
-    """Determine if the file is an Excel or CSV file. Raise error for other types."""
-    file_extension = Path(file_path).suffix
-    if file_extension in [".xlsx", ".xls"]:
-        return "excel"
-    elif file_extension == ".csv":
-        return "csv"
-    else:
-        raise ValueError("The provided file must be either an Excel or CSV file.")
+# =========================================================
+# Table (Excel, CSV)
+# =========================================================
 
 
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
@@ -125,6 +98,130 @@ def read_csv(file_path: str | Path) -> list[dict[str, str]]:
             records.append(row_data)
 
         return records
+
+
+def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:
+    # Create a workbook and a worksheet
+    wb = Workbook()
+    ws = wb.active
+
+    if not data:
+        wb.save(file_path)
+        return
+
+    # Initialize headers with the keys of the first dictionary, maintaining order
+    headers = list(data[0].keys())
+
+    # Check for new keys in the subsequent dictionaries and append them to the headers list
+    for item in data[1:]:
+        for key in item.keys():
+            if key not in headers:
+                headers.append(key)
+
+    # Write the headers to the first row
+    ws.append(headers)
+
+    # Write the data to Excel
+    for item in data:
+        row = [item.get(header, "") for header in headers]
+        ws.append(row)
+
+    # Save the file
+    wb.save(file_path)
+
+
+# =========================================================
+# FASTA / FASTQ
+# =========================================================
+
+
+def is_gzip_file(path_file: str | Path) -> bool:
+    """Check if a file is a GZip compressed file."""
+    try:
+        with Path(path_file).open("rb") as f:
+            return f.read(2) == b"\x1f\x8b"
+    except OSError:
+        return False
+
+
+def read_lines(path_fastx: str | Path) -> Iterator[str]:
+    if is_gzip_file(path_fastx):
+        with gzip.open(path_fastx, "rt") as f:
+            yield from [line.strip() for line in f]
+    else:
+        with open(path_fastx) as f:
+            yield from [line.strip() for line in f]
+
+
+def detect_fastx_format(path_fastx: str | Path) -> str:
+    fastx_iterator = read_lines(path_fastx)
+    lines = [next(fastx_iterator).strip() for _ in range(4)]
+
+    if lines[0].startswith(">"):
+        return "FASTA"
+    elif lines[0].startswith("@") and lines[2].startswith("+"):
+        return "FASTQ"
+    raise ValueError("File format is unknown. The input does not appear to be in FASTA or FASTQ format.")
+
+
+def read_fastq(path_fastx: str | Path) -> Iterator[dict]:
+    """Read a FASTQ file and yield each record as a dictionary."""
+    iterator = read_lines(path_fastx)
+    try:
+        while True:
+            identifier = next(iterator).strip()
+            sequence = next(iterator).strip()
+            separator = next(iterator).strip()
+            quality = next(iterator).strip()
+            yield {"identifier": identifier, "sequence": sequence, "separator": separator, "quality": quality}
+    except StopIteration:
+        return
+
+
+def read_fasta(path_fasta: str | Path) -> Iterator[dict]:
+    """Read a FASTA file and yield each record as a dictionary."""
+    iterator = read_lines(path_fasta)
+    try:
+        while True:
+            identifier = next(iterator).strip()
+            sequence = next(iterator).strip()
+            yield {"identifier": identifier, "sequence": sequence}
+    except StopIteration:
+        return
+
+
+def write_fasta(data: list[dict] | Iterator[dict], file_path: str | Path, is_gzip: bool = True) -> None:
+    open_func = gzip.open if is_gzip else open
+    mode = "wt" if is_gzip else "w"
+
+    with open_func(file_path, mode) as f:
+        for record in data:
+            f.write(f"{record['identifier']}\n{record['sequence']}\n")
+
+
+def write_fastq(data: list[dict] | Iterator[dict], file_path: str | Path, is_gzip: bool = True) -> None:
+    open_func = gzip.open if is_gzip else open
+    mode = "wt" if is_gzip else "w"
+
+    with open_func(file_path, mode) as f:
+        for record in data:
+            f.write(f"{record['identifier']}\n{record['sequence']}\n{record['separator']}\n{record['quality']}\n")
+
+
+###########################################################
+# Load batch file
+###########################################################
+
+
+def determine_file_type(file_path: str) -> str | None:
+    """Determine if the file is an Excel or CSV file. Raise error for other types."""
+    file_extension = Path(file_path).suffix
+    if file_extension in [".xlsx", ".xls"]:
+        return "excel"
+    elif file_extension == ".csv":
+        return "csv"
+    else:
+        raise ValueError("The provided file must be either an Excel or CSV file.")
 
 
 def load_batchfile(batchfile_path: str) -> list[dict[str, str]]:
