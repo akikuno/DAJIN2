@@ -43,6 +43,8 @@
 
 + Automatically retrieve version information using `importlib.metadata.version` Issue: #59 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/4cf75078b5e7f487b07650e934d63448bc3a328e)]
 
++ Move the FASTX IO processing to `utils.io`. Issue: #66 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cca3db0b13ac53e082e2272f7ee7f593f905bd25)]
+
 ## ⛔️ Deprecated
 
 <!-- ############################################################# # -->
