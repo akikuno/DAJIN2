@@ -20,7 +20,7 @@ def execute_control(arguments: dict):
     logger.info(f"{arguments['control']} is now processing...")
 
     ###########################################################
-    # Preprocess
+    # Setup arguments
     ###########################################################
     ARGS: FormattedInputs = preprocess.format_inputs(arguments)
     preprocess.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
@@ -37,20 +37,44 @@ def execute_control(arguments: dict):
     logger.info(f"Preprocess {arguments['control']}...")
 
     ###########################################################
-    # Merge fastq files
+    # Concatenate fastq files
     ###########################################################
 
-    fastx_handler.save_inputs_as_single_fastx(ARGS.tempdir, ARGS.path_control, ARGS.control_name)
-    # Save subsetted fastq if the read number is too large (> 10,000 reads)
-    fastx_handler.save_subsetted_fastx(
-        Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz"), num_reads=10_000
-    )
-    ###########################################################
-    # Mapping
-    ###########################################################
+    fastx_handler.save_inputs_as_single_fastq(ARGS, is_control=True)
 
+    path_fastq = Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz")
+    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=20_000)
+
+    ###########################################################
     # Export fasta files as single-FASTA format
-    fastx_handler.export_fasta_files(ARGS.tempdir, ARGS.fasta_alleles, ARGS.control_name)
+    ###########################################################
+    fastx_handler.export_fasta_files(ARGS, is_control=True)
+
+    ###########################################################
+    # Separate fastq files by sequence error
+    ###########################################################
+    paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("control.fasta")
+    preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_sv=False)
+    preprocess.generate_midsv(ARGS, is_control=True, is_sv=False)
+    # ============================================================
+    # Detect sequence error reads
+    # ============================================================
+    preprocess.detect_sequence_error_reads(ARGS, is_control=True)
+    preprocess.split_fastq_by_sequence_error(ARGS, is_control=True)
+
+    # ============================================================
+    # Save subsetted fastq if the read number is too large (> 10,000 reads)
+    # ============================================================
+    path_fastq = Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz")
+    path_fastq_with_error = Path(
+        ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}_sequence_error.fastq.gz"
+    )
+    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=10_000)
+    fastx_handler.overwrite_with_downsampled_fastq(path_fastq_with_error, num_reads=10_000)
+
+    ###########################################################
+    # Mapping filtered control reads
+    ###########################################################
 
     # ============================================================
     # Mapping using mappy
@@ -58,16 +82,10 @@ def execute_control(arguments: dict):
     paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
     preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_sv=False)
 
-    ###########################################################
+    # ============================================================
     # MIDSV conversion
-    ###########################################################
+    # ============================================================
     preprocess.generate_midsv(ARGS, is_control=True, is_sv=False)
-
-    ###########################################################
-    # Detect sequence error reads
-    ###########################################################
-    preprocess.detect_sequence_error_reads(ARGS, is_control=True)
-    preprocess.split_fastq_by_sequence_error(ARGS, is_control=True)
 
     ###########################################################
     # Prepare data to `extract mutaion loci`
@@ -104,11 +122,12 @@ def execute_sample(arguments: dict):
     # Merge fastq files
     # ============================================================
 
-    fastx_handler.save_inputs_as_single_fastx(ARGS.tempdir, ARGS.path_sample, ARGS.sample_name)
+    fastx_handler.save_inputs_as_single_fastq(ARGS, is_control=False)
+
     # Save subsetted fastq if the read number is too large (> 10,000 reads)
-    fastx_handler.save_subsetted_fastx(
-        Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz"), num_reads=10_000
-    )
+    path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
+    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=10_000)
+
     # ============================================================
     # Mapping with mappy
     # ============================================================

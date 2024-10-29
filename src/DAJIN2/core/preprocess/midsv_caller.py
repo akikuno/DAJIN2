@@ -205,6 +205,9 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
+        if not Path(ARGS.tempdir, name, "sam", allele).exists():
+            continue
+
         path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele)
         path_midsv_directory.mkdir(parents=True, exist_ok=True)
 

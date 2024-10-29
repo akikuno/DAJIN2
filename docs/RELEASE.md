@@ -35,6 +35,7 @@
 
 ## 🌟 New Features
 ## 🐛 Bug Fixes
+
 ## 🔧 Maintenance
 
 + With the end of security support for Python 3.8 in October 2024, we have updated DAJIN2 to support Python 3.9 or later. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0967c463386a48639a614849b3d3e4453079c8b1)]
