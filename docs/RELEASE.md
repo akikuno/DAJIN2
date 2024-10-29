@@ -18,8 +18,8 @@
 
 + Add `preprocess.sequence_error_handler` to exclude Nanopore sequence errors from the analysis. Issue: #60 
   + Initial commit [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/329493dbfe6c0d03a6f8aadaab88911900f35dbb)]
-  + Since most Nanopore sequencing errors occur due to read interruptions, `parse_midsv_from_csv` classifies entries as either Unknown or Other (M). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
-  + Instead of strategies like Cosine similarity or HDBSCAN, the Jaro-Winkler distance is explicitly used as a string similarity metric. Jaro-Winkler was chosen because Levenshtein would be too time-consuming. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
+  + Since most Nanopore sequencing errors occur due to read interruptions, `parse_midsv_from_csv` classifies entries as either Unknown or Other (M). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
+  + Instead of strategies like Cosine similarity or HDBSCAN, the Jaro-Winkler distance is explicitly used as a string similarity metric. Jaro-Winkler was chosen because Levenshtein would be too time-consuming. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
 
 + Add `sr` presets to all execusions in `preprocess.mapping`. Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
 
