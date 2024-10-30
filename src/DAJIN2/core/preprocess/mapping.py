@@ -116,7 +116,7 @@ def generate_sam(
 
     for path_fasta in paths_fasta:
         name_fasta = Path(path_fasta).stem
-        presets = ["map-ont", "splice", "sr"]
+        presets = ["map-ont", "map-hifi", "sr"]
 
         path_sam_directory = Path(ARGS.tempdir, name, "sam", name_fasta)
         path_sam_directory.mkdir(parents=True, exist_ok=True)
