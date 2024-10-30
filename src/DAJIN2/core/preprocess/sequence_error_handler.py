@@ -24,6 +24,8 @@ def parse_midsv_from_csv(csv_tags: list[list[str]]) -> str:
     for tag in csv_tags:
         if tag.startswith("N") or tag.startswith("n"):
             midsv_seq.append("N")
+        elif tag.startswith("-"):
+            midsv_seq.append("D")
         else:
             midsv_seq.append("M")
     return "".join(midsv_seq)
@@ -124,9 +126,7 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
     else:
         NAME = ARGS.sample_name
 
-    path_qnames_without_sequence_error = Path(
-        ARGS.tempdir, NAME, "sequence_error", "qnames_without_sequence_error.txt"
-    )
+    path_qnames_without_sequence_error = Path(ARGS.tempdir, NAME, "sequence_error", "qnames_without_sequence_error.txt")
     qnames_without_error = set(path_qnames_without_sequence_error.read_text().splitlines())
 
     path_fastq = Path(ARGS.tempdir, NAME, "fastq", f"{NAME}.fastq.gz")
