@@ -16,6 +16,8 @@
 
 ## 💥 Breaking
 
++ Support for PacBio HiFi reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/69773342d3bf157f28db013d62796be43ae297e7)]
+
 + Add `preprocess.sequence_error_handler` to exclude Nanopore sequence errors from the analysis. Issue: #60 
   + Initial commit [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/329493dbfe6c0d03a6f8aadaab88911900f35dbb)]
   + Since most Nanopore sequencing errors occur due to read interruptions, `parse_midsv_from_csv` classifies entries as either Unknown or Other (M). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
