@@ -24,8 +24,6 @@ def parse_midsv_from_csv(csv_tags: list[list[str]]) -> str:
     for tag in csv_tags:
         if tag.startswith("N") or tag.startswith("n"):
             midsv_seq.append("N")
-        elif tag.startswith("-"):
-            midsv_seq.append("D")
         else:
             midsv_seq.append("M")
     return "".join(midsv_seq)
