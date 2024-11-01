@@ -28,10 +28,13 @@ jobs:
           activate-environment: test-env
           channels: bioconda, conda-forge, defaults
 
-      - name: Create conda environment and install dependencies
+      - name: Create and activate conda environment
         run: |
           conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
           conda activate env-dajin2
+
+      - name: Install DAJIN2 and dependencies
+        run: |
           pip install -e .  # Install DAJIN2 in editable mode
 
       - name: Download example dataset

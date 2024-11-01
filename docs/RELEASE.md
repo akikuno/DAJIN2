@@ -51,6 +51,8 @@
 
 + Move the FASTX IO processing to `utils.io`. Issue: #66 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cca3db0b13ac53e082e2272f7ee7f593f905bd25)]
 
++ Add E2E tests in Github Actions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8fb93621ae7b9c4e867a68e9160c3295bfb0f872)]
+
 ## ⛔️ Deprecated
 
 <!-- ############################################################# # -->
