@@ -1,0 +1,55 @@
+name: E2E test for Stx2 deletion
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.x"]
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          miniconda-version: "latest"
+          activate-environment: test-env
+          channels: bioconda, conda-forge, defaults
+
+      - name: Create conda environment and install dependencies
+        run: |
+          conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
+          conda activate env-dajin2
+          pip install -e .  # Install DAJIN2 in editable mode
+
+      - name: Download example dataset
+        run: |
+          if [ ! -d example_single ]; then
+            curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+            tar -xf example_single.tar.gz
+          fi
+
+      - name: Run DAJIN2 with parameters
+        env:
+          PYTHONPATH: src
+        run: |
+          time DAJIN2 \
+              --control example_single/control \
+              --sample example_single/sample \
+              --allele example_single/stx2_deletion.fa \
+              --name stx2_deletion \
+              --genome mm39 \
+              --threads 4 \
+              --debug || exit 1
