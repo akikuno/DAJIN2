@@ -26,7 +26,9 @@ def convert_nm_tag(csv_tags: list[list[str]]) -> str:
 
 def detect_sequence_error_reads_in_control(ARGS) -> None:
     # Convert CSV strings to MIDSV tags
-    midsv_control = io.read_jsonl(Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl"))
+    midsv_control = io.read_jsonl(
+        Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl")
+    )
     nm_tags, qnames = zip(*[(convert_nm_tag(m["CSSPLIT"].split(",")), m["QNAME"]) for m in midsv_control])
 
     # Vectorize the MIDSV tags using TF-IDF with character-level N-grams
@@ -76,7 +78,9 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     )
     qnames_with_sequence_error_control = set(path_qnames_without_sequence_error.read_text().splitlines())
 
-    midsv_control = io.read_jsonl(Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl"))
+    midsv_control = io.read_jsonl(
+        Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl")
+    )
     midsv_errors = (m for m in midsv_control if m["QNAME"] in qnames_with_sequence_error_control)
     nm_tags_error = [convert_nm_tag(m["CSSPLIT"].split(",")) for m in midsv_errors]
 
