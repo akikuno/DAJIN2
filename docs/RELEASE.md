@@ -37,7 +37,7 @@
 
 ## 🐛 Bug Fixes
 
-+ Fix a bug where a element of dict with empty values was left behind after minor insertions were removed.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
++ Fix a bug where a element of dict with empty values was left behind after minor insertions were removed.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/dcd66324999fbf2054b1310b879f81baf0fa7a92)]
 
 ## 🔧 Maintenance
 
