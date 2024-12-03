@@ -172,7 +172,7 @@ def remove_minor_groups(
         for seq in to_delete:
             del ins[seq]
 
-    return insertions_merged
+    return {key: value for key, value in insertions_merged.items() if value}
 
 
 def merge_similar_insertions(

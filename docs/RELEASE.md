@@ -31,15 +31,13 @@
 
 + Output seqence error reads as `BAM/{name}/sequence_errors.bam`. Issue: #61 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b2e717faa5ed17cdc18217d537cf49de6ca7c0b4)]
 
-## 📝 Documentation
-
 ## 🚀 Performance
 
 + Downsampling the sample reads to a maximum of 10,000. Issue: #58 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/33c2120b59c80afe7f76165b2410b8ffe51410bd)]
 
-
-## 🌟 New Features
 ## 🐛 Bug Fixes
+
++ Fix a bug where a element of dict with empty values was left behind after minor insertions were removed.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxx)]
 
 ## 🔧 Maintenance
 
