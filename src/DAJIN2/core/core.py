@@ -158,7 +158,7 @@ def execute_sample(arguments: dict):
     preprocess.cache_mutation_loci(ARGS, is_control=False)
 
     # ============================================================
-    # Detect and mapping SV (insertion/inversion) alleles
+    # Detect and mapping SV alleles
     # ============================================================
     paths_predefined_fasta: set[str] = {
         str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
@@ -169,13 +169,14 @@ def execute_sample(arguments: dict):
 
     paths_sv_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
     # paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
+
     paths_sv_fasta -= paths_predefined_fasta
 
     if paths_sv_fasta:
-        # mapping to SV (insertion/inversion) alleles
+        # mapping to SV alleles
         preprocess.generate_sam(ARGS, paths_sv_fasta, is_control=True, is_sv=True)
         preprocess.generate_sam(ARGS, paths_sv_fasta, is_control=False, is_sv=True)
-        # add SV (insertion/inversion) alleles to ARGS.fasta_alleles
+        # add SV alleles to ARGS.fasta_alleles
         for path_fasta_sv in paths_sv_fasta:
             allele, seq = Path(path_fasta_sv).read_text().strip().split("\n")
             allele = allele.replace(">", "")
