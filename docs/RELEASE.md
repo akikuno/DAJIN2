@@ -12,7 +12,62 @@
 
 <!-- ############################################################# # -->
 
-# v0.5.5.1 (2024-10-28)
+# v0.5.6 (2024-MM-DD)
+
+## 💥 Breaking
+
++ Support for PacBio HiFi reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/69773342d3bf157f28db013d62796be43ae297e7)]
+
++ Add `preprocess.sequence_error_handler` to exclude Nanopore sequence errors from the analysis. Issue: #60 
+  + Initial commit [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/329493dbfe6c0d03a6f8aadaab88911900f35dbb)]
+  + Since most Nanopore sequencing errors occur due to read interruptions, `parse_midsv_from_csv` classifies entries as either Unknown or Other (M). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
+  + Instead of strategies like Cosine similarity or HDBSCAN, the Jaro-Winkler distance is explicitly used as a string similarity metric. Jaro-Winkler was chosen because Levenshtein would be too time-consuming. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
+
++ Add `sr` presets to all execusions in `preprocess.mapping`. Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
+
++ Increase the sensitivity by lowering the mutation detection threshold from 0.5% to 0.1% to detect mutations around 0.75%. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0e19752c1a4100d5a9121d54a563698642dc35c1)]
+
++ Use `AgglomerativeClustering` instead of Constrained KMeans because AgglomerativeClustering provides a more global clustering approach, and Constrained KMeans was not very useful due to the unreliability of its `min_cluster_size`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b81711e553edccaec4d6396cf940081163a18471)]
+
++ Output seqence error reads as `BAM/{name}/sequence_errors.bam`. Issue: #61 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b2e717faa5ed17cdc18217d537cf49de6ca7c0b4)]
+
+## 🚀 Performance
+
++ Downsampling the sample reads to a maximum of 10,000. Issue: #58 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/33c2120b59c80afe7f76165b2410b8ffe51410bd)]
+
+## 🐛 Bug Fixes
+
++ Fix a bug where a element of dict with empty values was left behind after minor insertions were removed.  [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/dcd66324999fbf2054b1310b879f81baf0fa7a92)]
+
+## 🔧 Maintenance
+
++ With the end of security support for Python 3.8 in October 2024, we have updated DAJIN2 to support Python 3.9 or later. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0967c463386a48639a614849b3d3e4453079c8b1)]
+
++ Replace typing.Generator to collections.abc.Iterator Since typing.Generator is deprecated. Issue: #53 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f85964a4b8027b547b7b3e370b9e86ff8dda36be)]
+
++ Automatically retrieve version information using `importlib.metadata.version` Issue: #59 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/4cf75078b5e7f487b07650e934d63448bc3a328e)]
+
++ Move the FASTX IO processing to `utils.io`. Issue: #66 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cca3db0b13ac53e082e2272f7ee7f593f905bd25)]
+
++ Add E2E tests in Github Actions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8fb93621ae7b9c4e867a68e9160c3295bfb0f872)]
+
+## ⛔️ Deprecated
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2024-MM-DD) </summary>
+
+</details> -->
+
+<details>
+<summary> v0.5.5 (2024-10-08) </summary>
 
 ## 📝 Documentation
 
@@ -30,19 +85,9 @@
 + Remove unused dependencies
   + `networkx`: Issue #49 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/524186bdce9e28d6357378d0baeb45670d2e22ed)]
 
-<!-- ############################################################# # -->
+</details>
 
 
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!--  ------------------------------------------------------------- -->
-
-<!-- <details>
-<summary> v0.5.3 (2024-07-16) </summary>
-</details> -->
 
 <details>
 <summary> v0.5.4 (2024-07-23) </summary>

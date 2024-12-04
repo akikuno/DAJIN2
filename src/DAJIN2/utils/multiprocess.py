@@ -4,10 +4,9 @@ import io
 import logging
 import sys
 import traceback
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from itertools import islice
 from multiprocessing import Process, Queue
-from typing import Generator
 
 
 def get_error_message_prefix(arg: dict) -> str:
@@ -15,7 +14,7 @@ def get_error_message_prefix(arg: dict) -> str:
     return f"An unexpected error occurred at {arg['sample']}"
 
 
-def generate_chunks(iterable, chunk_size: int = 1) -> Generator[tuple]:
+def generate_chunks(iterable, chunk_size: int = 1) -> Iterator[tuple]:
     """Yield successive n-sized chunks from iterable."""
     iterator = iter(iterable)
     while True:

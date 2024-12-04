@@ -22,7 +22,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         # Cache data to temporary files
 
-        # FOr Insertion/Inversion allele
+        # For Insertion/Inversion allele
         path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}.jsonl")
         if not path_control.exists():
             path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}.jsonl")
@@ -58,7 +58,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         io.write_jsonl(data=scores_control, file_path=path_score_control)
 
         # Extract labels
-        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias, min_cluster_size)
+        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
         labels_result += relabel_with_consective_order(labels, start=max_label)
 
         # Remove temporary files

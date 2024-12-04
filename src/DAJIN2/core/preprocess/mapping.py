@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Generator
 
 import cstag
 import mappy
@@ -16,7 +16,7 @@ def to_sam(
     threads: int = 1,
     options: dict = None,
     cslong: bool = True,
-) -> Generator[str]:
+) -> Iterator[str]:
     """Align sequences using mappy and Convert PAF to SAM.
 
     Args:
@@ -116,10 +116,7 @@ def generate_sam(
 
     for path_fasta in paths_fasta:
         name_fasta = Path(path_fasta).stem
-        len_sequence = len(Path(path_fasta).read_text().split("\n")[1])
-        presets = ["map-ont", "splice"]
-        if len_sequence < 500:
-            presets += ["sr"]
+        presets = ["map-ont", "map-hifi", "sr"]
 
         path_sam_directory = Path(ARGS.tempdir, name, "sam", name_fasta)
         path_sam_directory.mkdir(parents=True, exist_ok=True)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Generator
 
 from DAJIN2.utils import io
 
@@ -34,7 +34,7 @@ def annotate_cs_tag(cssplit: str, mutation: set[str]) -> str:
 
 def generate_mutation_kmers(
     path_sample: Path | str, mutation_loci: list[set[str]], compress_ins: bool = True
-) -> Generator[list[str]]:
+) -> Iterator[list[str]]:
     midsv_sample = io.read_jsonl(path_sample)
     for cssplit in (cs["CSSPLIT"].split(",") for cs in midsv_sample):
         mutation_kmers = ["@,@,@"]

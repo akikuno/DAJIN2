@@ -11,6 +11,15 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: dajin2_version
+    attributes:
+      label: '🔖 DAJIN2 Version'
+      description: 'Required: Specify the DAJIN2 version you are using. You can find this information in the `DAJIN2 --version` command.'
+      placeholder: 'e.g., 0.5.5'
+    validations:
+      required: true
+
   - type: textarea
     id: environment
     attributes:
@@ -18,13 +27,11 @@ body:
       description: |
           Optional: The environment information.
           Example:
-          - OS: WSL (Ubuntu 22.04)
-          - DAJIN2 version: x.x.x
-          - Python version: x.x.x
+          OS: WSL (Ubuntu 22.04)
+          Python version: 3.10.15
       value: |
-          - OS:
-          - DAJIN2 version:
-          - Python version:
+          OS:
+          Python version:
       render: markdown
     validations:
       required: false

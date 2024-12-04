@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import NamedTuple
 
 import pytest
+
 from DAJIN2.core.consensus.name_handler import (
     _detect_sv,
     _determine_suffix,

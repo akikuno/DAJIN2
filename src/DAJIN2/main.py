@@ -8,8 +8,8 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
-
 import argparse
+import importlib.metadata
 import logging
 import shutil
 import sys
@@ -20,6 +20,11 @@ from pathlib import Path
 from DAJIN2 import gui, view
 from DAJIN2.core import core
 from DAJIN2.utils import config, input_validator, io, multiprocess, report_generator
+
+try:
+    DAJIN_VERSION = importlib.metadata.version("DAJIN2")
+except importlib.metadata.PackageNotFoundError:
+    DAJIN_VERSION = "counld not be retrieved"
 
 
 def generate_report(name: str, logger: logging.Logger) -> None:
@@ -36,7 +41,7 @@ def execute_single_mode(arguments: dict[str]):
     # Set logging to export log to stderr and file
     path_logfile = config.get_logfile()
     logger = config.set_logging(path_logfile)
-    logger.info(f"\N{RUNNER} Start running DAJIN2 version {config.DAJIN_VERSION}")
+    logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
     logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
 
     # Validate input files
@@ -146,7 +151,7 @@ def execute_batch_mode(arguments: dict[str]):
         config.reset_logging()
         path_logfile = config.get_logfile()
         logger = config.set_logging(path_logfile)
-        logger.info(f"\N{RUNNER} Start running DAJIN2 version {config.DAJIN_VERSION}")
+        logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
         logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
 
         # Run DAJIN2
@@ -175,7 +180,7 @@ def execute():
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {config.DAJIN_VERSION}")
+    parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
     ###############################################################################

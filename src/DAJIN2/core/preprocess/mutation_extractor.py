@@ -3,8 +3,8 @@ from __future__ import annotations
 import bisect
 import re
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Generator
 
 from DAJIN2.utils import config
 
@@ -22,7 +22,7 @@ from DAJIN2.core.preprocess.homopolymer_handler import extract_sequence_errors_i
 from DAJIN2.utils import io
 
 
-def count_indels(midsv_sample: Generator[dict], sequence: str) -> dict[str, list[int]]:
+def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[int]]:
     len_sequence = len(sequence)
     count = {"=": [0] * len_sequence, "+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:
@@ -315,7 +315,7 @@ def extract_mutation_loci(
     is_consensus: bool = False,
 ) -> list[set[str]]:
     if thresholds is None:
-        thresholds = {"*": 0.5, "-": 0.5, "+": 0.5}
+        thresholds = {"*": 0.1, "-": 0.1, "+": 0.1}
     indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
 
     # Extract candidate mutation loci

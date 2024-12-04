@@ -14,8 +14,16 @@ def remove_minor_alleles(clust_sample: list[dict]) -> list[dict]:
         counts[c["LABEL"]] += 1
 
     minor_labels = {label for label, count in counts.items() if count < min_sample_size}
+    clust_sample_removed = [c for c in clust_sample if c["LABEL"] not in minor_labels]
 
-    return [c for c in clust_sample if c["LABEL"] not in minor_labels]
+    # Make the remaining clusters account for 100%.
+    percents = {c["PERCENT"] for c in clust_sample_removed}
+    percents_100 = {p: round(p * 100 / sum(percents), 3) for p in percents}
+
+    for c in clust_sample_removed:
+        c["PERCENT"] = percents_100[c["PERCENT"]]
+
+    return clust_sample_removed
 
 
 def downsample_by_label(clust_sample: list[dict], num: int = 1000) -> list[dict]:

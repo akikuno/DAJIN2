@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 import uuid
 from collections import Counter, defaultdict
+from collections.abc import Iterator
 from itertools import groupby
 from pathlib import Path
-from typing import Generator
 
 import cstag
 import numpy as np
@@ -43,7 +43,7 @@ def clustering_insertions(cssplits_insertion: list[str]) -> list[int]:
 ###########################################################
 
 
-def extract_all_insertions(midsv_sample: Generator, mutation_loci: list[set[str]]) -> dict[int, list[str]]:
+def extract_all_insertions(midsv_sample: Iterator, mutation_loci: list[set[str]]) -> dict[int, list[str]]:
     """To extract insertion sequences of **10 base pairs or more** at each index."""
     insertion_index_sequences_control = defaultdict(list)
     for m_sample in midsv_sample:
@@ -172,7 +172,7 @@ def remove_minor_groups(
         for seq in to_delete:
             del ins[seq]
 
-    return insertions_merged
+    return {key: value for key, value in insertions_merged.items() if value}
 
 
 def merge_similar_insertions(
@@ -341,7 +341,7 @@ def get_cstag_position(sam_insertions: list[str]) -> tuple[list[str], list[int]]
 
 def mapping_insertion(
     TEMPDIR: Path, SAMPLE_NAME: str, cs_transposed: list[str], consensus_length: int, uuid4: str
-) -> Generator[str]:
+) -> Iterator[str]:
     # Temporarily cache the reference sequence
     cs_insertion = next(cs for cs in cs_transposed if cs != "N" and len(cs) == consensus_length)
     ref_seq = cstag.to_sequence(convert_cssplits_to_cstag([cs_insertion]))
@@ -537,8 +537,8 @@ def detect_insertions(TEMPDIR, SAMPLE_NAME, CONTROL_NAME, FASTA_ALLELES) -> None
 
     # Update labels
     cstag_insertions_update = {key: cstag_insertions[key] for key in fasta_insertions_unique.keys()}
-    cstag_insertions_update = add_unique_allele_keys(cstag_insertions_update, FASTA_ALLELES, "insertion")
-    fasta_insertions_update = add_unique_allele_keys(fasta_insertions_unique, FASTA_ALLELES, "insertion")
+    cstag_insertions_update = add_unique_allele_keys(cstag_insertions_update, FASTA_ALLELES, key="insertion")
+    fasta_insertions_update = add_unique_allele_keys(fasta_insertions_unique, FASTA_ALLELES, key="insertion")
 
     save_cstag(TEMPDIR, SAMPLE_NAME, cstag_insertions_update)
     save_fasta(TEMPDIR, SAMPLE_NAME, fasta_insertions_update)

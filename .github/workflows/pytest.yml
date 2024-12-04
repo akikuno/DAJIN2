@@ -1,48 +1,43 @@
 name: Pytest for Ubuntu / macOS latest
 
 on:
-  push:
-  schedule:
-    - cron: "0 2 * * 1" # The task runs at 2 a.m. every Monday.
+    push:
+    schedule:
+        - cron: "0 2 * * 1" # The task runs at 2 a.m. every Monday.
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      max-parallel: 10
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            max-parallel: 10
+            matrix:
+                os: [ubuntu-latest, macos-latest]
+                python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
-    defaults:
-      run:
-        shell: bash -l {0}
+        defaults:
+            run:
+                shell: bash -l {0}
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-          miniconda-version: "latest"
-          activate-environment: test-env
-          channels: bioconda, conda-forge, defaults, anaconda
+        steps:
+            - uses: actions/checkout@v4
+            - uses: conda-incubator/setup-miniconda@v3
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  miniconda-version: "latest"
+                  activate-environment: test-env
+                  channels: bioconda, conda-forge, defaults
 
-      - name: Setup conda environment
-        run: |
-          conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
+            - name: Setup conda environment
+              run: |
+                  conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
 
-      - name: Install weasyprint on macos-latest🍎
-        if: runner.os == 'macOS'
-        run: |
-          conda install -n env-dajin2 weasyprint
+            - name: Execute tests
+              env:
+                  PYTHONPATH: src
+              run: |
+                  conda activate env-dajin2
 
-      - name: Execute tests
-        env:
-          PYTHONPATH: src
-        run: |
-          conda activate env-dajin2
-
-          # Use pip because conda does not support pyproject.toml.
-          pip install -e .
-          pytest tests/ -p no:warnings -vv
+                  # Use pip because conda does not support pyproject.toml.
+                  pip install -e .
+                  pytest tests/ -p no:warnings -vv

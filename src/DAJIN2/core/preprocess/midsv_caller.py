@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Generator
 
 import midsv
 
@@ -40,6 +40,7 @@ def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[s
 
 
 def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dict[str, str]:
+    """Select the preset with the longest alignment length."""
     best_preset = defaultdict(str)
     for qname in preset_cigar_by_qname:
         preset_cigar = preset_cigar_by_qname[qname]
@@ -71,7 +72,7 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
 
 def extract_best_alignment_length_from_sam(
     path_sam_files: list[Path], best_preset: dict[str, str]
-) -> Generator[list[str]]:
+) -> Iterator[list[str]]:
     flag_header = False
     for path in path_sam_files:
         preset = path.stem
@@ -87,11 +88,11 @@ def extract_best_alignment_length_from_sam(
         flag_header = True
 
 
-def transform_to_midsv_format(sam: Generator[list[str]]) -> Generator[list[dict]]:
+def transform_to_midsv_format(sam: Iterator[list[str]]) -> Iterator[list[dict]]:
     yield from midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep={"FLAG"})
 
 
-def replace_internal_n_to_d(midsv_sample: Generator[list[dict]], sequence: str) -> Generator[list[dict]]:
+def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -> Iterator[list[dict]]:
     """
     Replace internal 'N's with 'D' in a given sequence.
     This function modifies the 'CSSPLIT' field in the input sample. It identifies
@@ -120,7 +121,7 @@ def is_reverse_strand(flag: int) -> bool:
     return bool(flag & 16)
 
 
-def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[list[dict]]:
+def convert_flag_to_strand(midsv_sample: Iterator[list[dict]]) -> Iterator[list[dict]]:
     """Convert FLAG to STRAND (+ or -)"""
     for samp in midsv_sample:
         samp["STRAND"] = "-" if is_reverse_strand(int(samp["FLAG"])) else "+"
@@ -128,8 +129,8 @@ def convert_flag_to_strand(midsv_sample: Generator[list[dict]]) -> Generator[lis
         yield samp
 
 
-def filter_samples_by_n_proportion(midsv_sample: Generator[dict], threshold: int = 95) -> Generator[list[dict]]:
-    """Filters out the samples from the input generator where the proportion of 'N' in the 'CSSPLIT' field is 95% or higher."""
+def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int = 95) -> Iterator[list[dict]]:
+    """Filters out the samples from the input Iterator where the proportion of 'N' in the 'CSSPLIT' field is 95% or higher."""
     for samp in midsv_sample:
         cssplits = samp.get("CSSPLIT", "").split(",")
         count = Counter(cssplits)
@@ -185,7 +186,7 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
     return ",".join(cssplit_reversed[::-1])
 
 
-def convert_consecutive_indels(midsv_sample: Generator) -> Generator[list[dict]]:
+def convert_consecutive_indels(midsv_sample: Iterator) -> Iterator[list[dict]]:
     """
     Due to alignment errors, there can be instances where a true match is mistakenly replaced with "insertion following a deletion".
     For example, although it should be "=C,=T", it gets replaced by "-C,+C|=T". In such cases, a process is performed to revert it back to "=C,=T".
@@ -204,6 +205,9 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
+        if not Path(ARGS.tempdir, name, "sam", allele).exists():
+            continue
+
         path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele)
         path_midsv_directory.mkdir(parents=True, exist_ok=True)
 
@@ -212,13 +216,13 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
 
         if is_control and is_sv:
             """
-            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.json` when control is barcode01, sample is barcode02, and the allele is insertion1.
+            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.jsonl` when control is barcode01, sample is barcode02, and the allele is insertion1.
             """
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"{ARGS.sample_name}_*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
         else:
             """
-            Set the destination for midsv as `barcode02/midsv/insertion1.json` when the sample is barcode02 and the allele is insertion1.
+            Set the destination for midsv as `barcode02/midsv/insertion1.jsonl` when the sample is barcode02 and the allele is insertion1.
             """
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob("*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}.jsonl")
