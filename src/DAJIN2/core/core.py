@@ -124,9 +124,9 @@ def execute_sample(arguments: dict):
 
     fastx_handler.save_inputs_as_single_fastq(ARGS, is_control=False)
 
-    # Save subsetted fastq if the read number is too large (> 10,000 reads)
+    # Save subsetted fastq if the read number is too large (> 100,000 reads)
     path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
-    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=10_000)
+    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=100_000)
 
     # ============================================================
     # Mapping with mappy
