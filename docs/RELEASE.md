@@ -18,6 +18,8 @@
 
 + Simplify feature extraction using `extract_n_features` to reduce computational costs. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cc4665719f9eedfa0457cc07d1bc3ca2142c574e)]
 
++ To avoid overlooking minor alleles, the number of reads is increased from 10,000 to 100,000 during downsampling. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7e3e08dec5d71769f917a58f63bf5af6df230ed4)]
+
 <!-- ############################################################# # -->
 
 
