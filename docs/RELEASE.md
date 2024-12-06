@@ -7,12 +7,33 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-[[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
++ commitMessage. Issue #XX [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 -->
 
 <!-- ############################################################# # -->
 
-# v0.5.6 (2024-12-05)
+# v0.5.7 (2025-MM-DD)
+
+## 🚀 Performance
+
++ Simplify feature extraction using `extract_n_features` to reduce computational costs. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cc4665719f9eedfa0457cc07d1bc3ca2142c574e)]
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2024-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.5.6 (2024-12-06) </summary>
 
 ## 💥 Breaking
 
@@ -51,20 +72,8 @@
 
 + Add E2E tests in Github Actions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8fb93621ae7b9c4e867a68e9160c3295bfb0f872)]
 
-## ⛔️ Deprecated
+</details>
 
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2024-MM-DD) </summary>
-
-</details> -->
 
 <details>
 <summary> v0.5.5 (2024-10-08) </summary>
