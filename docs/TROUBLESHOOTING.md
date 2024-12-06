@@ -12,7 +12,7 @@ conda update -n base conda -y
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
-conda config --set channel_priority flexible
+conda config --set channel_priority flexible # <- IMPORTANT!!
 
 # Install DAJIN2 to a virtual environment
 conda create -n env-dajin2 python=3.10 -y
@@ -56,6 +56,13 @@ conda config --set channel_priority flexible
 > [!CAUTION]
 > Bioconda recommends using `conda config --set channel_priority strict`, but as the installation of openpyxl fails, please use **`conda config --set channel_priority flexible`**.
 
+> [!WARNING]
+> If you encounter the following error message when you install DAJIN2, please try **`conda config --set channel_priority flexible`**.
+> ```bash
+> LibMambaUnsatisfiableError: Encountered problems while solving:
+> package dajin2-x.x.x-xxx is excluded by strict repo priority
+> ```
+
 3. Create a new virtual environment (optional but recommended):
 
 ```bash
@@ -78,8 +85,10 @@ pip install DAJIN2
 
 > [!CAUTION]
 > Pip installation might encounter issues due to the dependencies mentioned above, especially on systems without `zlib.h` or on Windows.
-> `sudo apt install gcc zlib1g zlib1g-dev` (Ubuntu)  
-> `brew install gcc zlib` (macOS)
+> ```bash
+> sudo apt install gcc zlib1g zlib1g-dev # WSL2 or Ubuntu  
+> brew install gcc zlib # macOS
+> ```
 
 
 ## Report other troubles
