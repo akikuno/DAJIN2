@@ -14,6 +14,10 @@
 
 # v0.5.7 (2025-MM-DD)
 
+## 💥 Breaking
+
++ Add `preprocess.deletion_detector` to improve clustering performance of large deletion. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
+
 ## 🚀 Performance
 
 + Simplify feature extraction using `extract_n_features` to reduce computational costs. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cc4665719f9eedfa0457cc07d1bc3ca2142c574e)]
