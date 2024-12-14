@@ -6,7 +6,9 @@ from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 
 
-def extract_unique_sv(fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, str]) -> dict[str, str]:
+def extract_unique_sv(
+    fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, str], base_num: int = 10
+) -> dict[str, str]:
     """
     Extract unique SVs (insertions/inversions) alleles if they are dissimilar to the FASTA_ALLELES input by the user.
     "Unique SV alleles" are defined as sequences that have a difference of more than 10 bases compared to the sequences in FASTA_ALLELES
@@ -17,7 +19,7 @@ def extract_unique_sv(fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str,
     to_delete = set()
     for key, seq in fasta_sv_alleles_unique.items():
         _, distances, _ = zip(*process.extract_iter(seq, FASTA_ALLELES.values(), scorer=DamerauLevenshtein.distance))
-        if any(d < 10 for d in distances):
+        if any(d < base_num for d in distances):
             to_delete.add(key)
 
     # Remove SV alleles that are similar to each other
@@ -27,7 +29,9 @@ def extract_unique_sv(fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str,
         _, distances, _ = zip(
             *process.extract_iter(seq, fasta_sv_alleles_unique.values(), scorer=DamerauLevenshtein.distance)
         )
-        similar_index = {k if d < 10 else None for k, d in zip(fasta_sv_alleles_unique.keys(), distances) if k != key}
+        similar_index = {
+            k if d < base_num else None for k, d in zip(fasta_sv_alleles_unique.keys(), distances) if k != key
+        }
         to_delete |= similar_index
 
     return {k: v for k, v in fasta_sv_alleles_unique.items() if k not in to_delete}

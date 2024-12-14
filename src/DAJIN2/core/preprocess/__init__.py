@@ -1,4 +1,5 @@
 from DAJIN2.core.preprocess.cache_checker import exists_cached_genome, exists_cached_hash
+from DAJIN2.core.preprocess.deletion_detector import detect_deletion_alleles
 from DAJIN2.core.preprocess.directory_manager import create_report_directories, create_temporal_directories
 from DAJIN2.core.preprocess.genome_fetcher import fetch_chromosome_size, fetch_coordinates
 from DAJIN2.core.preprocess.input_formatter import format_inputs
