@@ -36,12 +36,12 @@ def extract_d_features(dm_tags: list[str]) -> np.ndarray[np.float64]:
     return np.array(features)
 
 
-def detect_deletion_alleles(ARGS) -> None:
-    path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}.jsonl")
+def detect_deletion_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict) -> None:
+    path_midsv_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
     midsv_sample = io.read_jsonl(path_midsv_sample)
     dm_tags_sample = [convert_dm_tag(m["CSSPLIT"].split(",")) for m in midsv_sample]
 
-    path_midsv_control = Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl")
+    path_midsv_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl")
     midsv_control = io.read_jsonl(path_midsv_control)
     dm_tags_control = [convert_dm_tag(m["CSSPLIT"].split(",")) for m in midsv_control][:1000]
 
@@ -72,11 +72,11 @@ def detect_deletion_alleles(ARGS) -> None:
         fasta_by_label[label] = cstag.to_sequence(cstag_consensus)
 
     # Remove similar alleles to user's alleles, or clustered alleles
-    fasta_by_label = extract_unique_sv(fasta_by_label, ARGS.fasta_alleles)
+    fasta_by_label = extract_unique_sv(fasta_by_label, FASTA_ALLELES)
     cstag_by_label = {label: cs_tag for label, cs_tag in cstag_by_label.items() if label in fasta_by_label}
 
-    cstag_by_label = add_unique_allele_keys(cstag_by_label, ARGS.fasta_alleles, key="deletion")
-    fasta_by_label = add_unique_allele_keys(fasta_by_label, ARGS.fasta_alleles, key="deletion")
+    cstag_by_label = add_unique_allele_keys(cstag_by_label, FASTA_ALLELES, key="deletion")
+    fasta_by_label = add_unique_allele_keys(fasta_by_label, FASTA_ALLELES, key="deletion")
 
-    save_cstag(ARGS.tempdir, ARGS.sample_name, cstag_by_label)
-    save_fasta(ARGS.tempdir, ARGS.sample_name, fasta_by_label)
+    save_cstag(TEMPDIR, SAMPLE_NAME, cstag_by_label)
+    save_fasta(TEMPDIR, SAMPLE_NAME, fasta_by_label)
