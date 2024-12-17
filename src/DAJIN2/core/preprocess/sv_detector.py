@@ -7,6 +7,7 @@ from pathlib import Path
 
 import cstag
 import numpy as np
+from Bio.Align import PairwiseAligner
 
 from DAJIN2.core.clustering.clustering import optimize_labels
 from DAJIN2.core.preprocess.sv_handler import add_unique_allele_keys, extract_unique_sv, save_cstag, save_fasta
@@ -161,14 +162,98 @@ def extract_sv_features(sv_tags: list[str], sv_type: str, sv_index: list[int]) -
 
     return np.concatenate([X_index, X_size], axis=1)
 
+
 ###############################################################################
-# 変異部についてコンセンサス配列を入手する
+# ToDO 変異部についてコンセンサス配列を入手する
 ###############################################################################
+
+
+def group_cssplits(cssplits: list[str]) -> list[str]:
+    cssplits_grouped = []
+    current_group = [cssplits[0]]
+
+    for i in range(1, len(cssplits)):
+        # 現在の要素のprefixと前の要素のprefixが同じ場合
+        if cssplits[i][0] == cssplits[i - 1][0]:
+            current_group.append(cssplits[i])
+        else:
+            cssplits_grouped.append(",".join(current_group))  # グループを結果に追加
+            current_group = [cssplits[i]]  # 新しいグループを開始
+
+    cssplits_grouped.append(",".join(current_group))  # 最後のグループを追加
+    return cssplits_grouped
+
+
+# すべての配列をシードとアラインメントし、その結果を保存
+def _align_sequences(seed: str, sequences: str):
+    aligner = PairwiseAligner()
+    aligner.mode = "global"
+    aligned_sequences = []
+    for seq in sequences:
+        alignment = aligner.align(seed, seq)[0]  # 最初のアラインメント結果を取得
+        aligned_seq = []
+        for a, b in zip(alignment.target, alignment.query):
+            if a == "-":
+                aligned_seq.append("-")
+            else:
+                aligned_seq.append(b)
+        aligned_sequences.append("".join(aligned_seq))
+    return aligned_sequences
+
+
+# アラインメント結果からコンセンサス配列を生成
+def _build_consensus(aligned_seqs):
+    max_len = max(len(seq) for seq in aligned_seqs)
+    padded_seqs = [seq.ljust(max_len, "-") for seq in aligned_seqs]  # ギャップで揃える
+    aligned_matrix = np.array([list(seq) for seq in padded_seqs])
+    consensus = []
+    for col in aligned_matrix.T:  # 列ごとに塩基をチェック
+        unique, counts = np.unique(col, return_counts=True)
+        most_common = unique[np.argmax(counts)]  # 最も頻度の高い塩基を選定
+        consensus.append(most_common if most_common != "-" else "-")
+    return "".join(consensus).replace("-", "")  # 最終的にギャップを取り除く
+
+
+def _group_cssplits(cssplits: list[str]) -> Iterator[str]:
+    current_group = [cssplits[0]]
+    current_start_index = 0
+
+    for i in range(1, len(cssplits)):
+        # 現在の要素のprefixと前の要素のprefixが同じ場合
+        if cssplits[i][0] == cssplits[i - 1][0]:
+            current_group.append(cssplits[i])
+        else:
+            yield (current_start_index, ",".join(current_group))  # グループを結果に追加
+            current_group = [cssplits[i]]  # 新しいグループを開始
+            current_start_index = i
+
+    yield (i, ",".join(current_group))  # 最後のグループを追加
+
+
+def convert_insertion_cstag_to_cssplit(input_string):
+    pattern = re.compile(r"([\+\-=])([a-zA-Z]+)(.*)")
+    match = pattern.match(input_string)
+    if not match:
+        return input_string  # マッチしない場合はそのまま返す
+    prefix, letters, suffix = match.groups()  # グループを取得
+    # 文字ごとにprefixを付けて'|'で結合
+    transformed = "|".join(f"{prefix}{char}" for char in letters)
+
+    # 最後の部分を追加
+    return f"{transformed}{suffix}".upper()
+
+
+def call_consensus(sequences: list[str]) -> str:
+    # 最初に最も長いシード配列を選定
+    seed = max(sequences, key=len)
+    aligned_sequences = _align_sequences(seed, sequences)
+    return _build_consensus(aligned_sequences)
 
 
 ###############################################################################
 # main
 ###############################################################################
+
 
 def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict, sv_type: str) -> None:
     path_midsv_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
@@ -179,11 +264,15 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     midsv_control = io.read_jsonl(path_midsv_control)
     sv_tags_control = [convert_sv_tag(m["CSSPLIT"], sv_type) for m in midsv_control][:1000]
 
-    sv_index = sorted(set(define_index_converter(sv_tags_sample, sv_type).values()))
+    index_converter = define_index_converter(sv_tags_sample, sv_type)
+    sv_index = sorted(set(index_converter.values()))
 
     sv_features_sample = extract_sv_features(sv_tags_sample, sv_type, sv_index)
     sv_features_control = extract_sv_features(sv_tags_control, sv_type, sv_index)
 
+    #######################################################
+    # Clustering
+    #######################################################
     X = np.concatenate([sv_features_sample, sv_features_control])
     coverage_control = len(sv_features_control)
     coverage_sample = len(sv_features_sample)
@@ -200,15 +289,45 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     #######################################################
     # Generate cstag consensus
     #######################################################
+
     cstag_by_label = {}
     fasta_by_label = {}
     for label, cssplits in cssplits_by_label.items():
         cssplits_subset = cssplits[:100]
+        csv_group = defaultdict(list)
+        for cssplits in cssplits_subset:
+            cssplits_grouped = _group_cssplits(cssplits)
+            for i, cssplit in cssplits_grouped:
+                if cssplit.startswith("+") and cssplit.count("+") > 10 and i in index_converter:
+                    cs_tags = convert_cssplits_to_cstag([cssplit])
+                    csv_group[index_converter[i]].append(cs_tags)
+
+        index_consensus = {}
+        for key, value in csv_group.items():
+            ins_seqs, end_seqs = zip(*[cstag.split(tag) for tag in value])
+            consensus_ins = call_consensus(ins_seqs) + "|" + call_consensus(end_seqs)
+            index_consensus |= {key: convert_insertion_cstag_to_cssplit(consensus_ins)}
+
+        for cssplits in cssplits_subset:
+            for i, cssplit in _group_cssplits(cssplits):
+                if cssplit.startswith("+") and cssplit.count("+") > 10 and i in index_converter:
+                    cssplits[i] = index_consensus[index_converter[i]]
+
         cstag_subset = [convert_cssplits_to_cstag(tag) for tag in cssplits_subset]
         positions = [1] * len(cstag_subset)
         cstag_consensus = cstag.consensus(cstag_subset, positions)
         cstag_by_label[label] = cstag_consensus
         fasta_by_label[label] = cstag.to_sequence(cstag_consensus)
+
+    # cstag_by_label = {}
+    # fasta_by_label = {}
+    # for label, cssplits in cssplits_by_label.items():
+    #     cssplits_subset = cssplits[:100]
+    #     cstag_subset = [convert_cssplits_to_cstag(tag) for tag in cssplits_subset]
+    #     positions = [1] * len(cstag_subset)
+    #     cstag_consensus = cstag.consensus(cstag_subset, positions)
+    #     cstag_by_label[label] = cstag_consensus
+    #     fasta_by_label[label] = cstag.to_sequence(cstag_consensus)
 
     #######################################################
     # Remove similar alleles to user's alleles, or clustered alleles
