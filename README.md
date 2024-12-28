@@ -35,7 +35,14 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 ### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
-conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
+# Setup of Bioconda
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda config --set channel_priority flexible
+
+# Install DAJIN2
+conda create -n env-dajin2 -c conda-forge -c bioconda python=3.12 DAJIN2 -y
 conda activate env-dajin2
 ```
 
