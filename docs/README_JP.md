@@ -43,16 +43,6 @@ conda create -n env-dajin2 -c conda-forge -c bioconda python=3.12 DAJIN2 -y
 conda activate env-dajin2
 ```
 
-> [!NOTE]
-> Appleシリコン搭載のMacの場合：  
-> 現状、[BiocondaがAppleシリコンに対応していない](https://github.com/bioconda/bioconda-recipes/issues/37068#issuecomment-1257790919)ため、以下のようにRoseeta2経由でインストールを行ってください
-> ```bash
-> CONDA_SUBDIR=osx-64 conda create -n env-dajin2 -c conda-forge -c bioconda python=3.10 DAJIN2 -y
-> conda activate env-dajin2
-> conda config --env --set subdir osx-64
-> python -c "import platform; print(platform.machine())" # 'arm64'ではなく、'x86_64'と表示されることをご確認ください
-> ```
-
 ### [PyPI](https://pypi.org/project/DAJIN2/)
 
 ```bash
