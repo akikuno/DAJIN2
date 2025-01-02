@@ -20,7 +20,10 @@ from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
 
 
 def convert_sv_tag_insertion(cssplits: list[str]) -> str:
-    """Create a tag with I for bases that reads with insertion and M for bases that are mapped"""
+    """
+    Create a tag with I for bases that reads with insertion and M for bases that are mapped.
+    "MMMMIIIIMMMM"
+    """
     im_tags = []
     for tag in cssplits.split(","):
         if tag.startswith("+") and tag.count("+") > 10:
@@ -44,6 +47,7 @@ def convert_sv_tag(cssplits: list[str], sv_type: str) -> str:
 
 ###############################################################################
 # extract_sv_features
+# 各SVの開始のindexとそのSVのサイズを特徴量とする
 ###############################################################################
 
 
@@ -184,7 +188,7 @@ def _group_cssplits(cssplits: list[str]) -> Iterator[str]:
     yield (i, ",".join(current_group))  # 最後のグループを追加
 
 
-def _filter_valid_cssplits(cssplits, index_converter):
+def _filter_valid_cssplits(cssplits: list[tuple[int, str]], index_converter: dict[int, int]) -> list[tuple[int, str]]:
     """有効な cssplits をフィルタリングする"""
     # TODO: Deletion, Insertion, Inversionで適切な処理を変更する
     return [
@@ -195,7 +199,6 @@ def _filter_valid_cssplits(cssplits, index_converter):
 
 
 def _convert_insertion_cstag_to_cssplit(cs_tag: str) -> str:
-    # TODO: Deletion, Insertion, Inversionで適切な処理を変更する
     pattern = re.compile(r"([\+\-=])([a-zA-Z]+)(.*)")
     match = pattern.match(cs_tag)
     if not match:
@@ -208,8 +211,23 @@ def _convert_insertion_cstag_to_cssplit(cs_tag: str) -> str:
     return f"{transformed}{suffix}".upper()
 
 
+# ---------------------------------------------------------
+# call_consensus
+# ---------------------------------------------------------
+
+
 # すべての配列をシードとアラインメントし、その結果を保存
-def _align_sequences(seed: str, sequences: str):
+def _align_sequences(seed: str, sequences: list[str]) -> list[str]:
+    """
+    Align all sequences to the seed sequence and return the aligned sequences.
+
+    Args:
+        seed (str): The seed sequence to align against.
+        sequences (list[str]): The list of sequences to be aligned.
+
+    Returns:
+        list[str]: The list of aligned sequences.
+    """
     aligner = PairwiseAligner()
     aligner.mode = "global"
     aligned_sequences = []
@@ -226,7 +244,16 @@ def _align_sequences(seed: str, sequences: str):
 
 
 # アラインメント結果からコンセンサス配列を生成
-def _build_consensus(aligned_seqs):
+def _build_consensus(aligned_seqs: list[str]) -> str:
+    """
+    Generate a consensus sequence from the aligned sequences.
+
+    Args:
+        aligned_seqs (list[str]): The list of aligned sequences.
+
+    Returns:
+        str: The consensus sequence.
+    """
     max_len = max(len(seq) for seq in aligned_seqs)
     padded_seqs = [seq.ljust(max_len, "-") for seq in aligned_seqs]  # ギャップで揃える
     aligned_matrix = np.array([list(seq) for seq in padded_seqs])
@@ -261,19 +288,39 @@ def _generate_consensus_for_label(cssplits_subset, index_converter, sv_type: str
         if sv_type == "insertion":
             ins_seqs, end_seqs = zip(*[cstag.split(tag) for tag in value])
             consensus_ins = _call_consensus(ins_seqs) + "|" + _call_consensus(end_seqs)
-            index_consensus[key] = _convert_insertion_cstag_to_cssplit(consensus_ins)  # TODO
+            index_consensus[key] = _convert_insertion_cstag_to_cssplit(consensus_ins)
         else:
             index_consensus[key] = _call_consensus(value)
+
     return index_consensus
 
 
-def _replace_cssplits_with_consensus(cssplits_subset, index_consensus, index_converter):
+def _replace_cssplits_with_consensus(
+    cssplits_subset: list[list[str]], index_consensus: dict[int, str], index_converter: dict[int, int]
+):
     """cssplits_subset の中でコンセンサスに置き換える"""
-    for cssplits in cssplits_subset:
+    cssplits_replaced = cssplits_subset.copy()
+    for cssplits in cssplits_replaced:
         for i, cssplit in _group_cssplits(cssplits):
             if_valid = _filter_valid_cssplits([(i, cssplit)], index_converter)
             for i, _ in if_valid:
                 cssplits[i] = index_consensus[index_converter[i]]
+
+    return cssplits_replaced
+
+
+def _correct_sequence_error(
+    cssplits_subset: list[list[str]], mutation_loci: list[set[str]], fasta_control: str
+) -> list[list[str]]:
+    cssplit_replaced = cssplits_subset.copy()
+
+    for cssplits in cssplit_replaced:
+        for i, cs in enumerate(cssplits):
+            if cs[0] in mutation_loci[i]:
+                continue
+            cssplits[i] = "=" + fasta_control[i]
+
+    return cssplit_replaced
 
 
 ###############################################################################
@@ -282,7 +329,12 @@ def _replace_cssplits_with_consensus(cssplits_subset, index_consensus, index_con
 
 
 def generate_cstag_and_fasta(
-    path_midsv: Path, labels: list[int], index_converter: dict[int, int], sv_type: str
+    path_midsv: Path,
+    mutation_loci: list[set[str]],
+    fasta_control: str,
+    labels: list[int],
+    index_converter: dict[int, int],
+    sv_type: str,
 ) -> tuple[dict[int, str], dict[int, str]]:
     """cstag と fasta をラベルごとに生成する"""
 
@@ -301,10 +353,10 @@ def generate_cstag_and_fasta(
 
         # コンセンサスの生成
         index_consensus = _generate_consensus_for_label(cssplits_subset, index_converter, sv_type)
-        _replace_cssplits_with_consensus(cssplits_subset, index_consensus, index_converter)
-
+        cssplits_consensus = _replace_cssplits_with_consensus(cssplits_subset, index_consensus, index_converter)
+        cssplits_consensus = _correct_sequence_error(cssplits_subset, mutation_loci, fasta_control)
         # コンセンサス cstag と fasta の生成
-        cstag_subset = [convert_cssplits_to_cstag(tag) for tag in cssplits_subset]
+        cstag_subset = [convert_cssplits_to_cstag(tag) for tag in cssplits_consensus]
         positions = [1] * len(cstag_subset)
         cstag_consensus = cstag.consensus(cstag_subset, positions)
 
@@ -323,7 +375,7 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     path_midsv_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
     midsv_sample = io.read_jsonl(path_midsv_sample)
     sv_tags_sample = [convert_sv_tag(m["CSSPLIT"], sv_type) for m in midsv_sample]
-    MUTATION_LOCI = io.load_pickle(
+    MUTATION_LOCI: list[set[str]] = io.load_pickle(
         Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control", "mutation_loci.pickle")
     )  # TODO: MUTATION_LOCIをコンセンサスに反映させる
 
@@ -349,8 +401,9 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     #######################################################
     # Generate cstag consensus
     #######################################################
-
-    cstag_by_label, fasta_by_label = generate_cstag_and_fasta(path_midsv_sample, labels, index_converter, sv_type)
+    cstag_by_label, fasta_by_label = generate_cstag_and_fasta(
+        path_midsv_sample, MUTATION_LOCI, FASTA_ALLELES["control"], labels, index_converter, sv_type
+    )
 
     #######################################################
     # Remove similar alleles to user's alleles, or clustered alleles
