@@ -39,7 +39,7 @@ conda config --add channels conda-forge
 conda config --set channel_priority flexible
 
 # Install DAJIN2
-conda create -n env-dajin2 -c conda-forge -c bioconda python=3.12 DAJIN2 -y
+conda create -n env-dajin2 python=3.12 DAJIN2 -y
 conda activate env-dajin2
 ```
 

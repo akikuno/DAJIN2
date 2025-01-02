@@ -18,6 +18,11 @@
 
 + Add `preprocess.deletion_detector` to improve clustering performance of large deletion. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
 
+## 📝 Documentation
+
++ Upgrade Python version from 3.10 to 3.12 in README.md. Issue #74 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9499666e78c669debe8e5f600dc6a8f82253bae8)]
+
+
 ## 🚀 Performance
 
 + Simplify feature extraction using `extract_n_features` to reduce computational costs. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cc4665719f9eedfa0457cc07d1bc3ca2142c574e)]
