@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterator
+from itertools import chain
 from pathlib import Path
 
 import cstag
 import numpy as np
-from Bio.Align import PairwiseAligner
 
 from DAJIN2.core.clustering.clustering import optimize_labels
 from DAJIN2.core.preprocess.sv_handler import add_unique_allele_keys, extract_unique_sv, save_cstag, save_fasta
@@ -15,69 +15,45 @@ from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
 
 ###############################################################################
-# Detect sequence errors
+# Clusteringにつかう特徴量を抽出する
+# 特徴量：SVの開始のIndexとSVの大きさ
 ###############################################################################
 
 
-def convert_sv_tag_insertion(cssplits: list[str]) -> str:
-    """
-    Create a tag with I for bases that reads with insertion and M for bases that are mapped.
-    "MMMMIIIIMMMM"
-    """
-    im_tags = []
-    for tag in cssplits.split(","):
-        if tag.startswith("+") and tag.count("+") > 10:
-            ins = "I" * tag.count("|")
-            im_tags.append(ins + "M")
-        else:
-            im_tags.append("M")
+def get_index_of_sv(misdv_string: str, sv_type: str, mutation_loci: list[set[str]]) -> list[int]:
+    """Return a list with the start index of SV"""
 
-    return "".join(im_tags)
+    items = misdv_string.split(",")
+    index_of_sv = []
+    previous_midsv = items[0]
 
+    for i, item in enumerate(items):
+        if sv_type in ("deletion", "inversion"):
+            if sv_type == "deletion":
+                is_sv_item = item.startswith("-") and "-" in mutation_loci[i]
+                is_prev_sv_item = not previous_midsv.startswith("-")
+            else:  # inversion
+                is_sv_item = item.islower()
+                is_prev_sv_item = not previous_midsv.islower()
 
-# TODO: def convert_sv_tag_deletion(cssplits: list[str]) -> str:
-# TODO: def convert_sv_tag_inversion(cssplits: list[str]) -> str:
+            if is_sv_item and is_prev_sv_item:
+                index_of_sv.append(i)
 
+        elif sv_type == "insertion":
+            if item.startswith("+") and "+" in mutation_loci[i]:
+                index_of_sv.append(i)
 
-def convert_sv_tag(cssplits: list[str], sv_type: str) -> str:
-    if sv_type == "insertion":
-        return convert_sv_tag_insertion(cssplits)
-    # TODO
-
-
-###############################################################################
-# extract_sv_features
-# 各SVの開始のindexとそのSVのサイズを特徴量とする
-###############################################################################
+        previous_midsv = item
+    return index_of_sv
 
 
-def _find_sv_start_index(sv_tag: str, sv_type: str) -> list[int]:
-    if sv_type == "insertion":
-        key = "I"
-    elif sv_type == "deletion":
-        key = "D"
-    elif sv_type == "inversion":
-        key = "V"
-
-    pattern = re.compile(rf"{key}+")
-    return [match.start() for match in pattern.finditer(sv_tag)]
-
-
-def _extract_sv_start_index(sv_tags: list[str], sv_type: str) -> list[int]:
-    sv_start_index = []
-    for tag in sv_tags:
-        for i in _find_sv_start_index(tag, sv_type):
-            sv_start_index.append(i)
-    return sorted(sv_start_index)
-
-
-def _group_sv_start_index(sv_tags: list[list[str]], sv_type: str) -> list[list[int]]:
-    sv_start_index = _extract_sv_start_index(sv_tags, sv_type)
-
+def group_similar_indices(index_of_sv: list[int], distance: int = 5, min_coverage: float = 5.0) -> list[list[int]]:
+    """Return a list of groups of similar indices"""
+    index_of_sv.sort()
     groups = []
     current_group = []
-    for key in sv_start_index:
-        if not current_group or key - current_group[-1] <= 5:
+    for key in index_of_sv:
+        if not current_group or key - current_group[-1] <= distance:
             current_group.append(key)
         else:
             groups.append(current_group)
@@ -86,85 +62,68 @@ def _group_sv_start_index(sv_tags: list[list[str]], sv_type: str) -> list[list[i
     if current_group:
         groups.append(current_group)
 
-    return [group for group in groups if len(group) > 10]
+    return [group for group in groups if len(group) > min_coverage]
 
 
-def define_index_converter(sv_tags: list[list[str]], sv_type: str) -> dict[int, int]:
-    index_group = _group_sv_start_index(sv_tags, sv_type)
+def define_index_converter(index_grouped: list[list[int]]) -> dict[int, int]:
     index_converter = {}
-    for group in index_group:
-        value = group[0]
+    for group in index_grouped:
+        value = Counter(group).most_common()[0][0]
         index_converter |= {g: value for g in group}
     return index_converter
 
 
-def annotate_merged_sv_start_index(
-    sv_tags: list[str], sv_type: str, index_converter: dict[int, int]
-) -> list[list[int]]:
-    sv_start_index = []
-    for tag in sv_tags:
-        start_index = []
-        for i in _find_sv_start_index(tag, sv_type):
-            start_index.append(index_converter.get(i, None))
-        sv_start_index.append(start_index)
-    return sv_start_index
+def get_index_and_sv_size(
+    misdv_string: str, sv_type: str, mutation_loci: list[set[str]], index_converter: dict[int, int]
+) -> dict[int, int]:
+    """Return a dictionary with the start index and SV size"""
+
+    items = misdv_string.split(",")
+    result = {}
+    sv_size = 0
+    start_index = None
+    previous_midsv = items[0]
+
+    for i, item in enumerate(items):
+        if sv_type in ("deletion", "inversion"):
+            if sv_type == "deletion":
+                is_sv_item = item.startswith("-") and "-" in mutation_loci[i]
+                is_prev_sv_item = previous_midsv.startswith("-")
+            else:  # inversion
+                is_sv_item = item.islower()
+                is_prev_sv_item = previous_midsv.islower()
+
+            # Get the start index of SV
+            if is_sv_item and not is_prev_sv_item and i in index_converter:
+                start_index = index_converter[i]
+
+            # Calculate the size of SV
+            if is_sv_item:
+                sv_size += 1
+            elif start_index:
+                result.update({start_index: sv_size})
+                start_index = None
+                sv_size = 0
+
+        elif sv_type == "insertion":
+            if item.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
+                result.update({index_converter[i]: item.count("|")})
+
+        previous_midsv = item
+    return result
 
 
-def extract_sv_start_index(sv_tags_index: list[list[int]], sv_index: list[int]) -> list[list[int]]:
-    X_index = []
-    for index in sv_tags_index:
-        x_index = [0] * len(sv_index)
-        for i in index:
-            if i:
-                x_index[sv_index.index(i)] = 1
-        X_index.append(x_index)
-    return X_index
+def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[str]) -> np.ndarray:
+    """補正後のIndexにあるSVの大きさを特徴量として用いる"""
+    sv_size_features = []
 
+    for record in index_and_sv_size:
+        sv_size = {i: 0 for i in all_sv_index}
+        sv_size |= record
+        sv_size_features.append(sv_size)
 
-def _find_sv_start_index_and_size(sv_tag: str, sv_type: str) -> list[int]:
-    if sv_type == "insertion":
-        key = "I"
-    elif sv_type == "deletion":
-        key = "D"
-    elif sv_type == "inversion":
-        key = "V"
-
-    pattern = re.compile(rf"{key}+")
-    return [[match.start(), match.end() - match.start()] for match in pattern.finditer(sv_tag)]
-
-
-def annotate_size_by_merged_sv_start_index(
-    sv_tags: list[str], sv_type: str, index_converter: dict[int, int]
-) -> list[list[int]]:
-    sv_start_index_size = []
-    for tag in sv_tags:
-        start_index_size = []
-        for i, size in _find_sv_start_index_and_size(tag, sv_type):
-            start_index_size.append([index_converter.get(i, None), size])
-        sv_start_index_size.append(start_index_size)
-    return sv_start_index_size
-
-
-def extract_sv_size(sv_tags_size: list[list[list[int]]], sv_index: list[int]) -> list[list[int]]:
-    X_size = []
-    for index_size in sv_tags_size:
-        x_size = [0] * len(sv_index)
-        for i, size in index_size:
-            if i:
-                x_size[sv_index.index(i)] = size
-        X_size.append(x_size)
-    return X_size
-
-
-def extract_sv_features(sv_tags: list[str], sv_type: str, sv_index: list[int]) -> np.ndarray[np.float64]:
-    index_converter = define_index_converter(sv_tags, sv_type)
-    sv_tags_index = annotate_merged_sv_start_index(sv_tags, sv_type, index_converter)
-    sv_tags_size = annotate_size_by_merged_sv_start_index(sv_tags, sv_type, index_converter)
-
-    X_index = extract_sv_start_index(sv_tags_index, sv_index)
-    X_size = extract_sv_size(sv_tags_size, sv_index)
-
-    return np.concatenate([X_index, X_size], axis=1)
+    index_of_sv = sorted({key for record in sv_size_features for key in record.keys()})
+    return np.array([[record.get(i, 0) for i in index_of_sv] for record in sv_size_features])
 
 
 ###############################################################################
@@ -372,6 +331,148 @@ def generate_cstag_and_fasta(
 
 
 def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict, sv_type: str) -> None:
+    #######################################################
+    # Load data
+    #######################################################
+    MUTATION_LOCI: list[set[str]] = io.load_pickle(
+        Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", "control", "mutation_loci.pickle")
+    )
+
+    path_midsv_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
+    path_midsv_control = Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl")
+
+    coverage_sample = io.count_newlines(path_midsv_sample)
+    coverage_control = io.count_newlines(path_midsv_control)
+
+    #######################################################
+    # Extract features: SV start index and SV size
+    #######################################################
+    index_of_sv_sample = [
+        get_index_of_sv(m["CSSPLIT"], sv_type, MUTATION_LOCI) for m in io.read_jsonl(path_midsv_sample)
+    ]
+    index_of_sv_sample = sorted(chain.from_iterable(index_of_sv_sample))
+
+    index_of_sv_control = [
+        get_index_of_sv(m["CSSPLIT"], sv_type, MUTATION_LOCI) for m in io.read_jsonl(path_midsv_control)
+    ][:1000]
+    index_of_sv_control = sorted(chain.from_iterable(index_of_sv_control))
+
+    index_grouped_sample = group_similar_indices(
+        index_of_sv_sample, distance=5, min_coverage=max(5, coverage_sample * 0.05)
+    )
+    index_grouped_control = group_similar_indices(
+        index_of_sv_control, distance=5, min_coverage=max(5, coverage_control * 0.05)
+    )
+
+    index_converter_sample = define_index_converter(index_grouped_sample)
+    index_converter_control = define_index_converter(index_grouped_control)
+
+    index_and_sv_size_sample = [
+        get_index_and_sv_size(m["CSSPLIT"], sv_type, MUTATION_LOCI, index_converter_sample)
+        for m in io.read_jsonl(path_midsv_sample)
+    ]
+    index_and_sv_size_control = [
+        get_index_and_sv_size(m["CSSPLIT"], sv_type, MUTATION_LOCI, index_converter_control)
+        for m in io.read_jsonl(path_midsv_control)
+    ]
+
+    all_sv_index = {
+        key
+        for record in index_and_sv_size_sample + index_and_sv_size_control
+        if isinstance(record, dict)
+        for key in record.keys()
+    }
+
+    X_sample = extract_features(index_and_sv_size_sample, all_sv_index)
+    X_control = extract_features(index_and_sv_size_control, all_sv_index)
+
+    #######################################################
+    # Clustering
+    #######################################################
+
+    X = np.vstack([X_sample, X_control])
+    labels = optimize_labels(X, coverage_sample, coverage_control)
+
+    #######################################################
+    # Call consensus
+    #######################################################
+    cstag_by_label = {}
+    fasta_by_label = {}
+
+    if sv_type == "deletion" or sv_type == "inversion":
+        ###################################################
+        # 各IndexにおけるSV sizeのコンセンサスを、コントロールのアレルに反映させる
+        ###################################################
+
+        sv_index_by_label = defaultdict(set)
+        for label, record in zip(labels, index_and_sv_size_sample):
+            sv_index_by_label[label] |= record.keys()
+
+        index_and_sv_size_by_label = defaultdict(list)
+        for label, record in zip(labels, index_and_sv_size_sample):
+            sv_index = sv_index_by_label[label]
+            sv_size = {i: 0 for i in sv_index}
+            sv_size |= record
+            index_and_sv_size_by_label[label].append(sv_size)
+
+        ###################################################
+        # SV sizeのコンセンサスを取得
+        ###################################################
+        consensus_index_and_sv_size_by_label = defaultdict(dict)
+        for label, index_and_sv_size in index_and_sv_size_by_label.items():
+            frequency_counts = defaultdict(lambda: defaultdict(int))
+
+            # Count the frequencies
+            for record in index_and_sv_size:
+                for key, value in record.items():
+                    frequency_counts[key][value] += 1
+
+            # Extract the most frequent value for each key
+            consensus_index_and_sv_size_by_label[label] = {
+                key: max(values, key=values.get) for key, values in frequency_counts.items()
+            }
+
+        ###################################################
+        # ControlのアレルにSVを反映させる
+        ###################################################
+        def modify_tags(midsv_tags: list[str], start: int, end: int, modify_func: callable) -> list[str]:
+            return [tag if not (start <= i <= end) else modify_func(tag) for i, tag in enumerate(midsv_tags)]
+
+        for label, consensus_index_and_sv_size in consensus_index_and_sv_size_by_label:
+            midsv_tags_control = ["=" + s for s in list(FASTA_ALLELES["control"])]
+            for start, sv_size in consensus_index_and_sv_size.items():
+                if sv_size == 0:
+                    continue
+                end = start + sv_size
+                if sv_type == "deletion":
+                    midsv_tags_control = modify_tags(midsv_tags_control, start, end, lambda x: "-" + x[1:])
+                elif sv_type == "inversion":
+                    midsv_tags_control = modify_tags(midsv_tags_control, start, end, lambda x: x.lower())
+
+            cstag_by_label[label] = convert_cssplits_to_cstag(midsv_tags_control)
+            fasta_by_label[label] = cstag.to_sequence(cstag_by_label[label])
+
+    else:  # sv_type == "insertion"
+        cstag_by_label, fasta_by_label = generate_cstag_and_fasta(
+            path_midsv_sample, MUTATION_LOCI, fasta_control, labels, index_converter_sample, sv_type
+        )
+    # TODO ---------------------
+
+    for key, value in index_and_sv_size.items():
+        if key not in consensus_index_and_sv_size_by_label[label]:
+            consensus_index_and_sv_size_by_label[label][key] = value
+
+    cssplits_iter: Iterator[list[list[str]]] = (m["CSSPLIT"].split(",") for m in io.read_jsonl(path_midsv_sample))
+
+    cssplits_by_label = defaultdict(list)
+    for label, cssplits in zip(labels, cssplits_iter):
+        cssplits_by_label[label].append(cssplits)
+
+
+def old_detect_sv_alleles(
+    TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict, sv_type: str
+) -> None:
+    return
     path_midsv_sample = Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl")
     midsv_sample = io.read_jsonl(path_midsv_sample)
     sv_tags_sample = [convert_sv_tag(m["CSSPLIT"], sv_type) for m in midsv_sample]
