@@ -163,9 +163,16 @@ def execute_sample(arguments: dict):
     paths_predefined_fasta: set[str] = {
         str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
     }
-    preprocess.detect_deletion_alleles(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
-    preprocess.detect_insertions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
-    # preprocess.detect_inversions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles) #TODO
+
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="insertion"
+    )
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="deletion"
+    )
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
+    )
 
     paths_sv_fasta = set()
     paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
