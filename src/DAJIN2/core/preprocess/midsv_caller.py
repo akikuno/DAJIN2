@@ -235,4 +235,4 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
-        midsv.write_jsonl(midsv_sample, path_midsv_output)
+        io.write_jsonl(midsv_sample, path_midsv_output)

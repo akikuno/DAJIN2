@@ -11,7 +11,7 @@ import numpy as np
 from DAJIN2.core.clustering.clustering import optimize_labels
 from DAJIN2.core.preprocess.sv_handler import add_unique_allele_keys, extract_unique_sv, save_cstag, save_fasta
 from DAJIN2.utils import io
-from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag
+from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, revcomp_cssplits
 
 ###############################################################################
 # Clusteringにつかう特徴量を抽出する
@@ -252,9 +252,11 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
                     continue
                 end = start + sv_size
                 if sv_type == "deletion":
-                    midsv_tags_control = modify_tags(midsv_tags_control, start, end, lambda x: "-" + x[1:])
+                    midsv_tags_control = [
+                        tag if not (start <= i <= end) else "-" + tag[1:] for i, tag in enumerate(midsv_tags_control)
+                    ]
                 elif sv_type == "inversion":
-                    midsv_tags_control = modify_tags(midsv_tags_control, start, end, lambda x: x.lower())
+                    midsv_tags_control[start : end + 1] = revcomp_cssplits(midsv_tags_control[start : end + 1])
 
             cstag_by_label[label] = convert_cssplits_to_cstag(midsv_tags_control)
             fasta_by_label[label] = cstag.to_sequence(cstag_by_label[label])
