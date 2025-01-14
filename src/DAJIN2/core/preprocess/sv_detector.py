@@ -14,40 +14,42 @@ from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, revcomp_cssplits
 
 ###############################################################################
-# Clusteringにつかう特徴量を抽出する
-# 特徴量：SVの開始のIndexとSVの大きさ
+# Extract features for clustering
+# Features: The start index of the SV and the size of the SV
 ###############################################################################
 
 
 def get_index_of_sv(misdv_string: str, sv_type: str, mutation_loci: list[set[str]]) -> list[int]:
-    """Return a list with the start index of SV"""
+    """Return a list with the start index of SV using the MIDSV tags"""
 
-    items = misdv_string.split(",")
+    tags = misdv_string.split(",")
     index_of_sv = []
-    previous_midsv = items[0]
+    previous_tag = tags[0]
 
-    for i, item in enumerate(items):
+    for i, current_tag in enumerate(tags):
         if sv_type in ("deletion", "inversion"):
             if sv_type == "deletion":
-                is_sv_item = item.startswith("-") and "-" in mutation_loci[i]
-                is_prev_sv_item = not previous_midsv.startswith("-")
+                current_tag_is_sv = current_tag.startswith("-") and "-" in mutation_loci[i]
+                previous_tag_is_not_sv = not previous_tag.startswith("-")
             else:  # inversion
-                is_sv_item = item.islower()
-                is_prev_sv_item = not previous_midsv.islower()
+                current_tag_is_sv = current_tag.islower()
+                previous_tag_is_not_sv = not previous_tag.islower()
 
-            if is_sv_item and is_prev_sv_item:
-                index_of_sv.append(i)
+        # If the current tag is an SV and the previous tag is not an SV
+        if current_tag_is_sv and previous_tag_is_not_sv:
+            index_of_sv.append(i)
 
         elif sv_type == "insertion":
-            if item.startswith("+") and "+" in mutation_loci[i]:
+            if current_tag.startswith("+") and "+" in mutation_loci[i]:
                 index_of_sv.append(i)
 
-        previous_midsv = item
+        previous_tag = current_tag
     return index_of_sv
 
 
 def group_similar_indices(index_of_sv: list[int], distance: int = 5, min_coverage: float = 5.0) -> list[list[int]]:
-    """Return a list of groups of similar indices"""
+    """The presence of indels causes shifts in the start index of SVs detected by Nanopore.
+    To correct these shifts, group SV start indices that are within a specified distance of each other."""
     index_of_sv.sort()
     groups = []
     current_group = []
@@ -77,27 +79,27 @@ def get_index_and_sv_size(
 ) -> dict[int, int]:
     """Return a dictionary with the start index and SV size"""
 
-    items = misdv_string.split(",")
+    tags = misdv_string.split(",")
     result = {}
     sv_size = 0
     start_index = None
-    previous_midsv = items[0]
+    previous_tag = tags[0]
 
-    for i, item in enumerate(items):
+    for i, current_tag in enumerate(tags):
         if sv_type in ("deletion", "inversion"):
             if sv_type == "deletion":
-                is_sv_item = item.startswith("-") and "-" in mutation_loci[i]
-                is_prev_sv_item = previous_midsv.startswith("-")
+                current_tag_is_sv = current_tag.startswith("-") and "-" in mutation_loci[i]
+                previous_tag_is_not_sv = previous_tag.startswith("-")
             else:  # inversion
-                is_sv_item = item.islower()
-                is_prev_sv_item = previous_midsv.islower()
+                current_tag_is_sv = current_tag.islower()
+                previous_tag_is_not_sv = previous_tag.islower()
 
             # Get the start index of SV
-            if is_sv_item and not is_prev_sv_item and i in index_converter:
+            if current_tag_is_sv and not previous_tag_is_not_sv and i in index_converter:
                 start_index = index_converter[i]
 
             # Calculate the size of SV
-            if is_sv_item:
+            if current_tag_is_sv:
                 sv_size += 1
             elif start_index:
                 result.update({start_index: sv_size})
@@ -105,15 +107,14 @@ def get_index_and_sv_size(
                 sv_size = 0
 
         elif sv_type == "insertion":
-            if item.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
-                result.update({index_converter[i]: item.count("|")})
+            if current_tag.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
+                result.update({index_converter[i]: current_tag.count("|")})
 
-        previous_midsv = item
+        previous_tag = current_tag
     return result
 
 
 def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[str]) -> np.ndarray:
-    """補正後のIndexにあるSVの大きさを特徴量として用いる"""
     sv_size_features = []
 
     for record in index_and_sv_size:
@@ -241,9 +242,6 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
 
         cstag_by_label = {}
         fasta_by_label = {}
-
-        def modify_tags(midsv_tags: list[str], start: int, end: int, modify_func: callable) -> list[str]:
-            return [tag if not (start <= i <= end) else modify_func(tag) for i, tag in enumerate(midsv_tags)]
 
         for label, consensus_index_and_sv_size in consensus_index_and_sv_size_by_label.items():
             midsv_tags_control = ["=" + s for s in list(FASTA_ALLELES["control"])]
