@@ -27,10 +27,47 @@ def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
     return left_idx_n - 1, right_idx_n + 1
 
 
-# ToDo: 点変異が扱えていない。convert_cssplits_to_cstagをinversion検出用に改変すれば、必要なくなる。
-def convert_cssplit_to_dna(cssplit: str) -> str:
-    """Convert a cssplit to a plain DNA sequence."""
-    return "".join([char for char in cssplit if char.isalpha()])
+###########################################################
+# Convert cssplits to DNA sequence
+###########################################################
+
+
+def _revcomp_inversion(sequence: str) -> str:
+    """Reverse complement only the lowercase portions (= inversion) of the DNA sequence."""
+    # Define the complement dictionary
+    complement = {"a": "t", "t": "a", "c": "g", "g": "c", "n": "n"}
+
+    # Function to reverse complement a segment
+    def reverse_complement(segment: str) -> str:
+        return "".join(complement[nuc] for nuc in reversed(segment))
+
+    # Use re to split sequence into lowercase segments and other parts
+    parts = re.split(r"([a-z]+)", sequence)
+
+    # Apply reverse complement to lowercase parts
+    result = [reverse_complement(part) if part.islower() else part for part in parts]
+
+    return "".join(result)
+
+
+def convert_cssplits_to_sequence(cssplits: list[str]) -> str:
+    sequence = []
+    for tag in cssplits:
+        if tag.startswith("-"):  # deletion
+            pass
+        elif tag.startswith("+"):  # insertion
+            insertions, last_tag = tag.split("|")[:-1], tag.split("|")[-1]
+            ins_seq = "".join([ins[1] for ins in insertions])
+            sequence.append(ins_seq)
+            if last_tag.startswith("-"):
+                pass
+            else:  # match or substitution
+                last_seq = last_tag[-1]
+            sequence.append(last_seq)
+        else:  # match or substitution or inversion
+            sequence.append(tag[-1])
+
+    return _revcomp_inversion("".join(sequence))
 
 
 ###########################################################

@@ -22,6 +22,43 @@ def test_find_n_boundaries(cssplits, expected):
 
 
 ###########################################################
+# convert cssplits to DNA sequence
+###########################################################
+
+
+@pytest.mark.parametrize(
+    "sequence, expected",
+    [
+        ("AGGCGAacgAaccN", "AGGCGAcgtAggtN"),  # Lowercase inversion
+        ("AAAAaaaaAAAA", "AAAAttttAAAA"),  # All lowercase in the middle
+        ("aaaa", "tttt"),  # Only lowercase
+        ("AGGCGATACC", "AGGCGATACC"),  # No lowercase
+        ("a", "t"),  # Single lowercase
+        ("", ""),  # Empty string
+    ],
+)
+def test_revcomp_inversion(sequence, expected):
+    assert cssplits_handler._revcomp_inversion(sequence) == expected
+
+
+@pytest.mark.parametrize(
+    "cssplits, expected",
+    [
+        (
+            ["=A", "=n", "+a|+t|+g|=a", "=c", "=g", "=A", "=a", "=c", "=c", "=N"],
+            "AcgtcatnAggtN",
+        ),  # Complex case with insertion and inversion
+        (["=A", "=T", "=C", "=G"], "ATCG"),  # Simple match only
+        (["+a|+t|+g|=a"], "tcat"),  # Single insertion with match
+        (["=a", "=c", "=t"], "agt"),  # Simple inversion
+        ([], ""),  # Empty cssplits
+    ],
+)
+def test_convert_cssplits_to_sequence(cssplits, expected):
+    assert cssplits_handler.convert_cssplits_to_sequence(cssplits) == expected
+
+
+###########################################################
 # convert cssplits to cstag
 ###########################################################
 
