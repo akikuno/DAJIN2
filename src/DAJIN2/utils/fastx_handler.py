@@ -10,6 +10,7 @@ from pathlib import Path
 
 import mappy
 import pysam
+
 from DAJIN2.utils.io import detect_fastx_format, is_gzip_file, read_fasta, read_fastq, sanitize_name, write_fastq
 
 #################################################
@@ -107,7 +108,7 @@ def convert_fasta_to_fastq(path_fasta: str | Path, path_fastq: str | Path, quali
         for record in fasta:
             identifier = record["identifier"]
             if record["identifier"].startswith(">"):
-                identifier = f'@{record["identifier"][1:]}'
+                identifier = f"@{record['identifier'][1:]}"
             sequence = record["sequence"]
             separator = "+"
             quality = quality_score * len(sequence)

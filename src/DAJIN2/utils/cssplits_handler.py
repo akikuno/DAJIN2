@@ -360,7 +360,7 @@ def reallocate_insertion_within_deletion(cssplits: list[str], bin_size: int = 50
             elif cs.startswith("*"):
                 cs_new = f"-{cs[1]}"
             elif cs.startswith("+") and cs.split("|")[-1].startswith("*"):
-                cs_new = f'-{cs.split("|")[-1][1]}'
+                cs_new = f"-{cs.split('|')[-1][1]}"
             else:
                 cs_new = f"-{cs[-1]}"
             cssplits_updated[i] = cs_new
