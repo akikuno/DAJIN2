@@ -5,6 +5,8 @@ from pathlib import Path
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 
+from DAJIN2.utils import io
+
 
 def extract_unique_sv(
     fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, str], base_num: int = 10
@@ -49,9 +51,7 @@ def _check_duplicates_of_sets(set1: set[str], set2: set[str]) -> bool:
     return len(union_set) != total_elements
 
 
-def add_unique_allele_keys(
-    fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, set], key: str
-) -> dict[str, str]:
+def add_unique_allele_keys(fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, set], key: str) -> dict[str, str]:
     """
     Update keys to avoid duplicating user-specified alleles.
     If the allele 'insertion1' exists in FASTA_ALLELES, increment the digits.
@@ -77,10 +77,18 @@ def add_unique_allele_keys(
 
 
 def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_sv_alleles: dict[str, str]) -> None:
+    Path(TEMPDIR, SAMPLE_NAME, "fasta").mkdir(parents=True, exist_ok=True)
     for header, seq in fasta_sv_alleles.items():
         Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}\n")
 
 
+def save_midsv(TEMPDIR: Path | str, SAMPLE_NAME: str, midsv_sv_alleles: dict[str, list[str]]) -> None:
+    Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv").mkdir(parents=True, exist_ok=True)
+    for header, midsv_tag in midsv_sv_alleles.items():
+        io.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{header}.jsonl"))
+
+
 def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_sv_alleles: dict[str, str]) -> None:
+    Path(TEMPDIR, SAMPLE_NAME, "cstag").mkdir(parents=True, exist_ok=True)
     for header, cs_tag in cstag_sv_alleles.items():
         Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
