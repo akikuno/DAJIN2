@@ -3,10 +3,9 @@ from __future__ import annotations
 import textwrap
 from pathlib import Path
 
-import cstag
-
-from DAJIN2.core.report.insertion_reflector import reflect_ref_insertion_to_query
-from DAJIN2.utils.cssplits_handler import convert_cssplits_to_cstag, reallocate_insertion_within_deletion
+from DAJIN2.core.report.html_builder import to_html
+from DAJIN2.utils import io
+from DAJIN2.utils.cssplits_handler import reallocate_insertion_within_deletion
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:
@@ -17,17 +16,18 @@ def convert_to_fasta(header: str, sequence: str) -> str:
     return fasta
 
 
-def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, header: str, cons_per: list[dict]) -> str:
-    cons_cssplits = [max(cons, key=cons.get) for cons in cons_per]
-    cons_cssplits_reallocated = reallocate_insertion_within_deletion(cons_cssplits, bin_size=500, percentage=50)
-    cons_cstag = convert_cssplits_to_cstag(cons_cssplits_reallocated)
+def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_per: list[dict]) -> str:
+    midsv_cons = [max(cons, key=cons.get) for cons in cons_per]
+    midsv_cons_reallocated = reallocate_insertion_within_deletion(midsv_cons, bin_size=500, percentage=50)
 
     allele = header.split("_")[1]
-    if Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{allele}.txt").exists():
-        ref_cstag = Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{allele}.txt").read_text()
-        cons_cstag = reflect_ref_insertion_to_query(ref_cstag, cons_cstag)
+    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{allele}.jsonl")
+    if path_midsv_sv.exists():
+        midsv_ref = list(io.read_jsonl(path_midsv_sv))
+    else:
+        midsv_ref = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
-    return cstag.to_html(cons_cstag, f"{SAMPLE_NAME} {header.replace('_', ' ')}")
+    return to_html(midsv_ref, midsv_cons_reallocated, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
 
 
 ##################################################
@@ -59,10 +59,10 @@ def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
         path_output.write_text(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
 
 
-def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, cons_percentage: dict[list]) -> None:
+def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_percentage: dict[list]) -> None:
     for header, cons_per in cons_percentage.items():
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
-        path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, header, cons_per))
+        path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_per))
 
 
 # def to_vcf(TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COODINATES: dict[str, str], cons_percentage: dict[list]) -> str:

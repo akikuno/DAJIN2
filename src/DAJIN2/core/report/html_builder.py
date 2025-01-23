@@ -1,100 +1,115 @@
 HTML_HEADER = """<!DOCTYPE html>
-    <html>
-    <head>
-    <style>
-    h1 {
-    font-family: Consolas, 'Courier New', monospace;
-    color: #333;
-    padding: 0.1em 0;
-    border-top: solid 3px #333;
-    border-bottom: solid 3px #333;
-    }
-    .p_seq {
-    font-family: Consolas, 'Courier New', monospace;
-    color: #585858;
-    word-wrap: break-word;
-    letter-spacing: 0.15em;
-    }
-    .p_legend {
-    font-family: Consolas, 'Courier New', monospace;
-    color: #585858;
-    word-wrap: break-word;
-    }
+<html lang="en">
+<meta charset="utf-8">
 
-    <!-- Annotating mutations -->
-    .Ins {
-    color: #333;
-    font-weight: bold;
-    border: 0.1em solid;
-    background-color: #ee827c;
-    }
-    .Del {
-    color: #333;
-    font-weight: bold;
-    border: 0.1em solid;
-    background-color: #a0d8ef;
-    }
-    .Sub {
-    color: #333;
-    font-weight: bold;
-    border: 0.1em solid;
-    background-color: #98d98e;
-    }
-    .Inv {
-    color: #333;
-    font-weight: bold;
-    border: 0.1em solid;
-    background-color: #CAB5FF;
-    }
-    .Splice {
-    color: #333;
-    font-weight: bold;
-    border: 0.1em solid;
-    background-color: #f8e58c;
-    }
-    .Unknown {
-    color: #333;
-    font-weight: bold;
-    border: 0.1em solid;
-    background-color: #c0c6c9;
-    }
-    
-    <!-- Annotating SV to the consensus allele -->
-    .Ins_Allele {
-    color: #333;
-    font-weight: bold;
-    text-decoration:underline;
-    text-decoration-color: #ED5F5F;
-    }
-    .Del_Allele {
-    color: #333;
-    font-weight: bold;
-    text-decoration:underline;
-    text-decoration-color: #48C0F0;
-    }
-    .Inv_Allele {
-    color: #333;
-    font-weight: bold;
-    text-decoration:underline;
-    text-decoration-color: #7F4DFF;
-    }
+<head>
+    <style>
+        body {
+            width: 95%;
+            margin: 0 auto;
+            box-sizing: border-box;
+            font-family: Consolas, 'Courier New', monospace;
+            color: #333;
+        }
+
+        h1 {
+            padding: 0.1em 0;
+            border-top: solid 3px #333;
+            border-bottom: solid 3px #333;
+        }
+
+        .p_seq {
+            color: #585858;
+            word-wrap: break-word;
+            letter-spacing: 0.15em;
+        }
+
+        .p_legend {
+            word-wrap: break-word;
+        }
+
+        .p_legend span {
+            margin: 5px;
+        }
+
+        .p_legend br {
+            line-height: 2em;
+        }
+
+        .Ins {
+            font-weight: bold;
+            border: 0.1em solid;
+            background-color: #ee827c;
+        }
+
+        .Del {
+            font-weight: bold;
+            border: 0.1em solid;
+            background-color: #a0d8ef;
+        }
+
+        .Sub {
+            font-weight: bold;
+            border: 0.1em solid;
+            background-color: #98d98e;
+        }
+
+        .Inv {
+            font-weight: bold;
+            border: 0.1em solid;
+            background-color: #CAB5FF;
+        }
+
+        .Splice {
+            font-weight: bold;
+            border: 0.1em solid;
+            background-color: #f8e58c;
+        }
+
+        .Unknown {
+            font-weight: bold;
+            border: 0.1em solid;
+            background-color: #c0c6c9;
+        }
+
+        .Ins_Allele {
+            font-weight: bold;
+            text-decoration: underline;
+            text-decoration-color: #ED5F5F;
+            text-decoration-thickness: 3px;
+        }
+
+        .Del_Allele {
+            font-weight: bold;
+            text-decoration: underline;
+            text-decoration-color: #48C0F0;
+            text-decoration-thickness: 3px;
+        }
+
+        .Inv_Allele {
+            font-weight: bold;
+            text-decoration: underline;
+            text-decoration-color: #7F4DFF;
+            text-decoration-thickness: 3px;
+        }
     </style>
-    </head>
-    <body>
+</head>
+
+<body>
 """
 
 HTML_LEGEND = """
-<p class = "p_legend">
-Labels:
-<span class="Ins">Insertion</span>
-<span class="Del">Deletion</span>
-<span class="Sub">Substitution</span>
-<span class="Splice">Splice</span>
-<span class="Splice">Inversion</span>
-<span class="Unknown">Unknown</span>
-<span class="Ins_Allele">Insertion of the predicted allele</span>
-<span class="Del_Allele">Deletion of the predicted allele</span>
-<span class="Inv_Allele">Inversion of the predicted allele</span>
+<p class="p_legend">
+    <span class="Ins">Insertion</span>
+    <span class="Del">Deletion</span>
+    <span class="Sub">Substitution</span>
+    <span class="Splice">Splice</span>
+    <span class="Inv">Inversion</span>
+    <span class="Unknown">Unknown</span>
+    <br>
+    <span class="Ins_Allele">Insertion allele</span>
+    <span class="Del_Allele">Deletion allele</span>
+    <span class="Inv_Allele">Inversion allele</span>
 </p>
 <hr>
 """
@@ -106,7 +121,8 @@ HTML_FOOTER = """
 
 
 # Build html
-def embed_sv_allele_to_html(misdv_sv_allele: list[str]) -> list[str]:
+def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
+    """Add an HTML class for a colored underline to regions corresponding to SVs (indels, inversions)."""
     html_sv_allele = []
     idx = 0
     while idx < len(misdv_sv_allele):
@@ -117,6 +133,7 @@ def embed_sv_allele_to_html(misdv_sv_allele: list[str]) -> list[str]:
             ins_seq = ["=" + ins[1] for ins in insertions]
             html_sv_allele.extend(ins_seq)
             html_sv_allele.append("</span>")
+            # If a deletion occurs immediately after an insertion, close the insertion span and open the deletion span.
             if last_tag.startswith("-"):
                 html_sv_allele.append("<span class='Del_Allele'>")
                 html_sv_allele.append(last_tag)
@@ -125,59 +142,90 @@ def embed_sv_allele_to_html(misdv_sv_allele: list[str]) -> list[str]:
                 html_sv_allele.append(last_tag)
         elif midsv_tag.startswith("-"):
             html_sv_allele.append("<span class='Del_Allele'>")
-            html_sv_allele.append(midsv_tag)
+            html_sv_allele.append(misdv_sv_allele[idx])
+            # Enclose consecutive deletions within a single span.
+            while idx < len(misdv_sv_allele) - 1 and misdv_sv_allele[idx + 1].startswith("-"):
+                html_sv_allele.append(misdv_sv_allele[idx + 1])
+                idx += 1
             html_sv_allele.append("</span>")
         elif midsv_tag.islower():
             html_sv_allele.append("<span class='Inv_Allele'>")
+            # Enclose consecutive inversion within a single span.
             html_sv_allele.append(midsv_tag)
+            while idx < len(misdv_sv_allele) - 1 and misdv_sv_allele[idx + 1].islower():
+                html_sv_allele.append(misdv_sv_allele[idx + 1])
+                idx += 1
             html_sv_allele.append("</span>")
         else:
             html_sv_allele.append(midsv_tag)
 
         idx += 1
+
     return html_sv_allele
 
 
-def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str]) -> str:
+def embed_mutations_to_html(highlighted_sv_allele: list[str], midsv_consensus_sample: list[str]) -> str:
     idx = 0
-    for i, tag_sv in enumerate(html_sv_allele):
-        if tag_sv.startswith("<"):
+    idx_sv_allele = 0
+    html_parts = ['<p class="p_seq">']
+    while idx_sv_allele < len(highlighted_sv_allele):
+        tag_sv_allele = highlighted_sv_allele[idx_sv_allele]
+        if tag_sv_allele.startswith("<"):
+            html_parts.append(tag_sv_allele)
+            idx_sv_allele += 1
             continue
-        tag_sample = midsv_consensus[idx]
+        if tag_sv_allele.startswith("-"):
+            html_parts.append(tag_sv_allele[-1])
+            idx_sv_allele += 1
+            continue
+        if idx >= len(midsv_consensus_sample):
+            break
+        tag_sample = midsv_consensus_sample[idx]
+
+        # Substitution
         if tag_sample.startswith("*"):
             substitutions = [tag_sample[-1]]
-            while idx < len(midsv_consensus) - 1 and midsv_consensus[idx + 1].startswith("*"):
-                substitutions.append(midsv_consensus[idx + 1][-1])
+            while idx < len(midsv_consensus_sample) - 1 and midsv_consensus_sample[idx + 1].startswith("*"):
+                substitutions.append(midsv_consensus_sample[idx + 1][-1])
                 idx += 1
-            html_sv_allele[i] = "<span class='Sub'>" + "".join(substitutions) + "</span>"
+            html_parts.append("<span class='Sub'>" + "".join(substitutions) + "</span>")
+        # Insertion
         elif tag_sample.startswith("+"):
-            html_sv_allele.append("<span class='Ins'>")
+            html_parts.append("<span class='Ins'>")
             insertions, last_tag = tag_sample.split("|")[:-1], tag_sample.split("|")[-1]
             ins_seq = "".join(ins[-1] for ins in insertions)
-            html_sv_allele.append(ins_seq)
-            html_sv_allele.append("</span>")
+            html_parts.append(ins_seq)
+            html_parts.append("</span>")
             if last_tag.startswith("-"):
-                html_sv_allele.append("<span class='Del'>")
-                html_sv_allele.append(last_tag[-1])
-                html_sv_allele.append("</span>")
+                html_parts.append("<span class='Del'>")
+                html_parts.append(last_tag[-1])
+                html_parts.append("</span>")
             else:  # match or substitution
-                html_sv_allele.append(last_tag[-1])
+                html_parts.append(last_tag[-1])
+        # Deletion
         elif tag_sample.startswith("-"):
-            html_sv_allele.append("<span class='Del'>")
-            html_sv_allele.append(tag_sample[-1])
-            html_sv_allele.append("</span>")
+            html_parts.append("<span class='Del'>")
+            html_parts.append(tag_sample[-1])
+            while idx < len(midsv_consensus_sample) - 1 and midsv_consensus_sample[idx + 1].startswith("-"):
+                html_parts.append(midsv_consensus_sample[idx + 1][-1])
+                idx += 1
+            html_parts.append("</span>")
         else:
-            html_sv_allele[i] = tag_sv[-1]
+            html_parts.append(tag_sample[-1])
 
+        idx_sv_allele += 1
         idx += 1
-    return "".join(html_sv_allele)
+
+    html_parts.append("</p>")
+
+    return "".join(html_parts)
 
 
-def to_html(midsv_sv_allele: list[str], midsv_consensus: list[str:], description: str = "") -> str:
+def to_html(midsv_sv_allele: list[str], midsv_consensus_sample: list[str:], description: str = "") -> str:
     """Output HTML string showing a sequence with mutations colored"""
     description_str = f"<h1>{description}</h1>" if description else ""
-    html_sv_allele = embed_sv_allele_to_html(midsv_sv_allele)
-    html_parts = embed_mutations_to_html(html_sv_allele, midsv_consensus)
+    html_sv_allele = highlight_sv_regions(midsv_sv_allele)
+    html_parts = embed_mutations_to_html(html_sv_allele, midsv_consensus_sample)
     return "\n".join(
         [
             HTML_HEADER,

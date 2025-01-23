@@ -264,7 +264,7 @@ def execute_sample(arguments: dict):
     report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
     report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
     # HTML
-    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
+    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_percentage)
     # CSV (Allele Info)
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
     # BAM

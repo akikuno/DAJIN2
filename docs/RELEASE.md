@@ -18,6 +18,8 @@
 
 + Add `preprocess.deletion_detector` to improve clustering performance of large deletion. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
 
++ Add `html_builder` to display SV alleles. Issue #31
+
 ## 📝 Documentation
 
 + Upgrade Python version from 3.10 to 3.12 in README.md. Issue #74 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9499666e78c669debe8e5f600dc6a8f82253bae8)]
