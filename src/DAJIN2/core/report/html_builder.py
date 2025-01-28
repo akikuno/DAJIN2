@@ -167,7 +167,7 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
 def embed_mutations_to_html(highlighted_sv_allele: list[str], midsv_consensus_sample: list[str]) -> str:
     idx = 0
     idx_sv_allele = 0
-    html_parts = ['<p class="p_seq">']
+    html_parts = ["<p class='p_seq'>"]
     while idx_sv_allele < len(highlighted_sv_allele):
         tag_sv_allele = highlighted_sv_allele[idx_sv_allele]
         if tag_sv_allele.startswith("<"):

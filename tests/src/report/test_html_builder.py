@@ -40,37 +40,45 @@ def test_highlight_sv_regions(misdv_sv_allele, expected_output):
 
 test_data = [
     # Case 1: Insertion
-    (["=A", "+A|+C|+G|=T", "=A"], ["=A", "=A", "=C", "=G", "=T", "=A"], "A<span class='Ins_Allele'>ACG</span>TA"),
+    (
+        ["=A", "+A|+C|+G|=T", "=A"],
+        ["=A", "=A", "=C", "=G", "=T", "=A"],
+        "<p class='p_seq'>A<span class='Ins_Allele'>ACG</span>TA</p>",
+    ),
     # Case 2: Insertion followed by Deletion
     (
         ["=A", "+A|+C|+G|=T", "=A"],
         ["=A", "=A", "-C", "=G", "=T", "=A"],
-        "A<span class='Ins_Allele'>A<span class='Del'>C</span>G</span>TA",
+        "<p class='p_seq'>A<span class='Ins_Allele'>A<span class='Del'>C</span>G</span>TA</p>",
     ),
     # Case 3: Insertion followed by Substitution
     (
         ["=A", "+A|+C|+G|=T", "=A"],
         ["=A", "=A", "*CG", "=G", "=T", "=A"],
-        "A<span class='Ins_Allele'>A<span class='Sub'>G</span>G</span>TA",
+        "<p class='p_seq'>A<span class='Ins_Allele'>A<span class='Sub'>G</span>G</span>TA</p>",
     ),
     # Case 4: Deletion
-    (["=A", "-T", "-G", "=C", "=T"], ["=A", "=C", "=T"], "A<span class='Del_Allele'>TG</span>CT"),
+    (["=A", "-T", "-G", "=C", "=T"], ["=A", "=C", "=T"], "<p class='p_seq'>A<span class='Del_Allele'>TG</span>CT</p>"),
     # Case 5: Consecutive Deletions
-    (["=A", "=T", "=C", "=T"], ["=A", "-G", "-C", "=T"], "A<span class='Del'>GC</span>T"),
+    (["=A", "=T", "=C", "=T"], ["=A", "-G", "-C", "=T"], "<p class='p_seq'>A<span class='Del'>GC</span>T</p>"),
     # Case 6: Complex Case with Deletions
     (
         ["=A", "-T", "-G", "=C", "=T"],
         ["=A", "-C", "=T"],
-        "A<span class='Del_Allele'>TG</span><span class='Del'>C</span>T",
+        "<p class='p_seq'>A<span class='Del_Allele'>TG</span><span class='Del'>C</span>T</p>",
     ),
     # Case 7: Deletion and Substitution
     (
         ["=A", "-T", "-G", "=C", "=T"],
         ["=A", "-C", "*TG"],
-        "A<span class='Del_Allele'>TG</span><span class='Del'>C</span><span class='Sub'>G</span>",
+        "<p class='p_seq'>A<span class='Del_Allele'>TG</span><span class='Del'>C</span><span class='Sub'>G</span></p>",
     ),
     # Case 8: Inversion
-    (["=A", "=a", "=c", "=g", "=T"], ["=A", "=A", "=G", "=G", "=T"], "A<span class='Inv_Allele'>AGG</span>T"),
+    (
+        ["=A", "=a", "=c", "=g", "=T"],
+        ["=A", "=A", "=G", "=G", "=T"],
+        "<p class='p_seq'>A<span class='Inv_Allele'>AGG</span>T</p>",
+    ),
 ]
 
 
