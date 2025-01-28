@@ -251,13 +251,12 @@ FASTAディレクトリには、各アレルのFASTAファイルが保存され�
 HTMLディレクトリには、変異箇所が色付けされた各アレルのHTMLファイルが保存されます。  
 Tyr点変異（緑色）の例を以下に示します：
 
-<img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
+<img src="https://gist.github.com/user-attachments/assets/dd3947c4-1890-46e8-816c-034e88639adf" width="75%" />
 
-また、DAJIN2はサンプルに含まれる代表的なSVアレル(Insertion, Deletion, Inversion)を抽出し、SV箇所を下線で色付けします。
-以下は、Inversion（下線紫色）の両端に欠失（水色）および挿入（赤色）が認められる例です：
+また、DAJIN2はサンプルに含まれる代表的なSVアレル(Insertion, Deletion, Inversion)を抽出し、SV箇所を下線で色付けします。  
+以下は、Inversion（下線紫色）の両端に欠失（水色）および挿入（赤色）が認められる例です：  
 
-<img src="https://private-user-images.githubusercontent.com/15861316/407201909-021fe836-3718-4ab0-a018-de564b34faf6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDQ5MTksIm5iZiI6MTczODA0NDYxOSwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDE5MDktMDIxZmU4MzYtMzcxOC00YWIwLWEwMTgtZGU1NjRiMzRmYWY2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTAxOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVjZWQxZGZkNGJlMTI5NmZmNjkwNzIzYjc5MWExMzA0ZjVkOGYxM2NmZWZlMDEyM2M3Mzk2YjgxYzE0M2EyYWYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.OI1TDS-cEauZE4TOU0E8I090mEl-NHY7weWdl0cUw2Y" width="75%" />
-
+<img src="https://gist.github.com/user-attachments/assets/3bfdc2e5-f2a4-451d-b9ef-02cfecb31f75" width="75%" />
 
 ## 3. MUTATION_INFO
 
