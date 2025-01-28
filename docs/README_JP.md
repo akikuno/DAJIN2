@@ -12,7 +12,7 @@
 
 DAJIN2は、ナノポアシーアターゲットシーケンシングを用いた、ゲノム編集サンプルのジェノタイピングツールです。
 
-## 🌟 特徴
+# 🌟 特徴
 
 + **網羅的な変異検出**: ナノポアターゲット領域におけるゲノム編集イベントを、点変異から構造多型まで、網羅的に変異を検出することができます。
   + 特に、ゲノム編集で生じる**意図しない変異**の検出や、**欠失が生じた領域における挿入イベント**といった複合的な変異の検出が可能である点が強みとなります
@@ -21,14 +21,14 @@ DAJIN2は、ナノポアシーアターゲットシーケンシングを用い�
 + **直観的な可視化**: ゲノム編集結果は直観的に可視化され、変異を迅速かつ容易に識別することができます
 + **多サンプル対応**: 複数のサンプルの一括処理が可能です。これにより、大規模な実験や比較研究を効率的に進めることができます
 
-## 🛠 インストール
+# 🛠 インストール
 
-### 環境
+## 環境
 
 - Python >= 3.9
 - Unix環境 (Linux, macOS, WSL2, etc.)
 
-### [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
+## [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
 
 
 ```bash
@@ -43,7 +43,7 @@ conda create -n env-dajin2 python=3.12 DAJIN2 -y
 conda activate env-dajin2
 ```
 
-### [PyPI](https://pypi.org/project/DAJIN2/)
+## [PyPI](https://pypi.org/project/DAJIN2/)
 
 ```bash
 pip install DAJIN2
@@ -53,16 +53,16 @@ pip install DAJIN2
 > インストールに問題が発生した場合は、[トラブルシューティングガイド](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)をご覧ください。
 
 
-## 💻 使用方法
+# 💻 使用方法
 
-### 必要なファイル
+## 必要なファイル
 
-#### サンプルおよびコントロールファイル
+### サンプルおよびコントロールファイル
 
 DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロールサンプル**が必要です。  
 ゲノム編集サンプルとコントロールのFASTQ/FASTA（gzip圧縮・非圧縮どちらも対応可能）、またはBAMファイルを含むディレクトリを指定します。
 
-##### [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)によるベースコール
+#### [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)によるベースコール
 
 Guppyによるベースコール後、以下のようなファイル構成が出力されます：
 
@@ -78,12 +78,12 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
-上記のbarcode01をコントロール、barcode02をサンプルと仮定すると、それぞれのディレクトリは下記の通りに指定します：
+上記のbarcode01をコントロール、barcode02をサンプルとすると、それぞれのディレクトリは下記の通りに指定します：
 
 + コントロール: `fastq_pass/barcode01`
 + サンプル: `fastq_pass/barcode02`
 
-##### [Dorado](https://github.com/nanoporetech/dorado)によるベースコール
+#### [Dorado](https://github.com/nanoporetech/dorado)によるベースコール
 
 Doradoによるベースコール（[`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)）においては、BAMファイルが出力されます：
 
@@ -114,13 +114,13 @@ dorado_correct
     └── EXP-PBC096_barcode02.fasta
 ```
 
-上記のbarcode01をコントロール、barcode02をサンプルと仮定すると、それぞれのディレクトリは下記の通りに指定します：
+上記のbarcode01をコントロール、barcode02をサンプルとすると、それぞれのディレクトリは下記の通りに指定します：
 
 + コントロール: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
 + サンプル: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
 
 
-#### 想定されるアレル配列を含むFASTAファイル
+### 想定されるアレル配列を含むFASTAファイル
 
 FASTAファイルには、ゲノム編集によって想定されるアレルを記述します。
 
@@ -141,9 +141,9 @@ ACGTACGT
 ```
 
 ここで、`>control` はコントロールアレルの配列を表しており、必須です。  
-`>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの配列です。  
+`>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレル配列です。  
 
-### 単一サンプル解析
+## 単一サンプル解析
 
 単一サンプルの解析コマンドは以下の通りです。
 
@@ -159,10 +159,10 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   -g, --genome (オプション)   参照ゲノムのID (e.g hg38, mm39) [デフォルト: '']
   -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
   -h, --help                ヘルプメッセージの出力
-  -v, --version             バージョン情報の出力
+  -v, --version             バージョンの出力
 ```
 
-#### 実行例
+### 実行例
 
 ```bash
 # Example datasetのダウンロード
@@ -179,48 +179,13 @@ DAJIN2 \
     --threads 4
 ```
 
-<!-- #### 使用例
-
-```bash
-# Donwload the example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-single.tar.gz
-tar -xf example-single.tar.gz
-
-# Run DAJIN2
-DAJIN2 \
-    --name stx2-deletion \
-    --sample example-single/sample.fq.gz \
-    --control example-single/control.fq.gz \
-    --allele example-single/design.fa \
-    --genome mm39 \
-    --threads 10
-
-# 2023-06-04 11:30:03: example-single/control.fq.gz is now processing...
-# 2023-06-04 11:30:06: Preprocess example-single/control.fq.gz...
-# 2023-06-04 11:30:06: Mapping example-single/control.fq.gz...
-# 2023-06-04 11:30:21: Call MIDSV example-single/control.fq.gz...
-# 2023-06-04 11:30:31: 🍵 example-single/control.fq.gz is finished!
-# 2023-06-04 11:30:31: example-single/sample.fq.gz is now processing...
-# 2023-06-04 11:30:35: Preprocess example-single/sample.fq.gz...
-# 2023-06-04 11:34:13: Classify example-single/sample.fq.gz...
-# 2023-06-04 11:34:18: Clustering example-single/sample.fq.gz...
-# 2023-06-04 11:35:01: Consensus calling example-single/sample.fq.gz...
-# 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
-# 🎉 Finished! Open DAJIN_Results/stx2-deletion to see the report.
-``` -->
-
-### 複数サンプルの一括処理
+## 複数サンプルの一括処理
 
 `batch`サブコマンドを利用することで、複数サンプルの同時処理が可能です。  
 サンプル情報をまとめたCSVファイルまたはExcelファイルが必要です。  
 
-<!-- > [!NOTE]
-> サンプル情報のまとめ方は、[こちら](https://github.com/akikuno/DAJIN2/blob/main/examples/example-batch/batch.csv)をご参照ください。 -->
-
 > [!NOTE]
 > サンプル情報のまとめ方は、[こちら](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000)をご参照ください。  
-
-<!-- <iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe> -->
 
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
@@ -231,7 +196,7 @@ DAJIN2 batch <-f|--file> [-t|--threads] [-h]
   -h, --help                ヘルプメッセージの出力
 ```
 
-#### 実行例
+### 実行例
 
 ```bash
 # Example datasetのダウンロード
@@ -243,49 +208,10 @@ DAJIN2 --file batch.csv --threads 4
 ```
 
 
-<!-- 
-#### 使用例
+# 📈 出力結果
 
-```bash
-# Donwload the example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-batch.tar.gz
-tar -xf example-batch.tar.gz
-
-# Run DAJIN2
-DAJIN2 batch --file example-batch/batch.csv --threads 3
-
-# 2023-07-31 17:01:10: example-batch/tyr_control.fq.gz is now processing...
-# 2023-07-31 17:01:16: Preprocess example-batch/tyr_control.fq.gz...
-# 2023-07-31 17:01:48: Output BAM files of example-batch/tyr_control.fq.gz...
-# 2023-07-31 17:01:52: 🍵 example-batch/tyr_control.fq.gz is finished!
-# 2023-07-31 17:01:52: example-batch/tyr_c230gt_50%.fq.gz is now processing...
-# 2023-07-31 17:01:52: example-batch/tyr_c230gt_10%.fq.gz is now processing...
-# 2023-07-31 17:01:52: example-batch/tyr_c230gt_01%.fq.gz is now processing...
-# 2023-07-31 17:01:55: Preprocess example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:01:55: Preprocess example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:01:55: Preprocess example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:02:17: Classify example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:02:19: Clustering example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:02:34: Classify example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:02:35: Classify example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:02:39: Clustering example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:02:39: Clustering example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:02:53: Consensus calling of example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:02:59: Output reports of example-batch/tyr_c230gt_50%.fq.gz...
-# 2023-07-31 17:03:04: 🍵 example-batch/tyr_c230gt_50%.fq.gz is finished!
-# 2023-07-31 17:03:39: Consensus calling of example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:03:51: Output reports of example-batch/tyr_c230gt_01%.fq.gz...
-# 2023-07-31 17:04:03: 🍵 example-batch/tyr_c230gt_01%.fq.gz is finished!
-# 2023-07-31 17:04:08: Consensus calling of example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:04:16: Output reports of example-batch/tyr_c230gt_10%.fq.gz...
-# 2023-07-31 17:04:24: 🍵 example-batch/tyr_c230gt_10%.fq.gz is finished!
-# 🎉 Finished! Open DAJIN_Results/tyr-substitution to see the report.
-``` -->
-
-## 📈 出力結果
-
-DAJIN2の処理が完了すると、**DAJIN_Results**というディレクトリが作られます。  
-このDAJIN_Resultsディレクトリには、以下のファイルが含まれます：  
+DAJIN2の処理が完了すると、`DAJIN_Results/{NAME}`というディレクトリが作られます。  
+この`DAJIN_Results/{NAME}`ディレクトリには、以下のファイルが含まれます：  
 
 ```text
 DAJIN_Results/tyr-substitution
@@ -311,7 +237,7 @@ DAJIN_Results/tyr-substitution
 └── read_summary.xlsx
 ```
 
-### 1. BAM
+## 1. BAM
 
 BAMディレクトリには、アレルごとに分類されたBAMファイルが格納されています。  
 
@@ -319,18 +245,21 @@ BAMディレクトリには、アレルごとに分類されたBAMファイル�
 > `genome`オプションで参照ゲノムを指定すると、その参照ゲノムにアライメントされます。  
 > 指定がない場合、入力のFASTAファイルのcontrolアレルにアライメントされます。
 
-### 2. FASTA / HTML
+## 2. FASTA と HTML
 
 FASTAディレクトリには、各アレルのFASTAファイルが保存されます。  
 HTMLディレクトリには、変異箇所が色付けされた各アレルのHTMLファイルが保存されます。  
-Tyr点変異の例を以下に示します：
-- 点変異箇所は**緑色**でハイライトされています。
-
+Tyr点変異（緑色）の例を以下に示します：
 
 <img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
 
+また、DAJIN2はサンプルに含まれる代表的なSVアレル(Insertion, Deletion, Inversion)を抽出し、SV箇所を下線で色付けします。
+以下は、Inversion（下線紫色）の両端に欠失（水色）および挿入（赤色）が認められる例です：
 
-### 3. MUTATION_INFO
+<img src="https://private-user-images.githubusercontent.com/15861316/407201909-021fe836-3718-4ab0-a018-de564b34faf6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDQ5MTksIm5iZiI6MTczODA0NDYxOSwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDE5MDktMDIxZmU4MzYtMzcxOC00YWIwLWEwMTgtZGU1NjRiMzRmYWY2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTAxOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVjZWQxZGZkNGJlMTI5NmZmNjkwNzIzYjc5MWExMzA0ZjVkOGYxM2NmZWZlMDEyM2M3Mzk2YjgxYzE0M2EyYWYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.OI1TDS-cEauZE4TOU0E8I090mEl-NHY7weWdl0cUw2Y" width="75%" />
+
+
+## 3. MUTATION_INFO
 
 MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテーブルが保存されます。  
 *Tyr*点変異の例を以下に示します：
@@ -338,7 +267,7 @@ MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテ�
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-### 4. read_summary.xlsx / read_plot.html / read_plot.pdf
+## 4. read_summary.xlsx / read_plot.html / read_plot.pdf
 
 read_summary.xlsxには、各アレルのリード数と存在割合が記述されています。  
 read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化したもので、各アレルの割合を図示しています。  
@@ -358,7 +287,7 @@ read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化した
 > とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
 
 
-## 📣 フィードバックと行動規範
+# 📣 フィードバックと行動規範
 
 > [!NOTE]
 > よくあるご質問については、[こちら](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ_JP.md)ををご覧ください。
@@ -367,10 +296,10 @@ read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化した
 他の質問、バグ報告、フィードバックについて、皆さまからのご意見をお待ちしています。  
 報告には [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) をご利用ください（日本語でも大丈夫です）。  
 
-<!-- ## 🤝 コントリビューター行動規範 -->
+<!-- # 🤝 コントリビューター行動規範 -->
 
 なお、本プロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
 
-## 📄 参考文献
+# 📄 参考文献
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)

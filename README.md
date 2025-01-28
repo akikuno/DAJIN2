@@ -17,7 +17,7 @@ DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore sequen
 
 The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), symbolizing the concept of capturing everything in one sweep.  
 
-## 🌟 Features
+# 🌟 Features
 
 + **Comprehensive Mutation Detection**: Equipped with the capability to detect genome editing events over a wide range, it can identify a broad spectrum of mutations, from small changes to large structural variations.
   + DAJIN2 is also possible to detect complex mutations characteristic of genome editing, such as "insertions occurring in regions where deletions have occurred."
@@ -25,14 +25,14 @@ The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or
 + **Multi-Sample Compatibility**: Enabling parallel processing of multiple samples. This facilitates efficient progression of large-scale experiments and comparative studies.
 
 
-## 🛠 Installation
+# 🛠 Installation
 
-### Prerequisites
+## Prerequisites
 
 - Python >= 3.9
 - Unix-like environment (Linux, macOS, WSL2, etc.)
 
-### From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
+## From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
 # Setup of Bioconda
@@ -46,7 +46,7 @@ conda create -n env-dajin2 python=3.12 DAJIN2 -y
 conda activate env-dajin2
 ```
 
-### From [PyPI](https://pypi.org/project/DAJIN2/)
+## From [PyPI](https://pypi.org/project/DAJIN2/)
 
 ```bash
 pip install DAJIN2
@@ -56,15 +56,15 @@ pip install DAJIN2
 > If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
 
 
-## 💻 Usage
+# 💻 Usage
 
-### Required Files
+## Required Files
 
-#### FASTQ/FASTA/BAM Files for Sample and Control
+### FASTQ/FASTA/BAM Files for Sample and Control
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
-##### Basecalling with [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
+#### Basecalling with [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
 After basecalling with Guppy, the following file structure will be output:
 
 ```text
@@ -85,7 +85,7 @@ Assuming barcode01 is the control and barcode02 is the sample, the respective di
 + Sample: `fastq_pass/barcode02`
 
 
-##### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
+#### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
 
 For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
 
@@ -121,12 +121,12 @@ Assuming barcode01 is the control and barcode02 is the sample, the respective di
 + Control: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
 + Sample: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
 
-#### FASTA File Including Anticipated Allele Sequences
+### FASTA File Including Anticipated Allele Sequences
 
 The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
 
 > [!IMPORTANT]
-> **A header name >control and its sequence are mandatory.**
+> **A header name `>control` and its sequence are nessesary.**
 
 If there are anticipated alleles (e.g., knock-ins or knock-outs), include their sequences in the FASTA file too. These anticipated alleles can be named arbitrarily.
 
@@ -144,7 +144,7 @@ ACGTACGT
 Here, `>control` represents the sequence of the control allele, while `>knock-in` and `>knock-out` represent the sequences of the anticipated knock-in and knock-out alleles, respectively.
 
 
-### Single Sample Analysis
+## Single Sample Analysis
 
 DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
@@ -163,7 +163,7 @@ Options:
 -v, --version             Display the version number and exit.
 ```
 
-#### Example
+### Example
 
 ```bash
 # Download example dataset
@@ -180,36 +180,7 @@ DAJIN2 \
     --threads 4
 ```
 
-<!-- ```bash
-# Donwload the example dataset
-wget https://github.com/akikuno/DAJIN2/raw/main/examples/example-single.tar.gz
-tar -xf example-single.tar.gz
-
-# Run DAJIN2
-DAJIN2 \
-    --name stx2-deletion \
-    --sample example-single/sample.fq.gz \
-    --control example-single/control.fq.gz \
-    --allele example-single/design.fa \
-    --genome mm39 \
-    --threads 10
-
-# 2023-06-04 11:30:03: example-single/control.fq.gz is now processing...
-# 2023-06-04 11:30:06: Preprocess example-single/control.fq.gz...
-# 2023-06-04 11:30:06: Mapping example-single/control.fq.gz...
-# 2023-06-04 11:30:21: Call MIDSV example-single/control.fq.gz...
-# 2023-06-04 11:30:31: 🍵 example-single/control.fq.gz is finished!
-# 2023-06-04 11:30:31: example-single/sample.fq.gz is now processing...
-# 2023-06-04 11:30:35: Preprocess example-single/sample.fq.gz...
-# 2023-06-04 11:34:13: Classify example-single/sample.fq.gz...
-# 2023-06-04 11:34:18: Clustering example-single/sample.fq.gz...
-# 2023-06-04 11:35:01: Consensus calling example-single/sample.fq.gz...
-# 2023-06-04 11:35:08: 🍵 example-single/sample.fq.gz is finished!
-# 🎉 Finished! Open DAJIN_Results/stx2-deletion to see the report.
-```
- -->
-
-### Batch Processing
+## Batch Processing
 
 By using the `batch` subcommand, you can process multiple files simultaneously.  
 For this purpose, a CSV or Excel file consolidating the sample information is required.  
@@ -227,7 +198,7 @@ options:
   -h, --help                Display this help message and exit.
 ```
 
-#### Example
+### Example
 
 ```bash
 # Donwload the example dataset
@@ -239,10 +210,10 @@ DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
 
-## 📈 Report Contents
+# 📈 Reports
 
-Upon completion of DAJIN2 processing, a directory named **DAJIN_Results** is generated.  
-Inside the **DAJIN_Results** directory, the following files can be found:  
+Upon completion of DAJIN2 processing, a directory named `DAJIN_Results/{NAME}` is generated.  
+Inside the `DAJIN_Results/{NAME}` directory, the following files can be found:  
 
 ```
 DAJIN_Results/tyr-substitution
@@ -268,7 +239,7 @@ DAJIN_Results/tyr-substitution
 └── read_summary.xlsx
 ```
 
-### 1. BAM
+## 1. BAM
 
 The BAM directory contains the BAM files of reads classified per allele.  
 
@@ -276,7 +247,7 @@ The BAM directory contains the BAM files of reads classified per allele.
 > Specifying a reference genome using the `genome` option will align the reads to that genome.  
 > Without `genome` options, the reads will align to the control allele within the input FASTA file.
 
-### 2. FASTA and HTML
+## 2. FASTA and HTML
 
 The FASTA directory stores the FASTA files of each allele.  
 The HTML directory contains HTML files for each allele, where mutation sites are color-highlighted.  
@@ -284,14 +255,19 @@ For example, Tyr point mutation is highlighted in **green**.
 
 <img src="https://user-images.githubusercontent.com/15861316/274518501-2ca3f442-1b86-4635-be3d-fd37575c4ca2.png" width="75%" />
 
-### 3. MUTATION_INFO
+Furthermore, DAJIN2 extracts representative SV alleles (Insertion, Deletion, Inversion) included in the sample and highlights SV regions with colored underlines.  
+The following is an example where a deletion (light blue) and an insertion (red) are observed at both ends of an inversion (purple underline):
+
+<img src="https://private-user-images.githubusercontent.com/15861316/407201909-021fe836-3718-4ab0-a018-de564b34faf6.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDQ5MTksIm5iZiI6MTczODA0NDYxOSwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDE5MDktMDIxZmU4MzYtMzcxOC00YWIwLWEwMTgtZGU1NjRiMzRmYWY2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTAxOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWVjZWQxZGZkNGJlMTI5NmZmNjkwNzIzYjc5MWExMzA0ZjVkOGYxM2NmZWZlMDEyM2M3Mzk2YjgxYzE0M2EyYWYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.OI1TDS-cEauZE4TOU0E8I090mEl-NHY7weWdl0cUw2Y" width="75%" />
+
+## 3. MUTATION_INFO
 
 The MUTATION_INFO directory saves tables depicting mutation sites for each allele.  
 An example of a *Tyr* point mutation is described by its position on the chromosome and the type of mutation.  
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-### 4. resd_summary.xlsx, read_plot.html and read_plot.pdf
+## 4. resd_summary.xlsx, read_plot.html and read_plot.pdf
 
 read_summary.xlsx describes the number of reads and presence proportion for each allele.  
 Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
@@ -308,7 +284,7 @@ The **Allele type** includes:
 > In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
 > Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
-## 📣 Feedback and Support
+# 📣 Feedback and Support
 
 > [!NOTE]
 > For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
@@ -320,14 +296,13 @@ Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) 
 Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
 
 
-
-## 🤝 Code of Conduct
+# 🤝 Code of Conduct
 
 Please note that this project is released with a [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md).  
 By participating in this project you agree to abide by its terms.  
 
 
-## 📄 References
+# 📄 References
 
 For more information, please refer to the following publication:
 
