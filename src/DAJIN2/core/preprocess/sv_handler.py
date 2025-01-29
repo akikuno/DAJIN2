@@ -56,25 +56,26 @@ def add_unique_allele_keys(
 ) -> dict[str, str]:
     """
     Update keys to avoid duplicating user-specified alleles.
-    If the allele 'insertion1' exists in FASTA_ALLELES, increment the digits.
-    (insertion1 -> insertion01 -> insertion001...)
+    If the allele 'insertion01' exists in FASTA_ALLELES, increment the digits.
+    (insertion01 -> insertion001 -> insertion0001...)
     """
     user_defined_alleles = set(FASTA_ALLELES)
     key_duplicated_alleles = {allele for allele in user_defined_alleles if key in allele}
+
     if key_duplicated_alleles == set():
-        return {f"{key}{i + 1}": value for i, value in enumerate(fasta_sv_alleles.values())}
+        return {f"{key}{(i + 1):02}": value for i, value in enumerate(fasta_sv_alleles.values())}
 
     key_candidate_alleles = set()
-    digits = 2
+    num_digits = 3 # 001
     while _check_duplicates_of_sets(key_candidate_alleles, key_duplicated_alleles):
-        key_candidate_alleles = {f"{key}{i + 1:0{digits}}" for i, _ in enumerate(fasta_sv_alleles)}
-        digits += 1
+        key_candidate_alleles = {f"{key}{(i + 1):0{num_digits}}" for i, _ in enumerate(fasta_sv_alleles)}
+        num_digits += 1
 
     return dict(zip(key_candidate_alleles, fasta_sv_alleles.values()))
 
 
 ###########################################################
-# Save cstag and fasta
+# Save fasta and midsv files
 ###########################################################
 
 
@@ -85,12 +86,6 @@ def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_sv_alleles: dict[str
 
 
 def save_midsv(TEMPDIR: Path | str, SAMPLE_NAME: str, midsv_sv_alleles: dict[str, list[str]]) -> None:
-    Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv").mkdir(parents=True, exist_ok=True)
+    Path(TEMPDIR, SAMPLE_NAME, "midsv").mkdir(parents=True, exist_ok=True)
     for header, midsv_tag in midsv_sv_alleles.items():
-        io.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{header}.jsonl"))
-
-
-def save_cstag(TEMPDIR: Path | str, SAMPLE_NAME: str, cstag_sv_alleles: dict[str, str]) -> None:
-    Path(TEMPDIR, SAMPLE_NAME, "cstag").mkdir(parents=True, exist_ok=True)
-    for header, cs_tag in cstag_sv_alleles.items():
-        Path(TEMPDIR, SAMPLE_NAME, "cstag", f"{header}.txt").write_text(cs_tag + "\n")
+        io.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{header}.jsonl"))
