@@ -238,19 +238,19 @@ def execute_sample(arguments: dict):
 
     consensus.cache_mutation_loci(ARGS, clust_downsampled)
 
-    cons_percentage, cons_sequence = consensus.call_consensus(
+    cons_percentages, cons_sequences = consensus.call_consensus(
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
-    cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
-    cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
+    allele_names = consensus.call_allele_name(ARGS.tempdir, ARGS.sample_name, cons_sequences, cons_percentages, ARGS.fasta_alleles, threshold=50)
+    cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
+    cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
 
     RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
-    io.save_pickle(cons_percentage, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
-    io.save_pickle(cons_sequence, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequence.pickle"))
+    io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
+    io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
@@ -261,12 +261,12 @@ def execute_sample(arguments: dict):
     # RESULT
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
     # FASTA
-    report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
+    report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)
     report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
     # HTML
-    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_percentage)
+    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_percentages)
     # CSV (Allele Info)
-    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
+    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentages)
     # BAM
     report.bam_exporter.export_to_bam(
         ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE

@@ -64,6 +64,7 @@ def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_pe
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
         path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_per))
 
+# TODO: Implement to_vcf
 
 # def to_vcf(TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COODINATES: dict[str, str], cons_percentage: dict[list]) -> str:
 #     pass
