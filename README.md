@@ -253,12 +253,12 @@ The FASTA directory stores the FASTA files of each allele.
 The HTML directory contains HTML files for each allele, where mutation sites are color-highlighted.  
 For example, Tyr point mutation is highlighted in **green**.  
 
-<img src="https://private-user-images.githubusercontent.com/15861316/407203437-dd3947c4-1890-46e8-816c-034e88639adf.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDU0NTgsIm5iZiI6MTczODA0NTE1OCwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDM0MzctZGQzOTQ3YzQtMTg5MC00NmU4LTgxNmMtMDM0ZTg4NjM5YWRmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTkxOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlhNzNjNGM3YjFmOTYyODZjNWRkYTgxMjliNjA5M2RlNmIwZDAyZGZhNDZjNjkzNTYzNTk5MjMxNDMzMmM4NjAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.AJ0foqobWPBhsD3OQhW8HOJ98F_ae82BZIJGqZ4umLQ" width="75%" />
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/tyr-substitution.png" width="75%" />
 
 Furthermore, DAJIN2 extracts representative SV alleles (Insertion, Deletion, Inversion) included in the sample and highlights SV regions with colored underlines.  
 The following is an example where a deletion (light blue) and an insertion (red) are observed at both ends of an inversion (purple underline):
 
-<img src="https://private-user-images.githubusercontent.com/15861316/407202971-3bfdc2e5-f2a4-451d-b9ef-02cfecb31f75.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDU0NTksIm5iZiI6MTczODA0NTE1OSwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDI5NzEtM2JmZGMyZTUtZjJhNC00NTFkLWI5ZWYtMDJjZmVjYjMxZjc1LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTkxOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTE0ZGFkMjEzMjIzNDc3ZTg2ZWVmNWJmYzY3ZWVhY2RhYWRkZmMyZWNlYzFmYjY4NDQzMDk0YzRmODM5MzViNTUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.8BvLxEwcjSCFDUBAgNWocF3JQO_sQ-t8sibezswKAeo" width="75%" />
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
 ## 3. MUTATION_INFO
 
