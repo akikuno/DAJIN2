@@ -62,6 +62,7 @@ def return_labels(
     X_control = csr_matrix(score_control)
 
     # Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
+    # TODO: This KMeans for X_control may become unnecessary because we removed sequence error reads in the previous step
     labels_control = KMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
     scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
