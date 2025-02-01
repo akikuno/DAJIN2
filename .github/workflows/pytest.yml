@@ -14,8 +14,17 @@ jobs:
             - name: Fetch maintained Python versions
               id: get-versions
               run: |
-                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ | \
-                      grep -oP '3\.\d+' | sort -u | tail -n +2 | jq -R -s -c 'split("\n")[:-1]')
+                  #   Maintained Python versions (excluding the latest version)
+                  PYTHON_VERSIONS=$(grep -e "<tr" -e "<td" tmp_python.html | grep -v "Branch" |
+                      paste - - - - - - |
+                      grep -v -e "feature" -e "end-of-life" |
+                      sed 1d |
+                      cut -f 1 |
+                      sed "s|^.*<p>||" |
+                      sed "s|</p>.*$||")
+                  #   Convert as a JSON array
+                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | jq -R -s -c 'split(" ")')
+                  #  Cache the Python versions
                   echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
 
     build:
