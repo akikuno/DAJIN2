@@ -6,13 +6,26 @@ on:
         - cron: "0 2 * * 1" # The task runs at 2 a.m. every Monday.
 
 jobs:
+    get-python-versions:
+        runs-on: ubuntu-latest
+        outputs:
+            versions: ${{ steps.get-versions.outputs.versions }}
+        steps:
+            - name: Fetch maintained Python versions
+              id: get-versions
+              run: |
+                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ | \
+                      grep -oP '3\.\d+' | sort -u | tail -n +2 | jq -R -s -c 'split("\n")[:-1]')
+                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
+
     build:
+        needs: get-python-versions
         runs-on: ${{ matrix.os }}
         strategy:
             max-parallel: 10
             matrix:
                 os: [ubuntu-latest, macos-latest]
-                python-version: ["3.9", "3.10", "3.11", "3.12"]
+                python-version: ${{ fromJson(needs.get-python-versions.outputs.versions) }}
         name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
         defaults:
@@ -31,13 +44,11 @@ jobs:
             - name: Setup conda environment
               run: |
                   conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
-
             - name: Execute tests
               env:
                   PYTHONPATH: src
               run: |
                   conda activate env-dajin2
-
                   # Use pip because conda does not support pyproject.toml.
                   pip install -e .
                   pytest tests/ -p no:warnings -vv
