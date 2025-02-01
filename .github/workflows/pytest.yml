@@ -15,7 +15,9 @@ jobs:
               id: get-versions
               run: |
                   #   Maintained Python versions (excluding the latest version)
-                  PYTHON_VERSIONS=$(grep -e "<tr" -e "<td" tmp_python.html | grep -v "Branch" |
+                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ |
+                      grep -e "<tr" -e "<td" |
+                      grep -v "Branch" |
                       paste - - - - - - |
                       grep -v -e "feature" -e "end-of-life" |
                       sed 1d |
