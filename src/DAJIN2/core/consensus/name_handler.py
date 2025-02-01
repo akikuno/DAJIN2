@@ -49,10 +49,12 @@ def generate_allele_mapping(alleles: list[str]) -> dict[str, str]:
     allele_mapping = {}
     for prefix, group in groups.items():
         digits = max(2, len(str(len(group))))
-        for i, allele in enumerate(group):
+        allele_id = 1
+        for allele in group:
             if allele not in allele_mapping:
-                new_allele = f"{prefix}{(i+1):0{digits}}"
+                new_allele = f"{prefix}{(allele_id):0{digits}}"
                 allele_mapping[allele] = new_allele
+                allele_id += 1
 
     return allele_mapping
 

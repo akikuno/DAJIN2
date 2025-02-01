@@ -96,7 +96,11 @@ def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
             "inversion05": "inversion01",
             "insertion11": "insertion01"}
         ),
-    ],
+        # Case 6: Conseqtive alleles
+        (
+            ["deletion01", "deletion01", "deletion04"],
+            {"deletion01": "deletion01", "deletion04": "deletion02"}
+        ),    ],
 )
 def test_generate_allele_mapping(alleles, expected):
     assert generate_allele_mapping(alleles) == expected
