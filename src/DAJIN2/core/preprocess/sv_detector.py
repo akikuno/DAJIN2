@@ -100,15 +100,22 @@ def get_index_and_sv_size(
             if current_tag_is_sv:
                 sv_size += 1
             elif start_index:
-                result.update({start_index: sv_size})
+                if sv_size < 10:
+                    continue
+                result |= {start_index: sv_size}
                 start_index = None
                 sv_size = 0
 
         elif sv_type == "insertion":
             if current_tag.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
-                result.update({index_converter[i]: current_tag.count("|")})
+                start_index = index_converter[i]
+                sv_size = current_tag.count("|")
+                if sv_size < 10:
+                    continue
+                result |= {start_index: sv_size}
 
         previous_tag = current_tag
+
     return result
 
 
@@ -135,6 +142,7 @@ def load_data(tempdir, sample_name, control_name):
     path_midsv_control = Path(tempdir, control_name, "midsv", "control", f"{control_name}.jsonl")
     coverage_sample = io.count_newlines(path_midsv_sample)
     coverage_control = io.count_newlines(path_midsv_control)
+
     return mutation_loci, path_midsv_sample, path_midsv_control, coverage_sample, coverage_control
 
 def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int, int]:
@@ -142,6 +150,7 @@ def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int
     index_of_sv = [get_index_of_sv(m["CSSPLIT"], sv_type, mutation_loci) for m in io.read_jsonl(path_midsv)]
     index_of_sv = sorted(chain.from_iterable(index_of_sv))
     grouped_indices = group_similar_indices(index_of_sv, distance=5, min_coverage=max(5, coverage * 0.05))
+
     return define_index_converter(grouped_indices)
 
 
@@ -291,6 +300,10 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     X = np.vstack([X_sample, X_control])
     labels = optimize_labels(X, coverage_sample, coverage_control)
 
+    threshold = max(coverage_sample * 0.05, 5)
+    label_converter = {label: label if count > threshold else -1 for label, count in Counter(labels).items()}
+    labels = [label_converter[label] for label in labels]
+
     #######################################################
     # Call consensus
     #######################################################
@@ -301,6 +314,10 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     # Consensus call of SVs
     midsv_by_label = get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, FASTA_ALLELES["control"])
     fasta_by_label = {label: convert_cssplits_to_sequence(midsv_tag) for label, midsv_tag in midsv_by_label.items()}
+
+    # Discard -1 due to minor allele
+    midsv_by_label = {label: tag for label, tag in midsv_by_label.items() if label != -1}
+    fasta_by_label = {label: tag for label, tag in fasta_by_label.items() if label != -1}
 
     #######################################################
     # Remove similar alleles to user's alleles, or clustered alleles
