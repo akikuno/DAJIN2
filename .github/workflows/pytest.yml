@@ -14,7 +14,7 @@ jobs:
             - name: Fetch maintained Python versions
               id: get-versions
               run: |
-                  #   Maintained Python versions (excluding the latest version)
+                  # Fetch maintained Python versions (excluding the latest version)
                   PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ |
                       grep -e "<tr" -e "<td" |
                       grep -v "Branch" |
@@ -24,11 +24,13 @@ jobs:
                       cut -f 1 |
                       sed "s|^.*<p>||" |
                       sed "s|</p>.*$||")
-                  #   Convert as a JSON array
-                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr -d "\n" | jq -R -s -c 'split(" ")')
-                  #  Cache the Python versions
-                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
 
+                  # Convert to a JSON array (replace newlines with spaces first)
+                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr '\n' ' ' | jq -R -s -c 'split(" ") | map(select(length > 0))')
+
+                  # Cache the Python versions
+                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
+                  echo "versions=$PYTHON_VERSIONS"
     build:
         needs: get-python-versions
         runs-on: ${{ matrix.os }}
