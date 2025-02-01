@@ -31,6 +31,10 @@
 
 + To avoid overlooking minor alleles, the number of reads is increased from 10,000 to 100,000 during downsampling. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7e3e08dec5d71769f917a58f63bf5af6df230ed4)]
 
+## 🔧 Maintenance
+
+Increase the SV allele number to at least two digits (e.g., `deletion01`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
+
 <!-- ############################################################# # -->
 
 
