@@ -72,8 +72,9 @@ def define_index_converter(index_grouped: list[list[int]]) -> dict[int, int]:
     return index_converter
 
 
+
 def get_index_and_sv_size(
-    misdv_string: str, sv_type: str, mutation_loci: list[set[str]], index_converter: dict[int, int]
+    misdv_string: str, sv_type: str, mutation_loci: list[set[str]], index_converter: dict[int, int] = None
 ) -> dict[int, int]:
     """Return a dictionary with the start index and SV size"""
 
@@ -81,42 +82,91 @@ def get_index_and_sv_size(
     result = {}
     sv_size = 0
     start_index = None
-    previous_tag = tags[0]
 
-    for i, current_tag in enumerate(tags):
+    i = 0
+    while True:
+
+        if i >= len(tags):
+            break
+
         if sv_type in ("deletion", "inversion"):
             if sv_type == "deletion":
-                current_tag_is_sv = current_tag.startswith("-") and "-" in mutation_loci[i]
-                previous_tag_is_not_sv = previous_tag.startswith("-")
+                while i < len(tags) and tags[i].startswith("-") and "-" in mutation_loci[i]:
+                    sv_size += 1
+                    i += 1
             else:  # inversion
-                current_tag_is_sv = current_tag.islower()
-                previous_tag_is_not_sv = previous_tag.islower()
+                while i < len(tags) and tags[i].islower():
+                    sv_size += 1
+                    i += 1
 
-            # Get the start index of SV
-            if current_tag_is_sv and not previous_tag_is_not_sv and i in index_converter:
-                start_index = index_converter[i]
-
-            # Calculate the size of SV
-            if current_tag_is_sv:
-                sv_size += 1
-            elif start_index:
-                if sv_size < 10:
-                    continue
+            if sv_size >= 10:
+                start_index = i - sv_size
+                if index_converter is not None:
+                    start_index = index_converter.get(start_index, start_index)
                 result |= {start_index: sv_size}
-                start_index = None
-                sv_size = 0
+
+            sv_size = 0
 
         elif sv_type == "insertion":
-            if current_tag.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
-                start_index = index_converter[i]
-                sv_size = current_tag.count("|")
+            if tags[i].startswith("+") and "+" in mutation_loci[i]:
+                start_index = i
+                sv_size = tags[i].count("|")
                 if sv_size < 10:
+                    i += 1
                     continue
+                if index_converter is not None:
+                    start_index = index_converter.get(start_index, start_index)
                 result |= {start_index: sv_size}
 
-        previous_tag = current_tag
+        i += 1
 
     return result
+
+# def get_index_and_sv_size(
+#     misdv_string: str, sv_type: str, mutation_loci: list[set[str]], index_converter: dict[int, int]
+# ) -> dict[int, int]:
+#     """Return a dictionary with the start index and SV size"""
+
+#     tags = misdv_string.split(",")
+#     result = {}
+#     sv_size = 0
+#     start_index = None
+#     previous_tag = tags[0]
+
+#     for i, current_tag in enumerate(tags):
+#         if sv_type in ("deletion", "inversion"):
+#             if sv_type == "deletion":
+#                 current_tag_is_sv = current_tag.startswith("-") and "-" in mutation_loci[i]
+#                 previous_tag_is_not_sv = previous_tag.startswith("-")
+#             else:  # inversion
+#                 current_tag_is_sv = current_tag.islower()
+#                 previous_tag_is_not_sv = previous_tag.islower()
+
+#             # Get the start index of SV
+#             if current_tag_is_sv and not previous_tag_is_not_sv and i in index_converter:
+#                 start_index = index_converter[i]
+
+#             # Calculate the size of SV
+#             if current_tag_is_sv:
+#                 sv_size += 1
+#             elif start_index:
+#                 if sv_size < 10:
+#                     continue
+#                 result |= {start_index: sv_size}
+#                 start_index = None
+#                 sv_size = 0
+
+#         elif sv_type == "insertion":
+#             if current_tag.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
+#                 start_index = index_converter[i]
+#                 sv_size = current_tag.count("|")
+#                 if sv_size < 10:
+#                     continue
+#                 result |= {start_index: sv_size}
+
+#         previous_tag = current_tag
+
+#     return result
 
 
 def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[str]) -> np.ndarray:
@@ -147,7 +197,7 @@ def load_data(tempdir, sample_name, control_name):
 
 def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int, int]:
     """Process SV indices and group them based on proximity."""
-    index_of_sv = [get_index_of_sv(m["CSSPLIT"], sv_type, mutation_loci) for m in io.read_jsonl(path_midsv)]
+    index_of_sv = [list(get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, None).keys()) for m in io.read_jsonl(path_midsv)]
     index_of_sv = sorted(chain.from_iterable(index_of_sv))
     grouped_indices = group_similar_indices(index_of_sv, distance=5, min_coverage=max(5, coverage * 0.05))
 
