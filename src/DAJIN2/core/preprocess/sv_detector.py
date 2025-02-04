@@ -80,93 +80,41 @@ def get_index_and_sv_size(
 
     tags = misdv_string.split(",")
     result = {}
-    sv_size = 0
-    start_index = None
-
     i = 0
-    while True:
 
-        if i >= len(tags):
-            break
+    while i < len(tags):
+        sv_size = 0
+        start_index = None
 
-        if sv_type in ("deletion", "inversion"):
-            if sv_type == "deletion":
-                while i < len(tags) and tags[i].startswith("-") and "-" in mutation_loci[i]:
-                    sv_size += 1
-                    i += 1
-            else:  # inversion
-                while i < len(tags) and tags[i].islower():
-                    sv_size += 1
-                    i += 1
+        if sv_type == "deletion":
+            while i < len(tags) and tags[i].startswith("-") and "-" in mutation_loci[i]:
+                sv_size += 1
+                i += 1
 
-            if sv_size >= 10:
-                start_index = i - sv_size
-                if index_converter is not None:
-                    start_index = index_converter.get(start_index, start_index)
-                result |= {start_index: sv_size}
+        elif sv_type == "inversion":
+            while i < len(tags) and tags[i].islower():
+                sv_size += 1
+                i += 1
 
-            sv_size = 0
+        elif sv_type == "insertion" and tags[i].startswith("+") and "+" in mutation_loci[i]:
+            start_index = i
+            sv_size = tags[i].count("|")
 
-        elif sv_type == "insertion":
-            if tags[i].startswith("+") and "+" in mutation_loci[i]:
-                start_index = i
-                sv_size = tags[i].count("|")
-                if sv_size < 10:
-                    i += 1
-                    continue
-                if index_converter is not None:
-                    start_index = index_converter.get(start_index, start_index)
-                result |= {start_index: sv_size}
+        if sv_size < 10:
+            i += 1
+            continue
+
+        start_index = start_index if start_index is not None else i - sv_size
+
+        if index_converter is None:
+            result |= {start_index: sv_size}
+        elif start_index in index_converter:
+            start_index = index_converter[start_index]
+            result |= {start_index: sv_size}
 
         i += 1
 
     return result
-
-# def get_index_and_sv_size(
-#     misdv_string: str, sv_type: str, mutation_loci: list[set[str]], index_converter: dict[int, int]
-# ) -> dict[int, int]:
-#     """Return a dictionary with the start index and SV size"""
-
-#     tags = misdv_string.split(",")
-#     result = {}
-#     sv_size = 0
-#     start_index = None
-#     previous_tag = tags[0]
-
-#     for i, current_tag in enumerate(tags):
-#         if sv_type in ("deletion", "inversion"):
-#             if sv_type == "deletion":
-#                 current_tag_is_sv = current_tag.startswith("-") and "-" in mutation_loci[i]
-#                 previous_tag_is_not_sv = previous_tag.startswith("-")
-#             else:  # inversion
-#                 current_tag_is_sv = current_tag.islower()
-#                 previous_tag_is_not_sv = previous_tag.islower()
-
-#             # Get the start index of SV
-#             if current_tag_is_sv and not previous_tag_is_not_sv and i in index_converter:
-#                 start_index = index_converter[i]
-
-#             # Calculate the size of SV
-#             if current_tag_is_sv:
-#                 sv_size += 1
-#             elif start_index:
-#                 if sv_size < 10:
-#                     continue
-#                 result |= {start_index: sv_size}
-#                 start_index = None
-#                 sv_size = 0
-
-#         elif sv_type == "insertion":
-#             if current_tag.startswith("+") and "+" in mutation_loci[i] and i in index_converter:
-#                 start_index = index_converter[i]
-#                 sv_size = current_tag.count("|")
-#                 if sv_size < 10:
-#                     continue
-#                 result |= {start_index: sv_size}
-
-#         previous_tag = current_tag
-
-#     return result
 
 
 def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[str]) -> np.ndarray:
@@ -233,10 +181,12 @@ def get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, 
     for label, index_and_sv_size in index_and_sv_size_by_label.items():
         frequency_counts = defaultdict(lambda: defaultdict(int))
 
-        # Count the frequencies
+        # Count the frequencies of the SV sizes
         for record in index_and_sv_size:
-            for key, value in record.items():
-                frequency_counts[key][value] += 1
+            for index, sv_size in record.items():
+                if sv_size == 0:
+                    continue
+                frequency_counts[index][sv_size] += 1
 
         consensus_index_and_sv_size_by_label[label] = {
             key: max(values, key=values.get) for key, values in frequency_counts.items()
@@ -324,6 +274,9 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     #######################################################
 
     index_converter_sample = process_sv_indices(path_midsv_sample, sv_type, mutation_loci, coverage_sample)
+    if index_converter_sample == {}:
+        return
+
     index_converter_control = process_sv_indices(path_midsv_control, sv_type, mutation_loci, coverage_control)
 
     index_and_sv_size_sample = extract_sv_features(path_midsv_sample, sv_type, mutation_loci, index_converter_sample)

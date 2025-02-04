@@ -127,6 +127,8 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
     idx = 0
     while idx < len(misdv_sv_allele):
         midsv_tag = misdv_sv_allele[idx]
+        
+        # Insertion
         if midsv_tag.startswith("+"):
             html_sv_allele.append("<span class='Ins_Allele'>")
             insertions, last_tag = midsv_tag.split("|")[:-1], midsv_tag.split("|")[-1]
@@ -140,6 +142,8 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
                 html_sv_allele.append("</span>")
             else:  # match or substitution
                 html_sv_allele.append(last_tag)
+        
+        # Deletion
         elif midsv_tag.startswith("-"):
             html_sv_allele.append("<span class='Del_Allele'>")
             html_sv_allele.append(misdv_sv_allele[idx])
@@ -148,6 +152,8 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
                 html_sv_allele.append(misdv_sv_allele[idx + 1])
                 idx += 1
             html_sv_allele.append("</span>")
+
+        # Inversion
         elif midsv_tag.islower():
             html_sv_allele.append("<span class='Inv_Allele'>")
             # Enclose consecutive inversion within a single span.
@@ -156,6 +162,8 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
                 html_sv_allele.append(misdv_sv_allele[idx + 1])
                 idx += 1
             html_sv_allele.append("</span>")
+
+        # No SV
         else:
             html_sv_allele.append(midsv_tag)
 
@@ -168,48 +176,55 @@ def embed_mutations_to_html(highlighted_sv_allele: list[str], midsv_consensus_sa
     idx = 0
     idx_sv_allele = 0
     html_parts = ["<p class='p_seq'>"]
+
     while idx_sv_allele < len(highlighted_sv_allele):
         tag_sv_allele = highlighted_sv_allele[idx_sv_allele]
+
+        if idx >= len(midsv_consensus_sample):
+            break
+
         if tag_sv_allele.startswith("<"):
             html_parts.append(tag_sv_allele)
             idx_sv_allele += 1
             continue
+
         if tag_sv_allele.startswith("-"):
             html_parts.append(tag_sv_allele[-1])
             idx_sv_allele += 1
             continue
-        if idx >= len(midsv_consensus_sample):
-            break
+
         tag_sample = midsv_consensus_sample[idx]
 
+        # Insertion
+        if tag_sample.startswith("+"):
+            insertions, last_tag = tag_sample.split("|")[:-1], tag_sample.split("|")[-1]
+            insertions = "".join(ins[-1] for ins in insertions)
+            html_parts.append("<span class='Ins'>" + "".join(insertions) + "</span>")
+
+            if last_tag.startswith("-"):
+                html_parts.append("<span class='Del'>" + last_tag[-1] + "</span>")
+            else:  # match or substitution
+                html_parts.append(last_tag[-1])
+
         # Substitution
-        if tag_sample.startswith("*"):
+        elif tag_sample.startswith("*"):
             substitutions = [tag_sample[-1]]
             while idx < len(midsv_consensus_sample) - 1 and midsv_consensus_sample[idx + 1].startswith("*"):
                 substitutions.append(midsv_consensus_sample[idx + 1][-1])
+                idx_sv_allele += 1
                 idx += 1
             html_parts.append("<span class='Sub'>" + "".join(substitutions) + "</span>")
-        # Insertion
-        elif tag_sample.startswith("+"):
-            html_parts.append("<span class='Ins'>")
-            insertions, last_tag = tag_sample.split("|")[:-1], tag_sample.split("|")[-1]
-            ins_seq = "".join(ins[-1] for ins in insertions)
-            html_parts.append(ins_seq)
-            html_parts.append("</span>")
-            if last_tag.startswith("-"):
-                html_parts.append("<span class='Del'>")
-                html_parts.append(last_tag[-1])
-                html_parts.append("</span>")
-            else:  # match or substitution
-                html_parts.append(last_tag[-1])
+
         # Deletion
         elif tag_sample.startswith("-"):
-            html_parts.append("<span class='Del'>")
-            html_parts.append(tag_sample[-1])
+            deletions = [tag_sample[-1]]
             while idx < len(midsv_consensus_sample) - 1 and midsv_consensus_sample[idx + 1].startswith("-"):
-                html_parts.append(midsv_consensus_sample[idx + 1][-1])
+                deletions.append(midsv_consensus_sample[idx + 1][-1])
+                idx_sv_allele += 1
                 idx += 1
-            html_parts.append("</span>")
+            html_parts.append("<span class='Del'>" + "".join(deletions) + "</span>")
+
+        # Othres
         else:
             html_parts.append(tag_sample[-1])
 
