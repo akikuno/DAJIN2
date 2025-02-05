@@ -20,8 +20,8 @@ def detect_sv(cons_per: list[dict[str, float]], threshold: int = 50) -> bool:
     return any(re.search(pattern, cons_midsv_tag) for pattern in patterns)
 
 def format_allele_label(label: int, total_labels: int) -> str:
-    label_digits = max(2, len(str(total_labels))) # minimum of 2 digits (01, 02, 03...)
-    return f"{label:0{label_digits}}"
+    digits = max(2, len(str(total_labels))) # minimum of 2 digits (01, 02, 03...)
+    return f"{label:0{digits}}"
 
 
 def determine_suffix(cons_seq: str, fasta_allele: str, is_sv: bool) -> str:
@@ -68,7 +68,7 @@ def call_allele_name(
     threshold: int = 50,
 ) -> dict[int, str]:
 
-    digits = len(str(len(cons_percentages)))
+    digits = max(2, len(str(len(cons_percentages))))
     exists_sv = [detect_sv(cons_per, threshold) for cons_per in cons_percentages.values()]
 
     sorted_keys = sorted(cons_percentages.keys(), key=lambda x: x.percent, reverse=True)
