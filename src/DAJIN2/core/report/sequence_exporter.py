@@ -17,17 +17,16 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 
 
 def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_per: list[dict]) -> str:
-    midsv_cons = [max(cons, key=cons.get) for cons in cons_per]
-    midsv_cons_reallocated = reallocate_insertion_within_deletion(midsv_cons, bin_size=500, percentage=50)
+    midsv_consensus = [max(cons, key=cons.get) for cons in cons_per]
 
     allele = header.split("_")[1]
     path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{allele}.jsonl")
     if path_midsv_sv.exists():
-        midsv_ref = list(io.read_jsonl(path_midsv_sv))
+        midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
     else:
-        midsv_ref = ["=" + base for base in list(FASTA_ALLELES[allele])]
+        midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
-    return to_html(midsv_ref, midsv_cons_reallocated, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
+    return to_html(midsv_sv_allele, midsv_consensus, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
 
 
 ##################################################
