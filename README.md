@@ -52,6 +52,21 @@ conda activate env-dajin2
 pip install DAJIN2
 ```
 
+> [!IMPORTANT]
+> DAJIN2 is actively developed and continuously improved. To access the latest features, please ensure you have the newest version installed.
+> ```bash
+> DAJIN2 --version
+> ```
+> To update to the latest version, use one of the following commands:
+> ```bash
+> conda update DAJIN2 -y
+> ```
+> or
+> ```bash
+> pip install -U DAJIN2
+> ```
+
+
 > [!CAUTION]
 > If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
 
