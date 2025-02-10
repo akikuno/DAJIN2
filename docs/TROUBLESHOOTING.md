@@ -22,7 +22,7 @@ conda activate env-dajin2
 conda install -c conda-forge -c bioconda DAJIN2 -y
 ```
 
-以下の項目は、詳細です。
+The following items are details.
 
 ### Prerequisites
 
