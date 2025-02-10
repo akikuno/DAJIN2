@@ -68,12 +68,6 @@ HTML_HEADER = """<!DOCTYPE html>
             background-color: #CAB5FF;
         }
 
-        .Splice {
-            font-weight: bold;
-            border: 0.1em solid;
-            background-color: #f8e58c;
-        }
-
         .Unknown {
             font-weight: bold;
             border: 0.1em solid;
@@ -111,10 +105,10 @@ HTML_LEGEND = """
     <span class="Ins">Insertion</span>
     <span class="Del">Deletion</span>
     <span class="Sub">Substitution</span>
-    <span class="Splice">Splice</span>
     <span class="Inv">Inversion</span>
     <span class="Unknown">Unknown</span>
     <br>
+    <span>SV alleles:</span>
     <span class="Ins_Allele">Insertion allele</span>
     <span class="Del_Allele">Deletion allele</span>
     <span class="Inv_Allele">Inversion allele</span>
