@@ -3,7 +3,7 @@ from __future__ import annotations
 from itertools import groupby
 from pathlib import Path
 
-from DAJIN2.utils.cssplits_handler import reallocate_insertion_within_deletion, revcomp_cssplits
+from DAJIN2.utils.cssplits_handler import revcomp_cssplits
 
 ###########################################################
 # group by mutation
@@ -113,16 +113,14 @@ def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, head
 ###########################################################
 
 
-def export_to_csv(TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_percentage: dict[str, list]) -> None:
+def export_to_csv(TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_midsv_tags: dict[str, list[str]]) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
-    for header, cons in cons_percentage.items():
-        cssplits = [max(c, key=c.get) for c in cons]
+    for header, cons_midsv_tag in cons_midsv_tags.items():
         if GENOME_COORDINATES.get("strand") == "-":
-            cssplits = revcomp_cssplits(cssplits)
-        cssplits = reallocate_insertion_within_deletion(cssplits, bin_size=500, percentage=50)
-        cssplits_inversion = annotate_inversion(cssplits)
-        cssplits_grouped = group_by_mutation(cssplits_inversion)
-        result = report_mutations(cssplits_grouped, GENOME_COORDINATES, header)
+            cons_midsv_tag = revcomp_cssplits(cons_midsv_tag)
+        cons_midsv_tag_inversion = annotate_inversion(cons_midsv_tag)
+        cons_midsv_tag_grouped = group_by_mutation(cons_midsv_tag_inversion)
+        result = report_mutations(cons_midsv_tag_grouped, GENOME_COORDINATES, header)
         results.extend(result)
 
     results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
