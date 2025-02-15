@@ -6,7 +6,7 @@ from itertools import groupby
 from pathlib import Path
 
 from DAJIN2.utils import io
-from DAJIN2.utils.cssplits_handler import call_sequence
+from DAJIN2.utils.cssplits_handler import call_sequence, reflect_sv_deletion_in_midsv
 
 ###########################################################
 # call position weight matrix (cons_pergentage)
@@ -79,14 +79,15 @@ class ConsensusKey:
 
 
 def call_consensus(
-    tempdir: Path, sample_name: str, fasta_alleles: dict[str, str], clust_sample: list[dict]
-) -> tuple[dict[list], dict[str]]:
-    clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
+    tempdir: Path, sample_name: str, fasta_alleles: dict[str, str], clust_downsampled: list[dict]
+) -> tuple[dict[list], dict[str], dict[str]]:
 
     cons_percentages = {}
     cons_sequences = {}
+    cons_midsv_tags = {}
 
-    for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
+    clust_downsampled.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
+    for (allele, label), group in groupby(clust_downsampled, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
         sequence = fasta_alleles[allele]
 
@@ -96,7 +97,16 @@ def call_consensus(
         cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
         cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
 
+        cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
+        path_midsv_sv = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
+        
+        if allele.startswith("deletion") and path_midsv_sv.exists():
+            midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
+            cons_midsv_tag = reflect_sv_deletion_in_midsv(cons_midsv_tag, midsv_sv_allele)
+
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage
         cons_sequences[key] = call_sequence(cons_percentage)
-    return cons_percentages, cons_sequences
+        cons_midsv_tags[key] = cons_midsv_tag
+
+    return cons_percentages, cons_sequences, cons_midsv_tags

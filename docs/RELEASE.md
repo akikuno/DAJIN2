@@ -33,7 +33,7 @@
 
 ## 🔧 Maintenance
 
-Increase the SV allele number to at least two digits (e.g., `deletion01`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
++ Change the numeric ID of allele names to be at least two digits (e.g., allele1 → allele01). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
 
 <!-- ############################################################# # -->
 

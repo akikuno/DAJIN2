@@ -3,8 +3,6 @@ from __future__ import annotations
 import re
 
 import cstag
-import numpy as np
-import ruptures as rpt
 
 
 def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
@@ -193,6 +191,10 @@ def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
     return "".join(_standardize_case(cssplits_combined))
 
 
+###########################################################
+# convert cssplits to sequence
+###########################################################
+
 def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
     """convert position weight matrix (cons_pergentage) to sequence"""
 
@@ -209,167 +211,216 @@ def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
 # reallocate_insertion_within_deletion
 ###########################################################
 
+def highlight_sv_deletions(misdv_sv_allele: list[str]) -> list[str]:
+    """Annotate start and end poisition at the SV deletions."""
+    sv_deletions = []
+    idx = 0
+    while idx < len(misdv_sv_allele):
+        midsv_tag = misdv_sv_allele[idx]
 
-def _extract_candidate_index_of_large_deletions(
-    cssplits: list[str], bin_size: int = 500, percentage: int = 50
-) -> list[dict[str, int]]:
-    deletion_counts = []
-    for start in range(0, len(cssplits), bin_size // 10):
-        end = start + bin_size
-        counts_deletion = "".join(cssplits[start:end]).count("-")
-        deletion_counts.append((start, counts_deletion))
+        if midsv_tag.startswith("-"):
+            sv_deletions.append("!START_OF_DEL_ALLELE!")
+            sv_deletions.append(misdv_sv_allele[idx])
+            # Enclose consecutive deletions within a single span.
+            while idx < len(misdv_sv_allele) - 1 and misdv_sv_allele[idx + 1].startswith("-"):
+                sv_deletions.append(misdv_sv_allele[idx + 1])
+                idx += 1
+            sv_deletions.append("!END_OF_DEL_ALLELE!")
+        # No SV
+        else:
+            sv_deletions.append(midsv_tag)
 
-    range_of_large_deletions = []
-    on_the_peak = False
-    start = -1
-    end = -1
-    for i, count in deletion_counts:
-        del_percentage = count / bin_size * 100
-        if del_percentage > percentage and on_the_peak is False:
-            start = i
-            on_the_peak = True
-        if del_percentage <= percentage and on_the_peak is True:
-            end = i
-            on_the_peak = False
-        if start != -1 and end != -1:
-            range_of_large_deletions.append({"start": start, "end": end})
-            start = -1
-            end = -1
+        idx += 1
 
-    return range_of_large_deletions
+    return sv_deletions
 
 
-def _extract_break_points_of_large_deletions(
-    cssplits: list[str], range_of_large_deletions: list[dict[str, int]], bin_size: int = 500
-):
-    cssplits_match_bool = np.array([1 if cs.startswith("=") else 0 for cs in cssplits], dtype=bool)
+def embed_sv_deletions(midsv_consensus: list[str], midsv_sv_deletions: list[str]) -> list[str]:
+    """
+    Insert `!START_OF_DEL_ALLELE!` and `!END_OF_DEL_ALLELE!` into `midsv_consensus`.
+    """
+    idx = 0
+    idx_sv_allele = 0
 
-    break_points = []
-    for range_of_deletion in range_of_large_deletions:
-        break_point = {}
-        for key, index in range_of_deletion.items():
-            window_start = index
-            window_end = index + bin_size
+    midsv_consensus_with_deletion = []
+    while idx_sv_allele < len(midsv_sv_deletions) and idx < len(midsv_consensus):
+        tag_sv_allele = midsv_sv_deletions[idx_sv_allele]
 
-            # Find breakpoints(bps). First, predict approximate breakpoints using the signal of the window.
-            signal = cssplits_match_bool[window_start:window_end]
-            bps = rpt.Window(model="ar").fit(signal).predict(n_bkps=10)[:-1]
-
-            # Aling breakpoints to the original index
-            if bps:
-                approximate_bp: int = bps[0] if key == "start" else bps[-1]
-            else:
-                approximate_bp: int = 0 if key == "start" else bin_size
-
-            # Find the exact breakpoint because the approximate breakpoint may not be accurate
-            signal_subset = signal[max(0, approximate_bp - 50) : min(approximate_bp + 50, len(signal))]
-            bp = -1
-            for i, sig in enumerate(signal_subset):
-                if key == "start" and not sig:
-                    bp = i + max(0, approximate_bp - 50) + window_start
-                    break
-                if key == "end" and sig:
-                    bp = i + max(0, approximate_bp - 50) + window_start - 1
-                    break
-            if bp == -1:
-                bp = approximate_bp
-
-            # Store the breakpoint
-            break_point[key] = bp
-
-        if break_point["start"] == break_point["end"]:
+        if tag_sv_allele.startswith("!"):
+            midsv_consensus_with_deletion.append(tag_sv_allele)
+            idx_sv_allele += 1
             continue
 
-        break_points.append(break_point)
+        if tag_sv_allele.startswith("-"):
+            idx_sv_allele += 1
+            continue
 
-    return break_points
+        tag_sample = midsv_consensus[idx]
 
+        midsv_consensus_with_deletion.append(tag_sample)
 
-def _convert_break_points_to_index(break_points: list[dict[str, int]]) -> list[int]:
-    index_of_large_deletions = []
-    for break_point in break_points:
-        start = break_point["start"]
-        end = break_point["end"]
-        index_of_large_deletions += list(range(start, end + 1))
-
-    return index_of_large_deletions
+        idx_sv_allele += 1
+        idx += 1
+    return midsv_consensus_with_deletion
 
 
-def _find_matched_indexes(cssplits: list[str], index_of_large_deletions: list[int]) -> list[int]:
-    matched_index = []
-    count_matches = 0
-    start_match = -1
+def get_flanked_tags_by_deletions(midsv_tags: list[str]) -> tuple[list[list[str]], list[tuple[int, int]]]:
+    """
+    Extracts index and midsv tags flanked by large deletions.
+    """
+    flanked_tags = []
+    flanked_indices = []
+    i = 0
+    while i < len(midsv_tags):
+        tag = midsv_tags[i]
+        flanked_tag = []
 
-    index_of_large_deletions.sort()
-    for i in index_of_large_deletions:
-        if cssplits[i].startswith("="):
-            if start_match == -1:
-                start_match = i
-            count_matches += 1
+        # Flag indicating whether it is flanked until the next Del_Allele appears
+        is_flanked = False
+
+        if tag.endswith("!END_OF_DEL_ALLELE!") and i < len(midsv_tags) - 1:
+            i += 1
+            start_index = i
+            while i < len(midsv_tags):
+                if midsv_tags[i].startswith("!START_OF_DEL_ALLELE!"):
+                    is_flanked = True
+                    break
+                flanked_tag.append(midsv_tags[i])
+                i += 1
+
+        if flanked_tag and is_flanked:
+            flanked_tags.append(flanked_tag)
+            end_index = i
+            flanked_indices.append((start_index, end_index))
+
+        i += 1
+
+    return flanked_tags, flanked_indices
+
+
+def has_consecutive_matches(tags: list[str], n: int = 10) -> bool:
+    count = 0
+    for tag in tags:
+        if tag.startswith("="):
+            count += 1
+            if count >= n:
+                return True
         else:
-            if count_matches >= 10:
-                matched_index += list(range(start_match, i))
-            count_matches = 0
-            start_match = -1
-
-    return matched_index
+            count = 0
+    return False
 
 
-def _remove_matched_indexes(index_of_large_deletions: list[int], matched_index: list[int]) -> set[int]:
-    return set(index_of_large_deletions) - set(matched_index)
+def get_last_index_of_del_allele(midsv_tags: list[str]) -> int:
+    return next(i for i in range(len(midsv_tags) - 1, -1, -1) if midsv_tags[i].endswith("!END_OF_DEL_ALLELE!")) + 1
 
 
-def _get_index_of_large_deletions(cssplits: list[str], bin_size: int = 500, percentage: int = 50) -> set[int]:
-    range_of_large_deletions = _extract_candidate_index_of_large_deletions(cssplits, bin_size, percentage)
-    break_points = _extract_break_points_of_large_deletions(cssplits, range_of_large_deletions, bin_size)
+def convert_midsv_tags_to_insertion(midsv_tags: list[str]) -> str:
+    """
+    Converts MIDSV tags to insertion tags.
+    e.g. ["=T", "=A", "+C|+C|=A", "-T", "=G", "=C"] -> "+T|+A|+C|+C|+A|+G|+C"
+    """
+    insertion_tags = []
+    for tag in midsv_tags:
+        if tag.startswith("-"):
+            continue
+        elif tag.startswith("+"):
+            ins, last = "|".join(tag.split("|")[:-1]), tag.split("|")[-1]
+            insertion_tags.append(ins)
+            if last.startswith("-"):
+                continue
+            insertion_tags.append("+" + last[-1])
+        else: # match or substitution
+            insertion_tags.append("+" + tag[-1])
+    return "|".join(insertion_tags)
 
-    index_of_large_deletions = _convert_break_points_to_index(break_points)
-    matched_index = _find_matched_indexes(cssplits, index_of_large_deletions)
-    return _remove_matched_indexes(index_of_large_deletions, matched_index)
+
+def extract_deletion_tags(midsv_sv_deletions_highlighted: list[str]) -> list[list[str]]:
+    deletion_tags = []
+    for tag in midsv_sv_deletions_highlighted:
+        if tag == "!START_OF_DEL_ALLELE!":
+            deletion_tags.append([])
+        if tag.startswith("-"):
+            deletion_tags[-1].extend([tag])
+
+    return deletion_tags
 
 
-def _adjust_cs_insertion(cs: str) -> str:
-    if cs.startswith("-"):
-        return None
-    elif cs.startswith("+"):
-        ins = "|".join(cs.split("|")[:-1])
-        end_cs = cs.split("|")[-1][-1]
-        cs_insertion = f"{ins}|+{end_cs}|"
-    else:
-        cs_insertion = f"+{cs[-1]}|"
-    return cs_insertion
+def handle_insertions_within_deletions(midsv_consensus_with_deletion: list[str], flanked_tags: list[list[str]], flanked_indices: list[tuple[int, int]], deletion_tags: list[list[str]]) -> list[str]:
+    insertions = []
+    previous_end = None
+    i = 0
+    index_shift = 0
+
+    while i < len(flanked_tags):
+        flanked_tag = flanked_tags[i]
+        start, end = flanked_indices[i]
+
+        start += index_shift
+        end += index_shift
+
+        deletion_tag = deletion_tags[i]
+
+        if has_consecutive_matches(flanked_tag) and insertions:
+            # Add Insertions
+            last_tag = midsv_consensus_with_deletion.pop(previous_end + 2)
+            insertions = "|".join([insertions, last_tag])
+            midsv_consensus_with_deletion.insert(previous_end + 2, insertions)
+            index_shift += 1
+            insertions = []
+
+        elif not has_consecutive_matches(flanked_tag):
+            # Collect Insertions and Add Deletions
+            insertions.append(convert_midsv_tags_to_insertion(flanked_tag))
+
+            midsv_consensus_with_deletion[start-1: end+1] = ["!" for _ in range(start-1, end+1)]
+            midsv_consensus_with_deletion[start: start] = deletion_tag
+            index_shift += len(deletion_tag) - 1
+
+        else:
+            # Add Deletions
+            midsv_consensus_with_deletion[start: start] = deletion_tag
+            index_shift += len(deletion_tag) - 1
+
+        previous_end = end
+        i += 1
+
+    if insertions and "!END_OF_DEL_ALLELE!" in midsv_consensus_with_deletion:
+        last_index = get_last_index_of_del_allele(midsv_consensus_with_deletion)
+        last_tag = midsv_consensus_with_deletion.pop(last_index)
+        insertions = "|".join(insertions)
+        insertions = "|".join([insertions, last_tag])
+
+        deletion_tag = deletion_tags[-1]
+        midsv_consensus_with_deletion.insert(last_index, insertions)
+        midsv_consensus_with_deletion[last_index:last_index] = deletion_tag
+
+    # Remove ['!START_OF_DEL_ALLELE!', '!END_OF_DEL_ALLELE!'] tags
+    return [m for m in midsv_consensus_with_deletion if not m.startswith("!")]
 
 
-def reallocate_insertion_within_deletion(cssplits: list[str], bin_size: int = 500, percentage: int = 50) -> list[str]:
+def reflect_deletions(midsv_consensus_with_deletion: list[str], deletion_tags: list[list[str]]) -> list[str]:
+    """
+    Reflect the Deletion when there is no Insertion.
+    """
+    for deletion_id, deletion_tag in enumerate(deletion_tags):
+        idx_of_del = [i for i, tag in enumerate(midsv_consensus_with_deletion) if tag == "!END_OF_DEL_ALLELE!"][deletion_id]
+        midsv_consensus_with_deletion[idx_of_del:idx_of_del] = deletion_tag
+
+    # Remove ['!START_OF_DEL_ALLELE!', '!END_OF_DEL_ALLELE!'] tags
+    return [m for m in midsv_consensus_with_deletion if not m.startswith("!")]
+
+
+def reflect_sv_deletion_in_midsv(midsv_consensus: list[str], midsv_sv_deletions: list[str]) -> list[str]:
     """
     Since the mapping in minimap2 is local alignment, insertion bases within large deletions may be partially mapped to the reference genome and not detected as insertion bases. Therefore, update cssplits to detect insertions within large deletions as insertions.
     """
-    cssplits_updated = cssplits.copy()
+    midsv_sv_deletions_highlighted = highlight_sv_deletions(midsv_sv_deletions)
+    midsv_consensus_with_deletion = embed_sv_deletions(midsv_consensus, midsv_sv_deletions_highlighted)
 
-    index_of_large_deletions: set[int] = _get_index_of_large_deletions(
-        cssplits, bin_size=bin_size, percentage=percentage
-    )
+    deletion_tags = extract_deletion_tags(midsv_sv_deletions_highlighted)
+    flanked_tags, flanked_indices = get_flanked_tags_by_deletions(midsv_consensus_with_deletion)
 
-    insertion_within_deletion = []
-    for i, cs in enumerate(cssplits):
-        if i in index_of_large_deletions:
-            if cs.startswith("-"):
-                continue
-            if cs.startswith("N") or cs.startswith("n"):
-                cs_new = cs
-            elif cs.startswith("*"):
-                cs_new = f"-{cs[1]}"
-            elif cs.startswith("+") and cs.split("|")[-1].startswith("*"):
-                cs_new = f"-{cs.split('|')[-1][1]}"
-            else:
-                cs_new = f"-{cs[-1]}"
-            cssplits_updated[i] = cs_new
-
-            insertion_within_deletion.append(_adjust_cs_insertion(cs))
-        else:
-            if not insertion_within_deletion:
-                continue
-            cssplits_updated[i] = "".join(insertion_within_deletion) + cs
-            insertion_within_deletion = []
-
-    return cssplits_updated
+    if not flanked_tags:
+        return reflect_deletions(midsv_consensus_with_deletion, deletion_tags)
+    else:
+        return handle_insertions_within_deletions(midsv_consensus_with_deletion, flanked_tags, flanked_indices, deletion_tags)

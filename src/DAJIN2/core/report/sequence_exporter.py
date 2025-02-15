@@ -5,7 +5,6 @@ from pathlib import Path
 
 from DAJIN2.core.report.html_builder import to_html
 from DAJIN2.utils import io
-from DAJIN2.utils.cssplits_handler import reallocate_insertion_within_deletion
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:
@@ -16,8 +15,7 @@ def convert_to_fasta(header: str, sequence: str) -> str:
     return fasta
 
 
-def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_per: list[dict]) -> str:
-    midsv_consensus = [max(cons, key=cons.get) for cons in cons_per]
+def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]) -> str:
 
     allele = header.split("_")[1]
     path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{allele}.jsonl")
@@ -26,7 +24,7 @@ def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header
     else:
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
-    return to_html(midsv_sv_allele, midsv_consensus, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
+    return to_html(midsv_sv_allele, cons_midsv_tag, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
 
 
 ##################################################
@@ -58,10 +56,10 @@ def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
         path_output.write_text(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
 
 
-def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_percentage: dict[list]) -> None:
-    for header, cons_per in cons_percentage.items():
+def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_midsv_tags: dict[list]) -> None:
+    for header, cons_midsv_tag in cons_midsv_tags.items():
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
-        path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_per))
+        path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_midsv_tag))
 
 # TODO: Implement to_vcf
 
