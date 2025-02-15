@@ -72,7 +72,6 @@ def define_index_converter(index_grouped: list[list[int]]) -> dict[int, int]:
     return index_converter
 
 
-
 def get_index_and_sv_size(
     misdv_string: str, sv_type: str, mutation_loci: list[set[str]], index_converter: dict[int, int] = None
 ) -> dict[int, int]:
@@ -133,6 +132,7 @@ def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[
 # main
 ###############################################################################
 
+
 # Data Loading
 def load_data(tempdir, sample_name, control_name):
     mutation_loci = io.load_pickle(Path(tempdir, sample_name, "mutation_loci", "control", "mutation_loci.pickle"))
@@ -143,9 +143,13 @@ def load_data(tempdir, sample_name, control_name):
 
     return mutation_loci, path_midsv_sample, path_midsv_control, coverage_sample, coverage_control
 
+
 def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int, int]:
     """Process SV indices and group them based on proximity."""
-    index_of_sv = [list(get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, None).keys()) for m in io.read_jsonl(path_midsv)]
+    index_of_sv = [
+        list(get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, None).keys())
+        for m in io.read_jsonl(path_midsv)
+    ]
     index_of_sv = sorted(chain.from_iterable(index_of_sv))
     grouped_indices = group_similar_indices(index_of_sv, distance=5, min_coverage=max(5, coverage * 0.05))
 
@@ -155,8 +159,7 @@ def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int
 def extract_sv_features(midsv_path, sv_type, mutation_loci, index_converter) -> list[dict[int, int]]:
     """Extract SV start indices and sizes."""
     return [
-        get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, index_converter)
-        for m in io.read_jsonl(midsv_path)
+        get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, index_converter) for m in io.read_jsonl(midsv_path)
     ]
 
 
@@ -175,7 +178,9 @@ def get_sv_index_by_label(labels, index_and_sv_size_sample) -> dict[int, list[di
     return dict(index_and_sv_size_by_label)
 
 
-def get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, fasta_control) -> dict[int, list[str]]:
+def get_midsv_consensus_by_label(
+    index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, fasta_control
+) -> dict[int, list[str]]:
     # Retrieve the most frequent index and SV size
     consensus_index_and_sv_size_by_label = defaultdict(dict)
     for label, index_and_sv_size in index_and_sv_size_by_label.items():
@@ -184,8 +189,6 @@ def get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, 
         # Count the frequencies of the SV sizes
         for record in index_and_sv_size:
             for index, sv_size in record.items():
-                if sv_size == 0:
-                    continue
                 frequency_counts[index][sv_size] += 1
 
         consensus_index_and_sv_size_by_label[label] = {
@@ -207,13 +210,10 @@ def get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, 
                 end = start + sv_size
                 if sv_type == "deletion":
                     midsv_tags_control = [
-                        tag if not (start <= i <= end) else "-" + tag[1:]
-                        for i, tag in enumerate(midsv_tags_control)
+                        tag if not (start <= i <= end) else "-" + tag[1:] for i, tag in enumerate(midsv_tags_control)
                     ]
                 elif sv_type == "inversion":
-                    midsv_tags_control[start : end + 1] = [
-                        tag.lower() for tag in midsv_tags_control[start : end + 1]
-                    ]
+                    midsv_tags_control[start : end + 1] = [tag.lower() for tag in midsv_tags_control[start : end + 1]]
 
             midsv_by_label[label] = midsv_tags_control
 
@@ -234,8 +234,9 @@ def get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, 
                             continue
                         if midsv_tag[index].count("|") == size:
                             insertions.append(midsv_tag[index])
-                    consensus_insertion = Counter(insertions).most_common()[0][0]
-                    consensus_insertion_by_label[label] |= {index: consensus_insertion}
+                    if insertions:
+                        consensus_insertion = Counter(insertions).most_common()[0][0]
+                        consensus_insertion_by_label[label] |= {index: consensus_insertion}
 
             return dict(consensus_insertion_by_label)
 
@@ -315,7 +316,9 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     index_and_sv_size_by_label = get_sv_index_by_label(labels, index_and_sv_size_sample)
 
     # Consensus call of SVs
-    midsv_by_label = get_midsv_consensus_by_label(index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, FASTA_ALLELES["control"])
+    midsv_by_label = get_midsv_consensus_by_label(
+        index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, FASTA_ALLELES["control"]
+    )
     fasta_by_label = {label: convert_cssplits_to_sequence(midsv_tag) for label, midsv_tag in midsv_by_label.items()}
 
     # Discard -1 due to minor allele
