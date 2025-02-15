@@ -81,14 +81,12 @@ HTML_HEADER = """<!DOCTYPE html>
             text-decoration-thickness: 3px;
         }
 
-        /*   #TODO Del_Allele may not be needed.
         .Del_Allele {
             font-weight: bold;
             text-decoration: underline;
             text-decoration-color: #48C0F0;
             text-decoration-thickness: 3px;
         }
-        */ # TODO
 
         .Inv_Allele {
             font-weight: bold;
@@ -112,26 +110,11 @@ HTML_LEGEND = """
     <br>
     <span>SV:</span>
     <span class="Ins_Allele">Insertion allele</span>
+    <span class="Del_Allele">Insertion allele</span>
     <span class="Inv_Allele">Inversion allele</span>
 </p>
 <hr>
 """
-
-# HTML_LEGEND = """
-# <p class="p_legend">
-#     <span class="Ins">Insertion</span>
-#     <span class="Del">Deletion</span>
-#     <span class="Sub">Substitution</span>
-#     <span class="Inv">Inversion</span>
-#     <span class="Unknown">Unknown</span>
-#     <br>
-#     <span>SV:</span>
-#     <span class="Ins_Allele">Insertion allele</span>
-#     <span class="Del_Allele">Deletion allele</span>
-#     <span class="Inv_Allele">Inversion allele</span>
-# </p>
-# <hr>
-# """
 
 HTML_FOOTER = """
 </body>
@@ -158,23 +141,6 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
             html_sv_allele.extend(ins_seq)
             html_sv_allele.append("</span>")
             html_sv_allele.append(last_tag)
-            # # If a deletion occurs immediately after an insertion, close the insertion span and open the deletion span.
-            # if last_tag.startswith("-"):
-            #     html_sv_allele.append("<span class='Del_Allele'>")
-            #     html_sv_allele.append(last_tag)
-            #     html_sv_allele.append("</span><!-- END_OF_DEL_ALLELE -->")
-            # else:  # match or substitution
-            #     html_sv_allele.append(last_tag)
-        
-        # # Deletion
-        # elif midsv_tag.startswith("-"):
-        #     html_sv_allele.append("<span class='Del_Allele'>")
-        #     html_sv_allele.append(misdv_sv_allele[idx])
-        #     # Enclose consecutive deletions within a single span.
-        #     while idx < len(misdv_sv_allele) - 1 and misdv_sv_allele[idx + 1].startswith("-"):
-        #         html_sv_allele.append(misdv_sv_allele[idx + 1])
-        #         idx += 1
-        #     html_sv_allele.append("</span><!-- END_OF_DEL_ALLELE -->")
 
         # Inversion
         elif midsv_tag.islower():
@@ -210,11 +176,6 @@ def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str
             html_parts.append(tag_sv_allele)
             idx_sv_allele += 1
             continue
-
-        # if tag_sv_allele.startswith("-"):
-        #     html_parts.append(tag_sv_allele[-1])
-        #     idx_sv_allele += 1
-        #     continue
 
         tag_sample = midsv_consensus[idx]
 
@@ -268,14 +229,7 @@ def to_html(midsv_sv_allele: list[str], midsv_consensus: list[str:], description
     description_str = f"<h1>{description}</h1>" if description else ""
     html_sv_allele = highlight_sv_regions(midsv_sv_allele)
     html_parts = embed_mutations_to_html(html_sv_allele, midsv_consensus)
-
     html_parts = "".join(html_parts)
-
-    # # Handle insertions within large deletions
-    # flanked_tags_sv_allele, _ = get_flanked_tags_by_deletions(html_sv_allele)
-    # sequences_within_deletion = [get_sequence_from_flanked_tags(tag) for tag in flanked_tags_sv_allele]
-    # flanked_tags, flanked_indices = get_flanked_tags_by_deletions(html_parts)
-    # html_parts = "".join(handle_insertions(html_parts, flanked_tags, flanked_indices, sequences_within_deletion))
 
     return "\n".join(
         [
