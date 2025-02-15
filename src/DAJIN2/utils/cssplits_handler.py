@@ -345,59 +345,6 @@ def extract_deletion_tags(midsv_sv_deletions_highlighted: list[str]) -> list[lis
     return deletion_tags
 
 
-def handle_insertions_within_deletions(midsv_consensus_with_deletion: list[str], flanked_tags: list[list[str]], flanked_indices: list[tuple[int, int]], deletion_tags: list[list[str]]) -> list[str]:
-    insertions = []
-    previous_end = None
-    i = 0
-    index_shift = 0
-
-    while i < len(flanked_tags):
-        flanked_tag = flanked_tags[i]
-        start, end = flanked_indices[i]
-
-        start += index_shift
-        end += index_shift
-
-        deletion_tag = deletion_tags[i]
-
-        if has_consecutive_matches(flanked_tag) and insertions:
-            # Add Insertions
-            last_tag = midsv_consensus_with_deletion.pop(previous_end + 2)
-            insertions = "|".join([insertions, last_tag])
-            midsv_consensus_with_deletion.insert(previous_end + 2, insertions)
-            index_shift += 1
-            insertions = []
-
-        elif not has_consecutive_matches(flanked_tag):
-            # Collect Insertions and Add Deletions
-            insertions.append(convert_midsv_tags_to_insertion(flanked_tag))
-
-            midsv_consensus_with_deletion[start-1: end+1] = ["!" for _ in range(start-1, end+1)]
-            midsv_consensus_with_deletion[start: start] = deletion_tag
-            index_shift += len(deletion_tag) - 1
-
-        else:
-            # Add Deletions
-            midsv_consensus_with_deletion[start: start] = deletion_tag
-            index_shift += len(deletion_tag) - 1
-
-        previous_end = end
-        i += 1
-
-    if insertions and "!END_OF_DEL_ALLELE!" in midsv_consensus_with_deletion:
-        last_index = get_last_index_of_del_allele(midsv_consensus_with_deletion)
-        last_tag = midsv_consensus_with_deletion.pop(last_index)
-        insertions = "|".join(insertions)
-        insertions = "|".join([insertions, last_tag])
-
-        deletion_tag = deletion_tags[-1]
-        midsv_consensus_with_deletion.insert(last_index, insertions)
-        midsv_consensus_with_deletion[last_index:last_index] = deletion_tag
-
-    # Remove ['!START_OF_DEL_ALLELE!', '!END_OF_DEL_ALLELE!'] tags
-    return [m for m in midsv_consensus_with_deletion if not m.startswith("!")]
-
-
 def reflect_deletions(midsv_consensus_with_deletion: list[str], deletion_tags: list[list[str]]) -> list[str]:
     """
     Reflect the Deletion when there is no Insertion.
@@ -406,9 +353,42 @@ def reflect_deletions(midsv_consensus_with_deletion: list[str], deletion_tags: l
         idx_of_del = [i for i, tag in enumerate(midsv_consensus_with_deletion) if tag == "!END_OF_DEL_ALLELE!"][deletion_id]
         midsv_consensus_with_deletion[idx_of_del:idx_of_del] = deletion_tag
 
+    return midsv_consensus_with_deletion
+
+
+def handle_insertions_within_deletions(midsv_consensus_with_deletion: list[str], flanked_tags: list[list[str]]) -> list[str]:
+    insertions = []
+    i = 0
+
+    while i < len(flanked_tags):
+        flanked_tag = flanked_tags[i]
+
+        # Get the index of the region enclosed by End and Start
+        flank_start = [i for i, tag in enumerate(midsv_consensus_with_deletion) if tag == "!END_OF_DEL_ALLELE!"][i]
+        flank_end = [i for i, tag in enumerate(midsv_consensus_with_deletion) if tag == "!START_OF_DEL_ALLELE!"][i+1]
+
+        if has_consecutive_matches(flanked_tag) and insertions:
+            # Reflect Insertions
+            last_tag = midsv_consensus_with_deletion.pop(flank_start + 1)
+            insertions = "|".join(["|".join(insertions), last_tag])
+            midsv_consensus_with_deletion.insert(flank_start + 1, insertions)
+            insertions = []
+
+        elif not has_consecutive_matches(flanked_tag):
+            # Collect Insertions
+            insertions.append(convert_midsv_tags_to_insertion(flanked_tag))
+            midsv_consensus_with_deletion[flank_start+1: flank_end] = ["!" for _ in range(flank_start+1, flank_end)]
+
+        i += 1
+
+    if insertions and "!END_OF_DEL_ALLELE!" in midsv_consensus_with_deletion:
+        last_index = get_last_index_of_del_allele(midsv_consensus_with_deletion)
+        last_tag = midsv_consensus_with_deletion.pop(last_index)
+        insertions = "|".join(["|".join(insertions), last_tag])
+        midsv_consensus_with_deletion.insert(last_index, insertions)
+
     # Remove ['!START_OF_DEL_ALLELE!', '!END_OF_DEL_ALLELE!'] tags
     return [m for m in midsv_consensus_with_deletion if not m.startswith("!")]
-
 
 def reflect_sv_deletion_in_midsv(midsv_consensus: list[str], midsv_sv_deletions: list[str]) -> list[str]:
     """
@@ -417,10 +397,10 @@ def reflect_sv_deletion_in_midsv(midsv_consensus: list[str], midsv_sv_deletions:
     midsv_sv_deletions_highlighted = highlight_sv_deletions(midsv_sv_deletions)
     midsv_consensus_with_deletion = embed_sv_deletions(midsv_consensus, midsv_sv_deletions_highlighted)
 
+    # Append deletion tags to the midsv_consensus_with_deletion
     deletion_tags = extract_deletion_tags(midsv_sv_deletions_highlighted)
-    flanked_tags, flanked_indices = get_flanked_tags_by_deletions(midsv_consensus_with_deletion)
+    midsv_consensus_with_deletion = reflect_deletions(midsv_consensus_with_deletion, deletion_tags)
 
-    if not flanked_tags:
-        return reflect_deletions(midsv_consensus_with_deletion, deletion_tags)
-    else:
-        return handle_insertions_within_deletions(midsv_consensus_with_deletion, flanked_tags, flanked_indices, deletion_tags)
+    flanked_tags, _ = get_flanked_tags_by_deletions(midsv_consensus_with_deletion)
+
+    return handle_insertions_within_deletions(midsv_consensus_with_deletion, flanked_tags)
