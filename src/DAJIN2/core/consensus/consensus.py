@@ -81,7 +81,6 @@ class ConsensusKey:
 def call_consensus(
     tempdir: Path, sample_name: str, fasta_alleles: dict[str, str], clust_downsampled: list[dict]
 ) -> tuple[dict[list], dict[str], dict[str]]:
-
     cons_percentages = {}
     cons_sequences = {}
     cons_midsv_tags = {}
@@ -99,7 +98,7 @@ def call_consensus(
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
         path_midsv_sv = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
-        
+
         if allele.startswith("deletion") and path_midsv_sv.exists():
             midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
             cons_midsv_tag = reflect_sv_deletion_in_midsv(cons_midsv_tag, midsv_sv_allele)

@@ -281,7 +281,9 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     index_converter_control = process_sv_indices(path_midsv_control, sv_type, mutation_loci, coverage_control)
 
     index_and_sv_size_sample = extract_sv_features(path_midsv_sample, sv_type, mutation_loci, index_converter_sample)
-    index_and_sv_size_control = extract_sv_features(path_midsv_control, sv_type, mutation_loci, index_converter_control)
+    index_and_sv_size_control = extract_sv_features(
+        path_midsv_control, sv_type, mutation_loci, index_converter_control
+    )
 
     all_sv_indices = {
         key

@@ -66,7 +66,7 @@ def add_unique_allele_keys(
         return {f"{key}{(i + 1):02}": value for i, value in enumerate(fasta_sv_alleles.values())}
 
     key_candidate_alleles = set()
-    num_digits = 3 # 001
+    num_digits = 3  # 001
     while _check_duplicates_of_sets(key_candidate_alleles, key_duplicated_alleles):
         key_candidate_alleles = {f"{key}{(i + 1):0{num_digits}}" for i, _ in enumerate(fasta_sv_alleles)}
         num_digits += 1

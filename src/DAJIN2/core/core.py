@@ -242,7 +242,9 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    allele_names = consensus.call_allele_name(ARGS.tempdir, ARGS.sample_name, cons_sequences, cons_percentages, ARGS.fasta_alleles, threshold=50)
+    allele_names = consensus.call_allele_name(
+        ARGS.tempdir, ARGS.sample_name, cons_sequences, cons_percentages, ARGS.fasta_alleles, threshold=50
+    )
     cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
     cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
     cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)

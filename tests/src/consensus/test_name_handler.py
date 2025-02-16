@@ -1,13 +1,11 @@
-from collections import defaultdict
 from typing import NamedTuple
 
 import pytest
-
 from DAJIN2.core.consensus.name_handler import (
+    add_key_by_allele_name,
     detect_sv,
     determine_suffix,
     format_allele_label,
-    add_key_by_allele_name,
     generate_allele_mapping,
     update_key_by_allele_name,
 )
@@ -30,6 +28,7 @@ from DAJIN2.core.consensus.name_handler import (
 )
 def test_detect_sv(cons_per, threshold, expected):
     assert detect_sv(cons_per, threshold) == expected
+
 
 ###########################################################
 # call_allele_name
@@ -65,42 +64,39 @@ def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
     assert result == expected_output
 
 
-
 @pytest.mark.parametrize(
     "alleles, expected",
     [
         # Case 1: Standard mapping
         (
             ["deletion02", "control", "deletion04", "inversion05", "insertion11"],
-            {"deletion02": "deletion01", "deletion04": "deletion02", "inversion05": "inversion01", "insertion11": "insertion01"}
+            {
+                "deletion02": "deletion01",
+                "deletion04": "deletion02",
+                "inversion05": "inversion01",
+                "insertion11": "insertion01",
+            },
         ),
         # Case 2: Only one allele in each group
         (
             ["deletion01", "inversion01", "insertion01"],
-            {"deletion01": "deletion01", "inversion01": "inversion01", "insertion01": "insertion01"}
+            {"deletion01": "deletion01", "inversion01": "inversion01", "insertion01": "insertion01"},
         ),
         # Case 3: No valid alleles
-        (
-            ["control", "unknown"],
-            {}
-        ),
+        (["control", "unknown"], {}),
         # Case 4: Multiple alleles in a single group
         (
             ["deletion01", "deletion02", "deletion03"],
-            {"deletion01": "deletion01", "deletion02": "deletion02", "deletion03": "deletion03"}
+            {"deletion01": "deletion01", "deletion02": "deletion02", "deletion03": "deletion03"},
         ),
         # Case 5: Mixed valid and invalid alleles
         (
             ["deletion02", "control", "inversion05", "insertion11", "unknown"],
-            {"deletion02": "deletion01",
-            "inversion05": "inversion01",
-            "insertion11": "insertion01"}
+            {"deletion02": "deletion01", "inversion05": "inversion01", "insertion11": "insertion01"},
         ),
         # Case 6: Conseqtive alleles
-        (
-            ["deletion01", "deletion01", "deletion04"],
-            {"deletion01": "deletion01", "deletion04": "deletion02"}
-        ),    ],
+        (["deletion01", "deletion01", "deletion04"], {"deletion01": "deletion01", "deletion04": "deletion02"}),
+    ],
 )
 def test_generate_allele_mapping(alleles, expected):
     assert generate_allele_mapping(alleles) == expected
@@ -115,6 +111,7 @@ class ConsensusKey(NamedTuple):
 ###########################################################
 # Replace new allele names to the consensus dictionary
 ###########################################################
+
 
 @pytest.mark.parametrize(
     "cons, allele_names, expected_output",
@@ -134,6 +131,7 @@ def test_update_key_by_allele_name(cons, allele_names, expected_output):
 ###########################################################
 # Add `NAME` key to RESULT_SAMPLE
 ###########################################################
+
 
 @pytest.mark.parametrize(
     "clust_sample, allele_names, expected_output",

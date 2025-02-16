@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+
 from DAJIN2.core.consensus.consensus import ConsensusKey
-from DAJIN2.utils import io
+
 
 def detect_sv(cons_per: list[dict[str, float]], threshold: int = 50) -> bool:
     cons_midsv_tag: str = "".join([max(tag, key=tag.get) for tag in cons_per])
@@ -14,13 +15,14 @@ def detect_sv(cons_per: list[dict[str, float]], threshold: int = 50) -> bool:
         rf"(\+[ACGTN]\|){{{threshold}}}",  # Insertions
         rf"(\-[ACGTN]){{{threshold}}}",  # Deletions
         rf"(\*[ACGTN][ACGTN]){{{threshold}}}",  # Substitutions
-        r"[acgtn]"  # Inversions (lowercase nucleotides)
+        r"[acgtn]",  # Inversions (lowercase nucleotides)
     ]
 
     return any(re.search(pattern, cons_midsv_tag) for pattern in patterns)
 
+
 def format_allele_label(label: int, total_labels: int) -> str:
-    digits = max(2, len(str(total_labels))) # minimum of 2 digits (01, 02, 03...)
+    digits = max(2, len(str(total_labels)))  # minimum of 2 digits (01, 02, 03...)
     return f"{label:0{digits}}"
 
 
@@ -38,7 +40,7 @@ def generate_allele_mapping(alleles: list[str]) -> dict[str, str]:
     groups = {}
     # Group alleles by prefix (deletion, inversion, insertion)
     for allele in alleles:
-        match = re.match(r'(deletion|inversion|insertion)(\d+)', allele)
+        match = re.match(r"(deletion|inversion|insertion)(\d+)", allele)
         if match:
             prefix, _ = match.groups()
             if prefix not in groups:
@@ -67,7 +69,6 @@ def call_allele_name(
     FASTA_ALLELES: dict[str, str],
     threshold: int = 50,
 ) -> dict[int, str]:
-
     digits = max(2, len(str(len(cons_percentages))))
     exists_sv = [detect_sv(cons_per, threshold) for cons_per in cons_percentages.values()]
 
@@ -93,10 +94,10 @@ def call_allele_name(
     return allele_names
 
 
-
 ###########################################################
 # Replace new allele names to the consensus dictionary
 ###########################################################
+
 
 def update_key_by_allele_name(cons: dict, allele_names: dict[int, str]) -> dict:
     cons_update = {}
@@ -110,6 +111,7 @@ def update_key_by_allele_name(cons: dict, allele_names: dict[int, str]) -> dict:
 ###########################################################
 # Add `NAME` key to RESULT_SAMPLE
 ###########################################################
+
 
 def add_key_by_allele_name(clust_sample: list[dict], allele_names: dict[int, str]) -> list[dict]:
     for clust in clust_sample:

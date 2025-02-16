@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 ###############################################################################
 # HTML Builder
 ###############################################################################
@@ -126,13 +124,14 @@ HTML_FOOTER = """
 # Highlight SV regions
 ###############################################################################
 
+
 def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
     """Add an HTML class for a colored underline to regions corresponding to SVs (indels, inversions)."""
     html_sv_allele = []
     idx = 0
     while idx < len(misdv_sv_allele):
         midsv_tag = misdv_sv_allele[idx]
-        
+
         # Insertion
         if midsv_tag.startswith("+"):
             html_sv_allele.append("<span class='Ins_Allele'>")
@@ -160,9 +159,11 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
 
     return html_sv_allele
 
+
 ###############################################################################
 # Embed mutations to HTML
 ###############################################################################
+
 
 def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str]) -> list[str]:
     idx = 0
@@ -170,7 +171,6 @@ def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str
     html_parts = ["<p class='p_seq'>"]
 
     while idx_sv_allele < len(html_sv_allele) and idx < len(midsv_consensus):
-
         tag_sv_allele = html_sv_allele[idx_sv_allele]
         if tag_sv_allele.startswith("<"):
             html_parts.append(tag_sv_allele)
@@ -218,6 +218,7 @@ def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str
     html_parts.append("</p>")
 
     return html_parts
+
 
 ###############################################################################
 # main

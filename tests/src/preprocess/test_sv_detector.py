@@ -1,7 +1,6 @@
-
 import pytest
-
 from DAJIN2.core.preprocess.sv_detector import get_index_and_sv_size
+
 
 @pytest.mark.parametrize(
     "misdv_string, sv_type, mutation_loci, index_converter, expected",
@@ -67,4 +66,3 @@ from DAJIN2.core.preprocess.sv_detector import get_index_and_sv_size
 def test_get_index_and_sv_size(misdv_string, sv_type, mutation_loci, index_converter, expected):
     result = get_index_and_sv_size(misdv_string, sv_type, mutation_loci, index_converter)
     assert result == expected
-

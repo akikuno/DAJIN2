@@ -15,8 +15,9 @@ def convert_to_fasta(header: str, sequence: str) -> str:
     return fasta
 
 
-def convert_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]) -> str:
-
+def convert_to_html(
+    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]
+) -> str:
     allele = header.split("_")[1]
     path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{allele}.jsonl")
     if path_midsv_sv.exists():
@@ -60,6 +61,7 @@ def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_mi
     for header, cons_midsv_tag in cons_midsv_tags.items():
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
         path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_midsv_tag))
+
 
 # TODO: Implement to_vcf
 

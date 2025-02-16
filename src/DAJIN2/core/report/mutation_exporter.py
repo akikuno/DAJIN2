@@ -113,7 +113,9 @@ def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, head
 ###########################################################
 
 
-def export_to_csv(TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_midsv_tags: dict[str, list[str]]) -> None:
+def export_to_csv(
+    TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_midsv_tags: dict[str, list[str]]
+) -> None:
     results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
     for header, cons_midsv_tag in cons_midsv_tags.items():
         if GENOME_COORDINATES.get("strand") == "-":

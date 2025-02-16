@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from DAJIN2.utils import cssplits_handler
 
 ###########################################################
@@ -129,7 +128,6 @@ def test_call_sequence(cons_percentage, expected_sequence):
     assert cssplits_handler.call_sequence(cons_percentage) == expected_sequence
 
 
-
 ###########################################################
 # reflect_sv_deletion_in_midsv
 ###########################################################
@@ -138,11 +136,12 @@ def test_call_sequence(cons_percentage, expected_sequence):
 # highlight_sv_deletions
 # ---------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "midsv_sv_allele, expected_output",
     [
         # Test case 1: Insertion
-        (["=A", "+A|+A|=C", "=G"], ['=A', '+A|+A|=C', '=G']),
+        (["=A", "+A|+A|=C", "=G"], ["=A", "+A|+A|=C", "=G"]),
         # Test case 2: Consecutive Deletions
         (["=A", "-A", "-G", "=G"], ["=A", "!START_OF_DEL_ALLELE!", "-A", "-G", "!END_OF_DEL_ALLELE!", "=G"]),
         # Test case 3: Single Deletion
@@ -152,14 +151,21 @@ def test_call_sequence(cons_percentage, expected_sequence):
 def test_highlight_sv_deletions(midsv_sv_allele, expected_output):
     assert cssplits_handler.highlight_sv_deletions(midsv_sv_allele) == expected_output
 
+
 # ---------------------------------------------------------
 # embed_sv_deletions
 # ---------------------------------------------------------
 
 test_data = [
-    (["=A", "-T", "-G", "=C", "=T"], ["=A", "=C", "=T"], ['=A', '!START_OF_DEL_ALLELE!', '!END_OF_DEL_ALLELE!', '=C', '=T']),
+    (
+        ["=A", "-T", "-G", "=C", "=T"],
+        ["=A", "=C", "=T"],
+        ["=A", "!START_OF_DEL_ALLELE!", "!END_OF_DEL_ALLELE!", "=C", "=T"],
+    ),
     (["=A", "=T", "=C", "=T"], ["=A", "-G", "-C", "=T"], ["=A", "-G", "-C", "=T"]),
 ]
+
+
 @pytest.mark.parametrize("midsv_sv_allele, midsv_consensus, expected_output", test_data)
 def test_embed_sv_deletions(midsv_sv_allele, midsv_consensus, expected_output):
     midsv_sv_allele_highlighted = cssplits_handler.highlight_sv_deletions(midsv_sv_allele)
@@ -171,24 +177,46 @@ def test_embed_sv_deletions(midsv_sv_allele, midsv_consensus, expected_output):
 # get_flanked_tags_by_deletions
 # ---------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "midsv_tags, expected_output",
     [
         # No flanked tags between deletions
-        (['=A', '!START_OF_DEL_ALLELE!', '=C', '!END_OF_DEL_ALLELE!', '=T'], ([], [])),
-
+        (["=A", "!START_OF_DEL_ALLELE!", "=C", "!END_OF_DEL_ALLELE!", "=T"], ([], [])),
         # One flanked tag between two deletions
         (
-            ['=A', '!START_OF_DEL_ALLELE!', '=C', '!END_OF_DEL_ALLELE!', '=T', '!START_OF_DEL_ALLELE!', '=C', '!END_OF_DEL_ALLELE!'],
-            ([['=T']], [(4, 5)])
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "=C",
+                "!END_OF_DEL_ALLELE!",
+                "=T",
+                "!START_OF_DEL_ALLELE!",
+                "=C",
+                "!END_OF_DEL_ALLELE!",
+            ],
+            ([["=T"]], [(4, 5)]),
         ),
-
         # Multiple flanked tags between deletions
         (
-            ['=A', '!START_OF_DEL_ALLELE!', '=C', '!END_OF_DEL_ALLELE!', '=T', '!START_OF_DEL_ALLELE!', '=C', '!END_OF_DEL_ALLELE!', '=T', '=T', '!START_OF_DEL_ALLELE!', '=C', '!END_OF_DEL_ALLELE!'],
-            ([['=T'], ['=T', '=T']], [(4, 5), (8, 10)])
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "=C",
+                "!END_OF_DEL_ALLELE!",
+                "=T",
+                "!START_OF_DEL_ALLELE!",
+                "=C",
+                "!END_OF_DEL_ALLELE!",
+                "=T",
+                "=T",
+                "!START_OF_DEL_ALLELE!",
+                "=C",
+                "!END_OF_DEL_ALLELE!",
+            ],
+            ([["=T"], ["=T", "=T"]], [(4, 5), (8, 10)]),
         ),
-    ]
+    ],
 )
 def test_get_flanked_tags_by_deletions(midsv_tags, expected_output):
     assert cssplits_handler.get_flanked_tags_by_deletions(midsv_tags) == expected_output
@@ -198,27 +226,23 @@ def test_get_flanked_tags_by_deletions(midsv_tags, expected_output):
 # has_consecutive_matches
 # ---------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "flanked_tag, n, expected_output",
     [
         # Case 1: No matching tags
         (["-A", "+T", "-G"], 10, False),
-
         # Case 2: Less than n consecutive matches
         (["=A", "=T", "=G", "-C", "=A", "=T"], 4, False),
-
         # Case 3: Exactly n consecutive matches
         (["=A", "=T", "=G", "=C", "=A", "=T", "=G", "=C", "=A", "=T"], 10, True),
-
         # Case 4: More than n consecutive matches
         (["=A"] * 15, 10, True),
-
         # Case 5: Consecutive matches but broken before reaching n
         (["=A", "=T", "=G", "=C", "=A", "-T", "=G", "=C", "=A", "=T"], 5, True),
-
         # Case 6: Edge case where n is 1 (any match should return True)
         (["=A", "-T", "+G"], 1, True),
-    ]
+    ],
 )
 def test_has_consecutive_matches(flanked_tag, n, expected_output):
     assert cssplits_handler.has_consecutive_matches(flanked_tag, n) == expected_output
@@ -228,35 +252,39 @@ def test_has_consecutive_matches(flanked_tag, n, expected_output):
 # has_consecutive_matches
 # ---------------------------------------------------------
 
+
 @pytest.mark.parametrize(
     "midsv_tags, expected_output",
     [
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "=C", "!END_OF_DEL_ALLELE!", "=T"],
-            4,
-            id="Single deletion block"
+            ["=A", "!START_OF_DEL_ALLELE!", "=C", "!END_OF_DEL_ALLELE!", "=T"], 4, id="Single deletion block"
         ),
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "=C", "!END_OF_DEL_ALLELE!", "=T", "!START_OF_DEL_ALLELE!", "=G", "!END_OF_DEL_ALLELE!"],
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "=C",
+                "!END_OF_DEL_ALLELE!",
+                "=T",
+                "!START_OF_DEL_ALLELE!",
+                "=G",
+                "!END_OF_DEL_ALLELE!",
+            ],
             8,
-            id="Multiple deletion blocks"
+            id="Multiple deletion blocks",
         ),
         pytest.param(
             ["=A", "=T", "=G"],
             None,  # Expecting an exception
-            id="No deletion block"
+            id="No deletion block",
         ),
         pytest.param(
             ["=A", "!START_OF_DEL_ALLELE!", "=C"],
             None,  # Expecting an exception
-            id="Unclosed deletion block"
+            id="Unclosed deletion block",
         ),
-        pytest.param(
-            ["!END_OF_DEL_ALLELE!", "=A", "=T"],
-            1,
-            id="END_OF_DEL_ALLELE at index 0"
-        ),
-    ]
+        pytest.param(["!END_OF_DEL_ALLELE!", "=A", "=T"], 1, id="END_OF_DEL_ALLELE at index 0"),
+    ],
 )
 def test_get_last_index_of_del_allele(midsv_tags, expected_output):
     if expected_output is None:
@@ -269,10 +297,10 @@ def test_get_last_index_of_del_allele(midsv_tags, expected_output):
         )
 
 
-
 # ---------------------------------------------------------
 # convert_midsv_tags_to_insertion
 # ---------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "midsv_tags, expected_output",
@@ -280,52 +308,28 @@ def test_get_last_index_of_del_allele(midsv_tags, expected_output):
         pytest.param(
             ["=T", "=A", "+C|+C|=A", "-T", "=G", "=C"],
             "+T|+A|+C|+C|+A|+G|+C",
-            id="Standard case with insertions and deletions"
+            id="Standard case with insertions and deletions",
         ),
+        pytest.param(["=A", "=C", "=G"], "+A|+C|+G", id="Only matches"),
         pytest.param(
-            ["=A", "=C", "=G"],
-            "+A|+C|+G",
-            id="Only matches"
+            ["+A|+T|=C", "=G", "-T", "+A|+G|=C"], "+A|+T|+C|+G|+A|+G|+C", id="Mixed insertions and deletions"
         ),
-        pytest.param(
-            ["+A|+T|=C", "=G", "-T", "+A|+G|=C"],
-            "+A|+T|+C|+G|+A|+G|+C",
-            id="Mixed insertions and deletions"
-        ),
-        pytest.param(
-            ["-A", "-C", "-G"],
-            "",
-            id="Only deletions"
-        ),
-        pytest.param(
-            ["+A|+C|+G", "+T|+A|=C"],
-            "+A|+C|+G|+T|+A|+C",
-            id="Only insertions"
-        ),
-        pytest.param(
-            ["=A", "=T", "=G", "-C", "-A", "=C"],
-            "+A|+T|+G|+C",
-            id="Trailing deletion"
-        ),
-        pytest.param(
-            ["+A|+T|-C", "=G", "=C"],
-            "+A|+T|+G|+C",
-            id="Insertion ending with deletion"
-        ),
-        pytest.param(
-            [],
-            "",
-            id="Empty list"
-        ),
-    ]
+        pytest.param(["-A", "-C", "-G"], "", id="Only deletions"),
+        pytest.param(["+A|+C|+G", "+T|+A|=C"], "+A|+C|+G|+T|+A|+C", id="Only insertions"),
+        pytest.param(["=A", "=T", "=G", "-C", "-A", "=C"], "+A|+T|+G|+C", id="Trailing deletion"),
+        pytest.param(["+A|+T|-C", "=G", "=C"], "+A|+T|+G|+C", id="Insertion ending with deletion"),
+        pytest.param([], "", id="Empty list"),
+    ],
 )
 def test_convert_midsv_tags_to_insertion(midsv_tags, expected_output):
     actual_output = cssplits_handler.convert_midsv_tags_to_insertion(midsv_tags)
     assert actual_output == expected_output
 
+
 # ---------------------------------------------------------
 # extract_deletion_tags
 # ---------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "midsv_sv_deletions_highlighted, expected_output",
@@ -333,34 +337,46 @@ def test_convert_midsv_tags_to_insertion(midsv_tags, expected_output):
         pytest.param(
             ["=A", "!START_OF_DEL_ALLELE!", "-C", "-G", "!END_OF_DEL_ALLELE!", "=T"],
             [["-C", "-G"]],
-            id="Single deletion block"
+            id="Single deletion block",
         ),
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "-C", "-G", "!END_OF_DEL_ALLELE!", "=T", "!START_OF_DEL_ALLELE!", "-A", "-T", "!END_OF_DEL_ALLELE!"],
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-C",
+                "-G",
+                "!END_OF_DEL_ALLELE!",
+                "=T",
+                "!START_OF_DEL_ALLELE!",
+                "-A",
+                "-T",
+                "!END_OF_DEL_ALLELE!",
+            ],
             [["-C", "-G"], ["-A", "-T"]],
-            id="Multiple deletion blocks"
+            id="Multiple deletion blocks",
         ),
+        pytest.param(["=A", "=T", "=G"], [], id="No deletion blocks"),
         pytest.param(
-            ["=A", "=T", "=G"],
-            [],
-            id="No deletion blocks"
-        ),
-        pytest.param(
-            ["!START_OF_DEL_ALLELE!", "-C", "-G", "!END_OF_DEL_ALLELE!", "!START_OF_DEL_ALLELE!", "-A", "-T", "!END_OF_DEL_ALLELE!"],
+            [
+                "!START_OF_DEL_ALLELE!",
+                "-C",
+                "-G",
+                "!END_OF_DEL_ALLELE!",
+                "!START_OF_DEL_ALLELE!",
+                "-A",
+                "-T",
+                "!END_OF_DEL_ALLELE!",
+            ],
             [["-C", "-G"], ["-A", "-T"]],
-            id="Only deletions without matches"
+            id="Only deletions without matches",
         ),
         pytest.param(
             ["!START_OF_DEL_ALLELE!", "!START_OF_DEL_ALLELE!", "-C", "!END_OF_DEL_ALLELE!"],
             [[], ["-C"]],
-            id="Nested deletion start tags"
+            id="Nested deletion start tags",
         ),
-        pytest.param(
-            [],
-            [],
-            id="Empty input"
-        ),
-    ]
+        pytest.param([], [], id="Empty input"),
+    ],
 )
 def test_extract_deletion_tags(midsv_sv_deletions_highlighted, expected_output):
     actual_output = cssplits_handler.extract_deletion_tags(midsv_sv_deletions_highlighted)
@@ -376,62 +392,170 @@ def test_extract_deletion_tags(midsv_sv_deletions_highlighted, expected_output):
     "midsv_consensus_with_deletion, deletion_tags, expected_output",
     [
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "!END_OF_DEL_ALLELE!", "=C","=T"],
+            ["=A", "!START_OF_DEL_ALLELE!", "!END_OF_DEL_ALLELE!", "=C", "=T"],
             [["-T", "-T"]],
             ["=A", "!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=C", "=T"],
-            id="Single deletion block without insertions"
+            id="Single deletion block without insertions",
         ),
         pytest.param(
             ["=A", "!START_OF_DEL_ALLELE!", "!END_OF_DEL_ALLELE!", "=C", "=G", "=T"],
             [["-T", "-T"]],
-            ["=A", "!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=C", "=G","=T"],
-            id="Single deletion block with multiple deletions"
+            ["=A", "!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=C", "=G", "=T"],
+            id="Single deletion block with multiple deletions",
         ),
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "!END_OF_DEL_ALLELE!", "=A", "=A", "!START_OF_DEL_ALLELE!", "!END_OF_DEL_ALLELE!", "=C", "=C"],
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "!END_OF_DEL_ALLELE!",
+                "=C",
+                "=C",
+            ],
             [["-G", "-G", "-G"], ["-T", "-T"]],
-            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "-G", "!END_OF_DEL_ALLELE!", "=A", "=A", "!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=C", "=C"],
-            id="Multiple deletion blocks"
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-G",
+                "-G",
+                "-G",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-T",
+                "-T",
+                "!END_OF_DEL_ALLELE!",
+                "=C",
+                "=C",
+            ],
+            id="Multiple deletion blocks",
         ),
-    ]
+    ],
 )
 def test_reflect_deletions(midsv_consensus_with_deletion, deletion_tags, expected_output):
     actual_output = cssplits_handler.reflect_deletions(midsv_consensus_with_deletion, deletion_tags)
     assert actual_output == expected_output
 
 
-
 # ---------------------------------------------------------
 # handle_insertions_within_deletions
 # ---------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "midsv_consensus_with_deletion, expected_output",
     [
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "!END_OF_DEL_ALLELE!", "=A", "!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=A"],
-            ['=A', '-G', '-G', '-T', '-T', '+A|=A'],
-            id="Two_separate_deletion_blocks"
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-G",
+                "-G",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-T",
+                "-T",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+            ],
+            ["=A", "-G", "-G", "-T", "-T", "+A|=A"],
+            id="Two_separate_deletion_blocks",
         ),
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "!END_OF_DEL_ALLELE!", "=A", "!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=A", "!START_OF_DEL_ALLELE!", "-C", "-C", "!END_OF_DEL_ALLELE!", "=A"],
-            ['=A', '-G', '-G', '-T', '-T', '-C', '-C', '+A|+A|=A'],
-            id="Three_separate_deletion_blocks"
+            [
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-G",
+                "-G",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-T",
+                "-T",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-C",
+                "-C",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+            ],
+            ["=A", "-G", "-G", "-T", "-T", "-C", "-C", "+A|+A|=A"],
+            id="Three_separate_deletion_blocks",
         ),
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "!END_OF_DEL_ALLELE!"] + ["=A"] * 10 + ["!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!", "=A", "!START_OF_DEL_ALLELE!", "-C", "-C", "!END_OF_DEL_ALLELE!", "=A"],
-            ['=A', '-G', '-G', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '-T', '-T', '-C', '-C', '+A|=A'],
-            id="Deletion_blocks_with_long_intervening_matches"
+            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "!END_OF_DEL_ALLELE!"]
+            + ["=A"] * 10
+            + [
+                "!START_OF_DEL_ALLELE!",
+                "-T",
+                "-T",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+                "!START_OF_DEL_ALLELE!",
+                "-C",
+                "-C",
+                "!END_OF_DEL_ALLELE!",
+                "=A",
+            ],
+            [
+                "=A",
+                "-G",
+                "-G",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "-T",
+                "-T",
+                "-C",
+                "-C",
+                "+A|=A",
+            ],
+            id="Deletion_blocks_with_long_intervening_matches",
         ),
         pytest.param(
-            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "!END_OF_DEL_ALLELE!"] + ["=A"] + ["!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!"] + ["=A"] * 10 + ["!START_OF_DEL_ALLELE!", "-C", "-C", "!END_OF_DEL_ALLELE!", "=A"],
-            ['=A', '-G', '-G', '-T', '-T', '+A|=A', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '=A', '-C', '-C', '=A'],
-            id="Multiple_deletion_blocks_with_varied_spacing"
+            ["=A", "!START_OF_DEL_ALLELE!", "-G", "-G", "!END_OF_DEL_ALLELE!"]
+            + ["=A"]
+            + ["!START_OF_DEL_ALLELE!", "-T", "-T", "!END_OF_DEL_ALLELE!"]
+            + ["=A"] * 10
+            + ["!START_OF_DEL_ALLELE!", "-C", "-C", "!END_OF_DEL_ALLELE!", "=A"],
+            [
+                "=A",
+                "-G",
+                "-G",
+                "-T",
+                "-T",
+                "+A|=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "=A",
+                "-C",
+                "-C",
+                "=A",
+            ],
+            id="Multiple_deletion_blocks_with_varied_spacing",
         ),
-    ]
+    ],
 )
 def test_handle_insertions_within_deletions(midsv_consensus_with_deletion, expected_output):
     flanked_tags, _ = cssplits_handler.get_flanked_tags_by_deletions(midsv_consensus_with_deletion)
     actual_output = cssplits_handler.handle_insertions_within_deletions(midsv_consensus_with_deletion, flanked_tags)
     assert actual_output == expected_output
-
