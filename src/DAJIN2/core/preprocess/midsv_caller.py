@@ -196,6 +196,14 @@ def convert_consecutive_indels(midsv_sample: Iterator) -> Iterator[list[dict]]:
         yield m
 
 
+def append_best_preset(midsv_sample: list[dict], best_preset: dict[str, str]) -> Iterator[dict]:
+    for m in midsv_sample:
+        qname = m["QNAME"]
+        if qname in best_preset:
+            m["PRESET"] = best_preset[qname]
+        yield m
+
+
 ###########################################################
 # main
 ###########################################################
@@ -235,4 +243,5 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
+        midsv_sample = append_best_preset(midsv_sample, best_preset)
         io.write_jsonl(midsv_sample, path_midsv_output)
