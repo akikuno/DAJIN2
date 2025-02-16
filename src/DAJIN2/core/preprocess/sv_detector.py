@@ -296,13 +296,12 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     if all_sv_indices == set():
         return
 
-    X_sample = extract_features(index_and_sv_size_sample, all_sv_indices)
-    X_control = extract_features(index_and_sv_size_control, all_sv_indices)
-
     #######################################################
     # Clustering
     #######################################################
 
+    X_sample = extract_features(index_and_sv_size_sample, all_sv_indices)
+    X_control = extract_features(index_and_sv_size_control, all_sv_indices)
     X = np.vstack([X_sample, X_control])
     labels = optimize_labels(X, coverage_sample, coverage_control)
 
