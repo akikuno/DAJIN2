@@ -16,7 +16,7 @@
 
 ## 💥 Breaking
 
-+ Add `preprocess.deletion_detector` to improve clustering performance of large deletion. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
++ Add `preprocess.sv_detector` to improve SV allele deletion. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
 
 + Add `html_builder` to display SV alleles. Issue #31 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1ba73f00ac72a5191749248469fab639c9e1e429)]
 
@@ -33,7 +33,7 @@
 
 ## 🔧 Maintenance
 
-+ Change the numeric ID of allele names to be at least two digits (e.g., allele1 → allele01). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
++ Increase the SV allele number to at least two digits (e.g., `deletion01`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
 
 <!-- ############################################################# # -->
 
