@@ -21,10 +21,14 @@ def is_valid_file(control_fasta: Path, knockin_fasta: Path) -> bool:
 def get_index_of_knockin_loci(control_fasta: Path, knockin_fasta: Path) -> set[int]:
     alignments = mapping.to_sam(knockin_fasta, control_fasta, preset="map-ont")
     alignments = [a.split("\t") for a in alignments]
+    alignments_midsv = list(midsv.transform(alignments, midsv=False, cssplit=True, qscore=False))
+    if not alignments_midsv:
+        return set()
     alignments_midsv = next(iter(midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)))
     cssplits = alignments_midsv["CSSPLIT"].split(",")
 
     return {i for i, cs in enumerate(cssplits) if cs.startswith("-")}
+
 
 
 def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:
