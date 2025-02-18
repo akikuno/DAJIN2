@@ -382,7 +382,9 @@ def handle_insertions_within_deletions(
 
         elif not has_consecutive_matches(flanked_tag):
             # Collect Insertions
-            insertions.append(convert_midsv_tags_to_insertion(flanked_tag))
+            insertion = convert_midsv_tags_to_insertion(flanked_tag)
+            if insertion:
+                insertions.append(insertion)
             midsv_consensus_with_deletion[flank_start + 1 : flank_end] = [
                 "!" for _ in range(flank_start + 1, flank_end)
             ]

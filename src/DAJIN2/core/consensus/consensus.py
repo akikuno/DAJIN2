@@ -97,10 +97,10 @@ def call_consensus(
         cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
-        path_midsv_sv = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
+        path_midsv_sv_deletion = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
 
-        if allele.startswith("deletion") and path_midsv_sv.exists():
-            midsv_sv_deletion = list(io.read_jsonl(path_midsv_sv))
+        if allele.startswith("deletion") and path_midsv_sv_deletion.exists():
+            midsv_sv_deletion = list(io.read_jsonl(path_midsv_sv_deletion))
             cons_midsv_tag = reflect_sv_deletion_in_midsv(cons_midsv_tag, midsv_sv_deletion)
 
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
