@@ -100,8 +100,8 @@ def call_consensus(
         path_midsv_sv = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
 
         if allele.startswith("deletion") and path_midsv_sv.exists():
-            midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
-            cons_midsv_tag = reflect_sv_deletion_in_midsv(cons_midsv_tag, midsv_sv_allele)
+            midsv_sv_deletion = list(io.read_jsonl(path_midsv_sv))
+            cons_midsv_tag = reflect_sv_deletion_in_midsv(cons_midsv_tag, midsv_sv_deletion)
 
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage

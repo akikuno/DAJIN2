@@ -178,6 +178,15 @@ def get_sv_index_by_label(labels, index_and_sv_size_sample) -> dict[int, list[di
     return dict(index_and_sv_size_by_label)
 
 
+def remove_invalid_sv(midsv_by_label: dict[int, list[str]]) -> dict[int, list[str]]:
+    """
+    If the first or last index is deletion (starts with '-'), exclude the SV.
+    """
+    return {
+        label: tag for label, tag in midsv_by_label.items() if not (tag[0].startswith("-") or tag[-1].startswith("-"))
+    }
+
+
 def get_midsv_consensus_by_label(
     index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, fasta_control
 ) -> dict[int, list[str]]:
@@ -260,7 +269,12 @@ def get_midsv_consensus_by_label(
 
             midsv_by_label[label] = midsv_tags_control
 
-    return midsv_by_label
+    return remove_invalid_sv(midsv_by_label)
+
+
+###############################################################################
+# main
+###############################################################################
 
 
 def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict, sv_type: str) -> None:
@@ -281,9 +295,7 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     index_converter_control = process_sv_indices(path_midsv_control, sv_type, mutation_loci, coverage_control)
 
     index_and_sv_size_sample = extract_sv_features(path_midsv_sample, sv_type, mutation_loci, index_converter_sample)
-    index_and_sv_size_control = extract_sv_features(
-        path_midsv_control, sv_type, mutation_loci, index_converter_control
-    )
+    index_and_sv_size_control = extract_sv_features(path_midsv_control, sv_type, mutation_loci, index_converter_control)
 
     all_sv_indices = {
         key
@@ -320,6 +332,7 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     midsv_by_label = get_midsv_consensus_by_label(
         index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, FASTA_ALLELES["control"]
     )
+
     fasta_by_label = {label: convert_cssplits_to_sequence(midsv_tag) for label, midsv_tag in midsv_by_label.items()}
 
     # Discard -1 due to minor allele

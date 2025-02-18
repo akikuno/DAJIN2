@@ -237,7 +237,7 @@ def highlight_sv_deletions(misdv_sv_allele: list[str]) -> list[str]:
     return sv_deletions
 
 
-def embed_sv_deletions(midsv_consensus: list[str], midsv_sv_deletions: list[str]) -> list[str]:
+def embed_sv_deletions(midsv_consensus: list[str], midsv_sv_deletion: list[str]) -> list[str]:
     """
     Insert `!START_OF_DEL_ALLELE!` and `!END_OF_DEL_ALLELE!` into `midsv_consensus`.
     """
@@ -245,8 +245,8 @@ def embed_sv_deletions(midsv_consensus: list[str], midsv_sv_deletions: list[str]
     idx_sv_allele = 0
 
     midsv_consensus_with_deletion = []
-    while idx_sv_allele < len(midsv_sv_deletions) and idx < len(midsv_consensus):
-        tag_sv_allele = midsv_sv_deletions[idx_sv_allele]
+    while idx_sv_allele < len(midsv_sv_deletion) and idx < len(midsv_consensus):
+        tag_sv_allele = midsv_sv_deletion[idx_sv_allele]
 
         if tag_sv_allele.startswith("!"):
             midsv_consensus_with_deletion.append(tag_sv_allele)
@@ -336,9 +336,9 @@ def convert_midsv_tags_to_insertion(midsv_tags: list[str]) -> str:
     return "|".join(insertion_tags)
 
 
-def extract_deletion_tags(midsv_sv_deletions_highlighted: list[str]) -> list[list[str]]:
+def extract_deletion_tags(midsv_sv_deletion_highlighted: list[str]) -> list[list[str]]:
     deletion_tags = []
-    for tag in midsv_sv_deletions_highlighted:
+    for tag in midsv_sv_deletion_highlighted:
         if tag == "!START_OF_DEL_ALLELE!":
             deletion_tags.append([])
         if tag.startswith("-"):
@@ -399,15 +399,15 @@ def handle_insertions_within_deletions(
     return [m for m in midsv_consensus_with_deletion if not m.startswith("!")]
 
 
-def reflect_sv_deletion_in_midsv(midsv_consensus: list[str], midsv_sv_deletions: list[str]) -> list[str]:
+def reflect_sv_deletion_in_midsv(midsv_consensus: list[str], midsv_sv_deletion: list[str]) -> list[str]:
     """
     Since the mapping in minimap2 is local alignment, insertion bases within large deletions may be partially mapped to the reference genome and not detected as insertion bases. Therefore, update cssplits to detect insertions within large deletions as insertions.
     """
-    midsv_sv_deletions_highlighted = highlight_sv_deletions(midsv_sv_deletions)
-    midsv_consensus_with_deletion = embed_sv_deletions(midsv_consensus, midsv_sv_deletions_highlighted)
+    midsv_sv_deletion_highlighted = highlight_sv_deletions(midsv_sv_deletion)
+    midsv_consensus_with_deletion = embed_sv_deletions(midsv_consensus, midsv_sv_deletion_highlighted)
 
     # Append deletion tags to the midsv_consensus_with_deletion
-    deletion_tags = extract_deletion_tags(midsv_sv_deletions_highlighted)
+    deletion_tags = extract_deletion_tags(midsv_sv_deletion_highlighted)
     midsv_consensus_with_deletion = reflect_deletions(midsv_consensus_with_deletion, deletion_tags)
 
     flanked_tags, _ = get_flanked_tags_by_deletions(midsv_consensus_with_deletion)
