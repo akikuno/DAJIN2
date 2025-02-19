@@ -6,6 +6,14 @@ from pathlib import Path
 from DAJIN2.core.consensus.consensus import ConsensusKey
 
 
+def scale_percentage(clust_sample_removed: list[dict]) -> list[dict]:
+    total_percent = sum({c["LABEL"]: c["PERCENT"] for c in clust_sample_removed}.values())
+    scaled_percent_by_label = {c["LABEL"]: round(c["PERCENT"] * 100 / total_percent, 3) for c in clust_sample_removed}
+    for c in clust_sample_removed:
+        c["PERCENT"] = scaled_percent_by_label[c["LABEL"]]
+    return clust_sample_removed
+
+
 def detect_sv(cons_per: list[dict[str, float]], threshold: int = 50) -> bool:
     cons_midsv_tag: str = "".join([max(tag, key=tag.get) for tag in cons_per])
 
@@ -72,15 +80,15 @@ def call_allele_name(
     digits = max(2, len(str(len(cons_percentages))))
     exists_sv = [detect_sv(cons_per, threshold) for cons_per in cons_percentages.values()]
 
-    sorted_keys = sorted(cons_percentages.keys(), key=lambda x: x.percent, reverse=True)
+    sorted_keys = sorted(cons_percentages, key=lambda x: x.percent, reverse=True)
     alleles = [key.allele for key in sorted_keys]
     allele_mapping = generate_allele_mapping(alleles)
 
     allele_names = {}
     for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
-        suffix = determine_suffix(cons_seq, FASTA_ALLELES[keys.allele], is_sv)
-        allele_name = allele_mapping.get(keys.allele, keys.allele)
         allele_id = f"{keys.label:0{digits}}"
+        allele_name = allele_mapping.get(keys.allele, keys.allele)
+        suffix = determine_suffix(cons_seq, FASTA_ALLELES[keys.allele], is_sv)
         allele_names[keys.label] = f"allele{allele_id}_{allele_name}_{suffix}_{keys.percent}%"
 
     # Rename the consensus midsv files that `preprocess.sv_detector` created.

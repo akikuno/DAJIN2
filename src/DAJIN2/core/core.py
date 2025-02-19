@@ -233,6 +233,9 @@ def execute_sample(arguments: dict):
     # Remove minor alleles with fewer than 5 reads or less than 0.5%
     clust_sample_removed = consensus.remove_minor_alleles(clust_sample)
 
+    # Adjust the percentage to 100%
+    clust_sample_removed = consensus.scale_percentage(clust_sample_removed)
+
     # Downsampling to 1000 reads in each LABEL
     clust_downsampled = consensus.downsample_by_label(clust_sample_removed, 1000)
 
@@ -249,9 +252,6 @@ def execute_sample(arguments: dict):
     cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
     cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)
 
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
-    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
-
     io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
     io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
     io.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
@@ -263,22 +263,30 @@ def execute_sample(arguments: dict):
     logger.info(f"Output reports of {arguments['sample']}...")
 
     # RESULT
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
+    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
+
     # FASTA
     report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)
     report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
+
     # HTML
     report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags)
+
     # CSV (Allele Info)
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
+
     # BAM
     report.bam_exporter.export_to_bam(
         ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE
     )
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
+
     # VCF
-    # working in progress
+    # TODO: working in progress
 
     ###########################################################
     # Finish call
