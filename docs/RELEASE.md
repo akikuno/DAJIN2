@@ -35,6 +35,10 @@
 
 + Increase the SV allele number to at least two digits (e.g., `deletion01`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
 
++ Display the currently processing NAME in batch mode. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c713f3198a9cc3f27854fec71c4c1da8959b4053)]
+
++ By appending a UUID to the log file, potential filename duplication can be prevented. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/41a8b183c47642ad2c2f171d02c779fd8f817c55)]
+
 <!-- ############################################################# # -->
 
 
