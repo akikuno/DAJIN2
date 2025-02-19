@@ -151,8 +151,10 @@ def execute_batch_mode(arguments: dict[str]):
         config.reset_logging()
         path_logfile = config.get_logfile()
         logger = config.set_logging(path_logfile)
+
         logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
         logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
+        logger.info(f"\N{LEFT-POINTING MAGNIFYING GLASS} Handling {name}")
 
         # Run DAJIN2
         run_DAJIN2(groups, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
