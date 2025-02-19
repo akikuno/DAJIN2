@@ -12,11 +12,11 @@
 
 <!-- ############################################################# # -->
 
-# v0.5.7 (2025-MM-DD)
+# v0.6.0 (2025-02-20)
 
 ## 💥 Breaking
 
-+ Add `preprocess.sv_detector` to improve SV allele deletion. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
++ Add `preprocess.sv_detector` to detect SV (Insertion/Deletion/Inversion) alleles. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
 
 + Add `html_builder` to display SV alleles. Issue #31 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1ba73f00ac72a5191749248469fab639c9e1e429)]
 
