@@ -4,6 +4,8 @@
 
 ### Long Story Short
 
+Please run the following command. If an error occurs, please report it on [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new?template=bug_report.yml).
+
 ```bash
 # Update conda
 conda update -n base conda -y
@@ -15,17 +17,19 @@ conda config --add channels conda-forge
 conda config --set channel_priority flexible # <- IMPORTANT!!
 
 # Install DAJIN2 to a virtual environment
-conda create -n env-dajin2 python=3.10 -y
+conda create -n env-dajin2 python=3.12 -y
 conda activate env-dajin2
-conda install -c bioconda DAJIN2 -y
+conda install -c conda-forge -c bioconda DAJIN2 -y
 ```
+
+The following items are details.
 
 ### Prerequisites
 
 Before installing `DAJIN2`, please ensure that your system meets the following requirements:
 
-- Python >=3.9
-- Unix-like environment (Linux, macOS, WSL, etc.)
+- Maintained Python versions (excluding the latest version)
+- Unix-like environment (Linux, macOS, WSL2, etc.)
 - [Conda](https://docs.conda.io/en/latest/) is highly recommended for managing dependencies
 - If using pip, access to administrative privileges or the ability to install packages globally
 
@@ -36,7 +40,7 @@ Before installing `DAJIN2`, please ensure that your system meets the following r
 - `htslib` requires `zlib.h`, which may not be available on all systems by default.
 - As of the latest update, `htslib v1.21`, [there is no support for Windows via Bioconda](https://anaconda.org/bioconda/htslib).
 
-### Recommended Installation Method
+### Recommended Installation Strategy
 
 #### Using Conda
 

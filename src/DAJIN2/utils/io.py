@@ -10,8 +10,8 @@ from collections.abc import Iterator
 from io import BufferedReader
 from pathlib import Path
 
+import pandas as pd
 import wslPath
-from openpyxl import Workbook, load_workbook
 
 ###########################################################
 # Input/Output
@@ -67,19 +67,7 @@ def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> Non
 
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
     """Load data from an Excel file."""
-    wb = load_workbook(filename=file_path)
-    ws = wb.active
-
-    headers = list(next(ws.iter_rows(min_row=1, max_row=1, values_only=True)))
-
-    records = []
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if all(element is None for element in row):  # Skip rows with all None values
-            continue
-        row_data = {headers[i]: (row[i] if i < len(row) else None) for i in range(len(headers))}
-        records.append(row_data)
-
-    return records
+    return pd.read_excel(file_path).to_dict(orient="records")
 
 
 def read_csv(file_path: str | Path) -> list[dict[str, str]]:
@@ -101,33 +89,7 @@ def read_csv(file_path: str | Path) -> list[dict[str, str]]:
 
 
 def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:
-    # Create a workbook and a worksheet
-    wb = Workbook()
-    ws = wb.active
-
-    if not data:
-        wb.save(file_path)
-        return
-
-    # Initialize headers with the keys of the first dictionary, maintaining order
-    headers = list(data[0].keys())
-
-    # Check for new keys in the subsequent dictionaries and append them to the headers list
-    for item in data[1:]:
-        for key in item.keys():
-            if key not in headers:
-                headers.append(key)
-
-    # Write the headers to the first row
-    ws.append(headers)
-
-    # Write the data to Excel
-    for item in data:
-        row = [item.get(header, "") for header in headers]
-        ws.append(row)
-
-    # Save the file
-    wb.save(file_path)
+    return pd.DataFrame(data).to_excel(file_path, index=False)
 
 
 # =========================================================

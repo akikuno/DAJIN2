@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 import sys
+import uuid
 import warnings
 from pathlib import Path
 
@@ -26,7 +27,7 @@ class DeferredFileHandler(logging.FileHandler):
 
 def get_logfile() -> Path:
     current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    return Path(f"DAJIN2_log_{current_time}.txt")
+    return Path(f"DAJIN2_log_{current_time}_{uuid.uuid4()}.txt")
 
 
 def set_logging(path_logfile: Path) -> logging.Logger:

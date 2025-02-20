@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "DAJIN2"
-version = "0.5.6"
+version = "0.6.0"
 description = "One-step genotyping tools for targeted long-read sequencing"
 authors = ["Akihiro Kuno <akuno@md.tsukuba.ac.jp>"]
 readme = "README.md"
@@ -28,19 +28,19 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
+
+openpyxl = ">=3.0.7"
 numpy = ">=1.24.0"
 pandas = ">=1.3.0"
 scipy = ">=1.10.0"
-openpyxl = ">=3.1.0"
 plotly = ">=5.19.0"
 kaleido = ">=0.2.0"
 
 # Machine learning
 rapidfuzz = ">=3.6.0"
 scikit-learn = ">=1.3.0"
-ruptures = ">=1.1.8"
 
-# BioConda
+# Bioinformatics
 mappy = ">=2.24"
 pysam = ">=0.21.0"
 
@@ -51,7 +51,7 @@ Jinja2 = ">=3.1.0"
 
 # Custom packages
 cstag = ">=1.0.0"
-midsv = ">=0.11.0"
+midsv = "0.11.1"
 wslPath = ">=0.4.1"
 
 [tool.poetry.scripts]

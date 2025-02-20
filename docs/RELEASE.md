@@ -7,12 +7,54 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-[[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
++ commitMessage. Issue #XX [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 -->
 
 <!-- ############################################################# # -->
 
-# v0.5.6 (2024-12-05)
+# v0.6.0 (2025-02-20)
+
+## 💥 Breaking
+
++ Add `preprocess.sv_detector` to detect SV (Insertion/Deletion/Inversion) alleles. Issue #33 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/710e2a860abd9899d0b7378a58e1d672754c43db)]
+
++ Add `html_builder` to display SV alleles. Issue #31 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1ba73f00ac72a5191749248469fab639c9e1e429)]
+
+## 📝 Documentation
+
++ Upgrade Python version from 3.10 to 3.12 in README.md. Issue #74 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9499666e78c669debe8e5f600dc6a8f82253bae8)]
+
+
+## 🚀 Performance
+
++ Simplify feature extraction using `extract_n_features` to reduce computational costs. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cc4665719f9eedfa0457cc07d1bc3ca2142c574e)]
+
++ To avoid overlooking minor alleles, the number of reads is increased from 10,000 to 100,000 during downsampling. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/7e3e08dec5d71769f917a58f63bf5af6df230ed4)]
+
+## 🔧 Maintenance
+
++ Increase the SV allele number to at least two digits (e.g., `deletion01`). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/75367ea57fc1d3a4a9d86ea7e085a707da7ccdb3)]
+
++ Display the currently processing NAME in batch mode. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c713f3198a9cc3f27854fec71c4c1da8959b4053)]
+
++ By appending a UUID to the log file, potential filename duplication can be prevented. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/41a8b183c47642ad2c2f171d02c779fd8f817c55)]
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2024-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.5.6 (2024-12-06) </summary>
 
 ## 💥 Breaking
 
@@ -51,20 +93,8 @@
 
 + Add E2E tests in Github Actions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8fb93621ae7b9c4e867a68e9160c3295bfb0f872)]
 
-## ⛔️ Deprecated
+</details>
 
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2024-MM-DD) </summary>
-
-</details> -->
 
 <details>
 <summary> v0.5.5 (2024-10-08) </summary>

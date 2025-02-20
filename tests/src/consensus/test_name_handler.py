@@ -1,14 +1,12 @@
-from collections import defaultdict
 from typing import NamedTuple
 
 import pytest
-
 from DAJIN2.core.consensus.name_handler import (
-    _detect_sv,
-    _determine_suffix,
-    _format_allele_label,
     add_key_by_allele_name,
-    call_allele_name,
+    detect_sv,
+    determine_suffix,
+    format_allele_label,
+    generate_allele_mapping,
     update_key_by_allele_name,
 )
 
@@ -17,19 +15,19 @@ from DAJIN2.core.consensus.name_handler import (
 ###########################################################
 
 
-def test_detect_sv_threshold():
-    cons_percentages = defaultdict(list)
-    cons_percentages["sample1"] = [{"N": 90, "=C": 10}]  # one n
-    cons_percentages["sample2"] = [{"+G|+G|=A": 80, "=C": 20}]  # two insertion
-    cons_percentages["sample3"] = [{"-A": 100}, {"-A": 100}, {"-A": 100}]  # three deletion
-    cons_percentages["sample4"] = [{"*AT": 100}, {"*AT": 100}, {"*AT": 100}, {"*AT": 100}]  # four substitution
-    cons_percentages["sample5"] = [{"=a": 100}]  # inversion
-    assert _detect_sv(cons_percentages, threshold=1) == [True, True, True, True, True]
-    assert _detect_sv(cons_percentages, threshold=2) == [False, True, True, True, True]
-    assert _detect_sv(cons_percentages, threshold=3) == [False, False, True, True, True]
-    assert _detect_sv(cons_percentages, threshold=4) == [False, False, False, True, True]
-    assert _detect_sv(cons_percentages, threshold=5) == [False, False, False, False, True]
-    assert _detect_sv(cons_percentages, threshold=6) == [False, False, False, False, True]
+@pytest.mark.parametrize(
+    "cons_per, threshold, expected",
+    [
+        ([{"N": 90, "=C": 10}], 1, True),  # one "N"
+        ([{"+G|+G|=A": 80, "=C": 20}], 1, True),  # two insertions
+        ([{"-A": 100}, {"-A": 100}, {"-A": 100}], 3, True),  # three deletions
+        ([{"*AT": 100}, {"*AT": 100}, {"*AT": 100}, {"*AT": 100}], 4, True),  # four substitutions
+        ([{"=a": 100}], 5, True),  # inversion
+        ([{"N": 90, "=C": 10}], 2, False),  # fails threshold
+    ],
+)
+def test_detect_sv(cons_per, threshold, expected):
+    assert detect_sv(cons_per, threshold) == expected
 
 
 ###########################################################
@@ -48,7 +46,7 @@ def test_detect_sv_threshold():
     ],
 )
 def test_format_allele_label(label, total_labels, expected_output):
-    result = _format_allele_label(label, total_labels)
+    result = format_allele_label(label, total_labels)
     assert result == expected_output
 
 
@@ -56,14 +54,52 @@ def test_format_allele_label(label, total_labels, expected_output):
 @pytest.mark.parametrize(
     "cons_seq, fasta_allele, is_sv, expected_output",
     [
-        ("ATCG", "ATCG", False, "_intact"),
-        ("ATCG", "ATCC", True, "_sv"),
-        ("ATCG", "ATCC", False, "_indels"),
+        ("ATCG", "ATCG", False, "intact"),
+        ("ATCG", "ATCC", True, "SV"),
+        ("ATCG", "ATCC", False, "indels"),
     ],
 )
 def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
-    result = _determine_suffix(cons_seq, fasta_allele, is_sv)
+    result = determine_suffix(cons_seq, fasta_allele, is_sv)
     assert result == expected_output
+
+
+@pytest.mark.parametrize(
+    "alleles, expected",
+    [
+        # Case 1: Standard mapping
+        (
+            ["deletion02", "control", "deletion04", "inversion05", "insertion11"],
+            {
+                "deletion02": "deletion01",
+                "deletion04": "deletion02",
+                "inversion05": "inversion01",
+                "insertion11": "insertion01",
+            },
+        ),
+        # Case 2: Only one allele in each group
+        (
+            ["deletion01", "inversion01", "insertion01"],
+            {"deletion01": "deletion01", "inversion01": "inversion01", "insertion01": "insertion01"},
+        ),
+        # Case 3: No valid alleles
+        (["control", "unknown"], {}),
+        # Case 4: Multiple alleles in a single group
+        (
+            ["deletion01", "deletion02", "deletion03"],
+            {"deletion01": "deletion01", "deletion02": "deletion02", "deletion03": "deletion03"},
+        ),
+        # Case 5: Mixed valid and invalid alleles
+        (
+            ["deletion02", "control", "inversion05", "insertion11", "unknown"],
+            {"deletion02": "deletion01", "inversion05": "inversion01", "insertion11": "insertion01"},
+        ),
+        # Case 6: Conseqtive alleles
+        (["deletion01", "deletion01", "deletion04"], {"deletion01": "deletion01", "deletion04": "deletion02"}),
+    ],
+)
+def test_generate_allele_mapping(alleles, expected):
+    assert generate_allele_mapping(alleles) == expected
 
 
 class ConsensusKey(NamedTuple):
@@ -72,34 +108,11 @@ class ConsensusKey(NamedTuple):
     percent: float
 
 
-# Example test cases for call_allele_name function
-@pytest.mark.parametrize(
-    "cons_sequences, cons_percentages, FASTA_ALLELES, threshold, expected_output",
-    [
-        # Here, you can add test cases with the corresponding expected output.
-        # (cons_sequences, cons_percentages, FASTA_ALLELES, threshold, expected_output)
-        (
-            {ConsensusKey("control", 1, 100): "ACGT"},
-            {ConsensusKey("control", 1, 100): [{"A": 100}, {"C": 100}, {"G": 100}, {"T": 100}]},
-            {"control": "ACGT"},
-            50,
-            {1: "allele1_control_intact_100%"},
-        ),
-        (
-            {ConsensusKey("control", 10, 100): "ACGT"},
-            {ConsensusKey("control", 10, 100): [{"A": 100}, {"C": 100}, {"G": 100}, {"T": 100}]},
-            {"control": "ACGT"},
-            50,
-            {10: "allele10_control_intact_100%"},
-        ),
-    ],
-)
-def test_call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES, threshold, expected_output):
-    result = call_allele_name(cons_sequences, cons_percentages, FASTA_ALLELES, threshold)
-    assert result == expected_output
+###########################################################
+# Replace new allele names to the consensus dictionary
+###########################################################
 
 
-# Example test cases for cakey_by_allele_name function
 @pytest.mark.parametrize(
     "cons, allele_names, expected_output",
     [
@@ -115,7 +128,11 @@ def test_update_key_by_allele_name(cons, allele_names, expected_output):
     assert result == expected_output
 
 
-# Example test cases for add_key_by_allele_name function
+###########################################################
+# Add `NAME` key to RESULT_SAMPLE
+###########################################################
+
+
 @pytest.mark.parametrize(
     "clust_sample, allele_names, expected_output",
     [

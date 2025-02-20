@@ -18,8 +18,8 @@ def recalculate_sam_coodinates_to_reference(sam: list[list[str]], GENOME_COODINA
     for s in sam_headers:
         if s[0] != "@SQ":
             continue
-        s[1] = f'SN:{GENOME_COODINATES["chrom"]}'
-        s[2] = f'LN:{GENOME_COODINATES["chrom_size"]}'
+        s[1] = f"SN:{GENOME_COODINATES['chrom']}"
+        s[2] = f"LN:{GENOME_COODINATES['chrom_size']}"
 
     for s in sam_contents:
         s[2] = GENOME_COODINATES["chrom"]

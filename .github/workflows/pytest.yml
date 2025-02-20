@@ -6,13 +6,39 @@ on:
         - cron: "0 2 * * 1" # The task runs at 2 a.m. every Monday.
 
 jobs:
+    get-python-versions:
+        runs-on: ubuntu-latest
+        outputs:
+            versions: ${{ steps.get-versions.outputs.versions }}
+        steps:
+            - name: Fetch maintained Python versions
+              id: get-versions
+              run: |
+                  # Fetch maintained Python versions (excluding the latest version)
+                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ |
+                      grep -e "<tr" -e "<td" |
+                      grep -v "Branch" |
+                      paste - - - - - - |
+                      grep -v -e "feature" -e "end-of-life" |
+                      sed 1d |
+                      cut -f 1 |
+                      sed "s|^.*<p>||" |
+                      sed "s|</p>.*$||")
+
+                  # Convert to a JSON array (replace newlines with spaces first)
+                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr '\n' ' ' | jq -R -s -c 'split(" ") | map(select(length > 0))')
+
+                  # Cache the Python versions
+                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
+                  echo "versions=$PYTHON_VERSIONS"
     build:
+        needs: get-python-versions
         runs-on: ${{ matrix.os }}
         strategy:
             max-parallel: 10
             matrix:
                 os: [ubuntu-latest, macos-latest]
-                python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+                python-version: ${{ fromJson(needs.get-python-versions.outputs.versions) }}
         name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
         defaults:
@@ -31,13 +57,11 @@ jobs:
             - name: Setup conda environment
               run: |
                   conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
-
             - name: Execute tests
               env:
                   PYTHONPATH: src
               run: |
                   conda activate env-dajin2
-
                   # Use pip because conda does not support pyproject.toml.
                   pip install -e .
                   pytest tests/ -p no:warnings -vv

@@ -124,9 +124,9 @@ def execute_sample(arguments: dict):
 
     fastx_handler.save_inputs_as_single_fastq(ARGS, is_control=False)
 
-    # Save subsetted fastq if the read number is too large (> 10,000 reads)
+    # Save subsetted fastq if the read number is too large (> 100,000 reads)
     path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
-    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=10_000)
+    fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=100_000)
 
     # ============================================================
     # Mapping with mappy
@@ -164,11 +164,20 @@ def execute_sample(arguments: dict):
         str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
     }
 
-    preprocess.detect_insertions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles)
-    # preprocess.detect_inversions(ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles) #TODO
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="insertion"
+    )
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="deletion"
+    )
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
+    )
 
-    paths_sv_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    # paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
+    paths_sv_fasta = set()
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*.fasta")}
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
 
     paths_sv_fasta -= paths_predefined_fasta
 
@@ -224,24 +233,28 @@ def execute_sample(arguments: dict):
     # Remove minor alleles with fewer than 5 reads or less than 0.5%
     clust_sample_removed = consensus.remove_minor_alleles(clust_sample)
 
+    # Adjust the percentage to 100%
+    clust_sample_removed = consensus.scale_percentage(clust_sample_removed)
+
     # Downsampling to 1000 reads in each LABEL
     clust_downsampled = consensus.downsample_by_label(clust_sample_removed, 1000)
 
     consensus.cache_mutation_loci(ARGS, clust_downsampled)
 
-    cons_percentage, cons_sequence = consensus.call_consensus(
+    cons_percentages, cons_sequences, cons_midsv_tags = consensus.call_consensus(
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    allele_names = consensus.call_allele_name(cons_sequence, cons_percentage, ARGS.fasta_alleles)
-    cons_percentage = consensus.update_key_by_allele_name(cons_percentage, allele_names)
-    cons_sequence = consensus.update_key_by_allele_name(cons_sequence, allele_names)
+    allele_names = consensus.call_allele_name(
+        ARGS.tempdir, ARGS.sample_name, cons_sequences, cons_percentages, ARGS.fasta_alleles, threshold=50
+    )
+    cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
+    cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
+    cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)
 
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
-    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
-
-    io.save_pickle(cons_percentage, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentage.pickle"))
-    io.save_pickle(cons_sequence, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequence.pickle"))
+    io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
+    io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
+    io.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
@@ -250,22 +263,30 @@ def execute_sample(arguments: dict):
     logger.info(f"Output reports of {arguments['sample']}...")
 
     # RESULT
+    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
+    RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
+
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
+
     # FASTA
-    report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequence)
+    report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)
     report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
+
     # HTML
-    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, cons_percentage)
+    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags)
+
     # CSV (Allele Info)
-    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_percentage)
+    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
+
     # BAM
     report.bam_exporter.export_to_bam(
         ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE
     )
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
+
     # VCF
-    # working in progress
+    # TODO: working in progress
 
     ###########################################################
     # Finish call

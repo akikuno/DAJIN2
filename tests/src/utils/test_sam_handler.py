@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import midsv
-
 from DAJIN2.utils.sam_handler import (
     calculate_alignment_length,
     is_header,
