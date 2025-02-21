@@ -12,7 +12,28 @@
 
 <!-- ############################################################# # -->
 
-# v0.6.0 (2025-02-20)
+# v0.6.1 (2025-MM-DD)
+
++ commitMessage. Issue #XX [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<!-- ############################################################# # -->
+
+<details>
+<summary> v0.6.0 (2025-02-20) </summary>
 
 ## 💥 Breaking
 
@@ -39,19 +60,7 @@
 
 + By appending a UUID to the log file, potential filename duplication can be prevented. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/41a8b183c47642ad2c2f171d02c779fd8f817c55)]
 
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2024-MM-DD) </summary>
-
-</details> -->
-
+</details>
 
 <details>
 <summary> v0.5.6 (2024-12-06) </summary>
