@@ -91,14 +91,6 @@ def call_allele_name(
         suffix = determine_suffix(cons_seq, FASTA_ALLELES[keys.allele], is_sv)
         allele_names[keys.label] = f"allele{allele_id}_{allele_name}_{suffix}_{keys.percent}%"
 
-    # Rename the consensus midsv files that `preprocess.sv_detector` created.
-    Path(tempdir, sample_name, "consensus", "midsv").mkdir(parents=True, exist_ok=True)
-    for path_consensus_midsv in Path(tempdir, sample_name, "midsv").glob("consensus_*.jsonl"):
-        allele = path_consensus_midsv.stem.replace("consensus_", "")
-        if allele in allele_mapping:
-            new_allele = allele_mapping.get(allele, allele)
-            path_consensus_midsv.rename(Path(tempdir, sample_name, "consensus", "midsv", f"{new_allele}.jsonl"))
-
     return allele_names
 
 

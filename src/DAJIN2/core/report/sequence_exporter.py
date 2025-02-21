@@ -19,7 +19,7 @@ def convert_to_html(
     TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]
 ) -> str:
     allele = header.split("_")[1]
-    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{allele}.jsonl")
+    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}.jsonl")
     if path_midsv_sv.exists():
         midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
     else:
