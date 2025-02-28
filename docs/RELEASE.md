@@ -17,7 +17,7 @@
 
 ## 🔧 Maintenance
 
-+ Explicitly unify the line endings of text files in DAJIN_Reports to `LF`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
++ Explicitly unify the line endings of text files in DAJIN_Reports to `LF`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/695d67a7b6de3f29381bd4299fddc6106028d5c2)]
 
 ## 🐛 Bug Fixes
 
