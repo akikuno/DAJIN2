@@ -25,7 +25,7 @@ def convert_to_html(
     else:
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
-    return to_html(midsv_sv_allele, cons_midsv_tag, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
+    return to_html(midsv_sv_allele, cons_midsv_tag, allele, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
 
 
 ##################################################
