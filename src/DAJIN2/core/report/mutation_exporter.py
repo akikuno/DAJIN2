@@ -128,4 +128,5 @@ def export_to_csv(
     results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
 
     path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")
-    path_output.write_text(results_csv)
+    with open(path_output, "w", newline="\n", encoding="utf-8") as f:
+        f.write(results_csv)

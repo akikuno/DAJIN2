@@ -15,6 +15,10 @@
 # v0.6.1 (2025-MM-DD)
 
 
+## 🔧 Maintenance
+
++ Explicitly unify the line endings of text files in DAJIN_Reports to `LF`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
+
 ## 🐛 Bug Fixes
 
 + Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
