@@ -14,6 +14,9 @@
 
 # v0.6.1 (2025-MM-DD)
 
+## 🚀 Performance
+
+- Use `BisectingKMeans` instead of `AgglomerativeClustering` because `BisectingKMeans` can take a `spmatrix` as input, significantly reducing memory consumption. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/19fe3549584ee1b1c8ccb67c3d364434f5ad392c)]
 
 ## 🔧 Maintenance
 
