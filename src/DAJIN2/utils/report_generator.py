@@ -119,6 +119,11 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         pass
 
 
+###################################################################
+# main
+###################################################################
+
+
 def report(NAME: str) -> None:
     report_directory = Path(DAJIN_RESULTS_DIR, NAME)
     report_directory.mkdir(exist_ok=True, parents=True)

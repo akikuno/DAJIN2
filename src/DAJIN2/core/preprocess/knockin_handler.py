@@ -30,7 +30,6 @@ def get_index_of_knockin_loci(control_fasta: Path, knockin_fasta: Path) -> set[i
     return {i for i, cs in enumerate(cssplits) if cs.startswith("-")}
 
 
-
 def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:
     control_fasta = Path(TEMPDIR, SAMPLE_NAME, "fasta", "control.fasta")
     for knockin_fasta in Path(TEMPDIR, SAMPLE_NAME, "fasta").iterdir():
