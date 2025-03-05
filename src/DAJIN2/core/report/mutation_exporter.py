@@ -3,6 +3,8 @@ from __future__ import annotations
 from itertools import groupby
 from pathlib import Path
 
+import pandas as pd
+
 from DAJIN2.utils.cssplits_handler import revcomp_cssplits
 
 ###########################################################
@@ -116,7 +118,7 @@ def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, head
 def export_to_csv(
     TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_midsv_tags: dict[str, list[str]]
 ) -> None:
-    results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
+    results = []
     for header, cons_midsv_tag in cons_midsv_tags.items():
         if GENOME_COORDINATES.get("strand") == "-":
             cons_midsv_tag = revcomp_cssplits(cons_midsv_tag)
@@ -125,8 +127,8 @@ def export_to_csv(
         result = report_mutations(cons_midsv_tag_grouped, GENOME_COORDINATES, header)
         results.extend(result)
 
-    results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
+    col_names = ["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]
+    df_results = pd.DataFrame(results, columns=col_names).sort_values(by=["Allele ID", "Start"])
 
     path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")
-    with open(path_output, "w", newline="\n", encoding="utf-8") as f:
-        f.write(results_csv)
+    df_results.to_csv(path_output, index=False, encoding="utf-8", lineterminator="\n")
