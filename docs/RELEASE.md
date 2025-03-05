@@ -22,9 +22,14 @@
 
 + Explicitly unify the line endings of text files in DAJIN_Reports to `LF`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/695d67a7b6de3f29381bd4299fddc6106028d5c2)]
 
++ Upgrade to `pandas = ">=2.0.0"` because the argument specification for line terminator was changed to `lineterminator` in pandas >=1.5. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/65b421569e8be93e06c496827c8de1c62b9f47e0)]
+
 ## 🐛 Bug Fixes
 
 + Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
+
++ Sort MUTATION_INFO by Allele ID. Issue [#79](https://github.com/akikuno/DAJIN2/issues/79) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
+
 
 <!-- ############################################################# # -->
 
