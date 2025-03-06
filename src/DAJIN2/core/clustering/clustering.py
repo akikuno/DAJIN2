@@ -38,8 +38,10 @@ def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) ->
         labels_control = labels_all[coverage_sample:]
 
         num_labels_control = count_number_of_clusters(labels_control, coverage_control)
-
-        current_silhouette_score = silhouette_score(X, labels_all)
+        if len(Counter(labels_sample)) > 1:
+            current_silhouette_score = silhouette_score(X, labels_all)
+        else:
+            current_silhouette_score = -1
 
         if prev_silhouette_score >= current_silhouette_score or num_labels_control > 1:
             break
