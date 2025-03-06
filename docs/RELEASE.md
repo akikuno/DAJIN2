@@ -30,7 +30,12 @@
 
 + Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
 
-+ Fixed the issue where the SV length was reflected one base longer in deletion/inversion SV alleles. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cb39c83d3bea0f3d507dbc4d22c5a58f6d3cee3f)]
++ Fix the issue where the SV length was reflected one base longer in deletion/inversion SV alleles. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cb39c83d3bea0f3d507dbc4d22c5a58f6d3cee3f)]
+
++ Fix a bug where the silhouette score could not be calculated and resulted in an error when the sample and control were completely separated at a 1:1 ratio. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c4f36483a03584f52299e2cba81d9eaf9d19425d)]
+
++ Correct the mislabeling of Deletion Allele as Insertion Allele. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b9e38830e588823fc687363dee343f70fd5b6fae)]
+
 
 <!-- ############################################################# # -->
 
