@@ -24,12 +24,13 @@
 
 + Upgrade to `pandas = ">=2.0.0"` because the argument specification for line terminator was changed to `lineterminator` in pandas >=1.5. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/65b421569e8be93e06c496827c8de1c62b9f47e0)]
 
++ Sort MUTATION_INFO by Allele ID. Issue [#79](https://github.com/akikuno/DAJIN2/issues/79) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
+
 ## 🐛 Bug Fixes
 
 + Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
 
-+ Sort MUTATION_INFO by Allele ID. Issue [#79](https://github.com/akikuno/DAJIN2/issues/79) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
-
++ Fixed the issue where the SV length was reflected one base longer in deletion/inversion SV alleles. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
 
 <!-- ############################################################# # -->
 
