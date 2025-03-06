@@ -110,7 +110,7 @@ HTML_LEGEND = """
     <br>
     <span>SV:</span>
     <span class="Ins_Allele">Insertion allele</span>
-    <span class="Del_Allele">Insertion allele</span>
+    <span class="Del_Allele">Deletion allele</span>
     <span class="Inv_Allele">Inversion allele</span>
 </p>
 <hr>
