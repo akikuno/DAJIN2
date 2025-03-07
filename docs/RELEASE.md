@@ -26,6 +26,8 @@
 
 + Sort MUTATION_INFO by Allele ID. Issue [#79](https://github.com/akikuno/DAJIN2/issues/79) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
 
++ Add `sv_annotator` to reflect SV alleles in consensus midsv tags. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
+
 ## 🐛 Bug Fixes
 
 + Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
