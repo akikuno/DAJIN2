@@ -1,4 +1,5 @@
 import pytest
+
 from DAJIN2.core.classification import classifier
 
 

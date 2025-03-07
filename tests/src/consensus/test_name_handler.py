@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 import pytest
+
 from DAJIN2.core.consensus.name_handler import (
     add_key_by_allele_name,
     detect_sv,
