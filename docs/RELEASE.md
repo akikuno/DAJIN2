@@ -26,7 +26,7 @@
 
 + Sort MUTATION_INFO by Allele ID. Issue [#79](https://github.com/akikuno/DAJIN2/issues/79) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
 
-+ Add `sv_annotator` to reflect SV alleles in consensus midsv tags. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
++ Add `sv_annotator` to reflect SV alleles in consensus midsv tags. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f8a89d50c53427ae4166e5d48f57466441c2f50)]
 
 ## 🐛 Bug Fixes
 
