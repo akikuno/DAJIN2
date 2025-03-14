@@ -28,7 +28,7 @@
 
 + Add `sv_annotator` to reflect SV alleles in consensus midsv tags. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f8a89d50c53427ae4166e5d48f57466441c2f50)]
 
-+ Refactoring annotate_insertions_within_deletion: Previously, a similar function existed in cssplit_handler, but since this function is only called once during consensus, it has been moved to a dedicated module, consensus.sv_annotator. At the same time, the function has been simplified. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f8a89d50c53427ae4166e5d48f57466441c2f50)]
++ Refactoring `annotate_insertions_within_deletion`: Previously, a similar function existed in `cssplit_handler`, but since this function is only called once during consensus, it has been moved to a dedicated module, `consensus.sv_annotator`. At the same time, the function has been simplified. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/88988db9cfeb44fd95f377a38eb434289ac812b5)]
  
 ## 🐛 Bug Fixes
 
