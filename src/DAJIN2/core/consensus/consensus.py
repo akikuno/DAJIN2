@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
 
-from DAJIN2.core.consensus.sv_annotator import annotate_sv_allele
+from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
 from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import call_sequence
 
@@ -103,6 +103,8 @@ def call_consensus(
         if path_midsv_sv_allele.exists():
             midsv_sv_allele = list(io.read_jsonl(path_midsv_sv_allele))
             cons_midsv_tag = annotate_sv_allele(cons_midsv_tag, midsv_sv_allele)
+            if allele.startswith("deletion"):
+                cons_midsv_tag = annotate_insertions_within_deletion(cons_midsv_tag)
 
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage

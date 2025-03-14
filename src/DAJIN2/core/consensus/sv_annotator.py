@@ -1,11 +1,16 @@
-def annotate_sv_allele(cons_midsv_tag: list[str], midsv_sv_allele: list[str]) -> list[str]:
+###############################################################################
+# annotate_sv_allele
+###############################################################################
+
+
+def annotate_sv_allele(cons_midsv_tag: list[str], sv_midsv_tag: list[str]) -> list[str]:
     """Annotate the SV allele to consenses midsv tag."""
     cons_midsv_tag_with_sv_tag = []
     idx = 0
     num_deletion = 0
     num_insertion = 0
-    while idx < len(midsv_sv_allele) and idx - num_deletion + num_insertion < len(cons_midsv_tag):
-        sv_tag = midsv_sv_allele[idx]
+    while idx < len(sv_midsv_tag) and idx - num_deletion + num_insertion < len(cons_midsv_tag):
+        sv_tag = sv_midsv_tag[idx]
 
         # Deletion
         if sv_tag.startswith("-"):
@@ -13,8 +18,8 @@ def annotate_sv_allele(cons_midsv_tag: list[str], midsv_sv_allele: list[str]) ->
             # Enclose consecutive alleles within a single span.
             num_deletion += 1
             idx += 1
-            while idx < len(midsv_sv_allele) and midsv_sv_allele[idx].startswith("-"):
-                cons_midsv_tag_with_sv_tag.append(midsv_sv_allele[idx])
+            while idx < len(sv_midsv_tag) and sv_midsv_tag[idx].startswith("-"):
+                cons_midsv_tag_with_sv_tag.append(sv_midsv_tag[idx])
                 num_deletion += 1
                 idx += 1
 
@@ -62,3 +67,169 @@ def annotate_sv_allele(cons_midsv_tag: list[str], midsv_sv_allele: list[str]) ->
             cons_midsv_tag_with_sv_tag.append(cons_midsv_tag[idx - num_deletion + num_insertion])
             idx += 1
     return cons_midsv_tag_with_sv_tag
+
+
+###############################################################################
+# annotate_insertions_within_deletion
+""" Strategy
+- Extract regions flanked by deletions.
+- Determine whether the regions are insertions.
+- Convert tags to insertion format.
+- Merge consecutive insertions.
+- Annotate insertions in the consensus midsv tag list.
+"""
+###############################################################################
+
+
+def extract_flanked_ranges(sv_midsv_tag: list[str]) -> list[tuple[int, int]]:
+    """Extract start and end indices of regions flanked by deletions ("-")."""
+    prev_deletion = False
+    start = -1
+    end = -1
+    flanked_ranges = []
+    i = 0
+
+    while i < len(sv_midsv_tag):
+        sv_tag = sv_midsv_tag[i]
+        cur_deletion = sv_tag.startswith("-")
+
+        if prev_deletion and not cur_deletion:
+            start = i
+        elif not prev_deletion and cur_deletion and start != -1:
+            end = i - 1
+
+        if start != -1 and end != -1:
+            flanked_ranges.append((start, end))
+            start = -1
+            end = -1
+
+        prev_deletion = cur_deletion
+        i += 1
+
+    # Append sentinel empty value to match the number of deletions, as location candidates are one more than tag_flanked.
+    flanked_ranges.append(())
+
+    return flanked_ranges
+
+
+def get_end_of_deletion_indices(sv_midsv_tag: list[str]) -> list[int]:
+    """Retrieve the indices marking the end of deletion regions."""
+    index_end_of_deletion = []
+    is_prev_del = False
+
+    for i, tag in enumerate(sv_midsv_tag):
+        if tag.startswith("-"):
+            is_prev_del = True
+        elif is_prev_del:
+            index_end_of_deletion.append(i)
+            is_prev_del = False
+
+    return index_end_of_deletion
+
+
+def extract_tags_of_flanked_ranges(cons_midsv_tag: list[str], index_flanked: list[tuple[int, int]]) -> list[str]:
+    """Extract tags of regions flanked by deletions ("-")."""
+    tag_flanked = []
+    for indices in index_flanked:
+        if indices:
+            tag_flanked.append([cons_midsv_tag[i] for i in range(indices[0], indices[1] + 1)])
+    return tag_flanked
+
+
+def detect_insertions(tag_flanked: list[list[str]], n_match: int = 10) -> list[bool]:
+    """Determine whether the regions flanked by deletions are insertion sequences."""
+    is_insertions = [sum(1 for tag in tags if tag.startswith("=")) < n_match for tags in tag_flanked]
+
+    # Append sentinel value to match the number of deletions, as location candidates are one more than tag_flanked.
+    is_insertions.append(False)
+
+    return is_insertions
+
+
+def convert_tags_to_insertion(tag_flanked: list[list[str]], is_insertions: list[bool]) -> list[list[str]]:
+    """Convert tags to insertion format based on the given insertion flags."""
+    tag_insertion = []
+
+    for tags, is_insertion in zip(tag_flanked, is_insertions):
+        if is_insertion:
+            new_tags = [f"+{tag[-1]}" for tag in tags if not tag.startswith("-")]
+        else:
+            new_tags = tags  # Keep original tags unchanged
+        tag_insertion.append(new_tags)
+
+    return tag_insertion
+
+
+def merge_inserted_sequences(tag_insertion: list[list[str]], is_insertions: list[bool]) -> list[list[str] | None]:
+    """Merge insertion regions flanked by deletions."""
+    tag_insertion_merged = []
+    tmp_insertions = []
+
+    i = 0
+    while i < len(tag_insertion):
+        if is_insertions[i]:
+            tag_insertion_merged.append([])  # Mark the start of an insertion
+            tmp_insertions += tag_insertion[i]
+
+            # Merge consecutive insertions
+            if i + 1 < len(is_insertions) and is_insertions[i + 1]:
+                tmp_insertions += tag_insertion[i + 1]
+                tag_insertion[i + 1] = []  # Mark as processed
+            else:
+                tag_insertion_merged.append(tmp_insertions)
+                tmp_insertions = []
+
+            tag_insertion[i] = []  # Mark current as processed
+        else:
+            tag_insertion_merged.append(None)  # Non-insertion region remains unchanged
+
+        i += 1
+
+    return tag_insertion_merged
+
+
+def annotate_insertion(
+    cons_midsv_tag: list[str],
+    tag_insertion_merged: list[list[str] | None],
+    index_flanked: list[list[int]],
+    index_end_of_deletion: list[int],
+) -> list[str]:
+    """
+    Annotate insertions in the consensus midsv tag list.
+    """
+    for tag_insertion, idx_flanked, idx_del in zip(tag_insertion_merged, index_flanked, index_end_of_deletion):
+        if tag_insertion is None:
+            continue
+
+        if not tag_insertion:
+            # Replace the flanked region with empty strings
+            print(idx_flanked)
+            cons_midsv_tag[idx_flanked[0] : idx_flanked[1] + 1] = [""] * (idx_flanked[1] - idx_flanked[0] + 1)
+        else:
+            i = idx_del
+            # Find the first non-deletion tag
+            while i < len(cons_midsv_tag) and cons_midsv_tag[i].startswith("-"):
+                i += 1
+
+            # Append the existing tag and join with "|"
+            if i < len(cons_midsv_tag):  # Ensure within bounds
+                tag_insertion.append(cons_midsv_tag[i])
+                cons_midsv_tag[i] = "|".join(tag_insertion)
+
+    return [tag for tag in cons_midsv_tag if tag]  # Remove empty elements
+
+
+###############################################################################
+# main
+###############################################################################
+
+
+def annotate_insertions_within_deletion(cons_midsv_tag: list[str], sv_midsv_tag: list[str]) -> list[str]:
+    """Reflect SV deletions in the consensus midsv tag list."""
+    flanked_ranges = extract_flanked_ranges(sv_midsv_tag)
+    index_end_of_deletion = get_end_of_deletion_indices(sv_midsv_tag)
+    tag_flanked = extract_tags_of_flanked_ranges(cons_midsv_tag, flanked_ranges)
+    is_insertions = detect_insertions(tag_flanked)
+    tag_insertion = convert_tags_to_insertion(tag_flanked, is_insertions)
+    tag_insertion_merged = merge_inserted_sequences(tag_insertion, is_insertions)
+    return annotate_insertion(cons_midsv_tag, tag_insertion_merged, flanked_ranges, index_end_of_deletion)
