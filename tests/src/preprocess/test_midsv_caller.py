@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from DAJIN2.core.preprocess.mapping import to_sam
 from DAJIN2.core.preprocess.midsv_caller import (
     convert_consecutive_indels_to_match,

@@ -4,7 +4,6 @@ import shutil
 from pathlib import Path
 
 import plotly.express as px
-
 from DAJIN2.utils import io
 from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
 

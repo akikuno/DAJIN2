@@ -1,5 +1,4 @@
 import pytest
-
 from DAJIN2.core.preprocess.sv_detector import get_index_and_sv_size
 
 

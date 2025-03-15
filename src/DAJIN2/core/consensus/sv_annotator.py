@@ -138,7 +138,19 @@ def extract_tags_of_flanked_ranges(cons_midsv_tag: list[str], index_flanked: lis
 
 def detect_insertions(tag_flanked: list[list[str]], n_match: int = 10) -> list[bool]:
     """Determine whether the regions flanked by deletions are insertion sequences."""
-    is_insertions = [sum(1 for tag in tags if tag.startswith("=")) < n_match for tags in tag_flanked]
+    count_consective_match = 0
+    is_insertions = []
+    for tags in tag_flanked:
+        is_insertion = True
+        for tag in tags:
+            if tag.startswith("="):
+                count_consective_match += 1
+            else:
+                count_consective_match = 0
+            if count_consective_match >= n_match:
+                is_insertion = False
+                break
+        is_insertions.append(is_insertion)
 
     # Append sentinel value to match the number of deletions, as location candidates are one more than tag_flanked.
     is_insertions.append(False)
@@ -201,9 +213,8 @@ def annotate_insertion(
         if tag_insertion is None:
             continue
 
-        if not tag_insertion:
+        if not tag_insertion and idx_flanked:
             # Replace the flanked region with empty strings
-            print(idx_flanked)
             cons_midsv_tag[idx_flanked[0] : idx_flanked[1] + 1] = [""] * (idx_flanked[1] - idx_flanked[0] + 1)
         else:
             i = idx_del

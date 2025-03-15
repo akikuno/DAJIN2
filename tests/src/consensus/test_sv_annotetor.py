@@ -57,7 +57,11 @@ def test_extract_flanked_ranges(sv_midsv_tag, expected):
         # Case 1: Basic conversion
         ([["=A", "-N", "=T"], ["=C", "=G"], ["-N", "=A"]], [True, False, True], [["+A", "+T"], ["=C", "=G"], ["+A"]]),
         # Case 2: No conversion (all False)
-        ([["=A", "=T"], ["-N", "=C"], ["=G", "-N"]], [False, False, False], [["=A", "=T"], ["-N", "=C"], ["=G", "-N"]]),
+        (
+            [["=A", "=T"], ["-N", "=C"], ["=G", "-N"]],
+            [False, False, False],
+            [["=A", "=T"], ["-N", "=C"], ["=G", "-N"]],
+        ),
         # Case 3: All elements are insertions
         ([["=A", "=T"], ["=C", "=G"], ["=G", "=A"]], [True, True, True], [["+A", "+T"], ["+C", "+G"], ["+G", "+A"]]),
         # Case 4: List with only deletions
