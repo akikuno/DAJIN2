@@ -40,6 +40,7 @@
 
 + Correct the mislabeling of Deletion Allele as Insertion Allele. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b9e38830e588823fc687363dee343f70fd5b6fae)]
 
++ Return the region containing the insertion sequence as a deletion sequence if the region flanked by deletions is determined to be an insertion sequence. Issue #86 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/eef0c0d1b2658cd22ebca1108495aed2adea6e20)]
 
 <!-- ############################################################# # -->
 
