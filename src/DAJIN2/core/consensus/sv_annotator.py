@@ -202,20 +202,22 @@ def merge_inserted_sequences(tag_insertion: list[list[str]], is_insertions: list
 
 def annotate_insertion(
     cons_midsv_tag: list[str],
+    sv_midsv_tag: list[str],
     tag_insertion_merged: list[list[str] | None],
-    index_flanked: list[list[int]],
+    flanked_ranges: list[list[int]],
     index_end_of_deletion: list[int],
 ) -> list[str]:
     """
     Annotate insertions in the consensus midsv tag list.
     """
-    for tag_insertion, idx_flanked, idx_del in zip(tag_insertion_merged, index_flanked, index_end_of_deletion):
+    for tag_insertion, idx_flanked, idx_del in zip(tag_insertion_merged, flanked_ranges, index_end_of_deletion):
         if tag_insertion is None:
             continue
 
         if not tag_insertion and idx_flanked:
-            # Replace the flanked region with empty strings
-            cons_midsv_tag[idx_flanked[0] : idx_flanked[1] + 1] = [""] * (idx_flanked[1] - idx_flanked[0] + 1)
+            # Replace the flanked region with deletion tags
+            sv_deletions = [tag.replace("=", "-") for tag in sv_midsv_tag[idx_flanked[0] : idx_flanked[1] + 1]]
+            cons_midsv_tag[idx_flanked[0] : idx_flanked[1] + 1] = sv_deletions
         else:
             i = idx_del
             # Find the first non-deletion tag
@@ -227,7 +229,7 @@ def annotate_insertion(
                 tag_insertion.append(cons_midsv_tag[i])
                 cons_midsv_tag[i] = "|".join(tag_insertion)
 
-    return [tag for tag in cons_midsv_tag if tag]  # Remove empty elements
+    return cons_midsv_tag
 
 
 ###############################################################################
@@ -243,4 +245,4 @@ def annotate_insertions_within_deletion(cons_midsv_tag: list[str], sv_midsv_tag:
     is_insertions = detect_insertions(tag_flanked)
     tag_insertion = convert_tags_to_insertion(tag_flanked, is_insertions)
     tag_insertion_merged = merge_inserted_sequences(tag_insertion, is_insertions)
-    return annotate_insertion(cons_midsv_tag, tag_insertion_merged, flanked_ranges, index_end_of_deletion)
+    return annotate_insertion(cons_midsv_tag, sv_midsv_tag, tag_insertion_merged, flanked_ranges, index_end_of_deletion)
