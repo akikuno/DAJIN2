@@ -130,58 +130,21 @@ def test_get_end_of_deletion_indices(sv_midsv_tag, expected):
     assert sv_annotator.get_end_of_deletion_indices(sv_midsv_tag) == expected
 
 
-def annotate_insertion(
-    cons_midsv_tag: list[str],
-    tag_insertions: list[list[str] | None],
-    index_flanked: list[list[int]],
-    index_end_of_deletion: list[int],
-) -> list[str]:
-    """
-    Annotate insertions in the consensus midsv tag list.
-
-    Args:
-        cons_midsv_tag: A list of consensus sequence tags.
-        tag_insertions: A list containing insertion tags or None.
-        index_flanked: A list of index ranges for flanked regions.
-        index_end_of_deletion: A list of indices marking the end of deletions.
-
-    Returns:
-        list[str]: The modified consensus midsv tag list with annotated insertions.
-    """
-    for tag_insertion, idx_flanked, idx_del in zip(tag_insertions, index_flanked, index_end_of_deletion):
-        if tag_insertion is None:
-            continue
-
-        if not tag_insertion:
-            # Replace the flanked region with empty strings
-            cons_midsv_tag[idx_flanked[0] : idx_flanked[1] + 1] = [""] * (idx_flanked[1] - idx_flanked[0] + 1)
-        else:
-            i = idx_del
-            # Find the first non-deletion tag
-            while i < len(cons_midsv_tag) and cons_midsv_tag[i].startswith("-"):
-                i += 1
-
-            # Append the existing tag and join with "|"
-            if i < len(cons_midsv_tag):  # Ensure within bounds
-                tag_insertion.append(cons_midsv_tag[i])
-                cons_midsv_tag[i] = "|".join(tag_insertion)
-
-    return [tag for tag in cons_midsv_tag if tag]  # Remove empty elements
-
-
 @pytest.mark.parametrize(
-    "cons_midsv_tag, tag_insertions, index_flanked, index_end_of_deletion, expected",
+    "cons_midsv_tag, sv_midsv_tag, tag_insertions, index_flanked, index_end_of_deletion, expected",
     [
         # Test case 1: Basic case with insertions and deletions
         (
             ["=A", "-N", "*TG", "*TG", "-N", "*TC", "-C", "-N", "=A", "=A"],
+            ["=A", "-N", "=T", "=T", "-N", "=T", "=C", "-N", "=A", "=A"],
             [[], [], ["+G", "+G", "+C"]],
             [(2, 3), (5, 6), ()],
             [2, 5, 8],
-            ["=A", "-N", "-N", "-N", "+G|+G|+C|=A", "=A"],
+            ["=A", "-N", "-T", "-T", "-N", "-T", "-C", "-N", "+G|+G|+C|=A", "=A"],
         ),
         # Test case 2: No insertions
         (
+            ["=A", "-N", "=T", "=C", "-N", "=G"],
             ["=A", "-N", "=T", "=C", "-N", "=G"],
             [None, None],
             [(2, 3), ()],
@@ -191,17 +154,22 @@ def annotate_insertion(
         # Test case 3: Single insertion region
         (
             ["=A", "-N", "=G", "-N", "=T"],
+            ["=A", "-N", "=G", "-N", "=T"],
             [["+C"], None, None],
             [[0, 1], (), ()],
             [0, 3, 4],
             ["+C|=A", "-N", "=G", "-N", "=T"],
         ),
         # Test case 4: Empty list
-        ((), (), (), (), []),
+        ((), (), (), (), (), ()),
     ],
 )
-def test_annotate_insertion(cons_midsv_tag, tag_insertions, index_flanked, index_end_of_deletion, expected):
+def test_annotate_insertion(
+    cons_midsv_tag, sv_midsv_tag, tag_insertions, index_flanked, index_end_of_deletion, expected
+):
     assert (
-        sv_annotator.annotate_insertion(cons_midsv_tag, tag_insertions, index_flanked, index_end_of_deletion)
+        sv_annotator.annotate_insertion(
+            cons_midsv_tag, sv_midsv_tag, tag_insertions, index_flanked, index_end_of_deletion
+        )
         == expected
     )
