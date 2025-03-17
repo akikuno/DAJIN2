@@ -18,8 +18,8 @@ from src.DAJIN2.core.report import html_builder
         (["=A"], []),  # 大文字1つだけ
     ],
 )
-def test_get_inversion_index(midsv_sv_allele, expected):
-    assert html_builder.get_inversion_index(midsv_sv_allele) == expected
+def test_get_inversion_range(midsv_sv_allele, expected):
+    assert html_builder.get_inversion_range(midsv_sv_allele) == expected
 
 
 @pytest.mark.parametrize(
@@ -35,8 +35,8 @@ def test_get_inversion_index(midsv_sv_allele, expected):
         (["=A"], []),  # 挿入なし
     ],
 )
-def test_get_insertion_index(midsv_sv_allele, expected):
-    assert html_builder.get_insertion_index(midsv_sv_allele) == expected
+def test_get_insertion_range(midsv_sv_allele, expected):
+    assert html_builder.get_insertion_range(midsv_sv_allele) == expected
 
 
 @pytest.mark.parametrize(
@@ -67,11 +67,11 @@ def test_split_html_tags(highlight_sv_allele, expected):
 @pytest.mark.parametrize(
     "midsv_sv_allele, midsv_consensus, expected",
     [
-        (["=A", "=c", "=g", "=A"], ["=A", "=C", "=G", "=A"], ["=A", "<span class='Inv_Allele'>=C", "=G</span>", "=A"]),
+        (["=A", "=c", "=g", "=A"], ["=A", "=C", "=G", "=A"], ["=A", "<span class='Inv'>=C", "=G</span>", "=A"]),
         (
             ["=A", "=c", "=g", "=A", "=c", "=A"],
             ["=A", "=C", "=G", "=A", "-C", "=A"],
-            ["=A", "<span class='Inv_Allele'>=C", "=G</span>", "=A", "<span class='Inv_Allele'>-C</span>", "=A"],
+            ["=A", "<span class='Inv'>=C", "=G</span>", "=A", "<span class='Inv'>-C</span>", "=A"],
         ),
     ],
 )
@@ -128,8 +128,8 @@ def test_append_insertion_allele(midsv_sv_allele, midsv_consensus, expected):
         (["=A", "-G", "-T", "=A"], ["<p class='p_seq'>", "A", "<span class='Del'>GT</span>", "A", "</p>"]),
         # Inversion
         (
-            ["=A", "=c", "=g", "=A", "=c", "=A"],
-            ["<p class='p_seq'>", "A", "<span class='Inv'>cg</span>", "A", "<span class='Inv'>c</span>", "A", "</p>"],
+            ["=A", "<span class='Inv'>", "=c", "=g", "</span>", "=A", "<span class='Inv'>", "=c", "</span>", "=A"],
+            ["<p class='p_seq'>", "A", "<span class='Inv'>", "CG", "</span>", "A", "<span class='Inv'>", "C", "</span>", "A", "</p>"],
         ),
         # No mutation, just sequence
         (["=A", "=T", "=G", "=C"], ["<p class='p_seq'>", "A", "T", "G", "C", "</p>"]),

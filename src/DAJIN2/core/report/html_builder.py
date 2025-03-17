@@ -62,37 +62,18 @@ HTML_HEADER = """<!DOCTYPE html>
             background-color: #98d98e;
         }
 
-        .Inv {
-            font-weight: bold;
-            border: 0.1em solid;
-            background-color: #CAB5FF;
-        }
-
         .Unknown {
             font-weight: bold;
             border: 0.1em solid;
             background-color: #c0c6c9;
         }
 
-        .Ins_Allele {
-            font-weight: bold;
-            text-decoration: underline;
-            text-decoration-color: #ED5F5F;
-            text-decoration-thickness: 3px;
-        }
-
-        .Del_Allele {
-            font-weight: bold;
-            text-decoration: underline;
-            text-decoration-color: #48C0F0;
-            text-decoration-thickness: 3px;
-        }
-
-        .Inv_Allele {
+        .Inv {
             font-weight: bold;
             text-decoration: underline;
             text-decoration-color: #7F4DFF;
             text-decoration-thickness: 3px;
+            text-underline-offset: auto;
         }
     </style>
 </head>
@@ -105,13 +86,8 @@ HTML_LEGEND = """
     <span class="Ins">Insertion</span>
     <span class="Del">Deletion</span>
     <span class="Sub">Substitution</span>
-    <span class="Inv">Inversion</span>
     <span class="Unknown">Unknown</span>
-    <br>
-    <span>SV:</span>
-    <span class="Ins_Allele">Insertion allele</span>
-    <span class="Del_Allele">Deletion allele</span>
-    <span class="Inv_Allele">Inversion allele</span>
+    <span class="Inv">Inversion</span>
 </p>
 <hr>
 """
@@ -127,8 +103,8 @@ HTML_FOOTER = """
 ###############################################################################
 
 
-def get_inversion_index(midsv_sv_allele) -> list[tuple[int, int]]:
-    inversion_index = []
+def get_inversion_range(midsv_sv_allele) -> list[tuple[int, int]]:
+    inversion_range = []
     prev_inversion = False
     inversion_start = -1
     for i, tag_sv in enumerate(midsv_sv_allele):
@@ -136,39 +112,39 @@ def get_inversion_index(midsv_sv_allele) -> list[tuple[int, int]]:
             inversion_start = i
             prev_inversion = True
         elif not tag_sv.islower() and prev_inversion is True:
-            inversion_index.append((inversion_start, i - 1))
+            inversion_range.append((inversion_start, i - 1))
             inversion_start = -1
             prev_inversion = False
 
         # Last tag is inversion
         if i == len(midsv_sv_allele) - 1 and prev_inversion is True:
-            inversion_index.append((inversion_start, i))
+            inversion_range.append((inversion_start, i))
 
-    return inversion_index
+    return inversion_range
 
 
-def get_insertion_index(midsv_sv_allele) -> list[tuple[int, int]]:
-    insertion_index = []
+def get_insertion_range(midsv_sv_allele) -> list[tuple[int, int]]:
+    insertion_range = []
     idx = 0
     for i, tag_sv in enumerate(midsv_sv_allele):
         if tag_sv.startswith("+"):
             insertion_start = i + idx
             insertion_end = insertion_start + tag_sv.count("|") - 1
-            insertion_index.append((insertion_start, insertion_end))
+            insertion_range.append((insertion_start, insertion_end))
             idx += insertion_end
-    return insertion_index
+    return insertion_range
 
 
-def add_sv_class(midsv_consensus, sv_index, class_name: str) -> list[str]:
-    sv_index = iter(sv_index)
+def add_sv_class(cons_midsv_tag, sv_range, class_name: str) -> list[str]:
+    sv_range = iter(sv_range)
     highlight_sv_allele = []
 
     sv_start = -1
     sv_end = -1
-    for i, tag_sample in enumerate(midsv_consensus):
+    for i, tag_sample in enumerate(cons_midsv_tag):
         if sv_start == -1 or i == sv_end + 1:
             try:
-                sv_start, sv_end = next(sv_index)
+                sv_start, sv_end = next(sv_range)
             except StopIteration:
                 pass
         if i == sv_start == sv_end:
@@ -183,14 +159,14 @@ def add_sv_class(midsv_consensus, sv_index, class_name: str) -> list[str]:
     return highlight_sv_allele
 
 
-def append_inversion_allele(midsv_sv_allele, midsv_consensus) -> list[str]:
-    inversion_index = get_inversion_index(midsv_sv_allele)
-    return add_sv_class(midsv_consensus, inversion_index, "Inv_Allele")
+def append_inversion_allele(midsv_sv_allele, cons_midsv_tag) -> list[str]:
+    inversion_range = get_inversion_range(midsv_sv_allele)
+    return add_sv_class(cons_midsv_tag, inversion_range, "Inv")
 
 
-def append_insertion_allele(midsv_sv_allele, midsv_consensus) -> list[str]:
-    insertion_index = get_insertion_index(midsv_sv_allele)
-    return add_sv_class(midsv_consensus, insertion_index, "Ins_Allele")
+def append_insertion_allele(midsv_sv_allele, cons_midsv_tag) -> list[str]:
+    insertion_range = get_insertion_range(midsv_sv_allele)
+    return add_sv_class(cons_midsv_tag, insertion_range, "Ins_Allele")
 
 
 def split_html_tags(highlight_sv_allele: list[str]) -> list[str]:
@@ -233,34 +209,42 @@ def embed_mutations_to_html(highlight_sv_allele: list[str]) -> list[str]:
             else:  # match or substitution
                 html_parts.append(last_tag[-1])
 
+            idx += 1
+            continue
+
         # Substitution
-        elif tag_sample.startswith("*"):
-            substitutions = [tag_sample[-1]]
-            while idx < len(highlight_sv_allele) - 1 and highlight_sv_allele[idx + 1].startswith("*"):
-                substitutions.append(highlight_sv_allele[idx + 1][-1])
+        if tag_sample.startswith("*"):
+            substitutions = []
+            while idx < len(highlight_sv_allele) and highlight_sv_allele[idx].startswith("*"):
+                substitutions.append(highlight_sv_allele[idx][-1])
                 idx += 1
             html_parts.append("<span class='Sub'>" + "".join(substitutions) + "</span>")
+            continue
 
         # Deletion
-        elif tag_sample.startswith("-"):
-            deletions = [tag_sample[-1]]
-            while idx < len(highlight_sv_allele) - 1 and highlight_sv_allele[idx + 1].startswith("-"):
-                deletions.append(highlight_sv_allele[idx + 1][-1])
+        if tag_sample.startswith("-"):
+            deletions = []
+            while idx < len(highlight_sv_allele) and highlight_sv_allele[idx].startswith("-"):
+                deletions.append(highlight_sv_allele[idx][-1])
                 idx += 1
             html_parts.append("<span class='Del'>" + "".join(deletions) + "</span>")
+            continue
 
-        # Inversion
-        elif tag_sample.islower():
-            inversions = [tag_sample[-1]]
-            while idx < len(highlight_sv_allele) - 1 and highlight_sv_allele[idx + 1].islower():
-                inversions.append(highlight_sv_allele[idx + 1][-1])
+        # Inversion: Just convert to upper case
+        if tag_sample.islower() and not tag_sample.startswith("<"):  # avoid HTML span tag
+            inversions = []
+            while (
+                idx < len(highlight_sv_allele)
+                and highlight_sv_allele[idx].islower()
+                and not highlight_sv_allele[idx].startswith("<")
+            ):
+                inversions.append(highlight_sv_allele[idx][-1])
                 idx += 1
-            html_parts.append("<span class='Inv'>" + "".join(inversions) + "</span>")
+            html_parts.append("".join(inversions).upper())
+            continue
 
         # Othres
-        else:
-            html_parts.append(tag_sample[-1])
-
+        html_parts.append(tag_sample[-1])
         idx += 1
 
     html_parts.append("</p>")
@@ -273,15 +257,17 @@ def embed_mutations_to_html(highlight_sv_allele: list[str]) -> list[str]:
 ###############################################################################
 
 
-def to_html(midsv_sv_allele: list[str], midsv_consensus: list[str:], allele: str, description: str = "") -> str:
+def to_html(
+    midsv_sv_allele: list[str], cons_midsv_tag: list[str:], allele: str, is_sv_allele: bool, description: str = ""
+) -> str:
     """Output HTML string showing a sequence with mutations colored"""
     description_str = f"<h1>{description}</h1>" if description else ""
-    if allele.startswith("insertion"):
-        highlight_sv_allele = append_insertion_allele(midsv_sv_allele, midsv_consensus)
-    elif allele.startswith("inversion"):
-        highlight_sv_allele = append_inversion_allele(midsv_sv_allele, midsv_consensus)
+    if allele.startswith("insertion") and is_sv_allele:
+        highlight_sv_allele = append_insertion_allele(midsv_sv_allele, cons_midsv_tag)
+    elif allele.startswith("inversion") and is_sv_allele:
+        highlight_sv_allele = append_inversion_allele(midsv_sv_allele, cons_midsv_tag)
     else:
-        highlight_sv_allele = midsv_consensus
+        highlight_sv_allele = cons_midsv_tag
 
     highlight_sv_allele = split_html_tags(highlight_sv_allele)
 

@@ -20,12 +20,16 @@ def convert_to_html(
 ) -> str:
     allele = header.split("_")[1]
     path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}.jsonl")
+    is_sv_allele = False
     if path_midsv_sv.exists():
+        is_sv_allele = True
         midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
     else:
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
-    return to_html(midsv_sv_allele, cons_midsv_tag, allele, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
+    return to_html(
+        midsv_sv_allele, cons_midsv_tag, allele, is_sv_allele, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}"
+    )
 
 
 ##################################################
