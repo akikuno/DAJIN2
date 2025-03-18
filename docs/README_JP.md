@@ -58,7 +58,7 @@ pip install DAJIN2
 > ```bash
 > conda update DAJIN2 -y
 > ```
-> もしくは
+> または
 > ```bash
 > pip install -U DAJIN2
 > ```
@@ -157,6 +157,9 @@ ACGTACGT
 
 ここで、`>control` はコントロールアレルの配列を表しており、必須です。  
 `>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレル配列です。  
+
+> [!IMPORTANT]
+> **FASTA配列の両端は、アンプリコン配列の両端と一致させてください。** アンプリコンよりも長い、または短い場合、その差分はIndelとして判定される可能性があります  
 
 ## 単一サンプル解析
 

@@ -158,6 +158,8 @@ ACGTACGT
 
 Here, `>control` represents the sequence of the control allele, while `>knock-in` and `>knock-out` represent the sequences of the anticipated knock-in and knock-out alleles, respectively.
 
+> [!IMPORTANT]
+> **Ensure that both ends of the FASTA sequence match those of the amplicon sequence.** If the FASTA sequence is longer or shorter than the amplicon, the difference may be recognized as an indel.  
 
 ## Single Sample Analysis
 

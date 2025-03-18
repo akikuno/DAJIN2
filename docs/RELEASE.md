@@ -18,6 +18,9 @@
 
 - Use `BisectingKMeans` instead of `AgglomerativeClustering` because `BisectingKMeans` can take a `spmatrix` as input, significantly reducing memory consumption. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/19fe3549584ee1b1c8ccb67c3d364434f5ad392c)]
 
+## 📝 Documentation
++ Specify the Range of Bases to Be Recorded in the FASTA File. Issue #78 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/19fe3549584ee1b1c8ccb67c3d364434f5ad392c)]
+
 ## 🔧 Maintenance
 
 + Explicitly unify the line endings of text files in DAJIN_Reports to `LF`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/695d67a7b6de3f29381bd4299fddc6106028d5c2)]
