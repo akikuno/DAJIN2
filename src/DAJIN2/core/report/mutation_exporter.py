@@ -12,12 +12,12 @@ from DAJIN2.utils.cssplits_handler import revcomp_cssplits
 ###########################################################
 
 
-def annotate_inversion(cssplits: list[str]) -> list[str]:
-    return ["@" + cs if cs[-1].islower() else cs for cs in cssplits]
+def annotate_inversion(midsv_tag: list[str]) -> list[str]:
+    return ["@" + tag if tag.islower() else tag for tag in midsv_tag]
 
 
-def group_by_mutation(cssplits: list[str]) -> list[list[str]]:
-    return [list(group) for _, group in groupby(cssplits, key=lambda x: x[0])]
+def group_by_mutation(midsv_tag: list[str]) -> list[list[str]]:
+    return [list(group) for _, group in groupby(midsv_tag, key=lambda x: x[0])]
 
 
 ###########################################################
@@ -69,9 +69,10 @@ def _handle_insertion(group, genome, start, end, header, chromosome) -> tuple[li
 
 
 def _handle_inversion(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
-    end += len(group) - 1
-    size = len(group)
-    seq = "".join([g[-1].upper() for g in group])
+    count_deletion = sum(1 for g in group if "-" in g)
+    size = len(group) - count_deletion
+    end += size - 1
+    seq = "".join([g[-1].upper() for g in group if "-" not in g])
     result = [header, genome, chromosome, start, end, f"{size}bp inversion: {seq}"]
     end += 1
     start = end

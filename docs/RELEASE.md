@@ -44,6 +44,8 @@
 
 + Inversions are underlined since they can coexist with other mutations, while others are highlighted. Issue #84 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ccdc98b97052dbbb27b8c75b3dd1b888620a4e11)]
 
++ Reflect the mutations (indel, substitution) within the inversion in HTML and MUTATION_LOCI.
+
 <!-- ############################################################# # -->
 
 

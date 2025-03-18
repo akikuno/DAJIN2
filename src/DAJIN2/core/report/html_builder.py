@@ -202,13 +202,7 @@ def embed_mutations_to_html(highlight_sv_allele: list[str]) -> list[str]:
         if tag_sample.startswith("+"):
             insertions, last_tag = tag_sample.split("|")[:-1], tag_sample.split("|")[-1]
             insertions = "".join(ins[-1] for ins in insertions)
-            html_parts.append("<span class='Ins'>" + "".join(insertions) + "</span>")
-
-            if last_tag.startswith("-"):
-                html_parts.append("<span class='Del'>" + last_tag[-1] + "</span>")
-            else:  # match or substitution
-                html_parts.append(last_tag[-1])
-
+            html_parts.append("<span class='Ins'>" + "".join(insertions) + "</span>" + last_tag[-1])
             idx += 1
             continue
 
@@ -238,9 +232,19 @@ def embed_mutations_to_html(highlight_sv_allele: list[str]) -> list[str]:
                 and highlight_sv_allele[idx].islower()
                 and not highlight_sv_allele[idx].startswith("<")
             ):
-                inversions.append(highlight_sv_allele[idx][-1])
+                tag_inversion = highlight_sv_allele[idx].upper()
+                if tag_inversion.startswith("*"):  # Substitution
+                    inversions.append("<span class='Sub'>" + tag_inversion[-1] + "</span>")
+                elif tag_inversion.startswith("-"):  # Deletion
+                    inversions.append("<span class='Del'>" + tag_inversion[-1] + "</span>")
+                elif tag_inversion.startswith("+"):  # Insertion
+                    tag_insertion, tag_last = tag_inversion.split("|")[:-1], tag_inversion.split("|")[-1]
+                    insertion = "".join(ins[-1] for ins in tag_insertion)
+                    inversions.append("<span class='Ins'>" + "".join(insertion) + "</span>" + tag_last[-1])
+                else:
+                    inversions.append(tag_inversion[-1])
                 idx += 1
-            html_parts.append("".join(inversions).upper())
+            html_parts.append("".join(inversions))
             continue
 
         # Othres

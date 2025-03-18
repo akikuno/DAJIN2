@@ -118,7 +118,7 @@ def test_append_insertion_allele(midsv_sv_allele, midsv_consensus, expected):
     "highlight_sv_allele, expected",
     [
         # Insertion
-        (["=A", "+C|+C|=A", "=A"], ["<p class='p_seq'>", "A", "<span class='Ins'>CC</span>", "A", "A", "</p>"]),
+        (["=A", "+C|+C|=A", "=A"], ["<p class='p_seq'>", "A", "<span class='Ins'>CC</span>A", "A", "</p>"]),
         # Substitution
         (
             ["=A", "*CG", "=A", "*CG", "*CT", "=A"],
@@ -129,7 +129,34 @@ def test_append_insertion_allele(midsv_sv_allele, midsv_consensus, expected):
         # Inversion
         (
             ["=A", "<span class='Inv'>", "=c", "=g", "</span>", "=A", "<span class='Inv'>", "=c", "</span>", "=A"],
-            ["<p class='p_seq'>", "A", "<span class='Inv'>", "CG", "</span>", "A", "<span class='Inv'>", "C", "</span>", "A", "</p>"],
+            [
+                "<p class='p_seq'>",
+                "A",
+                "<span class='Inv'>",
+                "CG",
+                "</span>",
+                "A",
+                "<span class='Inv'>",
+                "C",
+                "</span>",
+                "A",
+                "</p>",
+            ],
+        ),
+        # Inversion with deletion
+        (
+            ["=A", "<span class='Inv'>", "=c", "-g", "</span>", "=A"],
+            ["<p class='p_seq'>", "A", "<span class='Inv'>", "C<span class='Del'>G</span>", "</span>", "A", "</p>"],
+        ),
+        # Inversion with insertion
+        (
+            ["=A", "<span class='Inv'>", "=c", "+g|+g|=c", "</span>", "=A"],
+            ["<p class='p_seq'>", "A", "<span class='Inv'>", "C<span class='Ins'>GG</span>C", "</span>", "A", "</p>"],
+        ),
+        # Inversion with substitution
+        (
+            ["=A", "<span class='Inv'>", "=c", "*gc", "</span>", "=A"],
+            ["<p class='p_seq'>", "A", "<span class='Inv'>", "C<span class='Sub'>C</span>", "</span>", "A", "</p>"],
         ),
         # No mutation, just sequence
         (["=A", "=T", "=G", "=C"], ["<p class='p_seq'>", "A", "T", "G", "C", "</p>"]),
@@ -141,8 +168,7 @@ def test_append_insertion_allele(midsv_sv_allele, midsv_consensus, expected):
             [
                 "<p class='p_seq'>",
                 "A",
-                "<span class='Ins'>CG</span>",
-                "A",
+                "<span class='Ins'>CG</span>A",
                 "<span class='Del'>T</span>",
                 "<span class='Sub'>G</span>",
                 "A",
