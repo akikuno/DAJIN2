@@ -105,10 +105,13 @@ def split_headers_and_contents(sam: list) -> tuple:
 
 def write_sam_to_bam(sam: list[list[str]], path_bam: str | Path, threads: int = 1) -> None:
     # Format SAM
-    formatted_sam = "\n".join("\t".join(s) for s in sam)
+    formatted_sam = "\n".join("\t".join(s) for s in sam) + "\n"
+
     # Write SAM to a temporary file
     path_sam = Path(path_bam.parent, f"temp_{uuid.uuid4()}.sam")
-    Path(path_sam).write_text(formatted_sam + "\n")
+    with open(path_sam, "w", newline="\n", encoding="utf-8") as f:
+        f.write(formatted_sam)
+
     # Convert SAM to BAM
     pysam.sort("-@", f"{threads}", "-o", str(path_bam), str(path_sam))
     pysam.index("-@", f"{threads}", str(path_bam))

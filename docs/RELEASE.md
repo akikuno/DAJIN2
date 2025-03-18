@@ -12,7 +12,61 @@
 
 <!-- ############################################################# # -->
 
-# v0.6.0 (2025-02-20)
+# v0.6.1 (2025-03-18)
+
+## 🚀 Performance
+
+- Use `BisectingKMeans` instead of `AgglomerativeClustering` because `BisectingKMeans` can take a `spmatrix` as input, significantly reducing memory consumption. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/19fe3549584ee1b1c8ccb67c3d364434f5ad392c)]
+
+## 📝 Documentation
++ Specify the Range of Bases to Be Recorded in the FASTA File. Issue #78 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8955c5dc38f28279a708b485466081c5f39aa3e)]
+
+## 🔧 Maintenance
+
++ Explicitly unify the line endings of text files in DAJIN_Reports to `LF`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/695d67a7b6de3f29381bd4299fddc6106028d5c2)]
+
++ Upgrade to `pandas = ">=2.0.0"` because the argument specification for line terminator was changed to `lineterminator` in pandas >=1.5. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/65b421569e8be93e06c496827c8de1c62b9f47e0)]
+
++ Sort MUTATION_INFO by Allele ID. Issue [#79](https://github.com/akikuno/DAJIN2/issues/79) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/891096d963d408e454d26f3eab26a5cee6426b3a)]
+
++ Add `sv_annotator` to reflect SV alleles in consensus midsv tags. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f8a89d50c53427ae4166e5d48f57466441c2f50)]
+
++ Refactoring `annotate_insertions_within_deletion`: Previously, a similar function existed in `cssplit_handler`, but since this function is only called once during consensus, it has been moved to a dedicated module, `consensus.sv_annotator`. At the same time, the function has been simplified. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/88988db9cfeb44fd95f377a38eb434289ac812b5)]
+ 
+## 🐛 Bug Fixes
+
++ Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
+
++ Fix the issue where the SV length was reflected one base longer in deletion/inversion SV alleles. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cb39c83d3bea0f3d507dbc4d22c5a58f6d3cee3f)]
+
++ Fix a bug where the silhouette score could not be calculated and resulted in an error when the sample and control were completely separated at a 1:1 ratio. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c4f36483a03584f52299e2cba81d9eaf9d19425d)]
+
++ Correct the mislabeling of Deletion Allele as Insertion Allele. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b9e38830e588823fc687363dee343f70fd5b6fae)]
+
++ Return the region containing the insertion sequence as a deletion sequence if the region flanked by deletions is determined to be an insertion sequence. Issue #86 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/eef0c0d1b2658cd22ebca1108495aed2adea6e20)]
+
++ Inversions are underlined since they can coexist with other mutations, while others are highlighted. Issue #84 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ccdc98b97052dbbb27b8c75b3dd1b888620a4e11)]
+
++ Reflect the mutations (indel, substitution) within the inversion in HTML and MUTATION_LOCI. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d0316c52cc129cf8d104cd1cce9c5eedff9898ce)]
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<!-- ############################################################# # -->
+
+<details>
+<summary> v0.6.0 (2025-02-20) </summary>
 
 ## 💥 Breaking
 
@@ -39,19 +93,7 @@
 
 + By appending a UUID to the log file, potential filename duplication can be prevented. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/41a8b183c47642ad2c2f171d02c779fd8f817c55)]
 
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2024-MM-DD) </summary>
-
-</details> -->
-
+</details>
 
 <details>
 <summary> v0.5.6 (2024-12-06) </summary>

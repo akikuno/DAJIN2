@@ -58,7 +58,7 @@ pip install DAJIN2
 > ```bash
 > conda update DAJIN2 -y
 > ```
-> もしくは
+> または
 > ```bash
 > pip install -U DAJIN2
 > ```
@@ -157,6 +157,9 @@ ACGTACGT
 
 ここで、`>control` はコントロールアレルの配列を表しており、必須です。  
 `>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレル配列です。  
+
+> [!IMPORTANT]
+> **FASTA配列の両端は、アンプリコン配列の両端と一致させてください。** アンプリコンよりも長い、または短い場合、その差分はIndelとして判定される可能性があります  
 
 ## 単一サンプル解析
 
@@ -267,12 +270,14 @@ HTMLディレクトリには、変異箇所が色付けされた各アレルのH
 Tyr点変異（緑色）の例を以下に示します：
 
 
-<img src="https://private-user-images.githubusercontent.com/15861316/407203437-dd3947c4-1890-46e8-816c-034e88639adf.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDU0NTgsIm5iZiI6MTczODA0NTE1OCwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDM0MzctZGQzOTQ3YzQtMTg5MC00NmU4LTgxNmMtMDM0ZTg4NjM5YWRmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTkxOFomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTlhNzNjNGM3YjFmOTYyODZjNWRkYTgxMjliNjA5M2RlNmIwZDAyZGZhNDZjNjkzNTYzNTk5MjMxNDMzMmM4NjAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.AJ0foqobWPBhsD3OQhW8HOJ98F_ae82BZIJGqZ4umLQ" width="75%" />
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/tyr-substitution.png" width="75%" />
+
 
 また、DAJIN2はサンプルに含まれる代表的なSVアレル(Insertion, Deletion, Inversion)を抽出し、SV箇所を下線で色付けします。  
 以下は、Inversion（下線紫色）の両端に欠失（水色）および挿入（赤色）が認められる例です：  
 
-<img src="https://private-user-images.githubusercontent.com/15861316/407202971-3bfdc2e5-f2a4-451d-b9ef-02cfecb31f75.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzgwNDU0NTksIm5iZiI6MTczODA0NTE1OSwicGF0aCI6Ii8xNTg2MTMxNi80MDcyMDI5NzEtM2JmZGMyZTUtZjJhNC00NTFkLWI5ZWYtMDJjZmVjYjMxZjc1LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTAxMjglMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwMTI4VDA2MTkxOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTE0ZGFkMjEzMjIzNDc3ZTg2ZWVmNWJmYzY3ZWVhY2RhYWRkZmMyZWNlYzFmYjY4NDQzMDk0YzRmODM5MzViNTUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.8BvLxEwcjSCFDUBAgNWocF3JQO_sQ-t8sibezswKAeo" width="75%" />
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
+
 
 ## 3. MUTATION_INFO
 

@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 import plotly.express as px
+
 from DAJIN2.utils import io
 from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
 
@@ -117,6 +118,11 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         fig.write_image(f"{output_filename}.pdf")
     except Exception:
         pass
+
+
+###################################################################
+# main
+###################################################################
 
 
 def report(NAME: str) -> None:

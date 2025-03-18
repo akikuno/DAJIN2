@@ -19,13 +19,17 @@ def convert_to_html(
     TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]
 ) -> str:
     allele = header.split("_")[1]
-    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "consensus", "midsv", f"{allele}.jsonl")
+    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}.jsonl")
+    is_sv_allele = False
     if path_midsv_sv.exists():
+        is_sv_allele = True
         midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
     else:
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
-    return to_html(midsv_sv_allele, cons_midsv_tag, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}")
+    return to_html(
+        midsv_sv_allele, cons_midsv_tag, allele, is_sv_allele, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}"
+    )
 
 
 ##################################################
@@ -36,7 +40,8 @@ def convert_to_html(
 def export_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str, cons_sequence: dict) -> None:
     for header, sequence in cons_sequence.items():
         path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta")
-        path_output.write_text(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
+        with open(path_output, "w", newline="\n", encoding="utf-8") as f:
+            f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
 
 
 def parse_fasta(file_path: Path) -> tuple[str, str]:
@@ -54,13 +59,15 @@ def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
     for fasta in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("*.fasta"):
         header, sequence = parse_fasta(fasta)
         path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{header}.fasta")
-        path_output.write_text(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
+        with open(path_output, "w", newline="\n", encoding="utf-8") as f:
+            f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
 
 
 def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_midsv_tags: dict[list]) -> None:
     for header, cons_midsv_tag in cons_midsv_tags.items():
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
-        path_output.write_text(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_midsv_tag))
+        with open(path_output, "w", newline="\n", encoding="utf-8") as f:
+            f.write(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_midsv_tag))
 
 
 # TODO: Implement to_vcf

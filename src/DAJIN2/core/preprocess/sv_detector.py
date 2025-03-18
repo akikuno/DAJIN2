@@ -216,7 +216,7 @@ def get_midsv_consensus_by_label(
             for start, sv_size in consensus_index_and_sv_size.items():
                 if sv_size == 0:  # Skip if the SV size is 0
                     continue
-                end = start + sv_size
+                end = start + sv_size - 1
                 if sv_type == "deletion":
                     midsv_tags_control = [
                         tag if not (start <= i <= end) else "-" + tag[1:] for i, tag in enumerate(midsv_tags_control)
@@ -295,7 +295,9 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     index_converter_control = process_sv_indices(path_midsv_control, sv_type, mutation_loci, coverage_control)
 
     index_and_sv_size_sample = extract_sv_features(path_midsv_sample, sv_type, mutation_loci, index_converter_sample)
-    index_and_sv_size_control = extract_sv_features(path_midsv_control, sv_type, mutation_loci, index_converter_control)
+    index_and_sv_size_control = extract_sv_features(
+        path_midsv_control, sv_type, mutation_loci, index_converter_control
+    )
 
     all_sv_indices = {
         key

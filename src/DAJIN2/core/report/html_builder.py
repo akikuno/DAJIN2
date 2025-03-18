@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 ###############################################################################
 # HTML Builder
 ###############################################################################
@@ -60,37 +62,18 @@ HTML_HEADER = """<!DOCTYPE html>
             background-color: #98d98e;
         }
 
-        .Inv {
-            font-weight: bold;
-            border: 0.1em solid;
-            background-color: #CAB5FF;
-        }
-
         .Unknown {
             font-weight: bold;
             border: 0.1em solid;
             background-color: #c0c6c9;
         }
 
-        .Ins_Allele {
-            font-weight: bold;
-            text-decoration: underline;
-            text-decoration-color: #ED5F5F;
-            text-decoration-thickness: 3px;
-        }
-
-        .Del_Allele {
-            font-weight: bold;
-            text-decoration: underline;
-            text-decoration-color: #48C0F0;
-            text-decoration-thickness: 3px;
-        }
-
-        .Inv_Allele {
+        .Inv {
             font-weight: bold;
             text-decoration: underline;
             text-decoration-color: #7F4DFF;
             text-decoration-thickness: 3px;
+            text-underline-offset: auto;
         }
     </style>
 </head>
@@ -103,13 +86,8 @@ HTML_LEGEND = """
     <span class="Ins">Insertion</span>
     <span class="Del">Deletion</span>
     <span class="Sub">Substitution</span>
-    <span class="Inv">Inversion</span>
     <span class="Unknown">Unknown</span>
-    <br>
-    <span>SV:</span>
-    <span class="Ins_Allele">Insertion allele</span>
-    <span class="Del_Allele">Insertion allele</span>
-    <span class="Inv_Allele">Inversion allele</span>
+    <span class="Inv">Inversion</span>
 </p>
 <hr>
 """
@@ -125,39 +103,82 @@ HTML_FOOTER = """
 ###############################################################################
 
 
-def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
-    """Add an HTML class for a colored underline to regions corresponding to SVs (indels, inversions)."""
-    html_sv_allele = []
+def get_inversion_range(midsv_sv_allele) -> list[tuple[int, int]]:
+    inversion_range = []
+    prev_inversion = False
+    inversion_start = -1
+    for i, tag_sv in enumerate(midsv_sv_allele):
+        if tag_sv.islower() and prev_inversion is False:
+            inversion_start = i
+            prev_inversion = True
+        elif not tag_sv.islower() and prev_inversion is True:
+            inversion_range.append((inversion_start, i - 1))
+            inversion_start = -1
+            prev_inversion = False
+
+        # Last tag is inversion
+        if i == len(midsv_sv_allele) - 1 and prev_inversion is True:
+            inversion_range.append((inversion_start, i))
+
+    return inversion_range
+
+
+def get_insertion_range(midsv_sv_allele) -> list[tuple[int, int]]:
+    insertion_range = []
     idx = 0
-    while idx < len(misdv_sv_allele):
-        midsv_tag = misdv_sv_allele[idx]
+    for i, tag_sv in enumerate(midsv_sv_allele):
+        if tag_sv.startswith("+"):
+            insertion_start = i + idx
+            insertion_end = insertion_start + tag_sv.count("|") - 1
+            insertion_range.append((insertion_start, insertion_end))
+            idx += insertion_end
+    return insertion_range
 
-        # Insertion
-        if midsv_tag.startswith("+"):
-            html_sv_allele.append("<span class='Ins_Allele'>")
-            insertions, last_tag = midsv_tag.split("|")[:-1], midsv_tag.split("|")[-1]
-            ins_seq = ["=" + ins[1] for ins in insertions]
-            html_sv_allele.extend(ins_seq)
-            html_sv_allele.append("</span>")
-            html_sv_allele.append(last_tag)
 
-        # Inversion
-        elif midsv_tag.islower():
-            html_sv_allele.append("<span class='Inv_Allele'>")
-            # Enclose consecutive inversion within a single span.
-            html_sv_allele.append(midsv_tag)
-            while idx < len(misdv_sv_allele) - 1 and misdv_sv_allele[idx + 1].islower():
-                html_sv_allele.append(misdv_sv_allele[idx + 1])
-                idx += 1
-            html_sv_allele.append("</span>")
+def add_sv_class(cons_midsv_tag, sv_range, class_name: str) -> list[str]:
+    sv_range = iter(sv_range)
+    highlight_sv_allele = []
 
-        # No SV
+    sv_start = -1
+    sv_end = -1
+    for i, tag_sample in enumerate(cons_midsv_tag):
+        if sv_start == -1 or i == sv_end + 1:
+            try:
+                sv_start, sv_end = next(sv_range)
+            except StopIteration:
+                pass
+        if i == sv_start == sv_end:
+            highlight_sv_allele.append(f"<span class='{class_name}'>{tag_sample}</span>")
+        elif i == sv_start:
+            highlight_sv_allele.append(f"<span class='{class_name}'>{tag_sample}")
+        elif i == sv_end:
+            highlight_sv_allele.append(f"{tag_sample}</span>")
         else:
-            html_sv_allele.append(midsv_tag)
+            highlight_sv_allele.append(tag_sample)
 
-        idx += 1
+    return highlight_sv_allele
 
-    return html_sv_allele
+
+def append_inversion_allele(midsv_sv_allele, cons_midsv_tag) -> list[str]:
+    inversion_range = get_inversion_range(midsv_sv_allele)
+    return add_sv_class(cons_midsv_tag, inversion_range, "Inv")
+
+
+def append_insertion_allele(midsv_sv_allele, cons_midsv_tag) -> list[str]:
+    insertion_range = get_insertion_range(midsv_sv_allele)
+    return add_sv_class(cons_midsv_tag, insertion_range, "Ins_Allele")
+
+
+def split_html_tags(highlight_sv_allele: list[str]) -> list[str]:
+    """
+    Splits a list of strings by HTML tags.
+
+    Example:
+        ["<span>=A</span>", "<span>-C", "=C", "</span>"]
+        -> ["<span>", "=A", "</span>", "<span>", "-C", "=C", "</span>"]
+    """
+    pattern = r"(<[^>]+>)"  # Regular expression to capture HTML tags
+    return [part for text in highlight_sv_allele for part in re.split(pattern, text) if part]
 
 
 ###############################################################################
@@ -165,54 +186,69 @@ def highlight_sv_regions(misdv_sv_allele: list[str]) -> list[str]:
 ###############################################################################
 
 
-def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str]) -> list[str]:
+def embed_mutations_to_html(highlight_sv_allele: list[str]) -> list[str]:
     idx = 0
-    idx_sv_allele = 0
     html_parts = ["<p class='p_seq'>"]
 
-    while idx_sv_allele < len(html_sv_allele) and idx < len(midsv_consensus):
-        tag_sv_allele = html_sv_allele[idx_sv_allele]
-        if tag_sv_allele.startswith("<"):
-            html_parts.append(tag_sv_allele)
-            idx_sv_allele += 1
-            continue
+    while idx < len(highlight_sv_allele):
+        tag_sample = highlight_sv_allele[idx]
 
-        tag_sample = midsv_consensus[idx]
+        if tag_sample.startswith("<"):  # HTML tag
+            html_parts.append(tag_sample)
+            idx += 1
+            continue
 
         # Insertion
         if tag_sample.startswith("+"):
             insertions, last_tag = tag_sample.split("|")[:-1], tag_sample.split("|")[-1]
             insertions = "".join(ins[-1] for ins in insertions)
-            html_parts.append("<span class='Ins'>" + "".join(insertions) + "</span>")
-
-            if last_tag.startswith("-"):
-                html_parts.append("<span class='Del'>" + last_tag[-1] + "</span>")
-            else:  # match or substitution
-                html_parts.append(last_tag[-1])
+            html_parts.append("<span class='Ins'>" + "".join(insertions) + "</span>" + last_tag[-1])
+            idx += 1
+            continue
 
         # Substitution
-        elif tag_sample.startswith("*"):
-            substitutions = [tag_sample[-1]]
-            while idx < len(midsv_consensus) - 1 and midsv_consensus[idx + 1].startswith("*"):
-                substitutions.append(midsv_consensus[idx + 1][-1])
-                idx_sv_allele += 1
+        if tag_sample.startswith("*"):
+            substitutions = []
+            while idx < len(highlight_sv_allele) and highlight_sv_allele[idx].startswith("*"):
+                substitutions.append(highlight_sv_allele[idx][-1])
                 idx += 1
             html_parts.append("<span class='Sub'>" + "".join(substitutions) + "</span>")
+            continue
 
         # Deletion
-        elif tag_sample.startswith("-"):
-            deletions = [tag_sample[-1]]
-            while idx < len(midsv_consensus) - 1 and midsv_consensus[idx + 1].startswith("-"):
-                deletions.append(midsv_consensus[idx + 1][-1])
-                idx_sv_allele += 1
+        if tag_sample.startswith("-"):
+            deletions = []
+            while idx < len(highlight_sv_allele) and highlight_sv_allele[idx].startswith("-"):
+                deletions.append(highlight_sv_allele[idx][-1])
                 idx += 1
             html_parts.append("<span class='Del'>" + "".join(deletions) + "</span>")
+            continue
+
+        # Inversion: Just convert to upper case
+        if tag_sample.islower() and not tag_sample.startswith("<"):  # avoid HTML span tag
+            inversions = []
+            while (
+                idx < len(highlight_sv_allele)
+                and highlight_sv_allele[idx].islower()
+                and not highlight_sv_allele[idx].startswith("<")
+            ):
+                tag_inversion = highlight_sv_allele[idx].upper()
+                if tag_inversion.startswith("*"):  # Substitution
+                    inversions.append("<span class='Sub'>" + tag_inversion[-1] + "</span>")
+                elif tag_inversion.startswith("-"):  # Deletion
+                    inversions.append("<span class='Del'>" + tag_inversion[-1] + "</span>")
+                elif tag_inversion.startswith("+"):  # Insertion
+                    tag_insertion, tag_last = tag_inversion.split("|")[:-1], tag_inversion.split("|")[-1]
+                    insertion = "".join(ins[-1] for ins in tag_insertion)
+                    inversions.append("<span class='Ins'>" + "".join(insertion) + "</span>" + tag_last[-1])
+                else:
+                    inversions.append(tag_inversion[-1])
+                idx += 1
+            html_parts.append("".join(inversions))
+            continue
 
         # Othres
-        else:
-            html_parts.append(tag_sample[-1])
-
-        idx_sv_allele += 1
+        html_parts.append(tag_sample[-1])
         idx += 1
 
     html_parts.append("</p>")
@@ -225,19 +261,29 @@ def embed_mutations_to_html(html_sv_allele: list[str], midsv_consensus: list[str
 ###############################################################################
 
 
-def to_html(midsv_sv_allele: list[str], midsv_consensus: list[str:], description: str = "") -> str:
+def to_html(
+    midsv_sv_allele: list[str], cons_midsv_tag: list[str:], allele: str, is_sv_allele: bool, description: str = ""
+) -> str:
     """Output HTML string showing a sequence with mutations colored"""
     description_str = f"<h1>{description}</h1>" if description else ""
-    html_sv_allele = highlight_sv_regions(midsv_sv_allele)
-    html_parts = embed_mutations_to_html(html_sv_allele, midsv_consensus)
-    html_parts = "".join(html_parts)
+    if allele.startswith("insertion") and is_sv_allele:
+        highlight_sv_allele = append_insertion_allele(midsv_sv_allele, cons_midsv_tag)
+    elif allele.startswith("inversion") and is_sv_allele:
+        highlight_sv_allele = append_inversion_allele(midsv_sv_allele, cons_midsv_tag)
+    else:
+        highlight_sv_allele = cons_midsv_tag
+
+    highlight_sv_allele = split_html_tags(highlight_sv_allele)
+
+    html_parts = embed_mutations_to_html(highlight_sv_allele)
+    html_parts_str = "".join(html_parts)
 
     return "\n".join(
         [
             HTML_HEADER,
             description_str,
             HTML_LEGEND,
-            html_parts,
+            html_parts_str,
             HTML_FOOTER,
         ]
     )

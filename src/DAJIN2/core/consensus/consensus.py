@@ -5,8 +5,9 @@ from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
 
+from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
 from DAJIN2.utils import io
-from DAJIN2.utils.cssplits_handler import call_sequence, reflect_sv_deletion_in_midsv
+from DAJIN2.utils.cssplits_handler import call_sequence
 
 ###########################################################
 # call position weight matrix (cons_pergentage)
@@ -97,11 +98,13 @@ def call_consensus(
         cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
-        path_midsv_sv_deletion = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
+        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
 
-        if allele.startswith("deletion") and path_midsv_sv_deletion.exists():
-            midsv_sv_deletion = list(io.read_jsonl(path_midsv_sv_deletion))
-            cons_midsv_tag = reflect_sv_deletion_in_midsv(cons_midsv_tag, midsv_sv_deletion)
+        if path_sv_midsv_tag.exists():
+            sv_midsv_tag = list(io.read_jsonl(path_sv_midsv_tag))
+            cons_midsv_tag = annotate_sv_allele(cons_midsv_tag, sv_midsv_tag)
+            if allele.startswith("deletion"):
+                cons_midsv_tag = annotate_insertions_within_deletion(cons_midsv_tag, sv_midsv_tag)
 
         key = ConsensusKey(allele, label, clust[0]["PERCENT"])
         cons_percentages[key] = cons_percentage

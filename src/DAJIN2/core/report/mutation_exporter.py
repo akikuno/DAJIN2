@@ -3,6 +3,8 @@ from __future__ import annotations
 from itertools import groupby
 from pathlib import Path
 
+import pandas as pd
+
 from DAJIN2.utils.cssplits_handler import revcomp_cssplits
 
 ###########################################################
@@ -10,12 +12,12 @@ from DAJIN2.utils.cssplits_handler import revcomp_cssplits
 ###########################################################
 
 
-def annotate_inversion(cssplits: list[str]) -> list[str]:
-    return ["@" + cs if cs[-1].islower() else cs for cs in cssplits]
+def annotate_inversion(midsv_tag: list[str]) -> list[str]:
+    return ["@" + tag if tag.islower() else tag for tag in midsv_tag]
 
 
-def group_by_mutation(cssplits: list[str]) -> list[list[str]]:
-    return [list(group) for _, group in groupby(cssplits, key=lambda x: x[0])]
+def group_by_mutation(midsv_tag: list[str]) -> list[list[str]]:
+    return [list(group) for _, group in groupby(midsv_tag, key=lambda x: x[0])]
 
 
 ###########################################################
@@ -67,9 +69,10 @@ def _handle_insertion(group, genome, start, end, header, chromosome) -> tuple[li
 
 
 def _handle_inversion(group, genome, start, end, header, chromosome) -> tuple[list[list[str]], int, int]:
-    end += len(group) - 1
-    size = len(group)
-    seq = "".join([g[-1].upper() for g in group])
+    count_deletion = sum(1 for g in group if "-" in g)
+    size = len(group) - count_deletion
+    end += size - 1
+    seq = "".join([g[-1].upper() for g in group if "-" not in g])
     result = [header, genome, chromosome, start, end, f"{size}bp inversion: {seq}"]
     end += 1
     start = end
@@ -116,7 +119,7 @@ def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, head
 def export_to_csv(
     TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_midsv_tags: dict[str, list[str]]
 ) -> None:
-    results = [["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]]
+    results = []
     for header, cons_midsv_tag in cons_midsv_tags.items():
         if GENOME_COORDINATES.get("strand") == "-":
             cons_midsv_tag = revcomp_cssplits(cons_midsv_tag)
@@ -125,7 +128,8 @@ def export_to_csv(
         result = report_mutations(cons_midsv_tag_grouped, GENOME_COORDINATES, header)
         results.extend(result)
 
-    results_csv = "\n".join([",".join(map(str, r)) for r in results]) + "\n"
+    col_names = ["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]
+    df_results = pd.DataFrame(results, columns=col_names).sort_values(by=["Allele ID", "Start"])
 
     path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")
-    path_output.write_text(results_csv)
+    df_results.to_csv(path_output, index=False, encoding="utf-8", lineterminator="\n")

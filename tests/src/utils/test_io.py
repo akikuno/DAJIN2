@@ -20,7 +20,7 @@ def test_sanitize_name_with_invalid_characters():
 
 
 def test_sanitize_name_with_whitespace():
-    assert io.sanitize_name("  leading_space") == "leading_space"
+    assert io.sanitize_name("  leading space") == "leading-space"
     assert io.sanitize_name("trailing space ") == "trailing-space"
 
 

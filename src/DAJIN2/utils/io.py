@@ -224,11 +224,43 @@ def convert_to_posix(path: str) -> str:
 
 def sanitize_name(file_name: Path | str) -> str:
     """
-    Sanitize the file name by replacing invalid characters on Windows OS with '-'
+    Sanitize the file name by replacing invalid characters on Windows OS with '-'.
+
+    The regular expression r'[<>:"/\\|?*\x00-\x1f .]' matches the following characters:
+
+    - **Windows prohibited characters**:
+        `<`, `>`, `:`, `"`, `/`, `\\`, `|`, `?`, `*`
+    - **Control characters (ASCII \x00 - \x1f)**:
+        Examples: `\t` (tab), `\n` (newline), `\r` (carriage return)
+    - **Period `.`**:
+        Matches as a literal character inside `[]`. Used to remove trailing or leading dots.
+    - **Space `" "`**:
+        Spaces are explicitly included (`.` is preceded by `" "` in the regex),
+        so they are replaced with `-` as well.
+
+    Example:
+        >>> sanitize_name("test file.txt")
+        'test-file-txt'
+        >>> sanitize_name("invalid|name?.txt")
+        'invalid-name-.txt'
+        >>> sanitize_name(" leading space.txt ")
+        'leading-space-txt'
+        >>> sanitize_name("file name with spaces")
+        'file-name-with-spaces'
+
+    Args:
+        file_name (Path | str): The original file name.
+
+    Returns:
+        str: The sanitized file name with invalid characters replaced by '-'.
+
+    Raises:
+        ValueError: If the provided file name is empty or contains only whitespace.
     """
     file_name = str(file_name).strip()
     if not file_name:
         raise ValueError("Provided name is empty or consists only of whitespace")
+
     forbidden_chars = r'[<>:"/\\|?*\x00-\x1F .]'
 
     return re.sub(forbidden_chars, "-", file_name)

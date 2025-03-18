@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.sparse import csr_matrix, spmatrix
-from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.cluster import BisectingKMeans
 from sklearn.metrics import silhouette_score
 
 from DAJIN2.core.clustering.score_handler import subset_scores
@@ -32,14 +32,16 @@ def optimize_labels(X: spmatrix, coverage_sample: int, coverage_control: int) ->
 
     for n_clusters in range(2, coverage_sample):
         np.random.seed(seed=1)
-        labels_all = AgglomerativeClustering(n_clusters=n_clusters).fit_predict(X).tolist()
+        labels_all = BisectingKMeans(n_clusters=n_clusters, random_state=1).fit_predict(X).tolist()
 
         labels_sample = labels_all[:coverage_sample]
         labels_control = labels_all[coverage_sample:]
 
         num_labels_control = count_number_of_clusters(labels_control, coverage_control)
-
-        current_silhouette_score = silhouette_score(X, labels_all)
+        if len(Counter(labels_sample)) > 1:
+            current_silhouette_score = silhouette_score(X, labels_all)
+        else:
+            current_silhouette_score = -1
 
         if prev_silhouette_score >= current_silhouette_score or num_labels_control > 1:
             break
@@ -63,12 +65,14 @@ def return_labels(
 
     # Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
     # TODO: This KMeans for X_control may become unnecessary because we removed sequence error reads in the previous step
-    labels_control = KMeans(n_clusters=2, random_state=1).fit_predict(X_control)
+    labels_control = BisectingKMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
     scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
 
     scores_sample = list(io.read_jsonl(path_score_sample))
     X = np.array(list(chain(scores_sample, scores_control_subset)))
+
+    X = csr_matrix(X)
 
     coverage_sample = io.count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
