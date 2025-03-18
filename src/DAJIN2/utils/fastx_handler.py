@@ -10,6 +10,7 @@ from pathlib import Path
 
 import mappy
 import pysam
+
 from DAJIN2.utils.io import detect_fastx_format, is_gzip_file, read_fasta, read_fastq, sanitize_name, write_fastq
 
 #################################################

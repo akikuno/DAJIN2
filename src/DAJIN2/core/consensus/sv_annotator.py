@@ -247,4 +247,6 @@ def annotate_insertions_within_deletion(cons_midsv_tag: list[str], sv_midsv_tag:
     is_insertions = detect_insertions(tag_flanked)
     tag_insertion = convert_tags_to_insertion(tag_flanked, is_insertions)
     tag_insertion_merged = merge_inserted_sequences(tag_insertion, is_insertions)
-    return annotate_insertion(cons_midsv_tag, sv_midsv_tag, tag_insertion_merged, flanked_ranges, index_end_of_deletion)
+    return annotate_insertion(
+        cons_midsv_tag, sv_midsv_tag, tag_insertion_merged, flanked_ranges, index_end_of_deletion
+    )
