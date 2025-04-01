@@ -309,18 +309,22 @@ read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化した
 > とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
 
 
-# 📣 フィードバックと行動規範
+# 📣 お問い合わせ
+
+ご質問やバグ報告、ご意見・ご要望など、皆さまのフィードバックをお待ちしています。
+ご報告は、以下のGoogleフォームからお願いいたします。  
+👉 [Googleフォーム](https://forms.gle/r4YRs1th7NGHfDcS9)
+
+また、GitHubアカウントをお持ちの方は、Issueからもご報告頂けます（日本語可）
+👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) 。  
 
 > [!NOTE]
 > よくあるご質問については、[こちら](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ_JP.md)ををご覧ください。
 
 
-他の質問、バグ報告、フィードバックについて、皆さまからのご意見をお待ちしています。  
-報告には [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) をご利用ください（日本語でも大丈夫です）。  
+# 🤝 行動規範
 
-<!-- # 🤝 コントリビューター行動規範 -->
-
-なお、本プロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
+本プロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
 
 # 📄 参考文献
 

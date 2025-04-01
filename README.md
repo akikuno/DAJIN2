@@ -304,14 +304,17 @@ The **Allele type** includes:
 
 # 📣 Feedback and Support
 
-> [!NOTE]
-> For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
+We welcome your questions, bug reports, and feedback.  
+Please use the following Google Form to submit your report:  
+👉 [Google Form](https://forms.gle/r4YRs1th7NGHfDcS9)  
 
-
-For more questions, bug reports, or other forms of feedback, we'd love to hear from you!  
-Please use [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) for all reporting purposes.  
+If you have a GitHub account, you can also submit reports via  
+👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) 
 
 Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
+
+> [!NOTE]
+> For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
 
 
 # 🤝 Code of Conduct
