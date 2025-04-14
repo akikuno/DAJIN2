@@ -12,7 +12,30 @@
 
 <!-- ############################################################# # -->
 
-# v0.6.1 (2025-03-18)
+# v0.6.2 (2025-MM-DD)
+
+## 🐛 Bug Fixes
+
++ Fix CSV header validation error when processing files with BOM (Byte Order Mark). Issue [#88](https://github.com/akikuno/DAJIN2/issues/88). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
+
+<!-- ############################################################# # -->
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<!-- ############################################################# # -->
+
+<details>
+<summary> v0.6.1 (2025-03-18) </summary>
 
 ## 🚀 Performance
 
@@ -48,22 +71,9 @@
 + Inversions are underlined since they can coexist with other mutations, while others are highlighted. Issue #84 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ccdc98b97052dbbb27b8c75b3dd1b888620a4e11)]
 
 + Reflect the mutations (indel, substitution) within the inversion in HTML and MUTATION_LOCI. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d0316c52cc129cf8d104cd1cce9c5eedff9898ce)]
++ 
+</details>
 
-<!-- ############################################################# # -->
-
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
-
-
-<!-- ############################################################# # -->
 
 <details>
 <summary> v0.6.0 (2025-02-20) </summary>

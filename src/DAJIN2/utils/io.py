@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import gzip
 import hashlib
 import json
@@ -71,21 +70,7 @@ def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
 
 
 def read_csv(file_path: str | Path) -> list[dict[str, str]]:
-    """Load data from a CSV file."""
-    with open(file_path) as csvfile:
-        header = [field.strip() for field in next(csv.reader(csvfile))]
-
-        records = []
-        for row in csv.reader(csvfile):
-            if not row:  # Skip empty rows
-                continue
-            if all(element is None for element in row):  # Skip rows with all None values
-                continue
-            row_trimmed = [field.strip() for field in row]
-            row_data = dict(zip(header, row_trimmed))
-            records.append(row_data)
-
-        return records
+    return pd.read_csv(file_path, encoding="utf-8-sig").to_dict(orient="records")
 
 
 def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:

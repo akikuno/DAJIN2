@@ -73,11 +73,13 @@ def validate_headers_of_batch_file(headers: set[str], filepath: str) -> None:
     accepted_headers = {"sample", "control", "allele", "name", "genome"}
 
     if not required_headers.issubset(headers):
-        raise ValueError(f'{filepath} must contain "sample", "control", "allele" and "name" in the header')
+        raise ValueError(
+            f'{filepath} must contain "sample", "control", "allele" and "name" in the header. Currently, it contains {headers}.'
+        )
 
     if not headers.issubset(accepted_headers):
         raise ValueError(
-            f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome".'
+            f'Accepted header names of {filepath} are "sample", "control", "allele", "name", or "genome". Currently, it contains {headers}.'
         )
 
 
