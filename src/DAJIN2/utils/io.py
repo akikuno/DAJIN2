@@ -64,13 +64,28 @@ def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> Non
 # =========================================================
 
 
+def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Strip whitespace from column names and string values in all cells.
+    """
+    df.columns = df.columns.str.strip()
+    return df.map(lambda x: x.strip() if isinstance(x, str) else x)
+
+
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
-    """Load data from an Excel file."""
-    return pd.read_excel(file_path).to_dict(orient="records")
+    """
+    Load data from an Excel file, stripping whitespace.
+    """
+    df = pd.read_excel(file_path)
+    return _clean_dataframe(df).to_dict(orient="records")
 
 
 def read_csv(file_path: str | Path) -> list[dict[str, str]]:
-    return pd.read_csv(file_path, encoding="utf-8-sig").to_dict(orient="records")
+    """
+    Load data from a CSV file with BOM handling, stripping whitespace.
+    """
+    df = pd.read_csv(file_path, encoding="utf-8-sig")
+    return _clean_dataframe(df).to_dict(orient="records")
 
 
 def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:
