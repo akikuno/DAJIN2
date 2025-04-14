@@ -16,7 +16,7 @@
 
 ## 🐛 Bug Fixes
 
-+ Fix CSV header validation error when processing files with BOM (Byte Order Mark). Issue [#88](https://github.com/akikuno/DAJIN2/issues/88). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
++ Fix CSV header validation error when processing files with BOM (Byte Order Mark). Issue [#88](https://github.com/akikuno/DAJIN2/issues/88). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/2bbf405a53d1fe431999cd368f55a3f0e422622b)]
 
 <!-- ############################################################# # -->
 
