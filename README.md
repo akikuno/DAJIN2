@@ -206,6 +206,10 @@ For this purpose, a CSV or Excel file consolidating the sample information is re
 > [!NOTE]
 > For guidance on how to compile sample information, please refer to [this document](https://docs.google.com/presentation/d/e/2PACX-1vSMEmXJPG2TNjfT66XZJRzqJd82aAqO5gJrdEzyhn15YBBr_Li-j5puOgVChYf3jA/embed?start=false&loop=false&delayms=3000).
 
+> [!NOTE]
+> It is **recommended to use the same value in the `name` column for samples belonging to the same experiment.**  
+> Assigning identical names enables parallel processing, thereby improving efficiency.
+
 
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
