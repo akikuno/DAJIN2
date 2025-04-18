@@ -208,8 +208,9 @@ DAJIN2 \
 > サンプル情報のまとめ方は、[こちら](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000)をご参照ください。  
 
 > [!NOTE]
-> `name`列は、**同一の実験系であれば同じ名称をご使用いただくことを推奨しております。**  
-> 同一名称とすることで、処理が並列化され、効率的に実行されます。
+> **同じ実験に属するサンプルには、`name`列に同じ値を使用することを推奨します。**  
+> 同一の名前を使用することで、処理が並列化され、効率が向上します。  
+> こちらが一例です 👉 [batch.csv](https://github.com/akikuno/DAJIN2/blob/main/examples/example_batch/batch.csv)
 
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [-h]
