@@ -16,7 +16,6 @@ body:
       attributes:
           label: "🔖 DAJIN2 Version"
           description: "Required: Specify the DAJIN2 version you are using. You can find this information in the `DAJIN2 --version` command."
-      placeholder: "0.6.0"
       validations:
           required: true
 
