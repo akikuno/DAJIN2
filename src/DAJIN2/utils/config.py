@@ -26,8 +26,8 @@ class DeferredFileHandler(logging.FileHandler):
 
 
 def get_logfile() -> Path:
-    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    return Path(f"DAJIN2_log_{current_time}_{uuid.uuid4()}.txt")
+    current_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    return Path(f"DAJIN2_log_{current_time}.txt")
 
 
 def set_logging(path_logfile: Path) -> logging.Logger:

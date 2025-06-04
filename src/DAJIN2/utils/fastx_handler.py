@@ -81,7 +81,7 @@ def save_bam_files_to_single_fastq(TEMPDIR: Path, path_bam_files: list[Path], sa
     pysam.merge("-f", "-o", str(path_concatenated_bam), *path_bam_files)
 
     path_concatenated_fastq = Path(TEMPDIR, sample_name, "fastq", f"{sample_name}.fastq.gz")
-    convert_bam_to_fastq(path_concatenated_fastq, str(path_concatenated_bam))
+    convert_bam_to_fastq(str(path_concatenated_bam), path_concatenated_fastq)
 
     path_concatenated_bam.unlink()
 
