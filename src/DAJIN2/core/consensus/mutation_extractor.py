@@ -111,15 +111,14 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
 
         thresholds = get_thresholds(path_indels_normalized_sample, path_indels_normalized_control)
 
-        is_consensus = True
-
         mutation_loci = extract_mutation_loci(
+            path_consensus_sample,
             sequence,
             path_indels_normalized_sample,
             path_indels_normalized_control,
             path_knockin,
-            thresholds,
-            is_consensus,
+            thresholds=thresholds,
+            is_consensus=True,
         )
 
         io.save_pickle(mutation_loci, Path(path_consensus, "mutation_loci.pickle"))
