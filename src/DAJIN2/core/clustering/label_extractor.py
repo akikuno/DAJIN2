@@ -7,7 +7,7 @@ from pathlib import Path
 from DAJIN2.core.clustering.clustering import return_labels
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 from DAJIN2.core.clustering.score_handler import annotate_score, make_score
-from DAJIN2.core.clustering.strand_bias_handler import is_strand_bias
+from DAJIN2.core.clustering.strand_bias_handler import count_strand_distribution
 from DAJIN2.utils import io
 
 
@@ -15,18 +15,19 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
     labels_result = []
     max_label = 1
 
-    strand_bias = is_strand_bias(Path(TEMPDIR, CONTROL_NAME, "midsv", "control", f"{CONTROL_NAME}.jsonl"))
+    strand_sample = count_strand_distribution(Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl"))
     classif_sample.sort(key=lambda x: x["ALLELE"])
     min_cluster_size = max(5, int(len(classif_sample) * 0.5 // 100))  # 0.5% of the samples
 
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
         # Cache data to temporary files
 
-        # For Insertion/Inversion allele
+        # For Insertion/Inversion allele # TODO: insertion/inversionアレルの名称は変わった可能性がある
         path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}.jsonl")
         if not path_control.exists():
             path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}.jsonl")
 
+        # Write the group to a temporary JSONL file
         unique_id = str(uuid.uuid4())
         path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_{unique_id}.jsonl")
         io.write_jsonl(data=group, file_path=path_sample)
@@ -58,7 +59,7 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         io.write_jsonl(data=scores_control, file_path=path_score_control)
 
         # Extract labels
-        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_bias)
+        labels = return_labels(path_score_sample, path_score_control, path_sample, strand_sample)
         labels_result += relabel_with_consective_order(labels, start=max_label)
 
         # Remove temporary files

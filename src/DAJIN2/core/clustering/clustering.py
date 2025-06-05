@@ -56,7 +56,7 @@ def get_label_most_common(labels: list[int]) -> int:
 
 
 def return_labels(
-    path_score_sample: Path, path_score_control: Path, path_sample: Path, strand_bias_in_control: bool
+    path_score_sample: Path, path_score_control: Path, path_sample: Path, strand_control: dict[str, int]
 ) -> list[int]:
     np.random.seed(seed=1)
 
@@ -79,7 +79,6 @@ def return_labels(
     labels = optimize_labels(X, coverage_sample, coverage_control)
 
     # Re-allocate clusters with strand bias to clusters without strand bias
-    if strand_bias_in_control is False:
-        labels = remove_biased_clusters(path_sample, path_score_sample, labels)
+    labels = remove_biased_clusters(path_sample, path_score_sample, labels, strand_control)
 
     return labels

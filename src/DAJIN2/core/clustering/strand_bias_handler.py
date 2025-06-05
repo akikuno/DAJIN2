@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterator
 from pathlib import Path
 
+from scipy.stats import fisher_exact
 from sklearn.tree import DecisionTreeClassifier
 
 from DAJIN2.utils import io
@@ -16,24 +16,20 @@ This module provides functions to determine whether each allele obtained after c
 Re-allocates reads belonging to clusters with strand bias to clusters without strand bias.
 """
 
-# Constants
-STRAND_BIAS_LOWER_LIMIT = 0.2
-STRAND_BIAS_UPPER_LIMIT = 0.8
 
-
-def is_strand_bias(path_control: Path) -> bool:
+def count_strand_distribution(path_midsv: Path) -> dict[str, int]:
     """
-    Determines whether there is a strand bias in sequencing data
-    based on the distribution of '+' and '-' strands.
+    Counts the distribution of '+' and '-' strands in the given control file.
     """
-    count_strand = defaultdict(int)
-    for sample in io.read_jsonl(path_control):
-        count_strand[sample["STRAND"]] += 1
+    strand_count = defaultdict(int)
+    for sample in io.read_jsonl(path_midsv):
+        strand_count[sample["STRAND"]] += 1
 
-    total = count_strand["+"] + count_strand["-"]
-    percentage_plus = count_strand["+"] / total if total > 0 else 0
+    # Ensure '+' and '-' are present for all labels
+    strand_count.setdefault("+", 0)
+    strand_count.setdefault("-", 0)
 
-    return not (STRAND_BIAS_LOWER_LIMIT < percentage_plus < STRAND_BIAS_UPPER_LIMIT)
+    return dict(strand_count)
 
 
 ###############################################################################
@@ -42,37 +38,44 @@ def is_strand_bias(path_control: Path) -> bool:
 ###############################################################################
 
 
-def count_strand(labels: list[int], samples: Iterator[dict[str, str]]) -> tuple[dict[str, int], dict[str, int]]:
-    """Count the occurrences of each strand type by label."""
-    positive_strand_counts_by_labels = defaultdict(int)
-    total_counts_by_labels = defaultdict(int)
+def count_strand_by_label(samples: dict[str, str], labels: list[int]) -> dict[int, dict[str, int]]:
+    """Count the occurrences of each strand type ('+' and '-') for each label."""
+    strand_counts_by_label = defaultdict(lambda: defaultdict(int))
 
     for label, sample in zip(labels, samples):
-        total_counts_by_labels[label] += 1
-        if sample["STRAND"] == "+":
-            positive_strand_counts_by_labels[label] += 1
+        strand_counts_by_label[label][sample["STRAND"]] += 1
 
-    return dict(positive_strand_counts_by_labels), dict(total_counts_by_labels)
+    # Ensure '+' and '-' are present for all labels
+    for counts in strand_counts_by_label.values():
+        counts.setdefault("+", 0)
+        counts.setdefault("-", 0)
+
+    return {label: dict(counts) for label, counts in strand_counts_by_label.items()}
 
 
 def determine_strand_biases(
-    positive_strand_counts_by_labels: dict[str, int], total_counts_by_labels: dict[str, int]
+    strand_counts_by_labels: dict[int, dict[str, int]], strand_sample: dict[str, int]
 ) -> dict[int, bool]:
     """Determine strand biases based on positive strand counts."""
     strand_biases = {}
-    for label, total in total_counts_by_labels.items():
-        positive_strand_count = positive_strand_counts_by_labels.get(label, 0)
-        strand_ratio = positive_strand_count / total
-        strand_biases[label] = not (STRAND_BIAS_LOWER_LIMIT < strand_ratio < STRAND_BIAS_UPPER_LIMIT)
+    for label, strand_counts in strand_counts_by_labels.items():
+        # numerical bias detection
+        plus_ratio = strand_counts["+"] / (strand_counts["+"] + strand_counts["-"])
+        is_biased_ratio = False if 0.2 < plus_ratio < 0.8 else True
+        # statistical bias detection
+        table = [[strand_counts["+"], strand_counts["-"]], [strand_sample["+"], strand_sample["-"]]]
+        res = fisher_exact(table, alternative="two-sided")
+
+        strand_biases[label] = is_biased_ratio and res.pvalue < 0.01
 
     return strand_biases
 
 
-def annotate_strand_bias_by_labels(path_sample: Path, labels: list[int]) -> bool:
+def annotate_strand_bias_by_labels(path_sample: Path, labels: list[int], strand_sample: dict[str, int]) -> bool:
     """Determine whether there is strand bias in the samples based on the provided labels."""
     samples = io.read_jsonl(path_sample)
-    positive_strand_counts_by_labels, total_counts_by_labels = count_strand(labels, samples)
-    return determine_strand_biases(positive_strand_counts_by_labels, total_counts_by_labels)
+    strand_counts_by_labels = count_strand_by_label(samples, labels)
+    return determine_strand_biases(strand_counts_by_labels, strand_sample)
 
 
 def prepare_training_testing_sets(labels, scores, strand_biases) -> tuple[list, list, list]:
@@ -99,16 +102,18 @@ def allocate_labels(labels: list[int], strand_biases: dict[str, bool], dtree, te
     label_predictions = iter(dtree.predict(test_data))
     for i, label in enumerate(labels):
         if strand_biases[label]:
-            labels[i] = next(label_predictions)
+            labels[i] = next(label_predictions).tolist()
     return labels
 
 
-def remove_biased_clusters(path_sample: Path, path_score_sample: Path, labels: list[int]) -> list[int]:
+def remove_biased_clusters(
+    path_sample: Path, path_score_sample: Path, labels: list[int], strand_sample: dict[str, int]
+) -> list[int]:
     """Remove clusters with strand bias by re-labeling based on decision tree predictions.
     Continue until at least one of the samples exhibits strand bias (i.e., do not calculate if all samples exhibit strand bias or, if none of the samples exhibit strand bias) and
     1000 iterations are reached, which serves as a safeguard to prevent infinite loops.
     """
-    strand_biases = annotate_strand_bias_by_labels(path_sample, labels)
+    strand_biases = annotate_strand_bias_by_labels(path_sample, labels, strand_sample)
 
     iteration_count = 0
     labels_corrected = labels
@@ -120,7 +125,7 @@ def remove_biased_clusters(path_sample: Path, path_score_sample: Path, labels: l
         labels_corrected = allocate_labels(labels, strand_biases, dtree, test_data)
 
         # Re-calculate strand biases based on the corrected labels
-        strand_biases = annotate_strand_bias_by_labels(path_sample, labels)
+        strand_biases = annotate_strand_bias_by_labels(path_sample, labels_corrected, strand_sample)
 
         iteration_count += 1
 
