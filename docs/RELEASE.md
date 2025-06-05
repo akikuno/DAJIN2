@@ -18,6 +18,11 @@
 
 + Fix CSV header validation error when processing files with BOM (Byte Order Mark). Issue [#88](https://github.com/akikuno/DAJIN2/issues/88). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/2bbf405a53d1fe431999cd368f55a3f0e422622b)]
 
++ The strand bias detection was too lenient, so the following revisions were made. Issue [#89](https://github.com/akikuno/DAJIN2/issues/89):
+  + In the `preprocessing` step, strand bias was calculated at the nucleotide level, and nucleotides showing bias were excluded. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c69dba52c023731aeb6d5f3c75b7550fcc426961)]
+  + In the `clustering` step, strand bias was calculated at the cluster level, and clusters showing bias were excluded. Issue [#89](https://github.com/akikuno/DAJIN2/issues/89) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cb1286250cd04ab592d81bf532558f29f211f91f)]
+
+
 <!-- ############################################################# # -->
 
 
