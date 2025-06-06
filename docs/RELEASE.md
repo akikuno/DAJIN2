@@ -14,6 +14,11 @@
 
 # v0.6.2 (2025-MM-DD)
 
+## 📝 Documentation
+
++ Update README to clarify hardware requirements Issue: [#91](https://github.com/akikuno/DAJIN2/issues/91), [#92](https://github.com/akikuno/DAJIN2/issues/92)
+
+
 ## 🐛 Bug Fixes
 
 + Fix CSV header validation error when processing files with BOM (Byte Order Mark). Issue [#88](https://github.com/akikuno/DAJIN2/issues/88). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/2bbf405a53d1fe431999cd368f55a3f0e422622b)]

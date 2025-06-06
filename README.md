@@ -14,29 +14,60 @@
 
 [日本語はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
-DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore sequencer target sequencing.
+DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore target sequencing.
 
-The name DAJIN is derived from the phrase 一網**打尽** (Ichimou **DAJIN** or Yīwǎng **Dǎjìn**), symbolizing the concept of capturing everything in one sweep.  
+**DAJIN2** takes its name from the Japanese phrase 一網**打尽** (*Ichimou DAJIN*, or *Yīwǎng Dǎjìn* in Chinese),  
+which means “to capture everything in a single sweep.”  
+This reflects the tool’s design philosophy: to comprehensively detect both intended and unintended genome editing outcomes in one go.
 
 # 🌟 Features
 
-+ **Comprehensive Mutation Detection**: Equipped with the capability to detect genome editing events over a wide range, it can identify a broad spectrum of mutations, from small changes to large structural variations.
-  + DAJIN2 is also possible to detect complex mutations characteristic of genome editing, such as "insertions occurring in regions where deletions have occurred."
-+ **Intuitive Visualization**: The outcomes of genome editing are visualized intuitively, allowing for the rapid and easy identification and analysis of mutations.
-+ **Multi-Sample Compatibility**: Enabling parallel processing of multiple samples. This facilitates efficient progression of large-scale experiments and comparative studies.
++ **Comprehensive Mutation Detection**  
+  DAJIN2 can detect a wide range of genome editing events in nanopore-targeted regions, from point mutations to structural variants.  
+  It is particularly effective at identifying **unexpected mutations** and **complex mutations**, such as insertions within deleted regions.
 
++ **Highly Sensitive Allele Classification**  
+  Supports classification of mosaic alleles, capable of detecting minor alleles present at approximately 1%.
+
++ **Intuitive Visualization**  
+  Genome editing results are visualized in an intuitive manner, enabling rapid and easy identification of mutations.
+
++ **Multi-Sample Support**  
+  Batch processing of multiple samples is supported, allowing efficient execution of large-scale experiments and comparative studies.
+
++ **Simple Installation and Operation**  
+  Requires no specialized computing environment and runs smoothly on a standard laptop.  
+  Easily installable via Bioconda or PyPI, and usable via the command line.  
 
 # 🛠 Installation
 
-## Prerequisites
+## System Requirements
+
+### Hardware
+
+- **Runs on a standard laptop**
+- Recommended memory: 8 GB or more
+
+>[!NOTE]
+> DAJIN2 is the successor to DAJIN, which required a GPU for efficient computation due to its use of deep learning.  
+> In contrast, **DAJIN2 does not use deep learning and does not require a GPU**.  
+> Therefore, it runs smoothly on typical laptops.
+
+### Software
 
 - Python >= 3.9
-- Unix-like environment (Linux, macOS, WSL2, etc.)
+- Unix-based environment (Linux, macOS, WSL2, etc.)
+
+>[!IMPORTANT]
+> **For Windows Users**  
+> DAJIN2 is designed to run in a Linux environment.  
+> If you are using Windows, please use **WSL2 (Windows Subsystem for Linux 2)**.
+
 
 ## From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
-# Setup of Bioconda
+# Setting up Bioconda
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
@@ -142,7 +173,7 @@ Assuming barcode01 is the control and barcode02 is the sample, the respective di
 The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
 
 > [!IMPORTANT]
-> **A header name `>control` and its sequence are nessesary.**
+> **A header name `>control` and its sequence are necessary.**
 
 If there are anticipated alleles (e.g., knock-ins or knock-outs), include their sequences in the FASTA file too. These anticipated alleles can be named arbitrarily.
 
@@ -200,13 +231,13 @@ DAJIN2 \
 
 ## Batch Processing
 
-By using the `batch` subcommand, you can process multiple files simultaneously.  
+By using the `batch` subcommand, you can process multiple samples simultaneously.  
 For this purpose, a CSV or Excel file consolidating the sample information is required.  
 
 > [!NOTE]
 > For guidance on how to compile sample information, please refer to [this document](https://docs.google.com/presentation/d/e/2PACX-1vSMEmXJPG2TNjfT66XZJRzqJd82aAqO5gJrdEzyhn15YBBr_Li-j5puOgVChYf3jA/embed?start=false&loop=false&delayms=3000).
 
-> [!NOTE]
+> [!TIP]
 > It is **recommended to use the same value in the `name` column for samples that belong to the same experiment.**  
 > Using identical names enables parallel processing, thereby improving efficiency.  
 > Here's an example 👉 [batch.csv](https://github.com/akikuno/DAJIN2/blob/main/examples/example_batch/batch.csv)
@@ -264,7 +295,7 @@ DAJIN_Results/tyr-substitution
 
 ## 1. BAM
 
-The BAM directory contains the BAM files of reads classified per allele.  
+The BAM directory contains the BAM files of reads classified by allele.  
 
 > [!NOTE]
 > Specifying a reference genome using the `genome` option will align the reads to that genome.  
@@ -290,9 +321,9 @@ An example of a *Tyr* point mutation is described by its position on the chromos
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
-## 4. resd_summary.xlsx, read_plot.html and read_plot.pdf
+## 4. read_summary.xlsx, read_plot.html and read_plot.pdf
 
-read_summary.xlsx describes the number of reads and presence proportion for each allele.  
+read_summary.xlsx summarizes the number and proportion of reads per allele.  
 Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
 The chart's **Allele type** indicates the type of allele, and **Percent of reads** shows the proportion of reads for each allele.  
 
