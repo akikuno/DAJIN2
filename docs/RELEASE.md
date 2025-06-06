@@ -12,11 +12,11 @@
 
 <!-- ############################################################# # -->
 
-# v0.6.2 (2025-MM-DD)
+# v0.6.2 (2025-06-07)
 
 ## 📝 Documentation
 
-+ Update README to clarify hardware requirements Issue: [#91](https://github.com/akikuno/DAJIN2/issues/91), [#92](https://github.com/akikuno/DAJIN2/issues/92)
++ Update README to clarify hardware requirements Issue: [#91](https://github.com/akikuno/DAJIN2/issues/91), [#92](https://github.com/akikuno/DAJIN2/issues/92) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a7995727dc35944d51c318e6ae0e79ded992c684)]
 
 
 ## 🐛 Bug Fixes
