@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import gzip
 import hashlib
 import json
@@ -65,27 +64,28 @@ def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> Non
 # =========================================================
 
 
+def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Strip whitespace from column names and string values in all cells.
+    """
+    df.columns = df.columns.str.strip()
+    return df.map(lambda x: x.strip() if isinstance(x, str) else x)
+
+
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
-    """Load data from an Excel file."""
-    return pd.read_excel(file_path).to_dict(orient="records")
+    """
+    Load data from an Excel file, stripping whitespace.
+    """
+    df = pd.read_excel(file_path)
+    return _clean_dataframe(df).to_dict(orient="records")
 
 
 def read_csv(file_path: str | Path) -> list[dict[str, str]]:
-    """Load data from a CSV file."""
-    with open(file_path) as csvfile:
-        header = [field.strip() for field in next(csv.reader(csvfile))]
-
-        records = []
-        for row in csv.reader(csvfile):
-            if not row:  # Skip empty rows
-                continue
-            if all(element is None for element in row):  # Skip rows with all None values
-                continue
-            row_trimmed = [field.strip() for field in row]
-            row_data = dict(zip(header, row_trimmed))
-            records.append(row_data)
-
-        return records
+    """
+    Load data from a CSV file with BOM handling, stripping whitespace.
+    """
+    df = pd.read_csv(file_path, encoding="utf-8-sig")
+    return _clean_dataframe(df).to_dict(orient="records")
 
 
 def write_xlsx(data: list[dict[str, str]], file_path: str | Path) -> None:

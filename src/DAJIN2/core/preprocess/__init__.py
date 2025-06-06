@@ -16,4 +16,5 @@ from DAJIN2.core.preprocess.sequence_error_handler import (
     replace_midsv_without_sequence_errors,
     split_fastq_by_sequence_error,
 )
+from DAJIN2.core.preprocess.strand_bias_handler import extract_sequence_errors_in_strand_biased_loci
 from DAJIN2.core.preprocess.sv_detector import detect_sv_alleles

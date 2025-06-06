@@ -68,7 +68,7 @@ def define_index_converter(index_grouped: list[list[int]]) -> dict[int, int]:
     index_converter = {}
     for group in index_grouped:
         value = Counter(group).most_common()[0][0]
-        index_converter |= {g: value for g in group}
+        index_converter |= dict.fromkeys(group, value)
     return index_converter
 
 
@@ -120,7 +120,7 @@ def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[
     sv_size_features = []
 
     for record in index_and_sv_size:
-        sv_size = {i: 0 for i in all_sv_index}
+        sv_size = dict.fromkeys(all_sv_index, 0)
         sv_size |= record
         sv_size_features.append(sv_size)
 
@@ -171,7 +171,7 @@ def get_sv_index_by_label(labels, index_and_sv_size_sample) -> dict[int, list[di
     index_and_sv_size_by_label = defaultdict(list)
     for label, record in zip(labels, index_and_sv_size_sample):
         sv_index = sv_index_by_label[label]
-        sv_size = {i: 0 for i in sv_index}
+        sv_size = dict.fromkeys(sv_index, 0)
         sv_size |= record
         index_and_sv_size_by_label[label].append(sv_size)
 

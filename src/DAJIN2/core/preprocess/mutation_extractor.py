@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import bisect
-import re
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
@@ -19,6 +18,7 @@ import numpy as np
 from sklearn.neural_network import MLPClassifier
 
 from DAJIN2.core.preprocess.homopolymer_handler import extract_sequence_errors_in_homopolymer_loci
+from DAJIN2.core.preprocess.strand_bias_handler import extract_sequence_errors_in_strand_biased_loci
 from DAJIN2.utils import io
 
 
@@ -27,7 +27,7 @@ def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[
     count = {"=": [0] * len_sequence, "+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:
         for i, cs in enumerate(samp["CSSPLIT"].split(",")):
-            if cs == "N" or re.search(r"a|c|g|t|n", cs):
+            if cs == "N" or cs.islower():
                 continue
             if cs.startswith("="):
                 count["="][i] += 1
@@ -57,7 +57,7 @@ def minimize_mutation_counts(
     In cases where control has a larger value than sample, adjust the value of sample to match that of control.
     """
     indels_control_minimized = {}
-    for mut in {"+", "-", "*"}:
+    for mut in ["+", "-", "*"]:
         indels_control_minimized[mut] = np.minimum(indels_control[mut], indels_sample[mut])
     return indels_control_minimized
 
@@ -168,12 +168,12 @@ def extract_anomal_loci(
 
 
 ###########################################################
-# Homolopolymer region
+# Error correction
 ###########################################################
 
 
-def discard_errors_in_homopolymer(loci: dict[str, set[int]], errors: dict[str, set[int]]) -> dict[str, set[int]]:
-    """Remove detected errors in homopolymer regions from the candidate loci."""
+def discard_errors(loci: dict[str, set[int]], errors: dict[str, set[int]]) -> dict[str, set[int]]:
+    """Remove detected errors from the candidate mutation loci."""
     return {mut: loci[mut] - errors[mut] for mut in {"+", "-", "*"}}
 
 
@@ -307,6 +307,7 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
 
 
 def extract_mutation_loci(
+    path_midsv_sample: Path,
     sequence: str,
     path_indels_normalized_sample: Path,
     path_indels_normalized_control: Path,
@@ -326,20 +327,25 @@ def extract_mutation_loci(
         indels_normalized_sample, indels_normalized_control, thresholds, is_consensus
     )
 
-    # Extract error loci in homopolymer regions
-    errors_in_homopolymer = extract_sequence_errors_in_homopolymer_loci(
-        sequence, indels_normalized_sample, indels_normalized_control, anomal_loci
-    )
-    mutation_loci = discard_errors_in_homopolymer(anomal_loci, errors_in_homopolymer)
-
     # Merge all mutations and knockin loci
     if path_knockin.exists():
         knockin_loci = io.load_pickle(path_knockin)
-        mutation_loci = add_knockin_loci(mutation_loci, knockin_loci)
+        anomal_loci = add_knockin_loci(anomal_loci, knockin_loci)
 
-    mutation_loci_merged = merge_index_of_consecutive_indel(mutation_loci)
-    mutation_loci_transposed = transpose_mutation_loci(mutation_loci_merged, sequence)
-    return mutation_loci_transposed
+    # Extract error loci in homopolymer regions
+    errors_in_homopolymer: dict[str, set[int]] = extract_sequence_errors_in_homopolymer_loci(
+        sequence, indels_normalized_sample, indels_normalized_control, anomal_loci
+    )
+    # Extract strand biased loci
+    bias_in_strandness: dict[str, set[int]] = extract_sequence_errors_in_strand_biased_loci(
+        path_midsv_sample, transpose_mutation_loci(anomal_loci, sequence)
+    )
+    anomal_loci = discard_errors(anomal_loci, errors_in_homopolymer)
+    anomal_loci = discard_errors(anomal_loci, bias_in_strandness)
+
+    anomal_loci_merged = merge_index_of_consecutive_indel(anomal_loci)
+    mutation_loci = transpose_mutation_loci(anomal_loci_merged, sequence)
+    return mutation_loci
 
 
 def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
@@ -349,6 +355,7 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         return None
 
     for allele, sequence in ARGS.fasta_alleles.items():
+        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
         path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele)
         path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci", allele)
 
@@ -366,7 +373,7 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele, "knockin.pickle")
 
         mutation_loci: list[set[str]] = extract_mutation_loci(
-            sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin
+            path_midsv_sample, sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin
         )
 
         io.save_pickle(mutation_loci, path_output_mutation_loci)
