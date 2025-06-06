@@ -25,14 +25,14 @@
 
 + The strand bias detection was too lenient, so the following revisions were made. Issue [#89](https://github.com/akikuno/DAJIN2/issues/89):
   + In the `preprocessing` step, strand bias was calculated at the nucleotide level, and nucleotides showing bias were excluded. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c69dba52c023731aeb6d5f3c75b7550fcc426961)]
-  + In the `clustering` step, strand bias was calculated at the cluster level, and clusters showing bias were excluded. Issue [#89](https://github.com/akikuno/DAJIN2/issues/89) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cb1286250cd04ab592d81bf532558f29f211f91f)]
+  + In the `clustering` step, strand bias was calculated at the cluster level, and clusters showing bias were excluded. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cb1286250cd04ab592d81bf532558f29f211f91f)]
 
 + The order of arguments in `fastx_handler.convert_bam_to_fastq` was reversed, so it has been corrected. Issue [#94](https://github.com/akikuno/DAJIN2/issues/94) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9498272d4afad04df5e2b662b4fedd8c1371024f)]
 
 
 ## 🔧 Maintenance
 
-+ Shorten DAJIN2 log filename by replacing long UUID with microseconds for visual clarity.Issue [#95](https://github.com/akikuno/DAJIN2/issues/95) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/aceff9aec1f0146434f14597df2f77c508b0726f)]
++ Shorten DAJIN2 log filename by replacing long UUID with microseconds for visual clarity. Issue [#95](https://github.com/akikuno/DAJIN2/issues/95) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/aceff9aec1f0146434f14597df2f77c508b0726f)]
 
 <!-- ############################################################# # -->
 
