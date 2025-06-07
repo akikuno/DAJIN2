@@ -14,8 +14,7 @@
 
 DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲノム編集サンプルの遺伝型解析ツールです。
 
-**DAJIN**は、「一網**打尽**」に由来しています。  
-意図された変異だけでなく、意図しない変異も含めて、**ゲノム編集の結果を一括かつ網羅的に検出する**という本ツールの設計思想が込められています。
+**DAJIN**の名称は「一網**打尽**」に由来しており、意図された変異だけでなく、意図しない変異も含めて、**ゲノム編集の結果を一括かつ網羅的に検出する**という本ツールの設計思想が込められています。
 
 
 # 🌟 特徴
@@ -48,7 +47,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 - メモリ推奨：8GB以上
 
 >[!NOTE]
-> DAJINでは深層学習を使用していたため、効率的な計算にはGPUが必要でした。  
+> 前身のDAJINは深層学習を使用していたため、効率的な計算にはGPUが必要でした。  
 > 一方、**DAJIN2では深層学習を用いておらず、GPUは不要**です。  
 > そのため、一般的なノートパソコンでも問題なく動作します。
 
@@ -83,11 +82,18 @@ pip install DAJIN2
 ```
 
 > [!IMPORTANT]
-> DAJIN2は継続的に開発・改良されています。最新の機能を利用するために、最新版がインストールされているかご確認ください。  
+> **DAJIN2は活発に開発・改良が進められています。**  
+> 最新機能をご利用いただくために、ご使用中のバージョンが最新版であることをご確認ください。  
+>
+> 🔍 **現在のバージョンの確認方法：**
 > ```bash
 > DAJIN2 --version
 > ```
-> なお、最新版へのアップデートは以下のとおりです。
+>
+> 🆕 **最新版の確認はこちら：**  
+> https://github.com/akikuno/DAJIN2/releases
+>
+> 🔄 **最新版へのアップデート方法：**
 > ```bash
 > conda update DAJIN2 -y
 > ```
@@ -95,6 +101,7 @@ pip install DAJIN2
 > ```bash
 > pip install -U DAJIN2
 > ```
+
 
 > [!CAUTION]
 > インストールに問題が発生した場合は、[トラブルシューティングガイド](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)をご覧ください。
@@ -354,7 +361,7 @@ read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化した
 👉 [Googleフォーム](https://forms.gle/r4YRs1th7NGHfDcS9)
 
 また、GitHubアカウントをお持ちの方は、Issueからもご報告頂けます（日本語可）：  
-👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) 。  
+👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose)  
 
 > [!NOTE]
 > よくあるご質問については、[こちら](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ_JP.md)をご覧ください。

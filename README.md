@@ -12,7 +12,7 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[日本語はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
+[日本語版 README はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
 DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore target sequencing.
 
@@ -85,11 +85,18 @@ pip install DAJIN2
 ```
 
 > [!IMPORTANT]
-> DAJIN2 is actively developed and continuously improved. To access the latest features, please ensure you have the newest version installed.
+> **DAJIN2 is actively being developed and improved.**  
+> Please make sure you are using the latest version to take advantage of the newest features.  
+>
+> 🔍 **To check your current version:**
 > ```bash
 > DAJIN2 --version
 > ```
-> To update to the latest version, use one of the following commands:
+>
+> 🆕 **Check the latest release here:**  
+> https://github.com/akikuno/DAJIN2/releases
+>
+> 🔄 **To update to the latest version:**
 > ```bash
 > conda update DAJIN2 -y
 > ```
@@ -97,7 +104,6 @@ pip install DAJIN2
 > ```bash
 > pip install -U DAJIN2
 > ```
-
 
 > [!CAUTION]
 > If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
@@ -345,7 +351,7 @@ Please use the following Google Form to submit your report:
 👉 [Google Form](https://forms.gle/r4YRs1th7NGHfDcS9)  
 
 If you have a GitHub account, you can also submit reports via  
-👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose) 
+👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose)  
 
 Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
 
