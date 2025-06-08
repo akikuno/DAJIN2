@@ -93,7 +93,7 @@ pip install DAJIN2
 > DAJIN2 --version
 > ```
 >
-> 🆕 **Check the latest release here:**  
+> ➡️ **Check the latest version:**  
 > https://github.com/akikuno/DAJIN2/releases
 >
 > 🔄 **To update to the latest version:**

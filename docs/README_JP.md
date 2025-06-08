@@ -64,7 +64,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 ## [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
 
 ```bash
-# Setup of Bioconda
+# Setting up Bioconda
 conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
@@ -90,10 +90,10 @@ pip install DAJIN2
 > DAJIN2 --version
 > ```
 >
-> 🆕 **最新版の確認はこちら：**  
+> ➡️ **最新バージョンの確認はこちら：**  
 > https://github.com/akikuno/DAJIN2/releases
 >
-> 🔄 **最新版へのアップデート方法：**
+> 🔄 **最新バージョンへのアップデート方法：**
 > ```bash
 > conda update DAJIN2 -y
 > ```
