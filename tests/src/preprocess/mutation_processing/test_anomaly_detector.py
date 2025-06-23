@@ -201,6 +201,9 @@ class TestDetectAnomalies:
 
             result = detect_anomalies(values_sample, values_control, threshold, is_consensus=True)
 
+            # In consensus mode with mock returning True for all indices
+            assert result == {0, 1}
+
             # Verify is_dissimilar_loci was called with is_consensus=True
             for call in mock_is_dissimilar.call_args_list:
                 # is_consensus is the 4th argument (index 3)
