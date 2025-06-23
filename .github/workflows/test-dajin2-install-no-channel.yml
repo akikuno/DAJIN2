@@ -50,5 +50,5 @@ jobs:
 
             - name: Test DAJIN2 installation from bioconda without channel config
               run: |
-                  conda install bioconda::dajin2
+                  conda install -c conda-forge -c bioconda DAJIN2
                   DAJIN2 --version
