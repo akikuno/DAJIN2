@@ -1,0 +1,54 @@
+name: Test DAJIN2 install without channel config
+
+on:
+    push:
+    schedule:
+        - cron: "0 2 * * 1" # Every Monday at 2 a.m.
+
+jobs:
+    get-python-versions:
+        runs-on: ubuntu-latest
+        outputs:
+            versions: ${{ steps.get-versions.outputs.versions }}
+        steps:
+            - name: Fetch maintained Python versions
+              id: get-versions
+              run: |
+                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ |
+                      grep -e "<tr" -e "<td" |
+                      grep -v "Branch" |
+                      paste - - - - - - |
+                      grep -v -e "feature" -e "end-of-life" |
+                      sed 1d |
+                      cut -f 1 |
+                      sed "s|^.*<p>||" |
+                      sed "s|</p>.*$||")
+                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr '\n' ' ' | jq -R -s -c 'split(" ") | map(select(length > 0))')
+                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
+
+    test-dajin2-install:
+        needs: get-python-versions
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest]
+                python-version: ${{ fromJson(needs.get-python-versions.outputs.versions) }}
+        name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+
+        defaults:
+            run:
+                shell: bash -l {0}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: conda-incubator/setup-miniconda@v3
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  auto-activate-base: true
+                  miniconda-version: "latest"
+
+            - name: Test DAJIN2 installation from bioconda without channel config
+              run: |
+                  conda install bioconda::dajin2
+                  DAJIN2 --version
