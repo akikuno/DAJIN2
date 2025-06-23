@@ -109,7 +109,7 @@ class TestIsDissimilarLoci:
         index = 0
 
         # Mock cosine_distance to return predictable values
-        with patch("DAJIN2.core.mutation_analysis.anomaly_detector.cosine_distance") as mock_cosine:
+        with patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.cosine_distance") as mock_cosine:
             mock_cosine.side_effect = [0.1, 0.05]  # distance, distance_slice
 
             result = is_dissimilar_loci(values_sample, values_control, index)
@@ -123,7 +123,7 @@ class TestIsDissimilarLoci:
         values_control = np.array([10.0, 8.0, 6.0, 5.0, 4.0, 3.0, 2.5, 2.0, 1.5, 1.0])
         index = 0
 
-        with patch("DAJIN2.core.mutation_analysis.anomaly_detector.cosine_distance") as mock_cosine:
+        with patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.cosine_distance") as mock_cosine:
             mock_cosine.side_effect = [0.1, 0.01]  # distance, distance_slice
 
             result = is_dissimilar_loci(values_sample, values_control, index)
@@ -137,7 +137,7 @@ class TestIsDissimilarLoci:
         values_control = np.array([10.0, 8.0])
         index = 0
 
-        with patch("DAJIN2.core.mutation_analysis.anomaly_detector.cosine_distance") as mock_cosine:
+        with patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.cosine_distance") as mock_cosine:
             mock_cosine.side_effect = [0.1, 0.01]
 
             result = is_dissimilar_loci(values_sample, values_control, index)
@@ -149,7 +149,7 @@ class TestIsDissimilarLoci:
 class TestDetectAnomalies:
     """Test detect_anomalies function."""
 
-    @patch("DAJIN2.core.mutation_analysis.anomaly_detector.is_dissimilar_loci")
+    @patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.is_dissimilar_loci")
     def test_detect_anomalies_basic(self, mock_is_dissimilar):
         """Test basic anomaly detection."""
         values_sample = np.array([10.0, 20.0, 30.0, 40.0, 50.0])
@@ -157,7 +157,7 @@ class TestDetectAnomalies:
         threshold = 5.0
 
         # Mock MLPClassifier to return predictable results
-        with patch("DAJIN2.core.mutation_analysis.anomaly_detector.MLPClassifier") as mock_mlp:
+        with patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.MLPClassifier") as mock_mlp:
             mock_classifier = Mock()
             mock_classifier.predict.return_value = [0, 1, 1, 0, 1]  # Predict anomalies at indices 1, 2, 4
             mock_mlp.return_value = mock_classifier
@@ -169,14 +169,14 @@ class TestDetectAnomalies:
 
             assert result == {1, 4}
 
-    @patch("DAJIN2.core.mutation_analysis.anomaly_detector.is_dissimilar_loci")
+    @patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.is_dissimilar_loci")
     def test_detect_anomalies_no_anomalies(self, mock_is_dissimilar):
         """Test when no anomalies are detected."""
         values_sample = np.array([10.0, 20.0, 30.0])
         values_control = np.array([8.0, 18.0, 28.0])
         threshold = 5.0
 
-        with patch("DAJIN2.core.mutation_analysis.anomaly_detector.MLPClassifier") as mock_mlp:
+        with patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.MLPClassifier") as mock_mlp:
             mock_classifier = Mock()
             mock_classifier.predict.return_value = [0, 0, 0]  # No anomalies predicted
             mock_mlp.return_value = mock_classifier
@@ -185,14 +185,14 @@ class TestDetectAnomalies:
 
             assert result == set()
 
-    @patch("DAJIN2.core.mutation_analysis.anomaly_detector.is_dissimilar_loci")
+    @patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.is_dissimilar_loci")
     def test_detect_anomalies_consensus_mode(self, mock_is_dissimilar):
         """Test anomaly detection in consensus mode."""
         values_sample = np.array([10.0, 20.0])
         values_control = np.array([5.0, 10.0])
         threshold = 3.0
 
-        with patch("DAJIN2.core.mutation_analysis.anomaly_detector.MLPClassifier") as mock_mlp:
+        with patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.MLPClassifier") as mock_mlp:
             mock_classifier = Mock()
             mock_classifier.predict.return_value = [1, 1]
             mock_mlp.return_value = mock_classifier
@@ -222,7 +222,7 @@ class TestDetectAnomalies:
 class TestExtractAnomalLoci:
     """Test extract_anomal_loci function."""
 
-    @patch("DAJIN2.core.mutation_analysis.anomaly_detector.detect_anomalies")
+    @patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.detect_anomalies")
     def test_extract_anomal_loci_basic(self, mock_detect):
         """Test basic anomalous loci extraction."""
         indels_normalized_sample = {
@@ -259,7 +259,7 @@ class TestExtractAnomalLoci:
         # Verify detect_anomalies was called for each mutation type
         assert mock_detect.call_count == 3
 
-    @patch("DAJIN2.core.mutation_analysis.anomaly_detector.detect_anomalies")
+    @patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.detect_anomalies")
     def test_extract_anomal_loci_consensus_mode(self, mock_detect):
         """Test extraction in consensus mode."""
         indels_normalized_sample = {"+": np.array([10.0]), "-": np.array([5.0]), "*": np.array([2.0])}
@@ -275,7 +275,7 @@ class TestExtractAnomalLoci:
             # is_consensus is passed as 4th positional argument (index 3)
             assert call[0][3] is True
 
-    @patch("DAJIN2.core.mutation_analysis.anomaly_detector.detect_anomalies")
+    @patch("DAJIN2.core.preprocess.mutation_processing.anomaly_detector.detect_anomalies")
     def test_extract_anomal_loci_empty_results(self, mock_detect):
         """Test extraction with no anomalies found."""
         indels_normalized_sample = {"+": np.array([10.0, 20.0]), "-": np.array([5.0, 15.0]), "*": np.array([2.0, 8.0])}

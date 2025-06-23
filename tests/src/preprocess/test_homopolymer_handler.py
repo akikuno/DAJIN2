@@ -109,7 +109,7 @@ class TestGetRepeatRegions:
 class TestExtractSequenceErrorsInHomopolymerLoci:
     """Test extract_sequence_errors_in_homopolymer_loci function."""
 
-    @patch("DAJIN2.core.preprocess.homopolymer_handler.get_repeat_regions")
+    @patch("DAJIN2.core.preprocess.error_correction.homopolymer_handler.get_repeat_regions")
     def test_extract_errors_basic(self, mock_get_repeats):
         """Test basic homopolymer error extraction."""
         sequence = "ACGTAAAACCCCTTTT"
@@ -143,7 +143,7 @@ class TestExtractSequenceErrorsInHomopolymerLoci:
         # Function calls get_repeat_regions once for each mutation type (+, -, *)
         assert mock_get_repeats.call_count == 3
 
-    @patch("DAJIN2.core.preprocess.homopolymer_handler.get_repeat_regions")
+    @patch("DAJIN2.core.preprocess.error_correction.homopolymer_handler.get_repeat_regions")
     def test_extract_errors_no_homopolymers(self, mock_get_repeats):
         """Test when no homopolymers are found."""
         sequence = "ACGTACGTACGT"
@@ -163,7 +163,7 @@ class TestExtractSequenceErrorsInHomopolymerLoci:
         assert result["-"] == set()
         assert result["*"] == set()
 
-    @patch("DAJIN2.core.preprocess.homopolymer_handler.get_repeat_regions")
+    @patch("DAJIN2.core.preprocess.error_correction.homopolymer_handler.get_repeat_regions")
     def test_extract_errors_no_anomalies_in_homopolymers(self, mock_get_repeats):
         """Test when anomalies don't overlap with homopolymers."""
         sequence = "ACGTAAAACCCCTTTT"
@@ -195,7 +195,7 @@ class TestExtractSequenceErrorsInHomopolymerLoci:
         assert result["-"] == set()
         assert result["*"] == set()
 
-    @patch("DAJIN2.core.preprocess.homopolymer_handler.get_repeat_regions")
+    @patch("DAJIN2.core.preprocess.error_correction.homopolymer_handler.get_repeat_regions")
     @patch("scipy.spatial.distance.cosine")
     def test_extract_errors_cosine_similarity_threshold(self, mock_cosine, mock_get_repeats):
         """Test cosine similarity threshold for error detection."""
@@ -228,7 +228,7 @@ class TestExtractSequenceErrorsInHomopolymerLoci:
         assert result["-"] == expected_errors
         assert result["*"] == expected_errors
 
-    @patch("DAJIN2.core.preprocess.homopolymer_handler.get_repeat_regions")
+    @patch("DAJIN2.core.preprocess.error_correction.homopolymer_handler.get_repeat_regions")
     def test_extract_errors_empty_anomalies(self, mock_get_repeats):
         """Test with empty anomal_loci."""
         sequence = "AAAACCCC"

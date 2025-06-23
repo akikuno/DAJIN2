@@ -144,7 +144,7 @@ class TestMinimizeMutationCounts:
 class TestSummarizeIndels:
     """Test summarize_indels function."""
 
-    @patch("DAJIN2.core.mutation_analysis.indel_counter.io.read_jsonl")
+    @patch("DAJIN2.core.preprocess.mutation_processing.indel_counter.io.read_jsonl")
     def test_summarize_indels_integration(self, mock_read_jsonl):
         """Test integration of count_indels and normalize_indels."""
         mock_read_jsonl.return_value = [
@@ -172,7 +172,7 @@ class TestSummarizeIndels:
         # Verify normalization
         assert indels_normalized["+"][1] == 50.0  # 1/2 * 100 = 50%
 
-    @patch("DAJIN2.core.mutation_analysis.indel_counter.io.read_jsonl")
+    @patch("DAJIN2.core.preprocess.mutation_processing.indel_counter.io.read_jsonl")
     def test_summarize_indels_empty_file(self, mock_read_jsonl):
         """Test summarize_indels with empty input file."""
         mock_read_jsonl.return_value = []

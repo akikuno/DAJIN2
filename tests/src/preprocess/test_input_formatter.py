@@ -137,7 +137,7 @@ class TestParseArguments:
 class TestConvertInputPathsToPosix:
     """Test convert_input_paths_to_posix function."""
 
-    @patch("DAJIN2.core.preprocess.input_formatter.io.convert_to_posix")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.io.convert_to_posix")
     def test_convert_input_paths_to_posix(self, mock_convert):
         """Test path conversion to POSIX format."""
         mock_convert.side_effect = lambda x: f"posix_{x}"
@@ -156,7 +156,7 @@ class TestConvertInputPathsToPosix:
 class TestCreateTemporalDirectory:
     """Test create_temporal_directory function."""
 
-    @patch("DAJIN2.core.preprocess.input_formatter.config.TEMP_ROOT_DIR", "/tmp/dajin")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.config.TEMP_ROOT_DIR", "/tmp/dajin")
     @patch("pathlib.Path.mkdir")
     def test_create_temporal_directory(self, mock_mkdir):
         """Test temporal directory creation."""
@@ -168,7 +168,7 @@ class TestCreateTemporalDirectory:
         # Verify mkdir was called with correct path
         mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch("DAJIN2.core.preprocess.input_formatter.config.TEMP_ROOT_DIR", "/custom/temp")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.config.TEMP_ROOT_DIR", "/custom/temp")
     @patch("pathlib.Path.mkdir")
     def test_create_temporal_directory_custom_root(self, mock_mkdir):
         """Test temporal directory creation with custom root."""
@@ -181,8 +181,8 @@ class TestCreateTemporalDirectory:
 class TestCheckCaches:
     """Test check_caches function."""
 
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.exists_cached_hash")
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.exists_cached_genome")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.exists_cached_hash")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.exists_cached_genome")
     def test_check_caches_both_exist(self, mock_cached_genome, mock_cached_hash):
         """Test when both caches exist."""
         mock_cached_hash.return_value = True
@@ -198,8 +198,8 @@ class TestCheckCaches:
         mock_cached_hash.assert_called_once_with(tempdir=tempdir, path=path_allele)
         mock_cached_genome.assert_called_once_with(tempdir=tempdir, genome=genome_url)
 
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.exists_cached_hash")
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.exists_cached_genome")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.exists_cached_hash")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.exists_cached_genome")
     def test_check_caches_one_missing(self, mock_cached_genome, mock_cached_hash):
         """Test when one cache is missing."""
         mock_cached_hash.return_value = True
@@ -213,8 +213,8 @@ class TestCheckCaches:
 
         assert result is False
 
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.exists_cached_hash")
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.exists_cached_genome")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.exists_cached_hash")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.exists_cached_genome")
     def test_check_caches_both_missing(self, mock_cached_genome, mock_cached_hash):
         """Test when both caches are missing."""
         mock_cached_hash.return_value = False
@@ -252,7 +252,7 @@ class TestGetGenomeCoordinates:
 
         assert result == expected
 
-    @patch("DAJIN2.core.preprocess.input_formatter.io.read_jsonl")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.io.read_jsonl")
     def test_get_genome_coordinates_with_cache(self, mock_read_jsonl):
         """Test genome coordinates with cached data."""
         cached_coords = {
@@ -275,9 +275,9 @@ class TestGetGenomeCoordinates:
         assert result == cached_coords
         mock_read_jsonl.assert_called_once_with(Path(tempdir, "cache", "genome_coordinates.jsonl"))
 
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.fetch_coordinates")
-    @patch("DAJIN2.core.preprocess.input_formatter.preprocess.fetch_chromosome_size")
-    @patch("DAJIN2.core.preprocess.input_formatter.io.write_jsonl")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.fetch_coordinates")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.preprocess.fetch_chromosome_size")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.io.write_jsonl")
     def test_get_genome_coordinates_fetch_new(self, mock_write_jsonl, mock_fetch_size, mock_fetch_coords):
         """Test fetching new genome coordinates."""
         mock_fetch_coords.return_value = {"genome": "hg38", "chrom": "chr2", "start": 500, "end": 1500, "strand": "-"}
@@ -308,14 +308,14 @@ class TestGetGenomeCoordinates:
 class TestFormatInputs:
     """Test format_inputs integration function."""
 
-    @patch("DAJIN2.core.preprocess.input_formatter.parse_arguments")
-    @patch("DAJIN2.core.preprocess.input_formatter.convert_input_paths_to_posix")
-    @patch("DAJIN2.core.preprocess.input_formatter.fastx_handler.extract_filename")
-    @patch("DAJIN2.core.preprocess.input_formatter.fastx_handler.dictionize_allele")
-    @patch("DAJIN2.core.preprocess.input_formatter.create_temporal_directory")
-    @patch("DAJIN2.core.preprocess.input_formatter.check_caches")
-    @patch("DAJIN2.core.preprocess.input_formatter.get_genome_coordinates")
-    @patch("DAJIN2.core.preprocess.input_formatter.io.sanitize_name")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.parse_arguments")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.convert_input_paths_to_posix")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.fastx_handler.extract_filename")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.fastx_handler.dictionize_allele")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.create_temporal_directory")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.check_caches")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.get_genome_coordinates")
+    @patch("DAJIN2.core.preprocess.infrastructure.input_formatter.io.sanitize_name")
     def test_format_inputs_integration(
         self,
         mock_sanitize,

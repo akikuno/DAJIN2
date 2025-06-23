@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from DAJIN2.core.preprocess import mapping
+from DAJIN2.core.preprocess.alignment import mapping
 
 
 def test_to_sam_tyr():
