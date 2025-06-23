@@ -3,7 +3,7 @@ name: Test DAJIN2 installation without channel config
 on:
   push:
   schedule:
-    - cron: "0 2 * * 1"  # Run every Monday at 2:00 AM UTC
+    - cron: "0 2 * * 1"  # 毎週月曜の午前2時 (UTC) に実行
 
 jobs:
   get-python-versions:
@@ -12,62 +12,43 @@ jobs:
       versions: ${{ steps.get-versions.outputs.versions }}
 
     steps:
-      #----------------------------------------
-      # Step 1: Get maintained CPython versions from official website
-      #----------------------------------------
-      - name: Fetch maintained CPython versions
-        id: maintained
+      - name: Get supported Python versions
+        id: get-versions
         run: |
-          MAINTAINED=$(curl -s https://devguide.python.org/versions/ \
+          # === 1. Python公式で保守中のバージョンを取得 ===
+          curl -s https://devguide.python.org/versions/ \
             | grep -e "<tr" -e "<td" \
             | grep -v "Branch" \
             | paste - - - - - - \
             | grep -v -e "feature" -e "end-of-life" \
             | sed 1d \
-            | cut -f 1 \
-            | sed -e 's|^.*<p>||' -e 's|</p>.*$||')
+            | cut -f1 \
+            | sed -e 's|^.*<p>||' -e 's|</p>.*$||' \
+            | sort -u > python-versions.txt
 
-          MAINTAINED_JSON=$(echo "$MAINTAINED" | tr '\n' ' ' \
-            | jq -R -s -c 'split(" ") | map(select(length > 0))')
+          # === 2. mappy がビルド対応しているバージョン ===
+          conda search -c bioconda mappy \
+            | grep -o 'py[0-9]\{2,3\}' \
+            | sed 's/^py//' \
+            | awk '{print substr($0,1,1) "." substr($0,2)}' \
+            | sort -u > mappy.txt
 
-          echo "json=$MAINTAINED_JSON" >> "$GITHUB_OUTPUT"
+          # === 3. pysam がビルド対応しているバージョン ===
+          conda search -c bioconda pysam \
+            | grep -o 'py[0-9]\{2,3\}' \
+            | sed 's/^py//' \
+            | awk '{print substr($0,1,1) "." substr($0,2)}' \
+            | sort -u > pysam.txt
 
-      #----------------------------------------
-      # Step 2: Extract supported Python versions from Bioconda (mappy & pysam)
-      #----------------------------------------
-      - name: Extract Bioconda-supported Python versions
-        id: bioconda
-        run: |
-          extract_pyvers () {
-            grep -o 'py[0-9]\{2,3\}' \
-              | sed 's/^py//' \
-              | awk '{
-                  if (length == 2)      { printf "2.%s\n", substr($0,2) }
-                  else if (length == 3) { printf "%s.%s\n", substr($0,1,1), substr($0,2) }
-              }' | sort -u
-          }
+          # === 4. 共通バージョン (mappy ∩ pysam) ∩ 保守バージョン ===
+          PYTHON_VERSIONS=$(join mappy.txt pysam.txt | join - python-versions.txt)
 
-          conda search -c bioconda mappy | extract_pyvers > mappy.txt
-          conda search -c bioconda pysam | extract_pyvers > pysam.txt
+          # JSON配列に変換（改行→空白→配列化）
+          PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr '\n' ' ' | jq -R -s -c 'split(" ") | map(select(length > 0))')
 
-          COMM=$(grep -Fxf mappy.txt pysam.txt | sort -Vr)
-          COMM_JSON=$(echo "$COMM" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-
-          echo "json=$COMM_JSON" >> "$GITHUB_OUTPUT"
-
-      #----------------------------------------
-      # Step 3: Intersect maintained and Bioconda-supported versions
-      #----------------------------------------
-      - name: Determine final compatible Python versions
-        id: get-versions
-        run: |
-          MAINTAINED=${{ steps.maintained.outputs.json }}
-          BIOCONDA=${{ steps.bioconda.outputs.json }}
-
-          FINAL=$(jq -n --argjson a "$MAINTAINED" --argjson b "$BIOCONDA" \
-            '$a | map(select(. as $v | $b | index($v)))')
-
-          echo "versions=$FINAL" >> "$GITHUB_OUTPUT"
+          # 出力に設定
+          echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
+          echo "versions=$PYTHON_VERSIONS"
 
   test-dajin2-install:
     needs: get-python-versions
@@ -83,7 +64,8 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
