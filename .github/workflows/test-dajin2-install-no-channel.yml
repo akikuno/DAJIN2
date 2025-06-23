@@ -1,54 +1,98 @@
-name: Test DAJIN2 install without channel config
+name: Test DAJIN2 installation without channel config
 
 on:
-    push:
-    schedule:
-        - cron: "0 2 * * 1" # Every Monday at 2 a.m.
+  push:
+  schedule:
+    - cron: "0 2 * * 1"  # Run every Monday at 2:00 AM UTC
 
 jobs:
-    get-python-versions:
-        runs-on: ubuntu-latest
-        outputs:
-            versions: ${{ steps.get-versions.outputs.versions }}
-        steps:
-            - name: Fetch maintained Python versions
-              id: get-versions
-              run: |
-                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ |
-                      grep -e "<tr" -e "<td" |
-                      grep -v "Branch" |
-                      paste - - - - - - |
-                      grep -v -e "feature" -e "end-of-life" |
-                      sed 1d |
-                      cut -f 1 |
-                      sed "s|^.*<p>||" |
-                      sed "s|</p>.*$||")
-                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr '\n' ' ' | jq -R -s -c 'split(" ") | map(select(length > 0))')
-                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
+  get-python-versions:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.get-versions.outputs.versions }}
 
-    test-dajin2-install:
-        needs: get-python-versions
-        runs-on: ${{ matrix.os }}
-        strategy:
-            matrix:
-                os: [ubuntu-latest, macos-latest]
-                python-version: ${{ fromJson(needs.get-python-versions.outputs.versions) }}
-        name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    steps:
+      #----------------------------------------
+      # Step 1: Get maintained CPython versions from official website
+      #----------------------------------------
+      - name: Fetch maintained CPython versions
+        id: maintained
+        run: |
+          MAINTAINED=$(curl -s https://devguide.python.org/versions/ \
+            | grep -e "<tr" -e "<td" \
+            | grep -v "Branch" \
+            | paste - - - - - - \
+            | grep -v -e "feature" -e "end-of-life" \
+            | sed 1d \
+            | cut -f 1 \
+            | sed -e 's|^.*<p>||' -e 's|</p>.*$||')
 
-        defaults:
-            run:
-                shell: bash -l {0}
+          MAINTAINED_JSON=$(echo "$MAINTAINED" | tr '\n' ' ' \
+            | jq -R -s -c 'split(" ") | map(select(length > 0))')
 
-        steps:
-            - uses: actions/checkout@v4
+          echo "json=$MAINTAINED_JSON" >> "$GITHUB_OUTPUT"
 
-            - uses: conda-incubator/setup-miniconda@v3
-              with:
-                  python-version: ${{ matrix.python-version }}
-                  auto-activate-base: true
-                  miniconda-version: "latest"
+      #----------------------------------------
+      # Step 2: Extract supported Python versions from Bioconda (mappy & pysam)
+      #----------------------------------------
+      - name: Extract Bioconda-supported Python versions
+        id: bioconda
+        run: |
+          extract_pyvers () {
+            grep -o 'py[0-9]\{2,3\}' \
+              | sed 's/^py//' \
+              | awk '{
+                  if (length == 2)      { printf "2.%s\n", substr($0,2) }
+                  else if (length == 3) { printf "%s.%s\n", substr($0,1,1), substr($0,2) }
+              }' | sort -u
+          }
 
-            - name: Test DAJIN2 installation from bioconda without channel config
-              run: |
-                  conda install -c conda-forge -c bioconda DAJIN2
-                  DAJIN2 --version
+          conda search -c bioconda mappy | extract_pyvers > mappy.txt
+          conda search -c bioconda pysam | extract_pyvers > pysam.txt
+
+          COMM=$(grep -Fxf mappy.txt pysam.txt | sort -Vr)
+          COMM_JSON=$(echo "$COMM" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
+          echo "json=$COMM_JSON" >> "$GITHUB_OUTPUT"
+
+      #----------------------------------------
+      # Step 3: Intersect maintained and Bioconda-supported versions
+      #----------------------------------------
+      - name: Determine final compatible Python versions
+        id: get-versions
+        run: |
+          MAINTAINED=${{ steps.maintained.outputs.json }}
+          BIOCONDA=${{ steps.bioconda.outputs.json }}
+
+          FINAL=$(jq -n --argjson a "$MAINTAINED" --argjson b "$BIOCONDA" \
+            '$a | map(select(. as $v | $b | index($v)))')
+
+          echo "versions=$FINAL" >> "$GITHUB_OUTPUT"
+
+  test-dajin2-install:
+    needs: get-python-versions
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ${{ fromJson(needs.get-python-versions.outputs.versions) }}
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          auto-activate-base: true
+          miniconda-version: "latest"
+
+      - name: Install and test DAJIN2 from Bioconda
+        run: |
+          conda install -c conda-forge -c bioconda DAJIN2
+          DAJIN2 --version
