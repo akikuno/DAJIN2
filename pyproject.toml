@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "DAJIN2"
-version = "0.6.2"
+version = "0.7.0"
 description = "One-step genotyping tools for targeted long-read sequencing"
 authors = ["Akihiro Kuno <akuno@md.tsukuba.ac.jp>"]
 readme = "README.md"
@@ -27,8 +27,16 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+# Specify 3.9–3.12 due to dependencies on mappy and pysam
+# mappy: https://anaconda.org/bioconda/mappy/files
+# pysam: https://anaconda.org/bioconda/pysam/files
+python = ">=3.9,<3.13"
 
+# Bioinformatics
+mappy = ">=2.24"
+pysam = ">=0.21.0"
+
+# Core dependencies
 openpyxl = ">=3.0.7"
 numpy = ">=1.24.0"
 pandas = ">=2.0.0"
@@ -39,10 +47,6 @@ kaleido = ">=0.2.0"
 # Machine learning
 rapidfuzz = ">=3.6.0"
 scikit-learn = ">=1.3.0"
-
-# Bioinformatics
-mappy = ">=2.24"
-pysam = ">=0.21.0"
 
 # GUI
 Flask = ">=2.2.0"
