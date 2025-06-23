@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import logging
 import sys
-import uuid
 import warnings
 from pathlib import Path
 

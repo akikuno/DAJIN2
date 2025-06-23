@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
-from DAJIN2.core.preprocess.input_formatter import FormattedInputs
+from DAJIN2.core.preprocess.infrastructure.input_formatter import FormattedInputs
 from DAJIN2.utils import fastx_handler, io
 
 logger = logging.getLogger(__name__)

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from DAJIN2.core.preprocess.mapping import to_sam
-from DAJIN2.core.preprocess.midsv_caller import (
+from DAJIN2.core.preprocess.alignment.mapping import to_sam
+from DAJIN2.core.preprocess.external_integration.midsv_caller import (
     convert_consecutive_indels_to_match,
     convert_flag_to_strand,
     has_inversion_in_splice,

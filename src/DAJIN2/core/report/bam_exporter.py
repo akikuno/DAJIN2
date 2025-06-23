@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pysam
 
-from DAJIN2.core.preprocess.mapping import to_sam
+from DAJIN2.core.preprocess.alignment.mapping import to_sam
 from DAJIN2.utils import io, sam_handler
 
 

@@ -1,6 +1,6 @@
 import pytest
 
-from DAJIN2.core.preprocess.sv_detector import get_index_and_sv_size
+from DAJIN2.core.preprocess.structural_variants.sv_detector import get_index_and_sv_size
 
 
 @pytest.mark.parametrize(
