@@ -144,7 +144,7 @@ Tests are organized to mirror the source code structure:
 ## Version and Dependencies
 
 Current version: 0.6.2
-- Python >= 3.9 required
+- Python 3.9-3.12 required
 - Uses Poetry for dependency management
 - All dependencies specified in pyproject.toml
 - Supports Unix-based environments (Linux, macOS, WSL2)

@@ -55,7 +55,7 @@ This reflects the tool’s design philosophy: to comprehensively detect both int
 
 ### Software
 
-- Python >= 3.9
+- Python 3.9-3.12
 - Unix-based environment (Linux, macOS, WSL2, etc.)
 
 >[!IMPORTANT]
