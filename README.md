@@ -205,18 +205,49 @@ DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
 DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
-  [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
+  [-g|--genome] [-b|--bed] [-t|--threads] [-h|--help] [-v|--version]
 
 Options:
--s, --sample              Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
--c, --control             Specify the path to the directory containing control FASTQ/FASTA/BAM files.
--a, --allele              Specify the path to the FASTA file.
--n, --name (Optional)     Set the output directory name. Default: 'Results'.
--g, --genome (Optional)   Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
--t, --threads (Optional)  Set the number of threads. Default: 1.
--h, --help                Display this help message and exit.
--v, --version             Display the version number and exit.
+-s, --sample            Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+-c, --control           Specify the path to the directory containing control FASTQ/FASTA/BAM files.
+-a, --allele            Specify the path to the FASTA file.
+-n, --name (Optional)   Set the output directory name. Default: 'Results'.
+-g, --genome (Optional) Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
+-b, --bed (Optional)    Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+-t, --threads (Optional) Set the number of threads. Default: 1.
+-h, --help              Display this help message and exit.
+-v, --version           Display the version number and exit.
 ```
+
+### Using BED Files for Genomic Coordinates
+
+If the reference genome is not from UCSC, you can specify a BED file using the `-b/--bed` option.
+
+When using the `-b/--bed` option with a BED file, please ensure:
+
+1. **Use BED6 format** (6 columns required):
+   ```
+   chr1    1000000    1001000    248956422    0    +
+   ```
+   
+   **Column descriptions:**
+   - Column 1: Chromosome name (e.g., chr1, chr2)
+   - Column 2: Start position (0-based, inclusive)
+   - Column 3: End position (0-based, exclusive)
+   - Column 4: Feature name (**use chromosome size** for proper IGV visualization)
+   - Column 5: Score (typically 0)
+   - Column 6: Strand (+ or -, **must match FASTA allele orientation**)
+
+2. **Match strand orientation**: The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.
+   - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file
+   - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
+
+3. **Why strand matters**: 
+   - DAJIN2 automatically applies reverse complement processing for minus strand regions
+   - Strand information is preserved in BAM files for proper IGV genome browser visualization
+   - Incorrect strand information can lead to misaligned sequences and inaccurate mutation detection
+
+For detailed BED file usage, see [BED_COORDINATE_USAGE.md](BED_COORDINATE_USAGE.md).
 
 ### Example
 

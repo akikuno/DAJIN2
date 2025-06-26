@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -122,3 +123,95 @@ def test_available_genome_fail():
     genome = "mm12345"
     url_das = available_servers["das"]
     assert input_validator.is_genome_id_available_in_ucsc(genome, url_das) is False
+
+
+###############################################################################
+# validate BED file
+###############################################################################
+
+
+class TestValidateBedFileAndGetCoordinates:
+    """Test BED file validation and coordinate extraction."""
+
+    def test_validate_bed_file_valid(self):
+        """Test validation of valid BED file."""
+        bed_content = "chr1\t100\t200\tfeature1\t0\t+"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bed', delete=False) as f:
+            f.write(bed_content)
+            f.flush()
+            
+            result = input_validator.validate_bed_file_and_get_coordinates(f.name, "hg38")
+            
+        Path(f.name).unlink()
+        
+        expected = {
+            "genome": "hg38",
+            "chrom": "chr1", 
+            "start": 100,
+            "end": 200,
+            "strand": "+",
+            "chrom_size": 0
+        }
+        
+        assert result == expected
+
+    def test_validate_bed_file_no_genome(self):
+        """Test BED validation without genome ID."""
+        bed_content = "chr2\t500\t600"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bed', delete=False) as f:
+            f.write(bed_content)
+            f.flush()
+            
+            result = input_validator.validate_bed_file_and_get_coordinates(f.name)
+            
+        Path(f.name).unlink()
+        
+        assert result["genome"] == ""
+        assert result["chrom"] == "chr2"
+        assert result["start"] == 500
+        assert result["end"] == 600
+
+    def test_validate_bed_file_nonexistent(self):
+        """Test validation of non-existent BED file."""
+        with pytest.raises(FileNotFoundError):
+            input_validator.validate_bed_file_and_get_coordinates("/nonexistent/file.bed")
+
+    def test_validate_bed_file_wrong_extension(self):
+        """Test validation of file with wrong extension."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            f.write("chr1\t100\t200")
+            f.flush()
+            
+            with pytest.raises(ValueError, match="BED file must have .bed or .bed.gz extension"):
+                input_validator.validate_bed_file_and_get_coordinates(f.name)
+                
+        Path(f.name).unlink()
+
+    def test_validate_bed_file_invalid_format(self):
+        """Test validation of invalid BED format."""
+        bed_content = "chr1\t100"  # Only 2 columns
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bed', delete=False) as f:
+            f.write(bed_content)
+            f.flush()
+            
+            with pytest.raises(ValueError, match="Invalid BED file format"):
+                input_validator.validate_bed_file_and_get_coordinates(f.name)
+                
+        Path(f.name).unlink()
+
+    def test_validate_bed_file_gz_extension(self):
+        """Test validation accepts .bed.gz extension."""
+        bed_content = "chr1\t100\t200"
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.bed.gz', delete=False) as f:
+            f.write(bed_content)
+            f.flush()
+            
+            # Should not raise exception for .bed.gz extension
+            result = input_validator.validate_bed_file_and_get_coordinates(f.name)
+            assert result["chrom"] == "chr1"
+                
+        Path(f.name).unlink()
