@@ -222,3 +222,47 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
     del available_servers["das"]
 
     return available_servers
+
+
+########################################################################
+# BED file validation
+########################################################################
+
+
+def validate_bed_file_and_get_coordinates(bed_path: str, genome: str = "") -> dict:
+    """
+    Validate BED file and convert to genome coordinates format.
+    
+    Args:
+        bed_path: Path to BED file
+        genome: Optional genome assembly name
+        
+    Returns:
+        Dictionary in DAJIN2 genome_coordinates format
+        
+    Raises:
+        FileNotFoundError: If BED file doesn't exist
+        ValueError: If BED file is invalid
+    """
+    from DAJIN2.utils.bed_handler import bed_to_genome_coordinates, BEDError
+    
+    try:
+        validate_file_existence(bed_path)
+        
+        # Check file extension
+        path_obj = Path(bed_path)
+        valid_extensions = [".bed", ".bed.gz"]
+        file_suffixes = "".join(path_obj.suffixes).lower()
+        
+        if not any(file_suffixes.endswith(ext) for ext in valid_extensions):
+            raise ValueError(f"BED file must have .bed or .bed.gz extension, got: {bed_path}")
+        
+        # Parse and validate BED file
+        genome_coordinates = bed_to_genome_coordinates(bed_path, genome)
+        
+        return genome_coordinates
+        
+    except BEDError as e:
+        raise ValueError(f"Invalid BED file format: {e}")
+    except Exception as e:
+        raise ValueError(f"Error processing BED file {bed_path}: {e}")
