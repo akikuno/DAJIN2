@@ -45,7 +45,7 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
     intervals = []
 
     try:
-        with open(bed_path, "r") as f:
+        with open(bed_path) as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
 

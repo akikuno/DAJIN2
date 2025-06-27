@@ -244,7 +244,7 @@ def validate_bed_file_and_get_coordinates(bed_path: str, genome: str = "") -> di
         FileNotFoundError: If BED file doesn't exist
         ValueError: If BED file is invalid
     """
-    from DAJIN2.utils.bed_handler import bed_to_genome_coordinates, BEDError
+    from DAJIN2.utils.bed_handler import BEDError, bed_to_genome_coordinates
 
     try:
         validate_file_existence(bed_path)
