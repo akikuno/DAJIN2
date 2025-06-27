@@ -39,15 +39,15 @@ def cache_bed_coordinates(name: str, genome_coordinates: dict, logger: logging.L
         # Create cache directory structure: .tempdir/{NAME}/cache/
         cache_dir = Path(config.DAJIN_RESULTS_DIR) / ".tempdir" / name / "cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Save to genome_coordinates.jsonl
         cache_file = cache_dir / "genome_coordinates.jsonl"
         with open(cache_file, "w") as f:
             json.dump(genome_coordinates, f)
             f.write("\n")
-        
+
         logger.debug(f"Cached BED coordinates to {cache_file}")
-        
+
     except Exception as e:
         logger.warning(f"Failed to cache BED coordinates: {e}")
 
@@ -66,7 +66,7 @@ def execute_single_mode(arguments: dict[str]):
 
     # Validate input files
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
-    
+
     # Handle genome coordinates (BED file takes precedence over genome ID)
     if arguments.get("genome_coordinate"):
         # BED file provided - use it and optionally combine with genome ID
@@ -76,10 +76,10 @@ def execute_single_mode(arguments: dict[str]):
         )
         arguments.update(genome_coordinates)
         logger.debug(f"Using BED file coordinates: {arguments['genome_coordinate']}")
-        
+
         # Cache BED coordinates to genome_coordinates.jsonl
         cache_bed_coordinates(arguments["name"], genome_coordinates, logger)
-        
+
     elif arguments.get("genome"):
         # Only genome ID provided - use UCSC lookup
         arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
@@ -137,9 +137,7 @@ def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) 
     if bed_file:
         # BED file provided - use it and optionally combine with genome ID
         genome_id = args_update.get("genome", "")
-        genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(
-            bed_file, genome_id
-        )
+        genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(bed_file, genome_id)
         args_update.update(genome_coordinates)
         # Ensure genome_coordinate is set for consistency
         args_update["genome_coordinate"] = bed_file
@@ -188,11 +186,11 @@ def execute_batch_mode(arguments: dict[str]):
         for args in groups:
             # Validate contents in the batch file
             input_validator.validate_files(args["sample"], args["control"], args["allele"])
-            
+
             # Validate BED file if provided
             if args.get("genome_coordinate"):
                 input_validator.validate_file_existence(args["genome_coordinate"])
-            
+
             # Validate genome and fetch urls
             if args.get("genome") and args["genome"] not in cache_urls_genome:
                 urls_genome = input_validator.validate_genome_and_fetch_urls(args["genome"])
@@ -236,8 +234,12 @@ def execute():
         "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )
     parser.add_argument(
-        "-b", "--bed", type=str, default="", dest="genome_coordinate",
-        help="Path to BED6 file containing genomic coordinates [default: '']"
+        "-b",
+        "--bed",
+        type=str,
+        default="",
+        dest="genome_coordinate",
+        help="Path to BED6 file containing genomic coordinates [default: '']",
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
     parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
