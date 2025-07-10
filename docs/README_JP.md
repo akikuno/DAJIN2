@@ -53,7 +53,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 
 ### ソフトウェア
 
-- Python >= 3.9
+- Python 3.9-3.12
 - Unix環境 (Linux, macOS, WSL2, etc.)
 
 >[!IMPORTANT]
@@ -208,7 +208,7 @@ ACGTACGT
 
 ```bash
 DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
-  [-g|--genome] [-t|--threads] [-h|--help] [-v|--version]
+  [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
 引数:
   -c, --control             コントロールのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
@@ -216,10 +216,66 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   -a, --allele              ゲノム編集によって想定されるアレルを記載したFASTAファイルのパス
   -n, --name (オプション)     出力ディレクトリの名前 [デフォルト: Results]
   -g, --genome (オプション)   参照ゲノムのID (e.g hg38, mm39) [デフォルト: '']
+  -b, --bed (オプション)     ゲノム座標を含むBED6ファイルのパス [デフォルト: '']
   -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
+  --no-filter (オプション)   マイナーアレルフィルタリングを無効化（0.5%未満のアレルも保持） [デフォルト: False]
   -h, --help                ヘルプメッセージの出力
   -v, --version             バージョンの出力
 ```
+
+### BEDファイルを用いたゲノム座標の指定
+
+参照ゲノムがUCSCのものでない場合、`-b/--bed`オプションを使用してBEDファイルを指定することができます。
+
+`-b/--bed`オプションでBEDファイルを使用する際は、以下の点にご注意ください：
+
+1. **BED6形式を使用**（6列必須）：
+   ```
+   chr1    1000000    1001000    248956422    0    +
+   ```
+   
+   **各列の説明：**
+   - 1列目：染色体名（例：chr1、chr2）
+   - 2列目：開始位置（0ベース、inclusive）
+   - 3列目：終了位置（0ベース、exclusive）
+   - 4列目：特徴量名（**IGVでの適切な可視化のため染色体サイズを使用**）
+   - 5列目：スコア（通常は0）
+   - 6列目：鎖（+または-、**FASTAアレルの向きと一致させる必要あり**）
+
+2. **鎖の向きを一致させる**：BEDファイルの鎖フィールド（6列目：`+`または`-`）は、**FASTAアレル配列の鎖の向きと一致する必要があります**。
+   - FASTAアレル配列が**フォワード鎖**（5'から3'）の場合、BEDファイルでは`+`を使用
+   - FASTAアレル配列が**リバース鎖**（3'から5'）の場合、BEDファイルでは`-`を使用
+
+3. **鎖が重要な理由**：
+   - DAJIN2はマイナス鎖領域に対して自動的に逆相補処理を適用します
+   - 鎖情報はIGVゲノムブラウザでの適切な可視化のためBAMファイルに保持されます
+   - 不正確な鎖情報は、配列のミスアライメントや不正確な変異検出につながる可能性があります
+
+詳細なBEDファイルの使用方法については、[BED_COORDINATE_USAGE.md](../BED_COORDINATE_USAGE.md)をご覧ください。
+
+### `--no-filter`による希少変異の検出
+
+DAJIN2は標準設定では、ノイズの軽減と精度向上のため、0.5%未満（100,000リードのダウンサンプリング中の5リード未満）のアレルを除外しています。しかし、希少変異や体細胞モザイクなど、非常に低頻度でマイナーアレルが存在する可能性がある場合は、`--no-filter`オプションを使用してこのフィルタリングを無効化できます。
+
+**`--no-filter`を使用する場面：**
+- 希少体細胞変異の検出（< 0.5%の頻度）
+- 低レベルモザイクが疑われるサンプルの解析
+- 頻度に関係なくすべての可能なアレルの検出が必要な研究
+
+**使用方法：**
+```bash
+DAJIN2 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2_deletion.fa \
+    --name stx2_deletion \
+    --genome mm39 \
+    --threads 4 \
+    --no-filter
+```
+
+> [!CAUTION]
+> `--no-filter`の使用は、結果にノイズや偽陽性を増加させる可能性があります。希少アレルについては、追加の実験手法による検証を推奨します。
 
 ### 実行例
 
@@ -246,17 +302,28 @@ DAJIN2 \
 > [!NOTE]
 > サンプル情報のまとめ方は、[こちら](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000)をご参照ください。  
 
+**必須列：** `sample`, `control`, `allele`, `name`  
+**オプション列：** `genome`, `bed`（または`genome_coordinate`）、その他のカスタム列
+
+**BEDファイルを使用したCSVの例：**
+```csv
+sample,control,allele,name,bed
+/path/to/sample1,/path/to/control1,/path/to/allele1.fa,experiment1,/path/to/coords1.bed
+/path/to/sample2,/path/to/control2,/path/to/allele2.fa,experiment2,/path/to/coords2.bed
+```
+
 > [!TIP]
 > **同じ実験に属するサンプルには、`name`列に同じ値を使用することを推奨します。**  
 > 同一の名前を使用することで、処理が並列化され、効率が向上します。  
 > こちらが一例です 👉 [batch.csv](https://github.com/akikuno/DAJIN2/blob/main/examples/example_batch/batch.csv)
 
 ```bash
-DAJIN2 batch <-f|--file> [-t|--threads] [-h]
+DAJIN2 batch <-f|--file> [-t|--threads] [--no-filter] [-h]
 
 引数:
   -f, --file                CSVまたはExcelファイルのパス
   -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
+  --no-filter (オプション)   マイナーアレルフィルタリングを無効化（0.5%未満のアレルも保持） [デフォルト: False]
   -h, --help                ヘルプメッセージの出力
 ```
 

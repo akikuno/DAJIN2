@@ -5,7 +5,7 @@ from pathlib import Path
 
 import midsv
 
-from DAJIN2.core.preprocess import mapping
+from DAJIN2.core.preprocess.alignment import mapping
 
 ###########################################################
 # Consider all mutations are possible in the knockin region

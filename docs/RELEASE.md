@@ -7,12 +7,39 @@
 ## 🐛 Bug Fixes
 ## 🔧 Maintenance
 ## ⛔️ Deprecated
-+ commitMessage. Issue #XX [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
++ commitMessage. Issue [#XX](https://github.com/akikuno/DAJIN2/issues/XX) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/xxxxx)]
 -->
 
 <!-- ############################################################# # -->
 
-# v0.6.2 (2025-06-07)
+<!-- ############################################################# # -->
+
+
+## v0.7.0 (2025-07-10)
+
+## 🌟 New Features
+
++ Added `--no-filter` option to detect rare mutations. See Issue: [#83](https://github.com/akikuno/DAJIN2/issues/83)
+
++ Added `-b/--bed` option to specify a BED file when using genomes other than UCSC reference genomes. See Issue: [#26](https://github.com/akikuno/DAJIN2/issues/26)
+
+## 🔧 Maintenance
+
++ Updated Python support from 3.9 to 3.12 due to dependencies in `pysam` and `mappy`. See Issue: [#101](https://github.com/akikuno/DAJIN2/issues/101)
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+<details>
+
+<summary> v0.6.2 (2025-06-07) </summary>
 
 ## 📝 Documentation
 
@@ -34,18 +61,8 @@
 
 + Shorten DAJIN2 log filename by replacing long UUID with microseconds for visual clarity. Issue [#95](https://github.com/akikuno/DAJIN2/issues/95) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/aceff9aec1f0146434f14597df2f77c508b0726f)]
 
-<!-- ############################################################# # -->
 
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
+</details>
 
 
 <!-- ############################################################# # -->

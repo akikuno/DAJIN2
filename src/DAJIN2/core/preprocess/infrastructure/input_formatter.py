@@ -58,15 +58,21 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
         "end": len(fasta_alleles["control"]) - 1,
         "strand": "+",
     }
-    if genome_urls["genome"]:
+    # Check if genome coordinates are available (from --genome or --genome-coordinate)
+    cache_file = Path(tempdir, "cache", "genome_coordinates.jsonl")
+    if cache_file.exists():
+        # Load cached coordinates (from BED file or genome ID)
+        genome_coordinates = next(io.read_jsonl(cache_file))
+    elif genome_urls["genome"]:
+        # Fetch coordinates using genome ID
         if is_cache_genome:
-            genome_coordinates = next(io.read_jsonl(Path(tempdir, "cache", "genome_coordinates.jsonl")))
+            genome_coordinates = next(io.read_jsonl(cache_file))
         else:
             genome_coordinates = preprocess.fetch_coordinates(
                 genome_coordinates, genome_urls, fasta_alleles["control"]
             )
             genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(genome_coordinates, genome_urls)
-            io.write_jsonl([genome_coordinates], Path(tempdir, "cache", "genome_coordinates.jsonl"))
+            io.write_jsonl([genome_coordinates], cache_file)
 
     return genome_coordinates
 
@@ -83,6 +89,7 @@ class FormattedInputs:
     genome_coordinates: dict[str, str]
     threads: int
     uuid: str
+    no_filter: bool = False
 
 
 def format_inputs(arguments: dict) -> FormattedInputs:
@@ -106,4 +113,5 @@ def format_inputs(arguments: dict) -> FormattedInputs:
         genome_coordinates,
         threads,
         uuid,
+        arguments.get("no_filter", False),
     )

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pysam
 
-from DAJIN2.core.preprocess.mapping import to_sam
+from DAJIN2.core.preprocess.alignment.mapping import to_sam
 from DAJIN2.utils import io, sam_handler
 
 
@@ -125,7 +125,8 @@ def update_genome_coodinates(sam: list, GENOME_COODINATES: dict = None) -> list:
 
     sam_records = sam.copy()
     sam_records = sam_handler.remove_microhomology(sam_records)
-    if GENOME_COODINATES["genome"]:
+    # Update @SQ headers if genome coordinates are available (from --genome or --genome-coordinate)
+    if GENOME_COODINATES.get("chrom") and GENOME_COODINATES.get("chrom_size"):
         return recalculate_sam_coodinates_to_reference(sam_records, GENOME_COODINATES)
     else:
         return convert_pos_to_one_indexed(sam_records)

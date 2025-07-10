@@ -26,6 +26,6 @@ def test_validate_columns_extra_not_accepted():
     columns = {"sample", "control", "allele", "name", "extra_column"}
     with pytest.raises(
         ValueError,
-        match='Accepted header names of test_filepath are "sample", "control", "allele", "name", or "genome".',
+        match='Accepted header names of test_filepath are "sample", "control", "allele", "name", "genome", "genome_coordinate", or "bed".',
     ):
         main.validate_headers_of_batch_file(columns, "test_filepath")

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from src.DAJIN2.core.preprocess import genome_fetcher
-from src.DAJIN2.utils.input_validator import validate_genome_and_fetch_urls
+from DAJIN2.core.preprocess.external_integration import genome_fetcher
+from DAJIN2.utils.input_validator import validate_genome_and_fetch_urls
 
 genome_urls = validate_genome_and_fetch_urls("mm39")
 

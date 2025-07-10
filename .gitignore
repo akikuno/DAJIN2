@@ -1,15 +1,14 @@
 # Temporary
-
 tmp/*
 tmp*
 .tmp*
 DAJIN_results/*
 DAJINResults/*
 mprofile*
-# Nanosim
-*aligned_reads*
-*error_profile*
-training_*
+
+
+CLAUDE.md
+GEMINI.md
 
 # vscode
 .vscode/*

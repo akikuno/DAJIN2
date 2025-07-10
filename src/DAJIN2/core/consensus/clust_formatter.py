@@ -5,8 +5,12 @@ from collections import defaultdict
 from itertools import groupby
 
 
-def remove_minor_alleles(clust_sample: list[dict]) -> list[dict]:
+def remove_minor_alleles(clust_sample: list[dict], no_filter: bool = False) -> list[dict]:
     """Remove minor alleles from the clustering sample."""
+    if no_filter:
+        # Skip filtering when --no-filter is used
+        return clust_sample
+
     min_sample_size = max(5, int(len(clust_sample) * 0.5 // 100))
 
     counts = defaultdict(int)

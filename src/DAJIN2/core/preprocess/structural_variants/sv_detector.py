@@ -7,7 +7,12 @@ from pathlib import Path
 import numpy as np
 
 from DAJIN2.core.clustering.clustering import optimize_labels
-from DAJIN2.core.preprocess.sv_handler import add_unique_allele_keys, extract_unique_sv, save_fasta, save_midsv
+from DAJIN2.core.preprocess.structural_variants.sv_handler import (
+    add_unique_allele_keys,
+    extract_unique_sv,
+    save_fasta,
+    save_midsv,
+)
 from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import convert_cssplits_to_sequence
 
