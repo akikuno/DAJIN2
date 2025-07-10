@@ -134,6 +134,32 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
     return intervals
 
 
+def validate_bed_coordinates(intervals: list[dict[str, any]]) -> None:
+    """
+    Validate BED coordinates for correctness.
+
+    Args:
+        intervals: List of interval dictionaries with 'start' and 'end' keys
+
+    Raises:
+        BEDError: If coordinates are invalid or intervals list is empty
+    """
+    if not intervals:
+        raise BEDError("No intervals provided for validation")
+
+    for i, interval in enumerate(intervals):
+        start = interval.get("start")
+        end = interval.get("end")
+
+        # Check if coordinates are integers
+        if not isinstance(start, int) or not isinstance(end, int):
+            raise BEDError(f"Interval {i + 1}: coordinates must be integers")
+
+        # Check if start < end
+        if start >= end:
+            raise BEDError(f"Interval {i + 1}: start ({start}) must be less than end ({end})")
+
+
 def bed_to_genome_coordinates(bed_path: str | Path, genome: str = "") -> dict[str, any]:
     """
     Convert BED file to DAJIN2 genome_coordinates format.
