@@ -205,7 +205,7 @@ DAJIN2 allows for the analysis of single samples (one sample vs one control).
 
 ```bash
 DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
-  [-g|--genome] [-b|--bed] [-t|--threads] [-h|--help] [-v|--version]
+  [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
 Options:
 -s, --sample            Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
@@ -215,6 +215,7 @@ Options:
 -g, --genome (Optional) Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -b, --bed (Optional)    Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
 -t, --threads (Optional) Set the number of threads. Default: 1.
+--no-filter (Optional)  Disable minor allele filtering (keep alleles <0.5%). Default: False.
 -h, --help              Display this help message and exit.
 -v, --version           Display the version number and exit.
 ```
@@ -249,6 +250,30 @@ When using the `-b/--bed` option with a BED file, please ensure:
 
 For detailed BED file usage, see [BED_COORDINATE_USAGE.md](BED_COORDINATE_USAGE.md).
 
+### Rare Mutation Detection with `--no-filter`
+
+By default, DAJIN2 filters out alleles with read counts below 0.5% (5 reads out of 100,000 downsampled reads) to reduce noise and improve accuracy. However, when analyzing rare mutations or somatic mosaicism where minor alleles may be present at very low frequencies, you can use the `--no-filter` option to disable this filtering.
+
+**When to use `--no-filter`:**
+- Detecting rare somatic mutations (< 0.5% frequency)
+- Analyzing samples with suspected low-level mosaicism
+- Research requiring detection of all possible alleles regardless of frequency
+
+**Usage:**
+```bash
+DAJIN2 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2_deletion.fa \
+    --name stx2_deletion \
+    --genome mm39 \
+    --threads 4 \
+    --no-filter
+```
+
+> [!CAUTION]
+> Using `--no-filter` may increase noise and false positives in the results. It is recommended to validate rare alleles through additional experimental methods.
+
 ### Example
 
 ```bash
@@ -274,6 +299,16 @@ For this purpose, a CSV or Excel file consolidating the sample information is re
 > [!NOTE]
 > For guidance on how to compile sample information, please refer to [this document](https://docs.google.com/presentation/d/e/2PACX-1vSMEmXJPG2TNjfT66XZJRzqJd82aAqO5gJrdEzyhn15YBBr_Li-j5puOgVChYf3jA/embed?start=false&loop=false&delayms=3000).
 
+**Required columns:** `sample`, `control`, `allele`, `name`  
+**Optional columns:** `genome`, `bed` (or `genome_coordinate`), and any custom columns
+
+**Example CSV with BED files:**
+```csv
+sample,control,allele,name,bed
+/path/to/sample1,/path/to/control1,/path/to/allele1.fa,experiment1,/path/to/coords1.bed
+/path/to/sample2,/path/to/control2,/path/to/allele2.fa,experiment2,/path/to/coords2.bed
+```
+
 > [!TIP]
 > It is **recommended to use the same value in the `name` column for samples that belong to the same experiment.**  
 > Using identical names enables parallel processing, thereby improving efficiency.  
@@ -281,11 +316,12 @@ For this purpose, a CSV or Excel file consolidating the sample information is re
 
 
 ```bash
-DAJIN2 batch <-f|--file> [-t|--threads] [-h]
+DAJIN2 batch <-f|--file> [-t|--threads] [--no-filter] [-h]
 
 options:
   -f, --file                Specify the path to the CSV or Excel file.
   -t, --threads (Optional)  Set the number of threads. Default: 1.
+  --no-filter (Optional)    Disable minor allele filtering (keep alleles <0.5%). Default: False.
   -h, --help                Display this help message and exit.
 ```
 
