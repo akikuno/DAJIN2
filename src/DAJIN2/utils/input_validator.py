@@ -79,9 +79,6 @@ def validate_fasta_content(path_fasta: str, allele_file: bool = False) -> None:
     if len(headers) != len(set(headers)):
         raise ValueError(f"{path_fasta} must include unique identifiers")
 
-    if len(seqs) != len(set(seqs)):
-        raise ValueError(f"{path_fasta} must include unique DNA sequences")
-
     if allele_file and "control" not in headers:
         raise ValueError(f"One of the headers in the {path_fasta} must be '>control'")
 

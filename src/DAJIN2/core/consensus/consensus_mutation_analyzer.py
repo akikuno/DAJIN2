@@ -98,7 +98,7 @@ def extract_path_n_filtered_control(
     return path_output
 
 
-def cache_normalized_indels(ARGS, path_consensus_sample: Path, allele: str) -> None:
+def cache_normalized_indels(ARGS, path_consensus_sample: Path, allele: str, no_filter: bool = False) -> None:
     """Cache normalized indels for consensus processing."""
     sequence = ARGS.fasta_alleles[allele]
 
@@ -107,7 +107,7 @@ def cache_normalized_indels(ARGS, path_consensus_sample: Path, allele: str) -> N
         ARGS.tempdir, ARGS.control_name, ARGS.sample_name, path_control, allele
     )
 
-    cache_selected_control_by_similarity(ARGS, path_control_filtered, path_consensus_sample, allele)
+    cache_selected_control_by_similarity(ARGS, path_control_filtered, path_consensus_sample, allele, no_filter)
 
     path_midsv_similar_control = Path(path_consensus_sample.parent, "control.jsonl")
 
@@ -118,7 +118,7 @@ def cache_normalized_indels(ARGS, path_consensus_sample: Path, allele: str) -> N
     io.save_pickle(indels_normalized_control, Path(path_consensus_sample.parent, "normalized_control.pickle"))
 
 
-def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
+def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False) -> None:
     """Cache mutation loci for consensus processing."""
     # Separate clusters by label and cache them
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
@@ -129,7 +129,7 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict]) -> None:
         path_consensus_sample = Path(path_consensus, f"{ARGS.sample_name}_sample.jsonl")
         io.write_jsonl(group, path_consensus_sample)
 
-        cache_normalized_indels(ARGS, path_consensus_sample, allele)
+        cache_normalized_indels(ARGS, path_consensus_sample, allele, no_filter)
 
         # Extract and cache mutation loci
         path_indels_normalized_sample = Path(path_consensus, "normalized_sample.pickle")

@@ -206,7 +206,7 @@ def execute_sample(arguments: dict):
 
     logger.info(f"Classify {arguments['sample']}...")
 
-    classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name)
+    classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.no_filter)
 
     io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
 
@@ -231,7 +231,7 @@ def execute_sample(arguments: dict):
     logger.info(f"Consensus calling of {arguments['sample']}...")
 
     # Remove minor alleles with fewer than 5 reads or less than 0.5%
-    clust_sample_removed = consensus.remove_minor_alleles(clust_sample)
+    clust_sample_removed = consensus.remove_minor_alleles(clust_sample, ARGS.no_filter)
 
     # Adjust the percentage to 100%
     clust_sample_removed = consensus.scale_percentage(clust_sample_removed)
@@ -239,7 +239,7 @@ def execute_sample(arguments: dict):
     # Downsampling to 1000 reads in each LABEL
     clust_downsampled = consensus.downsample_by_label(clust_sample_removed, 1000)
 
-    consensus.cache_mutation_loci(ARGS, clust_downsampled)
+    consensus.cache_mutation_loci(ARGS, clust_downsampled, ARGS.no_filter)
 
     cons_percentages, cons_sequences, cons_midsv_tags = consensus.call_consensus(
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled

@@ -49,7 +49,7 @@ def apply_mask(mut_onehot: dict[str, np.ndarray], mask_sample: dict[str, np.ndar
 
 
 def identify_normal_reads(
-    mut_onehot_sample_masked: dict[str, np.ndarray], mut_onehot_control_masked: dict[str, np.ndarray]
+    mut_onehot_sample_masked: dict[str, np.ndarray], mut_onehot_control_masked: dict[str, np.ndarray], no_filter: bool = False
 ) -> list[bool]:
     mutation_comparisons = {}
     for mut in {"+", "-", "*"}:
@@ -59,9 +59,16 @@ def identify_normal_reads(
         values_sum_sample = values_sample.sum(axis=1).reshape(-1, 1)
         values_sum_control = values_control.sum(axis=1).reshape(-1, 1)
 
-        clf = LocalOutlierFactor(novelty=True, n_neighbors=len(values_sum_sample)).fit(values_sum_sample)
-        labels = clf.predict(values_sum_control)
-        mutation_comparisons[mut] = np.where(labels == 1, True, False)
+        # Skip outlier detection for small samples when using --no-filter
+        if no_filter and len(values_sum_sample) <= 1:
+            # Accept all control reads when sample size is too small for LOF
+            mutation_comparisons[mut] = np.ones(len(values_sum_control), dtype=bool)
+        else:
+            # Use LocalOutlierFactor for sufficient sample sizes
+            n_neighbors = min(len(values_sum_sample), max(1, len(values_sum_sample) - 1))
+            clf = LocalOutlierFactor(novelty=True, n_neighbors=n_neighbors).fit(values_sum_sample)
+            labels = clf.predict(values_sum_control)
+            mutation_comparisons[mut] = np.where(labels == 1, True, False)
 
     return (mutation_comparisons["+"] * mutation_comparisons["-"] * mutation_comparisons["*"]).tolist()
 
@@ -71,7 +78,7 @@ def identify_normal_reads(
 ###########################################################
 
 
-def filter_control(ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str) -> list[bool]:
+def filter_control(ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str, no_filter: bool = False) -> list[bool]:
     """
     find similar control reads compared to sample reads
     """
@@ -94,13 +101,13 @@ def filter_control(ARGS, path_consensus_control: Path, path_consensus_sample: Pa
     mut_onehot_sample_masked = apply_mask(mut_onehot_sample, values_mask)
     mut_onehot_control_masked = apply_mask(mut_onehot_control, values_mask)
 
-    return identify_normal_reads(mut_onehot_sample_masked, mut_onehot_control_masked)
+    return identify_normal_reads(mut_onehot_sample_masked, mut_onehot_control_masked, no_filter)
 
 
 def cache_selected_control_by_similarity(
-    ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str
+    ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str, no_filter: bool = False
 ) -> None:
-    normal_reads_flags = filter_control(ARGS, path_consensus_control, path_consensus_sample, allele)
+    normal_reads_flags = filter_control(ARGS, path_consensus_control, path_consensus_sample, allele, no_filter)
     midsv_control = io.read_jsonl(path_consensus_control)
     midsv_filtered = (m for m, flag in zip(midsv_control, normal_reads_flags) if flag is True)
 

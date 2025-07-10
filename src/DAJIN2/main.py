@@ -148,12 +148,13 @@ def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) 
 
 
 def run_DAJIN2(
-    groups: list[dict[str, str]], cache_urls_genome: dict, is_control: bool = True, num_workers: int = 1
+    groups: list[dict[str, str]], cache_urls_genome: dict, is_control: bool = True, num_workers: int = 1, no_filter: bool = False
 ) -> None:
     contents = []
     for args in groups:
         args = create_argument_dict(args, cache_urls_genome, is_control)
         if args:  # Add args to contents only if it's not an empty dict
+            args["no_filter"] = no_filter  # Add no_filter to each args dict
             contents.append(args)
 
     # Return a list of unique dictionaries
@@ -209,8 +210,8 @@ def execute_batch_mode(arguments: dict[str]):
         logger.info(f"\N{LEFT-POINTING MAGNIFYING GLASS} Handling {name}")
 
         # Run DAJIN2
-        run_DAJIN2(groups, cache_urls_genome, is_control=True, num_workers=arguments["threads"])
-        run_DAJIN2(groups, cache_urls_genome, is_control=False, num_workers=arguments["threads"])
+        run_DAJIN2(groups, cache_urls_genome, is_control=True, num_workers=arguments["threads"], no_filter=arguments["no_filter"])
+        run_DAJIN2(groups, cache_urls_genome, is_control=False, num_workers=arguments["threads"], no_filter=arguments["no_filter"])
 
         # Finish call
         generate_report(name, logger)
@@ -242,6 +243,7 @@ def execute():
         help="Path to BED6 file containing genomic coordinates [default: '']",
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
+    parser.add_argument("--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)")
     parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
@@ -253,6 +255,7 @@ def execute():
         arguments = {}
         arguments["file"] = args.file
         arguments["threads"] = input_validator.update_threads(int(args.threads))
+        arguments["no_filter"] = args.no_filter
         arguments["debug"] = args.debug
         execute_batch_mode(arguments)
 
@@ -260,6 +263,7 @@ def execute():
     parser_batch = subparser.add_parser("batch", help="DAIJN2 batch mode")
     parser_batch.add_argument("-f", "--file", required=True, type=str, help="CSV or Excel file.")
     parser_batch.add_argument("-t", "--threads", default=1, type=int, help="Number of threads [default: 1]")
+    parser_batch.add_argument("--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)")
     parser_batch.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
     parser_batch.set_defaults(handler=batchmode)
 
@@ -309,6 +313,7 @@ def execute():
         arguments["genome"] = args.genome
         arguments["genome_coordinate"] = args.genome_coordinate
         arguments["threads"] = input_validator.update_threads(int(args.threads))
+        arguments["no_filter"] = args.no_filter
         arguments["debug"] = args.debug
 
         execute_single_mode(arguments)

@@ -89,6 +89,7 @@ class FormattedInputs:
     genome_coordinates: dict[str, str]
     threads: int
     uuid: str
+    no_filter: bool = False
 
 
 def format_inputs(arguments: dict) -> FormattedInputs:
@@ -112,4 +113,5 @@ def format_inputs(arguments: dict) -> FormattedInputs:
         genome_coordinates,
         threads,
         uuid,
+        arguments.get("no_filter", False),
     )
