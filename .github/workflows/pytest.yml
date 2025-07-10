@@ -11,26 +11,65 @@ jobs:
         outputs:
             versions: ${{ steps.get-versions.outputs.versions }}
         steps:
-            - name: Fetch maintained Python versions
+            - uses: actions/checkout@v4
+            - name: Extract Python versions from pyproject.toml
               id: get-versions
               run: |
-                  # Fetch maintained Python versions (excluding the latest version)
-                  PYTHON_VERSIONS=$(curl -s https://devguide.python.org/versions/ |
-                      grep -e "<tr" -e "<td" |
-                      grep -v "Branch" |
-                      paste - - - - - - |
-                      grep -v -e "feature" -e "end-of-life" |
-                      sed 1d |
-                      cut -f 1 |
-                      sed "s|^.*<p>||" |
-                      sed "s|</p>.*$||")
+                  # Parse Python version constraint from pyproject.toml and generate version list
+                  PYTHON_VERSIONS=$(python3 << 'EOF'
+                  import re
+                  import json
+                  import sys
 
-                  # Convert to a JSON array (replace newlines with spaces first)
-                  PYTHON_VERSIONS=$(echo "$PYTHON_VERSIONS" | tr '\n' ' ' | jq -R -s -c 'split(" ") | map(select(length > 0))')
+                  def parse_python_constraint(constraint):
+                      """Parse Python version constraint and return available version list"""
+                      
+                      # Parse >=X.Y,<X.Z format
+                      match = re.match(r'>=(\d+)\.(\d+),<(\d+)\.(\d+)', constraint)
+                      if not match:
+                          # Return default values
+                          return ["3.9", "3.10", "3.11", "3.12"]
+                      
+                      min_major, min_minor, max_major, max_minor = map(int, match.groups())
+                      versions = []
+                      
+                      # Known Python versions (should be updated periodically)
+                      known_python_versions = [
+                          (3, 9), (3, 10), (3, 11), (3, 12), (3, 13), (3, 14), (3, 15)
+                      ]
+                      
+                      for major, minor in known_python_versions:
+                          # Check if version is within constraints
+                          if (major > min_major or (major == min_major and minor >= min_minor)) and \
+                             (major < max_major or (major == max_major and minor < max_minor)):
+                              versions.append(f"{major}.{minor}")
+                      
+                      return versions
 
-                  # Cache the Python versions
+                  # Read pyproject.toml
+                  try:
+                      with open('pyproject.toml', 'r') as f:
+                          content = f.read()
+                      
+                      # Extract python = "..." line
+                      match = re.search(r'python\s*=\s*"([^"]+)"', content)
+                      if match:
+                          constraint = match.group(1)
+                          print(f"Python constraint: {constraint}", file=sys.stderr)
+                          
+                          versions = parse_python_constraint(constraint)
+                          print(json.dumps(versions))
+                      else:
+                          print('["3.9", "3.10", "3.11", "3.12"]')  # Default
+                          
+                  except Exception as e:
+                      print(f"Error: {e}", file=sys.stderr)
+                      print('["3.9", "3.10", "3.11", "3.12"]')  # Default on error
+                  EOF
+                  )
+
+                  echo "Generated versions: $PYTHON_VERSIONS"
                   echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
-                  echo "versions=$PYTHON_VERSIONS"
     build:
         needs: get-python-versions
         runs-on: ${{ matrix.os }}
