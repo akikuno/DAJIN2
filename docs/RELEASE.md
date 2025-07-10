@@ -15,17 +15,15 @@
 <!-- ############################################################# # -->
 
 
-## v0.7.0 (2025-07-10)
-
 ## 🌟 New Features
 
 + Added `--no-filter` option to detect rare mutations. See Issue: [#83](https://github.com/akikuno/DAJIN2/issues/83)
 
 + Added `-b/--bed` option to specify a BED file when using genomes other than UCSC reference genomes. See Issue: [#26](https://github.com/akikuno/DAJIN2/issues/26)
 
-+ Added もし参照ゲノム配列にInputのFASTA配列が存在しなかった場合に、UCSCへのリンクを含む明示的なエラーメッセージを表示する機能. See Issue: [#26](https://github.com/akikuno/DAJIN2/issues/26)
++ Added a feature to display an explicit error message with a UCSC genome browser link when the input FASTA sequence is not found in the reference genome. See Issue: [#26](https://github.com/akikuno/DAJIN2/issues/26)
 
-+ まったく同一の配列が存在する場合のValueErrorを削除。これはShort-readへの対応で、同一の配列が存在することは想定されるため。[[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fd7518357779f2f2ebea1dd6a43c7ddfe0b4c5a3#diff-4b9f2a326855933258d70bf13c107eed755b5140240b5b30bc9ca05de397ceeb)]
++ Removed the `ValueError` that occurred when identical sequences were found. This is to support short-read data, where such cases are expected. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fd7518357779f2f2ebea1dd6a43c7ddfe0b4c5a3#diff-4b9f2a326855933258d70bf13c107eed755b5140240b5b30bc9ca05de397ceeb)]
 
 ## 🔧 Maintenance
 
