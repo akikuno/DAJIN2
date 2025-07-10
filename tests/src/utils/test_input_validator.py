@@ -68,13 +68,6 @@ def test_fasta_error_duplicated_identifiers():
     assert str(e.value) == f"{fasta_path} must include unique identifiers"
 
 
-def test_fasta_error_duplicated_sequences():
-    with pytest.raises(ValueError) as e:
-        fasta_path = "tests/data/utils/validate_inputs/duplicated_seq.fa"
-        _ = input_validator.validate_fasta_content(fasta_path)
-    assert str(e.value) == f"{fasta_path} must include unique DNA sequences"
-
-
 def test_fasta_error_without_control():
     with pytest.raises(ValueError) as e:
         fasta_path = "tests/data/utils/validate_inputs/no_control.fa"

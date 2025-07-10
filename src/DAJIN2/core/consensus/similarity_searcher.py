@@ -49,7 +49,9 @@ def apply_mask(mut_onehot: dict[str, np.ndarray], mask_sample: dict[str, np.ndar
 
 
 def identify_normal_reads(
-    mut_onehot_sample_masked: dict[str, np.ndarray], mut_onehot_control_masked: dict[str, np.ndarray], no_filter: bool = False
+    mut_onehot_sample_masked: dict[str, np.ndarray],
+    mut_onehot_control_masked: dict[str, np.ndarray],
+    no_filter: bool = False,
 ) -> list[bool]:
     mutation_comparisons = {}
     for mut in {"+", "-", "*"}:
@@ -78,7 +80,9 @@ def identify_normal_reads(
 ###########################################################
 
 
-def filter_control(ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str, no_filter: bool = False) -> list[bool]:
+def filter_control(
+    ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str, no_filter: bool = False
+) -> list[bool]:
     """
     find similar control reads compared to sample reads
     """

@@ -206,7 +206,9 @@ def execute_sample(arguments: dict):
 
     logger.info(f"Classify {arguments['sample']}...")
 
-    classif_sample = classification.classify_alleles(ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.no_filter)
+    classif_sample = classification.classify_alleles(
+        ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.no_filter
+    )
 
     io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
 
