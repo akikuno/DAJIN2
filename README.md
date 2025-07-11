@@ -5,7 +5,7 @@
 [![Bioconda](https://img.shields.io/conda/v/bioconda/dajin2?label=Bioconda&color=orange)](https://anaconda.org/bioconda/dajin2)
 [![DOI](https://zenodo.org/badge/387721337.svg)](https://zenodo.org/badge/latestdoi/387721337)
 [![Paper](https://img.shields.io/badge/Plos%20Biol-10.1371/journal.pbio.3001507-lightgreen)](https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3001507)
-[![Inquiry](https://img.shields.io/badge/Inquiry-923DE2)](https://forms.gle/r4YRs1th7NGHfDcS9)
+[![Contact💬](https://img.shields.io/badge/Contact💬-923DE2)](https://forms.gle/r4YRs1th7NGHfDcS9)
 
 
 <p align="center">
