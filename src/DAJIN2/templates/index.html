@@ -4,44 +4,431 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DAJIN</title>
+    <title>DAJIN2</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
     <link href="/static/css/style.css" rel="stylesheet" type="text/css" media="all">
 </head>
 
 <body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Main Form -->
+                <div id="main-form" class="card">
+                    <div class="card-header">
+                        <h1 class="text-center mb-0">DAJIN2</h1>
+                        <p class="text-center text-muted mb-0">Genotyping tool for genome editing</p>
+                    </div>
+                    <div class="card-body">
+                        <form id="dajin-form" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Project Name <span class="text-danger">*</span></label>
+                                <input class="form-control" type="text" id="name" name="name" required 
+                                       placeholder="e.g. experiment_001" />
+                                <div class="form-text">This will be the name of the result folder</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="sample" class="form-label">Sample Directory <span class="text-danger">*</span></label>
+                                <input class="form-control" type="file" id="sample" name="sample" 
+                                       accept=".fastq,.fq,.fastq.gz,.fq.gz" multiple required webkitdirectory />
+                                <div class="form-text">
+                                    <strong>Select a folder containing FASTQ files</strong><br>
+                                    <small class="text-muted">
+                                        • All files in the folder must be FASTQ format (.fastq, .fq, .fastq.gz, .fq.gz)<br>
+                                        • All files must have the same extension<br>
+                                        • Click "Choose Files" and select any file in your sample directory
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="control" class="form-label">Control Directory <span class="text-danger">*</span></label>
+                                <input class="form-control" type="file" id="control" name="control" 
+                                       accept=".fastq,.fq,.fastq.gz,.fq.gz" multiple webkitdirectory />
+                                <div class="form-text">
+                                    <strong>Select a folder containing control FASTQ files</strong><br>
+                                    <small class="text-muted">
+                                        • All files in the folder must be FASTQ format (.fastq, .fq, .fastq.gz, .fq.gz)<br>
+                                        • All files must have the same extension<br>
+                                        • Click "Choose Files" and select any file in your control directory
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="allele" class="form-label">Allele FASTA <span class="text-danger">*</span></label>
+                                <input class="form-control" type="file" id="allele" name="allele" 
+                                       accept=".fasta,.fa,.fas" multiple required />
+                                <div class="form-text">Multiple files can be selected (.fasta, .fa, .fas)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="genome" class="form-label">Reference Genome <span class="text-muted">(Optional)</span></label>
+                                <input class="form-control" type="text" id="genome" name="genome" 
+                                       placeholder="e.g. hg38, mm39" />
+                                <div class="form-text">Enter genome ID if using reference</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="threads" class="form-label">Threads <span class="text-muted">(Optional)</span></label>
+                                <input class="form-control" type="number" id="threads" name="threads" 
+                                       min="1" max="32" value="1" />
+                                <div class="form-text">Number of parallel processing threads (1-32)</div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <span id="submit-text">Start Analysis</span>
+                                    <span id="submit-spinner" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Progress Panel -->
+                <div id="progress-panel" class="card mt-4" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Analysis Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress mb-3">
+                            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div id="progress-message" class="text-center">Starting analysis...</div>
+                        <div id="progress-steps" class="mt-3">
+                            <small class="text-muted">Step <span id="current-step">1</span> / <span id="total-steps">5</span></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result Panel -->
+                <div id="result-panel" class="card mt-4" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Analysis Results</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div id="result-message" class="mb-3"></div>
+                        <div id="result-path-display" class="mb-3 p-3 bg-light rounded">
+                            <div class="mb-2">
+                                <small class="text-muted">Unix Path:</small><br>
+                                <code id="result-path-unix" class="d-block"></code>
+                            </div>
+                            <div id="windows-path-container" style="display: none;">
+                                <small class="text-muted">Windows Path:</small><br>
+                                <code id="result-path-windows" class="d-block"></code>
+                            </div>
+                        </div>
+                        <div id="result-actions">
+                            <button type="button" class="btn btn-success me-2" onclick="openResultFolder()">
+                                📁 Open Results Folder
+                            </button>
+                            <div class="btn-group me-2" role="group">
+                                <button type="button" class="btn btn-info" onclick="copyResultPath('unix')">
+                                    📋 Copy Unix Path
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="copyResultPath('windows')" id="copy-windows-btn" style="display: none;">
+                                    📋 Copy Windows Path
+                                </button>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="startNewAnalysis()">
+                                🔄 Start New Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Panel -->
+                <div id="error-panel" class="alert alert-danger mt-4" style="display: none;">
+                    <h6 class="alert-heading">An Error Occurred</h6>
+                    <p id="error-message" class="mb-0"></p>
+                    <hr>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="startNewAnalysis()">
+                        🔄 Retry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
         crossorigin="anonymous"></script>
 
-    <form action="/submit" method="POST" enctype="multipart/form-data">
-        <h1>DAJIN2</h1>
+    <script>
+        let currentAnalysisId = null;
+        let eventSource = null;
 
-        <h2> Name </h2>
-        <input class="form-control" type="text" name="name" required />
+        // Add directory selection feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            const sampleInput = document.getElementById('sample');
+            const controlInput = document.getElementById('control');
+            
+            sampleInput.addEventListener('change', function(e) {
+                updateDirectoryFeedback(e.target, 'sample');
+            });
+            
+            controlInput.addEventListener('change', function(e) {
+                updateDirectoryFeedback(e.target, 'control');
+            });
+        });
 
-        <h2> Sample FASTQs </h2>
-        <input class="form-control" type="file" name="sample" accept=".fastq, .fq, .fastq.gz, .fq.gz" multiple
-            required />
+        function updateDirectoryFeedback(input, type) {
+            const files = input.files;
+            const container = input.closest('.mb-3');
+            let feedbackElement = container.querySelector('.directory-feedback');
+            
+            if (!feedbackElement) {
+                feedbackElement = document.createElement('div');
+                feedbackElement.className = 'directory-feedback mt-2 p-2 bg-info text-white rounded';
+                container.appendChild(feedbackElement);
+            }
+            
+            if (files.length > 0) {
+                // Get directory name from first file path
+                const firstFilePath = files[0].webkitRelativePath || files[0].name;
+                const dirName = firstFilePath.split('/')[0] || 'Selected files';
+                
+                feedbackElement.innerHTML = `
+                    <strong>✓ Directory selected:</strong> ${dirName}<br>
+                    <small>${files.length} file(s) found</small>
+                `;
+                feedbackElement.className = 'directory-feedback mt-2 p-2 bg-success text-white rounded';
+            } else {
+                feedbackElement.innerHTML = '<strong>⚠ No directory selected</strong>';
+                feedbackElement.className = 'directory-feedback mt-2 p-2 bg-warning text-dark rounded';
+            }
+        }
 
-        <h2> Control FASTQ </h2>
-        <input class="form-control" type="file" name="control" accept=".fastq, .fq, .fastq.gz, .fq.gz" required />
+        // Form submission handler
+        document.getElementById('dajin-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitText.textContent = 'Starting analysis...';
+            submitSpinner.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Success - start progress monitoring
+                    currentAnalysisId = result.analysis_id;
+                    showProgressPanel();
+                    startProgressMonitoring(currentAnalysisId);
+                } else {
+                    // Error
+                    showError(result.error || 'Unknown error occurred');
+                }
+            } catch (error) {
+                showError('Communication with server failed: ' + error.message);
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitText.textContent = 'Start Analysis';
+                submitSpinner.style.display = 'none';
+            }
+        });
 
-        <h2> Allele FASTA </h2>
-        <input class="form-control" type="file" name="allele" accept=".fasta, .fa" multiple required />
+        function startProgressMonitoring(analysisId) {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            eventSource = new EventSource(`/progress/${analysisId}`);
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.status === 'progress') {
+                    updateProgress(data.message, data.step, data.total_steps);
+                } else if (data.status === 'completed') {
+                    showResult(data.message, data.result_path);
+                    eventSource.close();
+                } else if (data.status === 'error') {
+                    showError(data.message);
+                    eventSource.close();
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('EventSource error:', event);
+                showError('Error occurred during progress monitoring');
+                eventSource.close();
+            };
+        }
 
-        <h2> Genome (optional) </h2>
-        <input class="form-control" type="text" name="genome" placeholder="(e.g. hg38)" />
+        function showProgressPanel() {
+            document.getElementById('main-form').style.display = 'none';
+            document.getElementById('progress-panel').style.display = 'block';
+            document.getElementById('result-panel').style.display = 'none';
+            document.getElementById('error-panel').style.display = 'none';
+        }
 
-        <h2> Threads (optional) </h2>
-        <input class="form-control" type="number" name="threads" min="1" />
+        function updateProgress(message, step, totalSteps) {
+            document.getElementById('progress-message').textContent = message;
+            document.getElementById('current-step').textContent = step;
+            document.getElementById('total-steps').textContent = totalSteps;
+            
+            const progressPercentage = (step / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = progressPercentage + '%';
+        }
 
-        <br>
+        function showResult(message, resultPath) {
+            document.getElementById('progress-panel').style.display = 'none';
+            document.getElementById('result-panel').style.display = 'block';
+            document.getElementById('result-message').innerHTML = message;
+            
+            // Store result path and display both Unix and Windows formats
+            window.resultPath = resultPath;
+            document.getElementById('result-path-unix').textContent = resultPath;
+            
+            // Show Windows path if it looks like a Windows system or WSL
+            function convertToWindowsPath(unixPath) {
+                // Convert WSL mount paths (/mnt/drive/) to Windows drive letters
+                const wslPattern = /^\/mnt\/([a-z])(\/.*)?$/i;
+                const match = unixPath.match(wslPattern);
+                
+                if (match) {
+                    const driveLetter = match[1].toUpperCase();
+                    const restOfPath = match[2] || '';
+                    return `${driveLetter}:${restOfPath}`.replace(/\//g, '\\');
+                } else {
+                    // For non-WSL paths, just convert slashes
+                    return unixPath.replace(/\//g, '\\');
+                }
+            }
+            
+            const windowsPath = convertToWindowsPath(resultPath);
+            if (resultPath.includes('/mnt/') || navigator.platform.includes('Win')) {
+                document.getElementById('windows-path-container').style.display = 'block';
+                document.getElementById('result-path-windows').textContent = windowsPath;
+                document.getElementById('copy-windows-btn').style.display = 'inline-block';
+                window.windowsPath = windowsPath;
+            }
+        }
 
-        <input class="btn btn-primary" type="submit" name="submit" value="Run DAJIN" />
+        function showError(message) {
+            document.getElementById('progress-panel').style.display = 'none';
+            document.getElementById('error-panel').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
 
-    </form>
+        async function openResultFolder() {
+            if (!currentAnalysisId) {
+                alert('No analysis ID available');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/open-folder/${currentAnalysisId}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Show success message with path info
+                    let successMsg = `Folder opened successfully!\n\nUnix Path: ${result.path}`;
+                    if (result.windows_path && result.windows_path !== result.path) {
+                        successMsg += `\nWindows Path: ${result.windows_path}`;
+                    }
+                    alert(successMsg);
+                } else {
+                    // Show detailed error information for debugging
+                    let errorMsg = `Could not open folder automatically.\n\n`;
+                    
+                    if (result.debug_info) {
+                        errorMsg += `Debug Info: ${result.debug_info}\n\n`;
+                    }
+                    
+                    errorMsg += `Please manually navigate to:\nUnix: ${result.path || window.resultPath || 'Unknown path'}`;
+                    
+                    if (result.windows_path || window.windowsPath) {
+                        errorMsg += `\nWindows: ${result.windows_path || window.windowsPath}`;
+                    }
+                    
+                    if (result.suggestion) {
+                        errorMsg += `\n\n${result.suggestion}`;
+                    }
+                    
+                    alert(errorMsg);
+                }
+            } catch (error) {
+                // Enhanced fallback with both path formats
+                let fallbackMsg = `Could not open folder automatically.\nError: ${error.message}\n\n`;
+                fallbackMsg += `Please manually navigate to:\nUnix: ${window.resultPath || 'Unknown path'}`;
+                
+                if (window.windowsPath) {
+                    fallbackMsg += `\nWindows: ${window.windowsPath}`;
+                }
+                
+                alert(fallbackMsg);
+            }
+        }
+        
+        function copyResultPath(type = 'unix') {
+            let pathToCopy;
+            let pathLabel;
+            
+            if (type === 'windows' && window.windowsPath) {
+                pathToCopy = window.windowsPath;
+                pathLabel = 'Windows path';
+            } else {
+                pathToCopy = window.resultPath;
+                pathLabel = 'Unix path';
+            }
+            
+            if (pathToCopy) {
+                navigator.clipboard.writeText(pathToCopy).then(function() {
+                    // Show temporary notification
+                    const btn = event.target;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✅ Copied!';
+                    btn.disabled = true;
+                    
+                    setTimeout(function() {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                }).catch(function(err) {
+                    // Fallback for older browsers
+                    prompt(`Copy this ${pathLabel}:`, pathToCopy);
+                });
+            }
+        }
+
+        function startNewAnalysis() {
+            // Reset all panels
+            document.getElementById('main-form').style.display = 'block';
+            document.getElementById('progress-panel').style.display = 'none';
+            document.getElementById('result-panel').style.display = 'none';
+            document.getElementById('error-panel').style.display = 'none';
+            
+            // Reset form
+            document.getElementById('dajin-form').reset();
+            
+            // Close any existing event source
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            
+            currentAnalysisId = null;
+            window.resultPath = null;
+        }
+    </script>
 </body>
 
 </html>

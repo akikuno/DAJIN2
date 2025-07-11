@@ -1,3 +1,191 @@
 body {
-    margin: 25px;
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 1rem 1.25rem;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.progress {
+    height: 1rem;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    background-color: #0d6efd;
+}
+
+.alert-danger {
+    border-color: #f5c2c7;
+    background-color: #f8d7da;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.form-text {
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+/* Custom styling for file inputs */
+.form-control[type="file"] {
+    padding: 0.375rem 0.75rem;
+}
+
+/* Animation for progress bar */
+@keyframes progress-bar-stripes {
+    0% {
+        background-position-x: 1rem;
+    }
+}
+
+.progress-bar-animated {
+    animation: 1s linear infinite progress-bar-stripes;
+}
+
+/* Result panel styling */
+#result-panel .card-body {
+    padding: 2rem;
+}
+
+#result-message {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Error panel styling */
+#error-panel {
+    border-left: 4px solid #dc3545;
+}
+
+/* Result path display styling */
+#result-path-display {
+    text-align: left;
+    border: 1px solid #dee2e6;
+    background-color: #f8f9fa !important;
+}
+
+#result-path-text {
+    font-size: 0.9rem;
+    color: #495057;
+    word-break: break-all;
+    background-color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Copy button animation */
+.btn-info {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-info:hover {
+    background-color: #31d2f2;
+    border-color: #25cff2;
+}
+
+/* Directory feedback styling */
+.directory-feedback {
+    font-size: 0.9rem;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+}
+
+.directory-feedback strong {
+    font-weight: 600;
+}
+
+/* File input enhancement for directory selection */
+input[type="file"][webkitdirectory] {
+    border: 2px dashed #dee2e6;
+    background-color: #f8f9fa;
+    transition: border-color 0.3s ease;
+}
+
+input[type="file"][webkitdirectory]:hover {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+input[type="file"][webkitdirectory]:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .card {
+        margin: 0.5rem 0;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    #result-actions .btn {
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+    
+    #result-actions .me-2 {
+        margin-right: 0 !important;
+    }
+    
+    #result-actions .btn-group {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    #result-actions .btn-group .btn {
+        flex: 1;
+    }
 }
