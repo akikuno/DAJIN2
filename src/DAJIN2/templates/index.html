@@ -21,23 +21,37 @@
                         <p class="text-center text-muted mb-0">Genotyping tool for genome editing</p>
                     </div>
                     <div class="card-body">
-                        <form id="dajin-form" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Project Name <span class="text-danger">*</span></label>
-                                <input class="form-control" type="text" id="name" name="name" required 
-                                       placeholder="e.g. experiment_001" />
-                                <div class="form-text">This will be the name of the result folder</div>
+                        <!-- Mode Selection -->
+                        <div class="mb-4">
+                            <label class="form-label">Analysis Mode</label>
+                            <div class="btn-group w-100" role="group" aria-label="Analysis mode selection">
+                                <input type="radio" class="btn-check" name="mode" id="single-mode" value="single" checked>
+                                <label class="btn btn-outline-primary" for="single-mode">Single Sample Analysis</label>
+                                
+                                <input type="radio" class="btn-check" name="mode" id="batch-mode" value="batch">
+                                <label class="btn btn-outline-primary" for="batch-mode">Batch Processing</label>
                             </div>
+                        </div>
+
+                        <!-- Single Sample Form -->
+                        <form id="dajin-form" enctype="multipart/form-data">
+                            <div id="single-sample-fields">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Project Name <span class="text-danger">*</span></label>
+                                    <input class="form-control" type="text" id="name" name="name" required 
+                                           placeholder="e.g. experiment_001" />
+                                    <div class="form-text">This will be the name of the result folder</div>
+                                </div>
 
                             <div class="mb-3">
                                 <label for="sample" class="form-label">Sample Directory <span class="text-danger">*</span></label>
                                 <input class="form-control" type="file" id="sample" name="sample" 
-                                       accept=".fastq,.fq,.fastq.gz,.fq.gz" multiple required webkitdirectory />
+                                       accept=".fastq,.fq,.fastq.gz,.fq.gz,.fasta,.fa,.fasta.gz,.fa.gz,.bam" multiple required webkitdirectory />
                                 <div class="form-text">
-                                    <strong>Select a folder containing FASTQ files</strong><br>
+                                    <strong>Select a folder containing sample files</strong><br>
                                     <small class="text-muted">
-                                        • All files in the folder must be FASTQ format (.fastq, .fq, .fastq.gz, .fq.gz)<br>
-                                        • All files must have the same extension<br>
+                                        • Supported formats: FASTQ (.fastq, .fq, .fastq.gz, .fq.gz), FASTA (.fasta, .fa, .fasta.gz, .fa.gz), or BAM (.bam)<br>
+                                        • All files in the folder must have the same format<br>
                                         • Click "Choose Files" and select any file in your sample directory
                                     </small>
                                 </div>
@@ -46,12 +60,12 @@
                             <div class="mb-3">
                                 <label for="control" class="form-label">Control Directory <span class="text-danger">*</span></label>
                                 <input class="form-control" type="file" id="control" name="control" 
-                                       accept=".fastq,.fq,.fastq.gz,.fq.gz" multiple webkitdirectory />
+                                       accept=".fastq,.fq,.fastq.gz,.fq.gz,.fasta,.fa,.fasta.gz,.fa.gz,.bam" multiple webkitdirectory />
                                 <div class="form-text">
-                                    <strong>Select a folder containing control FASTQ files</strong><br>
+                                    <strong>Select a folder containing control files</strong><br>
                                     <small class="text-muted">
-                                        • All files in the folder must be FASTQ format (.fastq, .fq, .fastq.gz, .fq.gz)<br>
-                                        • All files must have the same extension<br>
+                                        • Supported formats: FASTQ (.fastq, .fq, .fastq.gz, .fq.gz), FASTA (.fasta, .fa, .fasta.gz, .fa.gz), or BAM (.bam)<br>
+                                        • All files in the folder must have the same format<br>
                                         • Click "Choose Files" and select any file in your control directory
                                     </small>
                                 </div>
@@ -60,8 +74,8 @@
                             <div class="mb-3">
                                 <label for="allele" class="form-label">Allele FASTA <span class="text-danger">*</span></label>
                                 <input class="form-control" type="file" id="allele" name="allele" 
-                                       accept=".fasta,.fa,.fas" multiple required />
-                                <div class="form-text">Multiple files can be selected (.fasta, .fa, .fas)</div>
+                                       accept=".fasta,.fa" multiple required />
+                                <div class="form-text">Multiple files can be selected (.fasta, .fa)</div>
                             </div>
 
                             <div class="mb-3">
@@ -72,10 +86,68 @@
                             </div>
 
                             <div class="mb-3">
+                                <label for="bed" class="form-label">BED File <span class="text-muted">(Optional)</span></label>
+                                <input class="form-control" type="file" id="bed" name="bed" 
+                                       accept=".bed" />
+                                <div class="form-text">
+                                    <strong>Upload a BED6 file for genomic coordinates</strong><br>
+                                    <small class="text-muted">
+                                        • Use when reference genome is not from UCSC<br>
+                                        • BED6 format required (6 columns)<br>
+                                        • Strand must match FASTA allele orientation
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="threads" class="form-label">Threads <span class="text-muted">(Optional)</span></label>
                                 <input class="form-control" type="number" id="threads" name="threads" 
                                        min="1" max="32" value="1" />
                                 <div class="form-text">Number of parallel processing threads (1-32)</div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="no-filter" name="no-filter">
+                                <label class="form-check-label" for="no-filter">
+                                    Disable minor allele filtering (keep alleles <0.5%)
+                                </label>
+                                <div class="form-text">
+                                    <small class="text-muted">
+                                        Enable this for detecting rare mutations or somatic mosaicism
+                                    </small>
+                                </div>
+                            </div>
+                            </div>
+
+                            <!-- Batch Processing Fields -->
+                            <div id="batch-fields" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="batch-file" class="form-label">Batch File <span class="text-danger">*</span></label>
+                                    <input class="form-control" type="file" id="batch-file" name="batch-file" 
+                                           accept=".csv,.xlsx" />
+                                    <div class="form-text">
+                                        <strong>Upload a CSV or Excel file with sample information</strong><br>
+                                        <small class="text-muted">
+                                            Required columns: <code>sample</code>, <code>control</code>, <code>allele</code>, <code>name</code><br>
+                                            Optional columns: <code>genome</code>, <code>bed</code> (or <code>genome_coordinate</code>)<br>
+                                            <a href="https://docs.google.com/presentation/d/e/2PACX-1vSMEmXJPG2TNjfT66XZJRzqJd82aAqO5gJrdEzyhn15YBBr_Li-j5puOgVChYf3jA/embed?start=false&loop=false&delayms=3000" target="_blank">View batch file format guide</a>
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="batch-threads" class="form-label">Threads <span class="text-muted">(Optional)</span></label>
+                                    <input class="form-control" type="number" id="batch-threads" name="batch-threads" 
+                                           min="1" max="32" value="1" />
+                                    <div class="form-text">Number of parallel processing threads (1-32)</div>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="batch-no-filter" name="batch-no-filter">
+                                    <label class="form-check-label" for="batch-no-filter">
+                                        Disable minor allele filtering (keep alleles <0.5%)
+                                    </label>
+                                </div>
                             </div>
 
                             <div class="d-grid">
@@ -154,6 +226,20 @@
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="mt-5 py-3 bg-light">
+        <div class="container text-center">
+            <div class="text-muted">
+                <a href="https://github.com/akikuno/DAJIN2" target="_blank" class="text-decoration-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    DAJIN2 on GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
         crossorigin="anonymous"></script>
@@ -173,6 +259,38 @@
             
             controlInput.addEventListener('change', function(e) {
                 updateDirectoryFeedback(e.target, 'control');
+            });
+
+            // Mode switching
+            const singleMode = document.getElementById('single-mode');
+            const batchMode = document.getElementById('batch-mode');
+            const singleFields = document.getElementById('single-sample-fields');
+            const batchFields = document.getElementById('batch-fields');
+
+            singleMode.addEventListener('change', function() {
+                if (this.checked) {
+                    singleFields.style.display = 'block';
+                    batchFields.style.display = 'none';
+                    // Update required attributes
+                    document.getElementById('name').required = true;
+                    document.getElementById('sample').required = true;
+                    document.getElementById('control').required = true;
+                    document.getElementById('allele').required = true;
+                    document.getElementById('batch-file').required = false;
+                }
+            });
+
+            batchMode.addEventListener('change', function() {
+                if (this.checked) {
+                    singleFields.style.display = 'none';
+                    batchFields.style.display = 'block';
+                    // Update required attributes
+                    document.getElementById('name').required = false;
+                    document.getElementById('sample').required = false;
+                    document.getElementById('control').required = false;
+                    document.getElementById('allele').required = false;
+                    document.getElementById('batch-file').required = true;
+                }
             });
         });
 
@@ -212,13 +330,18 @@
             const submitText = document.getElementById('submit-text');
             const submitSpinner = document.getElementById('submit-spinner');
             
+            // Add mode to form data
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            formData.append('mode', mode);
+            
             // Show loading state
             submitBtn.disabled = true;
             submitText.textContent = 'Starting analysis...';
             submitSpinner.style.display = 'inline-block';
             
             try {
-                const response = await fetch('/submit', {
+                const endpoint = mode === 'batch' ? '/submit-batch' : '/submit';
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });

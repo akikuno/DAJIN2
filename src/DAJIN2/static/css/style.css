@@ -100,6 +100,15 @@ body {
     border-left: 4px solid #dc3545;
 }
 
+#error-message {
+    white-space: pre-line;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
 /* Result path display styling */
 #result-path-display {
     text-align: left;
@@ -156,6 +165,48 @@ input[type="file"][webkitdirectory]:focus {
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
+/* Footer styling */
+footer {
+    margin-top: auto;
+    border-top: 1px solid #dee2e6;
+}
+
+footer a {
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #0d6efd;
+}
+
+/* Mode selection styling */
+.btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+/* Batch file upload styling */
+#batch-fields .form-control[type="file"] {
+    border: 2px dashed #0d6efd;
+    background-color: #e7f1ff;
+}
+
+#batch-fields .form-control[type="file"]:hover {
+    border-color: #0b5ed7;
+    background-color: #d0e3ff;
+}
+
+/* Code styling in form text */
+.form-text code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    color: #e83e8c;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
@@ -187,5 +238,11 @@ input[type="file"][webkitdirectory]:focus {
     
     #result-actions .btn-group .btn {
         flex: 1;
+    }
+    
+    /* Mode selection buttons on mobile */
+    .btn-group label {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
     }
 }

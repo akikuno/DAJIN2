@@ -58,7 +58,11 @@ def validate_file(file):
     # Check file extension
     allowed_extensions = {
         'fastq': ['.fastq', '.fq', '.fastq.gz', '.fq.gz'],
-        'fasta': ['.fasta', '.fa', '.fas']
+        'fasta': ['.fasta', '.fa', '.fasta.gz', '.fa.gz'],
+        'bam': ['.bam'],
+        'csv': ['.csv'],
+        'excel': ['.xlsx', '.xls'],
+        'bed': ['.bed']
     }
     
     filename = file.filename.lower()
@@ -94,6 +98,142 @@ app = Flask(__name__)
 @app.route("/")
 def root_page():
     return render_template("index.html")
+
+
+@app.route("/submit-batch", methods=["POST"])
+def submit_batch():
+    try:
+        # Validate batch file
+        if 'batch-file' not in request.files or not request.files.get('batch-file').filename:
+            return jsonify({"error": "Please select a batch file"}), 400
+        
+        batch_file = request.files['batch-file']
+        file_type = validate_file(batch_file)
+        
+        if file_type not in ['csv', 'excel']:
+            return jsonify({"error": "Batch file must be CSV or Excel format"}), 400
+        
+        # Setup directories
+        import uuid
+        batch_id = f"batch_{uuid.uuid4().hex[:8]}"
+        TEMPDIR = Path(config.TEMP_ROOT_DIR, batch_id)
+        if TEMPDIR.exists():
+            shutil.rmtree(TEMPDIR)
+        UPLOAD_FOLDER = Path(TEMPDIR, "upload")
+        UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+        
+        # Save batch file
+        batch_filename = secure_filename(batch_file.filename)
+        batch_file_path = UPLOAD_FOLDER / batch_filename
+        batch_file.save(batch_file_path)
+        
+        # Get threads and no-filter options
+        threads = request.form.get('batch-threads')
+        try:
+            threads = int(threads) if threads else 1
+            if threads < 1:
+                threads = 1
+        except ValueError:
+            threads = 1
+        
+        no_filter = request.form.get('batch-no-filter') == 'on'
+        
+        # Prepare arguments
+        arguments = {
+            "file": str(batch_file_path),
+            "threads": threads,
+            "debug": False,
+            "no_filter": no_filter
+        }
+        
+        # Create progress queue for this analysis
+        progress_queue = queue.Queue()
+        progress_queues[batch_id] = progress_queue
+        
+        # Start analysis in background thread
+        def run_batch_analysis():
+            try:
+                progress_queue.put({"status": "progress", "message": "Starting batch analysis...", "step": 1, "total_steps": 5})
+                
+                progress_queue.put({"status": "progress", "message": "Validating batch file...", "step": 2, "total_steps": 5})
+                
+                progress_queue.put({"status": "progress", "message": "Running DAJIN2 batch processing...", "step": 3, "total_steps": 5})
+                
+                # Run the actual batch analysis
+                main.execute_batch_mode(arguments)
+                
+                progress_queue.put({"status": "progress", "message": "Generating reports...", "step": 4, "total_steps": 5})
+                
+                # Store result
+                analysis_results[batch_id] = {
+                    "status": "completed",
+                    "result_path": "DAJIN_Results",
+                    "abs_result_path": str(Path("DAJIN_Results").resolve()),
+                    "timestamp": time.time()
+                }
+                
+                completion_message = f"🎊 Batch analysis completed! Your results are saved in {str(Path('DAJIN_Results').resolve())}"
+                progress_queue.put({
+                    "status": "completed", 
+                    "message": completion_message,
+                    "result_path": str(Path("DAJIN_Results").resolve()),
+                    "step": 5,
+                    "total_steps": 5
+                })
+                
+            except FileNotFoundError as e:
+                # Enhanced error message for file/directory not found
+                current_dir = Path.cwd().resolve()
+                error_str = str(e)
+                
+                # Extract the missing path from the error message
+                import re
+                path_match = re.search(r"'([^']*)'", error_str)
+                missing_path = path_match.group(1) if path_match else "unknown path"
+                
+                detailed_error = (
+                    f"File or directory not found: '{missing_path}'\n\n"
+                    f"Current working directory: {current_dir}\n\n"
+                    f"The path '{missing_path}' does not exist in the current directory. "
+                    f"Please check the following:\n"
+                    f"1. Update the paths in your batch file to match the actual file locations\n"
+                    f"2. Ensure all sample, control, and allele files are accessible from '{current_dir}'\n"
+                    f"3. Use absolute paths in your batch file, or\n"
+                    f"4. Change the working directory where you started DAJIN2 GUI to match your batch file paths\n\n"
+                    f"Original error: {error_str}"
+                )
+                
+                progress_queue.put({"status": "error", "message": detailed_error})
+                analysis_results[batch_id] = {
+                    "status": "error",
+                    "error": detailed_error,
+                    "timestamp": time.time()
+                }
+                
+            except Exception as e:
+                error_msg = f"Batch analysis error occurred: {str(e)}"
+                progress_queue.put({"status": "error", "message": error_msg})
+                analysis_results[batch_id] = {
+                    "status": "error",
+                    "error": error_msg,
+                    "timestamp": time.time()
+                }
+        
+        # Start analysis thread
+        analysis_thread = threading.Thread(target=run_batch_analysis)
+        analysis_thread.daemon = True
+        analysis_thread.start()
+        
+        return jsonify({
+            "status": "started",
+            "message": "Batch analysis started",
+            "analysis_id": batch_id
+        })
+        
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Unexpected error occurred: {str(e)}"}), 500
 
 
 @app.route("/submit", methods=["POST"])
@@ -174,6 +314,17 @@ def submit():
         upload_files(allele_files, expected_type=['fasta'])
         PATH_ALLELE = get_path_of_uploaded_files(UPLOAD_FOLDER, allele_files)
 
+        # Handle BED file upload (optional)
+        PATH_BED = None
+        if 'bed' in request.files and request.files.get('bed').filename:
+            bed_file = request.files['bed']
+            file_type = validate_file(bed_file)
+            if file_type != 'bed':
+                return jsonify({"error": "BED file must have .bed extension"}), 400
+            bed_path = Path(UPLOAD_FOLDER, secure_filename(bed_file.filename))
+            bed_file.save(bed_path)
+            PATH_BED = str(bed_path)
+
         genome = request.form.get("genome", "").strip()
         threads = request.form.get("threads")
         try:
@@ -182,12 +333,17 @@ def submit():
                 threads = 1
         except ValueError:
             threads = 1
+        
+        # Get no-filter option
+        no_filter = request.form.get('no-filter') == 'on'
 
         # Prepare batch data
         data = []
         row = {"sample": PATH_SAMPLE, "name": name, "control": PATH_CONTROL, "allele": PATH_ALLELE[0]}
         if genome:
             row["genome"] = genome
+        if PATH_BED:
+            row["bed"] = PATH_BED
         data.append(row)
 
         # Create batch file
@@ -204,7 +360,7 @@ def submit():
             "file": str(batch_file_path),
             "threads": threads,
             "debug": False,
-            "no_filter": False
+            "no_filter": no_filter
         }
         
         # Create progress queue for this analysis
@@ -243,6 +399,35 @@ def submit():
                     "step": 5,
                     "total_steps": 5
                 })
+                
+            except FileNotFoundError as e:
+                # Enhanced error message for file/directory not found
+                current_dir = Path.cwd().resolve()
+                error_str = str(e)
+                
+                # Extract the missing path from the error message
+                import re
+                path_match = re.search(r"'([^']*)'", error_str)
+                missing_path = path_match.group(1) if path_match else "unknown path"
+                
+                detailed_error = (
+                    f"File or directory not found: '{missing_path}'\n\n"
+                    f"Current working directory: {current_dir}\n\n"
+                    f"The path '{missing_path}' does not exist in the current directory. "
+                    f"Please check the following:\n"
+                    f"1. Ensure all uploaded files were saved correctly\n"
+                    f"2. Verify that sample and control directories contain the expected files\n"
+                    f"3. Check that allele and BED files (if provided) are accessible\n"
+                    f"4. Try uploading the files again if the issue persists\n\n"
+                    f"Original error: {error_str}"
+                )
+                
+                progress_queue.put({"status": "error", "message": detailed_error})
+                analysis_results[name] = {
+                    "status": "error",
+                    "error": detailed_error,
+                    "timestamp": time.time()
+                }
                 
             except Exception as e:
                 error_msg = f"Analysis error occurred: {str(e)}"
