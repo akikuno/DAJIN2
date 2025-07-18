@@ -15,6 +15,35 @@
 <!-- ############################################################# # -->
 
 
+# v0.7.1 (2025-07-18)
+
+## 🌟 New Features
+
++ **Added Web-based Graphical User Interface (GUI)**: DAJIN2 now provides a user-friendly web interface that can be launched with `DAJIN2 gui`. The GUI supports both single sample analysis and batch processing with real-time progress monitoring, file upload capabilities, and cross-platform file management. See PR: [#106](https://github.com/akikuno/DAJIN2/pull/106)
+
+## 🐛 Bug Fixes
+
++ **Fixed KeyError for allele names containing underscores**: Resolved critical bug where allele names containing underscores (e.g., `deletion_allele`) caused KeyError during HTML export. Updated `sequence_exporter.py` to properly parse allele names from headers with complex naming patterns. See PR: [#107](https://github.com/akikuno/DAJIN2/pull/107)
+
+
+## 📝 Documentation
+
++ **Updated README with GUI Instructions**: Added comprehensive documentation for the new GUI mode in both English (README.md) and Japanese (README_JP.md) versions, including step-by-step instructions for single sample analysis and batch processing via the web interface.
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+<details>
+<summary> v0.7.0 (2025-07-11)</summary>
+
 ## 🌟 New Features
 
 + Added `--no-filter` option to detect rare mutations. See Issue: [#83](https://github.com/akikuno/DAJIN2/issues/83)
@@ -30,14 +59,7 @@
 + Updated Python support from 3.9 to 3.12 due to dependencies in `pysam` and `mappy`. See Issue: [#101](https://github.com/akikuno/DAJIN2/issues/101)
 
 
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
+</details>
 
 <details>
 
