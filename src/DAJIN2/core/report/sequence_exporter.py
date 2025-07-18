@@ -1,10 +1,40 @@
 from __future__ import annotations
 
+import re
 import textwrap
 from pathlib import Path
 
 from DAJIN2.core.report.html_builder import to_html
 from DAJIN2.utils import io
+
+
+def extract_allele_from_header(header: str) -> str:
+    """
+    Extract the allele name from a header string.
+
+    Header format: allele{ID}_{allele_name}_{suffix}_{percent}%
+    Examples:
+        - allele01_25003_Tombola_TMF2635-2636_intact_100% -> 25003_Tombola_TMF2635-2636
+        - allele01_control_intact_100% -> control
+        - allele02_deletion01_SV_75% -> deletion01
+
+    Args:
+        header (str): The header string to parse
+
+    Returns:
+        str: The extracted allele name
+    """
+    # Pattern to match: allele{digits}_{allele_name}_{suffix}_{percent}%
+    # suffix can be: intact, indels, SV
+    # percent can be integer or decimal
+    pattern = r"^allele\d+_(.+)_(intact|indels|SV)_\d+(?:\.\d+)?%$"
+    match = re.match(pattern, header)
+
+    if match:
+        return match.group(1)
+
+    # Fallback to original method for unexpected formats
+    return header.split("_")[1] if "_" in header else header
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:
@@ -18,7 +48,7 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 def convert_to_html(
     TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]
 ) -> str:
-    allele = header.split("_")[1]
+    allele = extract_allele_from_header(header)
     path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}.jsonl")
     is_sv_allele = False
     if path_midsv_sv.exists():
