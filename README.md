@@ -336,6 +336,55 @@ tar -xf example_batch.tar.gz
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
+## GUI (Graphical User Interface) Mode
+
+DAJIN2 provides a web interface that can be launched with a single command:
+
+```bash
+DAJIN2 gui
+```
+
+When executed, your default web browser will open and display the DAJIN2 GUI at `http://localhost:PORT/`.
+
+### Single Sample Analysis via GUI
+
+1. **Launch GUI**  
+   Run `DAJIN2 gui` to open the web interface.
+
+2. **Project Setup**  
+   - **Project Name**: Enter any analysis name  
+   - **Directory Upload**: Select directories containing sample or control FASTQ/FASTA/BAM files  
+   - **Allele FASTA**: Upload FASTA file containing expected allele sequences  
+   - **BED File (optional)**: Upload BED6 format file to specify genomic coordinates
+
+3. **Parameter Configuration**  
+   - **Reference Genome (optional)**: Specify UCSC genome ID (e.g., `hg38`, `mm39`)  
+   - **Threads**: Set the number of CPU threads to use  
+   - **No Filter**: Enable to detect rare mutations below 0.5% frequency
+
+4. **Run Analysis**  
+   Click "Start Analysis" and the progress will be displayed in real-time.
+
+5. **View Results**  
+   After completion, the output folder path will be displayed for accessing result files.
+
+### Batch Processing via GUI
+
+1. **Prepare Batch File**  
+   Create a CSV or Excel file with columns: `sample`, `control`, `allele`, `name`.
+
+2. **Upload Batch File**  
+   Use the "Batch Processing" tab to upload your configuration file.
+
+3. **Configure Global Settings**  
+   Set threads and filtering options for all samples at once.
+
+4. **Monitor Progress**  
+   The analysis status for each sample is displayed with detailed log output.
+
+5. **View Results**  
+   Results are saved in the `DAJIN_Results/` folder with subdirectories for each sample.
+
 
 # 📈 Reports
 
