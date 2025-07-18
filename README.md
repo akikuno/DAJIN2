@@ -346,8 +346,7 @@ DAJIN2 gui
 
 When executed, your default web browser will open and display the following GUI at `http://localhost:PORT/`.
 
-<img src="https://github.com/akikuno/DAJIN2/blob/main/image/dajin2-gui.jpg" width="75%">
-
+<img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.jpg" width="75%">
 
 ### Single Sample Analysis via GUI
 

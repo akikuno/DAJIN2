@@ -348,7 +348,7 @@ DAJIN2 gui
 
 実行すると、既定のWebブラウザが開き、`http://localhost:PORT/` に以下のようなGUIが表示されます。
 
-<img src="https://github.com/akikuno/DAJIN2/blob/main/image/dajin2-gui.jpg" width="75%">
+<img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.jpg" width="75%">
 
 
 ### GUIによる単一サンプル解析
