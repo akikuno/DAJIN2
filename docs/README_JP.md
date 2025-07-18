@@ -346,9 +346,12 @@ DAJIN2は、1コマンドで起動できるWebインターフェースを提供�
 DAJIN2 gui
 ```
 
-実行すると、既定のWebブラウザが開き、`http://localhost:PORT/` に以下のようなGUIが表示されます。
+実行すると、既定のWebブラウザが開き、`http://localhost:{PORT}/` に以下のようなGUIが表示されます。
 
 <img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.jpg" width="75%">
+
+> [!NOTE]
+> ブラウザが自動的に起動しない場合は、お使いのブラウザで `http://localhost:{PORT}/` に手動でアクセスしてください。
 
 
 ### GUIによる単一サンプル解析

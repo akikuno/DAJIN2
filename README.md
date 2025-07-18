@@ -344,9 +344,12 @@ DAJIN2 provides a web interface that can be launched with a single command:
 DAJIN2 gui
 ```
 
-When executed, your default web browser will open and display the following GUI at `http://localhost:PORT/`.
+When executed, your default web browser will open and display the following GUI at `http://localhost:{PORT}/`.
 
 <img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.jpg" width="75%">
+
+> [!NOTE]
+> If the browser does not launch automatically, please open your browser manually and navigate to `http://localhost:{PORT}/`.
 
 ### Single Sample Analysis via GUI
 
