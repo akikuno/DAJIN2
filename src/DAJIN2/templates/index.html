@@ -160,19 +160,31 @@
                     </div>
                 </div>
 
-                <!-- Progress Panel -->
+                <!-- Analysis Log Panel -->
                 <div id="progress-panel" class="card mt-4" style="display: none;">
-                    <div class="card-header">
-                        <h5 class="mb-0">Analysis Progress</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="progress mb-3">
-                            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                                 role="progressbar" style="width: 0%"></div>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Analysis Log</h5>
+                        <div class="d-flex flex-column align-items-end">
+                            <div id="analysis-clock" class="badge bg-primary mb-1" style="font-family: monospace; font-size: 0.9rem;">
+                                00:00:00
+                            </div>
+                            <small class="text-muted">Live updates from DAJIN2</small>
                         </div>
-                        <div id="progress-message" class="text-center">Starting analysis...</div>
-                        <div id="progress-steps" class="mt-3">
-                            <small class="text-muted">Step <span id="current-step">1</span> / <span id="total-steps">5</span></small>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="log-container" class="p-3 bg-dark text-light" style="height: 400px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85em; line-height: 1.4; border: 1px solid #444;">
+                            <div id="log-messages">
+                                <div class="log-entry text-info">Starting analysis...</div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <small class="text-muted">
+                                <span id="log-status">Analysis in progress...</span>
+                                <span class="float-end">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearLog()">Clear Log</button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="scrollToBottom()">↓ Scroll to Bottom</button>
+                                </span>
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -247,6 +259,8 @@
     <script>
         let currentAnalysisId = null;
         let eventSource = null;
+        let analysisStartTime = null;
+        let clockInterval = null;
 
         // Add directory selection feedback
         document.addEventListener('DOMContentLoaded', function() {
@@ -377,19 +391,26 @@
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 
-                if (data.status === 'progress') {
-                    updateProgress(data.message, data.step, data.total_steps);
+                if (data.status === 'log') {
+                    addLogMessage(data.message, 'info');
                 } else if (data.status === 'completed') {
+                    addLogMessage(data.message, 'success');
+                    stopAnalysisClock();
                     showResult(data.message, data.result_path);
                     eventSource.close();
                 } else if (data.status === 'error') {
+                    addLogMessage(data.message, 'error');
+                    stopAnalysisClock();
                     showError(data.message);
                     eventSource.close();
+                } else if (data.status === 'heartbeat') {
+                    // Keep connection alive
                 }
             };
             
             eventSource.onerror = function(event) {
                 console.error('EventSource error:', event);
+                stopAnalysisClock();
                 showError('Error occurred during progress monitoring');
                 eventSource.close();
             };
@@ -400,15 +421,86 @@
             document.getElementById('progress-panel').style.display = 'block';
             document.getElementById('result-panel').style.display = 'none';
             document.getElementById('error-panel').style.display = 'none';
+            
+            // Start the analysis timer
+            startAnalysisClock();
         }
 
-        function updateProgress(message, step, totalSteps) {
-            document.getElementById('progress-message').textContent = message;
-            document.getElementById('current-step').textContent = step;
-            document.getElementById('total-steps').textContent = totalSteps;
+        function addLogMessage(message, type = 'info') {
+            const logMessages = document.getElementById('log-messages');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry mb-1';
             
-            const progressPercentage = (step / totalSteps) * 100;
-            document.getElementById('progress-bar').style.width = progressPercentage + '%';
+            // Parse DAJIN2 log format: timestamp, level, message
+            let parsedMessage = message;
+            let logLevel = type;
+            
+            // Check if message matches DAJIN2 log format
+            const logFormatMatch = message.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\s*(\w+),\s*(.+)$/);
+            if (logFormatMatch) {
+                const [, timestamp, level, content] = logFormatMatch;
+                logLevel = level.toLowerCase();
+                
+                // Color code different log levels
+                let levelColor = 'text-light';
+                if (logLevel === 'error') {
+                    levelColor = 'text-danger';
+                } else if (logLevel === 'warning' || logLevel === 'warn') {
+                    levelColor = 'text-warning';
+                } else if (logLevel === 'info') {
+                    levelColor = 'text-info';
+                } else if (logLevel === 'debug') {
+                    levelColor = 'text-muted';
+                }
+                
+                // Format with colored timestamp and level
+                parsedMessage = `<span class="text-muted">${timestamp}</span> <span class="text-secondary">[${level}]</span> <span class="${levelColor}">${content}</span>`;
+            } else {
+                // Non-DAJIN2 formatted messages
+                if (type === 'error') {
+                    logEntry.className += ' text-danger';
+                } else if (type === 'success') {
+                    logEntry.className += ' text-success';
+                } else if (type === 'warning') {
+                    logEntry.className += ' text-warning';
+                } else {
+                    logEntry.className += ' text-light';
+                }
+                parsedMessage = message.replace(/\n/g, '<br>');
+            }
+            
+            logEntry.innerHTML = parsedMessage;
+            logMessages.appendChild(logEntry);
+            
+            // Auto-scroll to bottom
+            scrollToBottom();
+            
+            // Update status
+            updateLogStatus(message, type);
+        }
+        
+        function updateLogStatus(message, type) {
+            const statusElement = document.getElementById('log-status');
+            if (type === 'success') {
+                statusElement.textContent = 'Analysis completed successfully';
+                statusElement.className = 'text-success';
+            } else if (type === 'error') {
+                statusElement.textContent = 'Analysis failed - see log for details';
+                statusElement.className = 'text-danger';
+            } else {
+                statusElement.textContent = 'Analysis in progress...';
+                statusElement.className = 'text-muted';
+            }
+        }
+        
+        function clearLog() {
+            const logMessages = document.getElementById('log-messages');
+            logMessages.innerHTML = '<div class="log-entry text-info">Log cleared...</div>';
+        }
+        
+        function scrollToBottom() {
+            const logContainer = document.getElementById('log-container');
+            logContainer.scrollTop = logContainer.scrollHeight;
         }
 
         function showResult(message, resultPath) {
@@ -532,6 +624,42 @@
             }
         }
 
+        function startAnalysisClock() {
+            // Record the start time
+            analysisStartTime = new Date();
+            
+            // Update clock immediately
+            updateAnalysisClock();
+            
+            // Update every second
+            clockInterval = setInterval(updateAnalysisClock, 1000);
+        }
+
+        function updateAnalysisClock() {
+            if (!analysisStartTime) return;
+            
+            const now = new Date();
+            const elapsed = Math.floor((now - analysisStartTime) / 1000); // seconds
+            
+            const hours = Math.floor(elapsed / 3600);
+            const minutes = Math.floor((elapsed % 3600) / 60);
+            const seconds = elapsed % 60;
+            
+            const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const clockElement = document.getElementById('analysis-clock');
+            if (clockElement) {
+                clockElement.textContent = timeString;
+            }
+        }
+
+        function stopAnalysisClock() {
+            if (clockInterval) {
+                clearInterval(clockInterval);
+                clockInterval = null;
+            }
+        }
+
         function startNewAnalysis() {
             // Reset all panels
             document.getElementById('main-form').style.display = 'block';
@@ -541,6 +669,23 @@
             
             // Reset form
             document.getElementById('dajin-form').reset();
+            
+            // Reset log
+            const logMessages = document.getElementById('log-messages');
+            logMessages.innerHTML = '<div class="log-entry text-info">Ready to start new analysis...</div>';
+            
+            // Reset log status
+            const statusElement = document.getElementById('log-status');
+            statusElement.textContent = 'Analysis ready';
+            statusElement.className = 'text-muted';
+            
+            // Reset and stop analysis clock
+            stopAnalysisClock();
+            analysisStartTime = null;
+            const clockElement = document.getElementById('analysis-clock');
+            if (clockElement) {
+                clockElement.textContent = '00:00:00';
+            }
             
             // Close any existing event source
             if (eventSource) {

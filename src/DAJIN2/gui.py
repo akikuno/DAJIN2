@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import logging
 import os
 import queue
 import shutil
@@ -23,6 +24,35 @@ from DAJIN2.utils import config
 # Global variable to store progress information
 progress_queues = {}
 analysis_results = {}
+
+
+class ProgressLogHandler(logging.Handler):
+    """Custom logging handler to capture DAJIN2 log messages and send them to progress queue."""
+    
+    def __init__(self, progress_queue):
+        super().__init__()
+        self.progress_queue = progress_queue
+        self.setLevel(logging.INFO)
+        # Format to match the log file format: timestamp, level, message
+        formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s', 
+                                    datefmt='%Y-%m-%d %H:%M:%S')
+        self.setFormatter(formatter)
+    
+    def emit(self, record):
+        try:
+            # Only capture DAJIN2 related logs to avoid spam
+            if record.name.startswith('DAJIN2') or 'DAJIN' in record.getMessage():
+                # Format the log message
+                log_message = self.format(record)
+                # Send to progress queue
+                self.progress_queue.put({
+                    "status": "log", 
+                    "message": log_message,
+                    "timestamp": time.time()
+                })
+        except Exception:
+            # Don't let logging errors break the analysis
+            pass
 
 def convert_to_windows_path(unix_path):
     """Convert Unix/WSL path to Windows path"""
@@ -153,16 +183,23 @@ def submit_batch():
         # Start analysis in background thread
         def run_batch_analysis():
             try:
-                progress_queue.put({"status": "progress", "message": "Starting batch analysis...", "step": 1, "total_steps": 5})
+                # Set up log handler to capture DAJIN2 log messages
+                log_handler = ProgressLogHandler(progress_queue)
                 
-                progress_queue.put({"status": "progress", "message": "Validating batch file...", "step": 2, "total_steps": 5})
+                # Add handler to root logger to capture ALL logs (filtered in handler)
+                root_logger = logging.getLogger()
+                root_logger.addHandler(log_handler)
                 
-                progress_queue.put({"status": "progress", "message": "Running DAJIN2 batch processing...", "step": 3, "total_steps": 5})
+                # Also add to DAJIN2 main logger for good measure
+                dajin_logger = logging.getLogger('DAJIN2')
+                dajin_logger.addHandler(log_handler)
+                dajin_logger.setLevel(logging.INFO)
+                
+                # Send initial status
+                progress_queue.put({"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()})
                 
                 # Run the actual batch analysis
                 main.execute_batch_mode(arguments)
-                
-                progress_queue.put({"status": "progress", "message": "Generating reports...", "step": 4, "total_steps": 5})
                 
                 # Store result
                 analysis_results[batch_id] = {
@@ -176,12 +213,21 @@ def submit_batch():
                 progress_queue.put({
                     "status": "completed", 
                     "message": completion_message,
-                    "result_path": str(Path("DAJIN_Results").resolve()),
-                    "step": 5,
-                    "total_steps": 5
+                    "result_path": str(Path("DAJIN_Results").resolve())
                 })
                 
+                # Clean up handlers
+                root_logger.removeHandler(log_handler)
+                dajin_logger.removeHandler(log_handler)
+                
             except FileNotFoundError as e:
+                # Clean up handlers before handling error
+                try:
+                    root_logger.removeHandler(log_handler)
+                    dajin_logger.removeHandler(log_handler)
+                except:
+                    pass
+                    
                 # Enhanced error message for file/directory not found
                 current_dir = Path.cwd().resolve()
                 error_str = str(e)
@@ -211,6 +257,13 @@ def submit_batch():
                 }
                 
             except Exception as e:
+                # Clean up handlers before handling error
+                try:
+                    root_logger.removeHandler(log_handler)
+                    dajin_logger.removeHandler(log_handler)
+                except:
+                    pass
+                    
                 error_msg = f"Batch analysis error occurred: {str(e)}"
                 progress_queue.put({"status": "error", "message": error_msg})
                 analysis_results[batch_id] = {
@@ -370,16 +423,23 @@ def submit():
         # Start analysis in background thread
         def run_analysis():
             try:
-                progress_queue.put({"status": "progress", "message": "Starting analysis...", "step": 1, "total_steps": 5})
+                # Set up log handler to capture DAJIN2 log messages
+                log_handler = ProgressLogHandler(progress_queue)
                 
-                progress_queue.put({"status": "progress", "message": "Preprocessing files...", "step": 2, "total_steps": 5})
+                # Add handler to root logger to capture ALL logs (filtered in handler)
+                root_logger = logging.getLogger()
+                root_logger.addHandler(log_handler)
                 
-                progress_queue.put({"status": "progress", "message": "Running DAJIN2 analysis...", "step": 3, "total_steps": 5})
+                # Also add to DAJIN2 main logger for good measure
+                dajin_logger = logging.getLogger('DAJIN2')
+                dajin_logger.addHandler(log_handler)
+                dajin_logger.setLevel(logging.INFO)
+                
+                # Send initial status
+                progress_queue.put({"status": "log", "message": "Starting analysis...", "timestamp": time.time()})
                 
                 # Run the actual analysis
                 main.execute_batch_mode(arguments)
-                
-                progress_queue.put({"status": "progress", "message": "Generating reports...", "step": 4, "total_steps": 5})
                 
                 # Store result
                 result_path = f"DAJIN_Results/{name}"
@@ -395,12 +455,21 @@ def submit():
                 progress_queue.put({
                     "status": "completed", 
                     "message": completion_message,
-                    "result_path": abs_result_path,
-                    "step": 5,
-                    "total_steps": 5
+                    "result_path": abs_result_path
                 })
                 
+                # Clean up handlers
+                root_logger.removeHandler(log_handler)
+                dajin_logger.removeHandler(log_handler)
+                
             except FileNotFoundError as e:
+                # Clean up handlers before handling error
+                try:
+                    root_logger.removeHandler(log_handler)
+                    dajin_logger.removeHandler(log_handler)
+                except:
+                    pass
+                    
                 # Enhanced error message for file/directory not found
                 current_dir = Path.cwd().resolve()
                 error_str = str(e)
@@ -430,6 +499,13 @@ def submit():
                 }
                 
             except Exception as e:
+                # Clean up handlers before handling error
+                try:
+                    root_logger.removeHandler(log_handler)
+                    dajin_logger.removeHandler(log_handler)
+                except:
+                    pass
+                    
                 error_msg = f"Analysis error occurred: {str(e)}"
                 progress_queue.put({"status": "error", "message": error_msg})
                 analysis_results[name] = {
