@@ -21,7 +21,7 @@ body:
 
     - type: textarea
       attributes:
-          label: "💬 Current Behavior"
+          label: "💬 Current Behavior (Optional)"
           description: |
               Optional: A concise description of what you're experiencing.
       validations:
@@ -29,7 +29,7 @@ body:
 
     - type: textarea
       attributes:
-          label: "🎯 Expected Behavior"
+          label: "🎯 Expected Behavior (Optional)"
           description: |
               Optional: A concise description of what you expected to happen.
       validations:
@@ -37,7 +37,7 @@ body:
 
     - type: textarea
       attributes:
-          label: "⚠️ Error message"
+          label: "⚠️ Error message (Optional)"
           description: |
               Optional: If applicable, add the error message here.
       validations:
@@ -46,7 +46,7 @@ body:
     - type: textarea
       id: environment
       attributes:
-          label: "🔍 Environment"
+          label: "🔍 Environment (Optional)"
           description: |
               Optional: The environment information.
               Example:
@@ -62,7 +62,7 @@ body:
     - type: textarea
       id: anything_else
       attributes:
-          label: "📎 Anything else?"
+          label: "📎 Anything else? (Optional)"
           description: |
               Optional: Add any other contexts, links, or screenshots about the bug here.
       validations:

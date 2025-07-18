@@ -22,7 +22,7 @@ body:
     - type: textarea
       id: environment
       attributes:
-          label: "🔍 Environment"
+          label: "🔍 Environment (Optional)"
           description: |
               Optional: The environment information.
               Example:
@@ -38,7 +38,7 @@ body:
     - type: textarea
       id: anything_else
       attributes:
-          label: "📎 Anything else?"
+          label: "📎 Anything else? (Optional)"
           description: |
               Optional: Add any other contexts, links, or screenshots about the bug here.
       validations:
