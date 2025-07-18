@@ -19,16 +19,29 @@
 
 ## 🌟 New Features
 
-+ **Added Web-based Graphical User Interface (GUI)**: DAJIN2 now provides a user-friendly web interface that can be launched with `DAJIN2 gui`. The GUI supports both single sample analysis and batch processing with real-time progress monitoring, file upload capabilities, and cross-platform file management. See PR: [#106](https://github.com/akikuno/DAJIN2/pull/106)
++ **Web-based Graphical User Interface (GUI)**:  
+  DAJIN2 now includes an intuitive web interface, launched via the command `DAJIN2 gui`.  
+  The GUI supports both single-sample and batch analysis, offering features such as:
+  - Real-time progress monitoring  
+  - File upload via drag-and-drop  
+  - Cross-platform file management  
+  For details, see [PR #106](https://github.com/akikuno/DAJIN2/pull/106).
 
 ## 🐛 Bug Fixes
 
-+ **Fixed KeyError for allele names containing underscores**: Resolved critical bug where allele names containing underscores (e.g., `deletion_allele`) caused KeyError during HTML export. Updated `sequence_exporter.py` to properly parse allele names from headers with complex naming patterns. See PR: [#107](https://github.com/akikuno/DAJIN2/pull/107)
-
++ **Fixed `KeyError` when allele names contain underscores**:  
+  Resolved a critical issue where allele names with underscores (e.g., `deletion_allele`) triggered a `KeyError` during HTML export.  
+  The parser in `sequence_exporter.py` has been updated to correctly handle complex allele name headers.  
+  Special thanks to [@zpashkutz](https://github.com/zpashkutz) for reporting this bug!  
+  See [PR #107](https://github.com/akikuno/DAJIN2/pull/107) for details.
 
 ## 📝 Documentation
 
-+ **Updated README with GUI Instructions**: Added comprehensive documentation for the new GUI mode in both English (README.md) and Japanese (README_JP.md) versions, including step-by-step instructions for single sample analysis and batch processing via the web interface.
++ **Added GUI Usage Instructions to README**:  
+  Comprehensive documentation for the new GUI mode is now available in both English (`README.md`) and Japanese (`README_JP.md`).  
+  The update includes step-by-step guides for:
+  - Single-sample analysis  
+  - Batch processing via the web interface
 
 
 
