@@ -63,15 +63,28 @@ def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_geno
     if cache_file.exists():
         # Load cached coordinates (from BED file or genome ID)
         genome_coordinates = next(io.read_jsonl(cache_file))
+
+        # Since a BED file does not include chrom_size, retrieve it
+        chrom = genome_coordinates["chrom"]
+        genome = genome_coordinates["genome"]
+        goldenpath_url = genome_urls["goldenpath"]
+
+        genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(chrom, genome, goldenpath_url)
+
     elif genome_urls["genome"]:
         # Fetch coordinates using genome ID
         if is_cache_genome:
             genome_coordinates = next(io.read_jsonl(cache_file))
         else:
-            genome_coordinates = preprocess.fetch_coordinates(
-                genome_coordinates, genome_urls, fasta_alleles["control"]
-            )
-            genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(genome_coordinates, genome_urls)
+            gggenome_url = genome_urls["gggenome"]
+            genome = genome_urls["genome"]
+
+            genome_coordinates = preprocess.fetch_coordinates(genome, gggenome_url, fasta_alleles["control"])
+
+            chrom = genome_coordinates["chrom"]
+            goldenpath_url = genome_urls["goldenpath"]
+            genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(chrom, genome, goldenpath_url)
+
             io.write_jsonl([genome_coordinates], cache_file)
 
     return genome_coordinates

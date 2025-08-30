@@ -42,9 +42,7 @@ def fetch_seq_coordinates(genome: str, gggenome_url: str, seq_subset: str) -> di
     return {"chrom": chrom, "strand": strand, "start": int(start), "end": int(end)}
 
 
-def fetch_coordinates(genome_coordinates: dict, genome_urls: dict, seq: str) -> dict:
-    genome = genome_coordinates["genome"]
-    gggenome_url = genome_urls["gggenome"]
+def fetch_coordinates(genome: str, gggenome_url: str, seq: str) -> dict:
 
     seq_start, seq_end = seq[:100], seq[-100:]
     coordinate_start = fetch_seq_coordinates(genome, gggenome_url, seq_start)
@@ -59,10 +57,7 @@ def fetch_coordinates(genome_coordinates: dict, genome_urls: dict, seq: str) -> 
     return {"genome": genome, "chrom": chromosome, "start": start, "end": end, "strand": strand}
 
 
-def fetch_chromosome_size(genome_coordinates: dict, genome_urls: dict) -> int:
-    chrom = genome_coordinates["chrom"]
-    genome = genome_coordinates["genome"]
-    goldenpath_url = genome_urls["goldenpath"]
+def fetch_chromosome_size(chrom: str, genome: str, goldenpath_url: str) -> int:
     url = f"{goldenpath_url}/{genome}/bigZips/{genome}.chrom.sizes"
 
     records = fetch_bed_without_verification(url)

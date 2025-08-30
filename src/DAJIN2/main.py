@@ -68,9 +68,10 @@ def execute_single_mode(arguments: dict[str]):
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
 
     # Handle genome coordinates (BED file takes precedence over genome ID)
-    if arguments.get("genome_coordinate"):
-        # BED file provided - use it and optionally combine with genome ID
-        genome_id = arguments.get("genome", "")
+    if arguments["genome_coordinate"]:
+        # BED file provided - combine with genome ID
+        # If a BED file is provided, it is guaranteed that a genome has been specified
+        genome_id = arguments["genome"]
         genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(
             arguments["genome_coordinate"], genome_id
         )
@@ -80,7 +81,7 @@ def execute_single_mode(arguments: dict[str]):
         # Cache BED coordinates to genome_coordinates.jsonl
         cache_bed_coordinates(arguments["name"], genome_coordinates, logger)
 
-    elif arguments.get("genome"):
+    elif arguments["genome"]:
         # Only genome ID provided - use GGGenome and UCSC lookup
         arguments.update(input_validator.get_available_servers())
 
@@ -133,13 +134,15 @@ def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) 
 
     # Handle genome coordinates (BED file takes precedence over genome ID)
     bed_file = args_update.get("genome_coordinate") or args_update.get("bed")
+
     if bed_file:
-        # BED file provided - use it and optionally combine with genome ID
-        genome_id = args_update.get("genome", "")
+        # BED file provided - use it and combine with genome ID
+        genome_id = args_update["genome"]
         genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(bed_file, genome_id)
         args_update.update(genome_coordinates)
         # Ensure genome_coordinate is set for consistency
         args_update["genome_coordinate"] = bed_file
+
     elif args_update.get("genome"):
         args_update.update(cache_urls_genome[args_update["genome"]])
 
@@ -247,13 +250,13 @@ def execute():
     parser.add_argument("-a", "--allele", type=str, help="Path to a FASTA file")
     parser.add_argument("-n", "--name", type=str, help="Output directory name", default="Results")
     parser.add_argument(
-        "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
+        "-g", "--genome", type=str, default=None, help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )
     parser.add_argument(
         "-b",
         "--bed",
         type=str,
-        default="",
+        default=None,
         dest="genome_coordinate",
         help="Path to BED6 file containing genomic coordinates [default: '']",
     )
@@ -315,13 +318,16 @@ def execute():
         args.handler(args)
     else:
         if args.sample is None:
-            raise ValueError("the following arguments are required: -s/--sample")
+            parser.error("the following arguments are required: -s/--sample")
         if args.control is None:
-            raise ValueError("the following arguments are required: -c/--control")
+            parser.error("the following arguments are required: -c/--control")
         if args.allele is None:
-            raise ValueError("the following arguments are required: -a/--allele")
+            parser.error("the following arguments are required: -a/--allele")
         if args.name is None:
-            raise ValueError("the following arguments are required: -n/--name")
+            parser.error("the following arguments are required: -n/--name")
+        if args.genome_coordinate and args.genome is None:
+            parser.error("When using -b/--bed, specify -g/--genome")
+
         arguments = {}
         arguments["sample"] = args.sample
         arguments["control"] = args.control
