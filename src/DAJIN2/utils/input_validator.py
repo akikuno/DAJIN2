@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import os
 import ssl
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -162,12 +161,10 @@ def get_first_available_url(key: str, urls: list[str]) -> str | None:
     )
 
 
-def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
+def get_available_servers() -> dict[str, str]:
     server_lists = {
-        "blat": [
-            "https://genome.ucsc.edu/cgi-bin/hgBlat",
-            "https://genome-asia.ucsc.edu/cgi-bin/hgBlat",
-            "https://genome-euro.ucsc.edu/cgi-bin/hgBlat",
+        "gggenome": [
+            "https://gggenome.dbcls.jp/",
         ],
         "goldenpath": [
             "https://hgdownload.cse.ucsc.edu/goldenPath",
@@ -178,7 +175,7 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
     available_servers = {key: get_first_available_url(key, urls) for key, urls in server_lists.items()}
 
     error_messages = {
-        "gggenome": "GGGenome servers are currently down. Please wait for a while and try again.",
+        "gggenome": "GGGenome servers are currently down. To avoid accessing the site, please consider specifying the -b/--bed option. Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'",
         "goldenpath": "All UCSC GoldenPath servers are currently down. Please wait for a while and try again.",
     }
 

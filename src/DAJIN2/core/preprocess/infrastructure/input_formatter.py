@@ -13,7 +13,7 @@ def parse_arguments(arguments: dict) -> tuple:
     genome_urls = defaultdict(str)
     if arguments.get("genome"):
         genome_urls.update(
-            {"genome": arguments["genome"], "blat": arguments["blat"], "goldenpath": arguments["goldenpath"]}
+            {"genome": arguments["genome"], "gggenome": arguments["gggenome"], "goldenpath": arguments["goldenpath"]}
         )
 
     return (

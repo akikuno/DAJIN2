@@ -81,9 +81,8 @@ def execute_single_mode(arguments: dict[str]):
         cache_bed_coordinates(arguments["name"], genome_coordinates, logger)
 
     elif arguments.get("genome"):
-        # Only genome ID provided - use UCSC lookup
-        arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
-        logger.info(f"Using genome ID for coordinate lookup: {arguments['genome']}")
+        # Only genome ID provided - use GGGenome and UCSC lookup
+        arguments.update(input_validator.get_available_servers())
 
     # Run DAJIN2
     core.execute_control(arguments)
