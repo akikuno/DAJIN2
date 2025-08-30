@@ -197,7 +197,7 @@ def execute_batch_mode(arguments: dict[str]):
 
             # Validate genome and fetch urls
             if args.get("genome") and args["genome"] not in cache_urls_genome:
-                urls_genome = input_validator.validate_genome_and_fetch_urls(args["genome"])
+                urls_genome = input_validator.get_available_servers()
                 cache_urls_genome[args["genome"]] = urls_genome
 
     # Run DAJIN2
@@ -258,9 +258,7 @@ def execute():
         help="Path to BED6 file containing genomic coordinates [default: '']",
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument(
-        "--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)"
-    )
+    parser.add_argument("--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)")
     parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
