@@ -1,28 +1,55 @@
 from __future__ import annotations
 
+import json
 import uuid
-from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from DAJIN2.core import preprocess
+from DAJIN2.core.preprocess.genome_coodinate.genome_coodinate_generator import (
+    get_genome_coordinates_from_bed,
+    get_genome_coordinates_from_server,
+)
 from DAJIN2.utils import config, fastx_handler, io
 
 
-def parse_arguments(arguments: dict) -> tuple:
-    genome_urls = defaultdict(str)
-    if arguments.get("genome"):
-        genome_urls.update(
-            {"genome": arguments["genome"], "gggenome": arguments["gggenome"], "goldenpath": arguments["goldenpath"]}
-        )
+def parse_arguments(arguments: dict, tempdir: Path) -> tuple:
+    genome = arguments.get("genome")
+    bed = arguments.get("genome_coordinate")
+    cache_file = Path(tempdir, "cache", "genome_coordinates.jsonl")
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+
+    genome_coordinates = None
+
+    def fetch_and_cache_genome_coordinates(
+        genome: str, gggenome_url: str, goldenpath_url: str, control_seq: str
+    ) -> dict:
+        gc = get_genome_coordinates_from_server(genome, gggenome_url, goldenpath_url, control_seq)
+        with open(cache_file, "w") as f:
+            json.dump(gc, f)
+            f.write("\n")
+        return gc
+
+    if genome:
+        gggenome_url = arguments["gggenome"]
+        goldenpath_url = arguments["goldenpath"]
+        control_seq = fastx_handler.dictionize_allele(arguments["allele"])["control"]
+        if cache_file.exists():
+            genome_coordinates = next(io.read_jsonl(cache_file))
+            if genome_coordinates.get("genome") != genome:
+                genome_coordinates = fetch_and_cache_genome_coordinates(
+                    genome, gggenome_url, goldenpath_url, control_seq
+                )
+        else:
+            genome_coordinates = fetch_and_cache_genome_coordinates(genome, gggenome_url, goldenpath_url, control_seq)
+    elif bed:
+        genome_coordinates = get_genome_coordinates_from_bed(bed)
 
     return (
         Path(arguments["sample"]),
         Path(arguments["control"]),
         Path(arguments["allele"]),
-        arguments["name"],
         arguments["threads"],
-        genome_urls,
+        genome_coordinates,
         uuid.uuid4().hex,
     )
 
@@ -42,54 +69,6 @@ def create_temporal_directory(name: str, control_name: str) -> Path:
     return tempdir
 
 
-def check_caches(tempdir: Path, path_allele: str, genome_url: str) -> bool:
-    is_cache_hash = preprocess.exists_cached_hash(tempdir=tempdir, path=path_allele)
-    is_cache_genome = preprocess.exists_cached_genome(tempdir=tempdir, genome=genome_url)
-
-    return is_cache_hash and is_cache_genome
-
-
-def get_genome_coordinates(genome_urls: dict, fasta_alleles: dict, is_cache_genome: bool, tempdir: Path) -> dict:
-    genome_coordinates = {
-        "genome": genome_urls["genome"],
-        "chrom_size": 0,
-        "chrom": "control",
-        "start": 0,
-        "end": len(fasta_alleles["control"]) - 1,
-        "strand": "+",
-    }
-    # Check if genome coordinates are available (from --genome or --genome-coordinate)
-    cache_file = Path(tempdir, "cache", "genome_coordinates.jsonl")
-    if cache_file.exists():
-        # Load cached coordinates (from BED file or genome ID)
-        genome_coordinates = next(io.read_jsonl(cache_file))
-
-        # Since a BED file does not include chrom_size, retrieve it
-        chrom = genome_coordinates["chrom"]
-        genome = genome_coordinates["genome"]
-        goldenpath_url = genome_urls["goldenpath"]
-
-        genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(chrom, genome, goldenpath_url)
-
-    elif genome_urls["genome"]:
-        # Fetch coordinates using genome ID
-        if is_cache_genome:
-            genome_coordinates = next(io.read_jsonl(cache_file))
-        else:
-            gggenome_url = genome_urls["gggenome"]
-            genome = genome_urls["genome"]
-
-            genome_coordinates = preprocess.fetch_coordinates(genome, gggenome_url, fasta_alleles["control"])
-
-            chrom = genome_coordinates["chrom"]
-            goldenpath_url = genome_urls["goldenpath"]
-            genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(chrom, genome, goldenpath_url)
-
-            io.write_jsonl([genome_coordinates], cache_file)
-
-    return genome_coordinates
-
-
 @dataclass(frozen=True)
 class FormattedInputs:
     path_sample: Path
@@ -106,14 +85,12 @@ class FormattedInputs:
 
 
 def format_inputs(arguments: dict) -> FormattedInputs:
-    path_sample, path_control, path_allele, name, threads, genome_urls, uuid = parse_arguments(arguments)
+    tempdir = create_temporal_directory(arguments["name"], arguments["control"])
+    path_sample, path_control, path_allele, threads, genome_coordinates, uuid = parse_arguments(arguments, tempdir)
     path_sample, path_control, path_allele = convert_input_paths_to_posix(path_sample, path_control, path_allele)
     sample_name = fastx_handler.extract_filename(path_sample)
     control_name = fastx_handler.extract_filename(path_control)
     fasta_alleles = fastx_handler.dictionize_allele(path_allele)
-    tempdir = create_temporal_directory(name, control_name)
-    is_cache_genome = check_caches(tempdir, path_allele, genome_urls["genome"])
-    genome_coordinates = get_genome_coordinates(genome_urls, fasta_alleles, is_cache_genome, tempdir)
 
     return FormattedInputs(
         path_sample,

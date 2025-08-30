@@ -163,6 +163,7 @@ def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None,
         qnames_100reads: set[str] = set(list({s[0] for s in sam_contents[:10000]})[:100])
         sam_subset = [s for s in sam_updated if s[0] in qnames_100reads]
         path_bam_output = Path(TEMPDIR, "cache", ".igvjs", NAME, "control.bam")
+        path_bam_output.parent.mkdir(parents=True, exist_ok=True)
         write_sam_to_bam(sam_headers + sam_subset, path_bam_output, THREADS)
     else:
         sam_groups = group_by_allele_name(sam_contents, RESULT_SAMPLE)

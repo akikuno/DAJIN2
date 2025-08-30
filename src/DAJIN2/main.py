@@ -67,23 +67,14 @@ def execute_single_mode(arguments: dict[str]):
     # Validate input files
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
 
-    # Handle genome coordinates (BED file takes precedence over genome ID)
+    # Validate genome coordinates (BED file takes precedence over genome ID)
     if arguments["genome_coordinate"]:
-        # BED file provided - combine with genome ID
-        # If a BED file is provided, it is guaranteed that a genome has been specified
-        genome_id = arguments["genome"]
-        genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(
-            arguments["genome_coordinate"], genome_id
-        )
-        arguments.update(genome_coordinates)
-        logger.debug(f"Using BED file coordinates: {arguments['genome_coordinate']}")
-
-        # Cache BED coordinates to genome_coordinates.jsonl
-        cache_bed_coordinates(arguments["name"], genome_coordinates, logger)
-
+        input_validator.validate_bed_file(arguments["genome_coordinate"])
     elif arguments["genome"]:
-        # Only genome ID provided - use GGGenome and UCSC lookup
-        arguments.update(input_validator.get_available_servers())
+        # genome ID provided - use GGGenome and UCSC lookup
+        # Here, two processes are executed exceptionally: validating the server and obtaining valid server information.
+        # The reason is that splitting these processes would require accessing the server twice, which would increase the server load.
+        arguments |= input_validator.get_available_servers()
 
     # Run DAJIN2
     core.execute_control(arguments)
@@ -119,7 +110,7 @@ def validate_headers_of_batch_file(headers: set[str], filepath: str) -> None:
         )
 
 
-def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) -> dict[str, str]:
+def create_argument_dict(args: dict, genome_with_server_urls: dict[str, str], is_control: bool) -> dict[str, str]:
     """Create a dictionary of arguments from the given headers and group."""
     args_update = deepcopy(args)
 
@@ -136,29 +127,24 @@ def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) 
     bed_file = args_update.get("genome_coordinate") or args_update.get("bed")
 
     if bed_file:
-        # BED file provided - use it and combine with genome ID
-        genome_id = args_update["genome"]
-        genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(bed_file, genome_id)
-        args_update.update(genome_coordinates)
         # Ensure genome_coordinate is set for consistency
         args_update["genome_coordinate"] = bed_file
-
     elif args_update.get("genome"):
-        args_update.update(cache_urls_genome[args_update["genome"]])
+        args_update |= genome_with_server_urls
 
     return args_update
 
 
 def run_DAJIN2(
     groups: list[dict[str, str]],
-    cache_urls_genome: dict,
+    genome_with_server_urls: dict[str, str],
     is_control: bool = True,
     num_workers: int = 1,
     no_filter: bool = False,
 ) -> None:
     contents = []
     for args in groups:
-        args = create_argument_dict(args, cache_urls_genome, is_control)
+        args = create_argument_dict(args, genome_with_server_urls, is_control)
         if args:  # Add args to contents only if it's not an empty dict
             args["no_filter"] = no_filter  # Add no_filter to each args dict
             contents.append(args)
@@ -187,7 +173,7 @@ def execute_batch_mode(arguments: dict[str]):
     validate_headers_of_batch_file(headers, path_batchfile)
 
     # Validate contents and fetch genome urls
-    cache_urls_genome = {}
+    genome_with_server_urls = {}
     records.sort(key=lambda x: x["name"])
     for _, groups in groupby(records, key=lambda x: x["name"]):
         for args in groups:
@@ -199,9 +185,9 @@ def execute_batch_mode(arguments: dict[str]):
                 input_validator.validate_file_existence(args["genome_coordinate"])
 
             # Validate genome and fetch urls
-            if args.get("genome") and args["genome"] not in cache_urls_genome:
-                urls_genome = input_validator.get_available_servers()
-                cache_urls_genome[args["genome"]] = urls_genome
+            if args.get("genome") and args["genome"] not in genome_with_server_urls:
+                genome_with_server_urls["genome"] = args["genome"]
+                genome_with_server_urls |= input_validator.get_available_servers()
 
     # Run DAJIN2
     for name, groups in groupby(records, key=lambda x: x["name"]):
@@ -218,14 +204,14 @@ def execute_batch_mode(arguments: dict[str]):
         # Run DAJIN2
         run_DAJIN2(
             groups,
-            cache_urls_genome,
+            genome_with_server_urls,
             is_control=True,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
         )
         run_DAJIN2(
             groups,
-            cache_urls_genome,
+            genome_with_server_urls,
             is_control=False,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
@@ -261,7 +247,9 @@ def execute():
         help="Path to BED6 file containing genomic coordinates [default: '']",
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument("--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)")
+    parser.add_argument(
+        "--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)"
+    )
     parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
@@ -325,8 +313,6 @@ def execute():
             parser.error("the following arguments are required: -a/--allele")
         if args.name is None:
             parser.error("the following arguments are required: -n/--name")
-        if args.genome_coordinate and args.genome is None:
-            parser.error("When using -b/--bed, specify -g/--genome")
 
         arguments = {}
         arguments["sample"] = args.sample

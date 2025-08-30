@@ -1,13 +1,26 @@
 from __future__ import annotations
 
 import ssl
+import time
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 
-def fetch_bed_without_verification(url: str) -> list[str]:
+def fetch_bed_without_verification(url: str, timeout: int = 10, retries: int = 3) -> list[str]:
     context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
-    with urlopen(url, context=context, timeout=10) as response:
-        return [res.split("\t") for res in response.read().decode("utf-8").split("\n") if res]
+
+    for attempt in range(1, retries + 1):
+        try:
+            with urlopen(url, context=context, timeout=timeout) as response:
+                return [res.split("\t") for res in response.read().decode("utf-8").split("\n") if res]
+        except (HTTPError, URLError, TimeoutError) as e:
+            if attempt < retries:
+                time.sleep(1)
+                continue
+            else:
+                raise TimeoutError(
+                    f"Failed to fetch {url} after {retries} attempts (timeout={timeout}s). Last error: {e}"
+                )
 
 
 def fetch_seq_coordinates(genome: str, gggenome_url: str, seq_subset: str) -> dict:
@@ -43,7 +56,6 @@ def fetch_seq_coordinates(genome: str, gggenome_url: str, seq_subset: str) -> di
 
 
 def fetch_coordinates(genome: str, gggenome_url: str, seq: str) -> dict:
-
     seq_start, seq_end = seq[:100], seq[-100:]
     coordinate_start = fetch_seq_coordinates(genome, gggenome_url, seq_start)
     coordinate_end = fetch_seq_coordinates(genome, gggenome_url, seq_end)

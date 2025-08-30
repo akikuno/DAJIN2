@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import ssl
+import time
 from pathlib import Path
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 import mappy
 import pysam
+
+from DAJIN2.utils.bed_handler import BEDError
 
 ########################################################################
 # To accommodate cases where a user might input negative values or
@@ -113,30 +115,6 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 
 
 ########################################################################
-# Check Cache
-########################################################################
-
-
-def exists_cached_control(control: str, tempdir: Path) -> bool:
-    path_cache_hash = Path(tempdir, "cache", "control_hash.txt")
-    if path_cache_hash.exists():
-        current_hash = hashlib.sha256(Path(control).read_bytes()).hexdigest()
-        cashed_hash = path_cache_hash.read_text()
-        if current_hash == cashed_hash:
-            return True
-    return False
-
-
-def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool) -> bool:
-    path_cache_genome = Path(tempdir, "cache", "genome_symbol.txt")
-    if genome and exists_cache_control and path_cache_genome.exists():
-        cashed_genome = path_cache_genome.read_text()
-        if genome == cashed_genome:
-            return True
-    return False
-
-
-########################################################################
 # Check genome and UCSC server
 # BAMファイルのゲノム座標の入手に必要であり、以下に、各Serverの役割を述べる：
 ## Blat: BAMファイル出力の際のゲノム座標の入手
@@ -144,10 +122,24 @@ def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool)
 ########################################################################
 
 
-def fetch_html_without_verification(url: str) -> str:
+def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 3) -> str:
+    """
+    Fetch HTML with optional retries and clearer error messages.
+    """
     context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
-    with urlopen(url, context=context, timeout=10) as response:
-        return response.read().decode("utf-8")
+
+    for attempt in range(1, retries + 1):
+        try:
+            with urlopen(url, context=context, timeout=timeout) as response:
+                return response.read().decode("utf-8", "ignore")
+        except (HTTPError, URLError, TimeoutError) as e:
+            if attempt < retries:
+                time.sleep(1)
+                continue
+            else:
+                raise TimeoutError(
+                    f"Failed to fetch {url} after {retries} attempts (timeout={timeout}s). Last error: {e}"
+                )
 
 
 def format_url(key: str, url: str) -> str:
@@ -191,38 +183,42 @@ def get_available_servers() -> dict[str, str]:
 ########################################################################
 
 
-def validate_bed_file_and_get_coordinates(bed_path: str, genome: str = "") -> dict:
+def validate_bed_file(bed_path: str) -> None:
     """
-    Validate BED file and convert to genome coordinates format.
+    Validate BED file.
 
     Args:
         bed_path: Path to BED file
         genome: Optional genome assembly name
 
     Returns:
-        Dictionary in DAJIN2 genome_coordinates format
+        Dictionary in DAJIN2 genome_coordinates format:
+        {
+            "genome": genome,
+            "chrom": chromosome,
+            "start": start_position,
+            "end": end_position,
+            "strand": strand,
+            "chrom_size": chrom_size
+        }
 
     Raises:
         FileNotFoundError: If BED file doesn't exist
         ValueError: If BED file is invalid
     """
-    from DAJIN2.utils.bed_handler import BEDError, bed_to_genome_coordinates
 
     try:
         validate_file_existence(bed_path)
 
         # Check file extension
-        path_obj = Path(bed_path)
+        path_bed = Path(bed_path)
         valid_extensions = [".bed", ".bed.gz"]
-        file_suffixes = "".join(path_obj.suffixes).lower()
+        file_suffixes = "".join(path_bed.suffixes).lower()
 
         if not any(file_suffixes.endswith(ext) for ext in valid_extensions):
             raise ValueError(f"BED file must have .bed or .bed.gz extension, got: {bed_path}")
 
-        # Parse and validate BED file
-        genome_coordinates = bed_to_genome_coordinates(bed_path, genome)
-
-        return genome_coordinates
+        return None
 
     except BEDError as e:
         raise ValueError(f"Invalid BED file format: {e}")

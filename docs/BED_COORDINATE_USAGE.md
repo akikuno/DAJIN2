@@ -4,7 +4,7 @@ This document describes the new `--genome-coordinate` option added to DAJIN2.
 
 ## Overview
 
-DAJIN2 now supports specifying genomic coordinates via BED files using the `--genome-coordinate` option. This allows users to provide precise genomic coordinates without needing to rely on UCSC BLAT lookup.
+DAJIN2 now supports specifying genomic coordinates via BED files using the `-b/--bed` option (or `--genome-coordinate` for backward compatibility). This allows users to provide precise genomic coordinates without needing to rely on UCSC BLAT lookup, and enables offline operation when the external servers (UCSC Genome Browser and GGGENOME) are unavailable.
 
 ## Usage
 
@@ -12,15 +12,15 @@ DAJIN2 now supports specifying genomic coordinates via BED files using the `--ge
 
 ```bash
 # Using BED file only
-DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment1 --genome-coordinate coordinates.bed
+DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment1 --bed coordinates.bed
 
 # Using BED file with genome ID (BED takes precedence)
-DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment1 --genome hg38 --genome-coordinate coordinates.bed
+DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment1 --genome hg38 --bed coordinates.bed
 ```
 
 ### Priority Rules
 
-1. If `--genome-coordinate` is specified, it takes **precedence** over `--genome`
+1. If `-b/--bed` is specified, it takes **precedence** over `--genome`
 2. If both are specified, the BED file coordinates are used, but the genome ID from `--genome` is included in the metadata
 3. If only `--genome` is specified, UCSC lookup is used as before
 4. If neither is specified, analysis proceeds without genomic coordinates
@@ -35,28 +35,34 @@ chr1	1000000	1001000
 chr2	2000000	2001000
 ```
 
-#### Extended Format (6 columns)
+#### Extended Format (6 columns - REQUIRED)
 ```
-chr1	1000000	1001000	248956422	0	+
-chr2	2000000	2001000	242193529	0	-
+chr1	1000000	1001000	mm39	248956422	+
+chr2	2000000	2001000	mm39	242193529	-
 ```
 
 #### Column Definitions
 - **Column 1**: Chromosome name (e.g., `chr1`, `chr2`, `chrX`)
 - **Column 2**: Start position (0-based, inclusive)
 - **Column 3**: End position (0-based, exclusive)
-- **Column 4**: Feature name (**RECOMMENDED**: use chromosome size, e.g., `248956422` for chr1)
-- **Column 5**: Score (optional, typically 0)
-- **Column 6**: Strand (**REQUIRED**, `+` or `-`)
+- **Column 4**: Name (**genome ID**, e.g., `mm39`, `hg38`)
+- **Column 5**: Score (**chromosome size for proper IGV visualization**, e.g., `248956422` for chr1)
+- **Column 6**: Strand (**REQUIRED**, `+` or `-`, **must match FASTA allele orientation**)
 
-#### Chromosome Size Recommendation
-For optimal IGV visualization and proper coordinate handling, it is **strongly recommended** to specify the chromosome size in the 4th column (feature name field). This helps DAJIN2 properly handle genomic coordinates and improves visualization in genome browsers.
+> [!NOTE]  
+> For the score field (column 5), please enter the size of the chromosome specified in column 1.  
+> While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
+
+> [!IMPORTANT]  
+> **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
+> - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  
+> - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
 
 **Examples:**
 ```
-chr1    1000000    1001000    248956422    0    +
-chr2    2000000    2001000    242193529    0    -
-chrX    5000000    5001000    156040895    0    +
+chr1    1000000    1001000    mm39    248956422    +
+chr2    2000000    2001000    mm39    242193529    -
+chrX    5000000    5001000    mm39    156040895    +
 ```
 
 **How to find chromosome sizes:**
@@ -114,34 +120,20 @@ chr7	140453136	140753136	CFTR_locus	0	+
 
 **Command:**
 ```bash
-DAJIN2 --sample cf_sample/ --control cf_control/ --allele cftr_alleles.fa --name cftr_analysis --genome-coordinate coordinates.bed
+DAJIN2 --sample cf_sample/ --control cf_control/ --allele cftr_alleles.fa --name cftr_analysis --bed coordinates.bed
 ```
 
-### Example 2: BED File with Genome ID
-
-**Command:**
-```bash
-DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name analysis --genome hg38 --bed target.bed
-```
-
-This command:
-1. Uses coordinates from `target.bed`
-2. Includes `hg38` in the metadata
-3. Logs: "Using BED file coordinates: target.bed"
-
-### Example 3: Batch Mode with Mixed Coordinate Sources
+### Example 2: Batch Mode with Mixed Coordinate Sources
 
 **batch.csv:**
 ```csv
 sample,control,allele,name,genome,bed
-exp1/,ctrl/,alleles.fa,experiment1,hg38,region1.bed
-exp2/,ctrl/,alleles.fa,experiment2,hg38,
-exp3/,ctrl/,alleles.fa,experiment3,,region3.bed
+exp1/,ctrl/,alleles.fa,experiment1,hg38,
+exp2/,ctrl/,alleles.fa,experiment2,,region2.bed
 ```
 
-- `experiment1`: Uses `region1.bed` with `hg38` metadata
-- `experiment2`: Uses UCSC lookup for `hg38`
-- `experiment3`: Uses `region3.bed` without genome metadata
+- `experiment1`: Uses `hg38`
+- `experiment2`: Uses `region2.bed` without genome metadata
 
 ## Technical Details
 

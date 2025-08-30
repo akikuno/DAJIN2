@@ -5,9 +5,8 @@ from DAJIN2.core.preprocess.error_correction.sequence_error_handler import (
     split_fastq_by_sequence_error,
 )
 from DAJIN2.core.preprocess.error_correction.strand_bias_handler import extract_sequence_errors_in_strand_biased_loci
-from DAJIN2.core.preprocess.external_integration.genome_fetcher import fetch_chromosome_size, fetch_coordinates
 from DAJIN2.core.preprocess.external_integration.midsv_caller import generate_midsv
-from DAJIN2.core.preprocess.infrastructure.cache_checker import exists_cached_genome, exists_cached_hash
+from DAJIN2.core.preprocess.genome_coodinate.genome_fetcher import fetch_chromosome_size, fetch_coordinates
 from DAJIN2.core.preprocess.infrastructure.directory_manager import (
     create_report_directories,
     create_temporal_directories,
