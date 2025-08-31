@@ -34,3 +34,17 @@ pip install -U DAJIN2
 In DAJIN2 (version 0.5.4 and later), if the read count of the Control sample exceeds 100,000, the number of reads is randomly limited to 100,000 to reduce computational load.  
 As a result, the BAM file contains filtered reads, leading to a lower read count than the original.  
 It has been confirmed that limiting the read count to 100,000 does not affect the analysis results.  
+
+## What should I do if I get an error about GGGENOME or UCSC server being unavailable?
+
+When using the `-g/--genome` option, DAJIN2 attempts to access the GGGENOME and UCSC Goldenpath servers to retrieve genomic coordinates.  
+If you encounter error messages indicating that these servers are down or unavailable, consider using the `-b/--bed` option instead.  
+The BED file option allows you to specify genomic coordinates directly without requiring external server access, enabling offline operation.  
+
+For details on how to create and use BED files, see [README.md](https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates).  
+
+## How can I use reference genomes other than those provided by UCSC?
+
+You can specify any reference genome using the `-b/--bed` option.
+
+For details on how to create and use BED files, see [README.md](https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates).  

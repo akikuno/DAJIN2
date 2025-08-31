@@ -67,23 +67,14 @@ def execute_single_mode(arguments: dict[str]):
     # Validate input files
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
 
-    # Handle genome coordinates (BED file takes precedence over genome ID)
-    if arguments.get("genome_coordinate"):
-        # BED file provided - use it and optionally combine with genome ID
-        genome_id = arguments.get("genome", "")
-        genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(
-            arguments["genome_coordinate"], genome_id
-        )
-        arguments.update(genome_coordinates)
-        logger.debug(f"Using BED file coordinates: {arguments['genome_coordinate']}")
-
-        # Cache BED coordinates to genome_coordinates.jsonl
-        cache_bed_coordinates(arguments["name"], genome_coordinates, logger)
-
-    elif arguments.get("genome"):
-        # Only genome ID provided - use UCSC lookup
-        arguments.update(input_validator.validate_genome_and_fetch_urls(arguments["genome"]))
-        logger.info(f"Using genome ID for coordinate lookup: {arguments['genome']}")
+    # Validate genome coordinates (BED file takes precedence over genome ID)
+    if arguments["genome_coordinate"]:
+        input_validator.validate_bed_file(arguments["genome_coordinate"])
+    elif arguments["genome"]:
+        # genome ID provided - use GGGenome and UCSC lookup
+        # Here, two processes are executed exceptionally: validating the server and obtaining valid server information.
+        # The reason is that splitting these processes would require accessing the server twice, which would increase the server load.
+        arguments |= input_validator.get_available_servers()
 
     # Run DAJIN2
     core.execute_control(arguments)
@@ -119,7 +110,7 @@ def validate_headers_of_batch_file(headers: set[str], filepath: str) -> None:
         )
 
 
-def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) -> dict[str, str]:
+def create_argument_dict(args: dict, genome_with_server_urls: dict[str, str], is_control: bool) -> dict[str, str]:
     """Create a dictionary of arguments from the given headers and group."""
     args_update = deepcopy(args)
 
@@ -134,29 +125,26 @@ def create_argument_dict(args: dict, cache_urls_genome: dict, is_control: bool) 
 
     # Handle genome coordinates (BED file takes precedence over genome ID)
     bed_file = args_update.get("genome_coordinate") or args_update.get("bed")
+
     if bed_file:
-        # BED file provided - use it and optionally combine with genome ID
-        genome_id = args_update.get("genome", "")
-        genome_coordinates = input_validator.validate_bed_file_and_get_coordinates(bed_file, genome_id)
-        args_update.update(genome_coordinates)
         # Ensure genome_coordinate is set for consistency
         args_update["genome_coordinate"] = bed_file
     elif args_update.get("genome"):
-        args_update.update(cache_urls_genome[args_update["genome"]])
+        args_update |= genome_with_server_urls
 
     return args_update
 
 
 def run_DAJIN2(
     groups: list[dict[str, str]],
-    cache_urls_genome: dict,
+    genome_with_server_urls: dict[str, str],
     is_control: bool = True,
     num_workers: int = 1,
     no_filter: bool = False,
 ) -> None:
     contents = []
     for args in groups:
-        args = create_argument_dict(args, cache_urls_genome, is_control)
+        args = create_argument_dict(args, genome_with_server_urls, is_control)
         if args:  # Add args to contents only if it's not an empty dict
             args["no_filter"] = no_filter  # Add no_filter to each args dict
             contents.append(args)
@@ -185,7 +173,7 @@ def execute_batch_mode(arguments: dict[str]):
     validate_headers_of_batch_file(headers, path_batchfile)
 
     # Validate contents and fetch genome urls
-    cache_urls_genome = {}
+    genome_with_server_urls = {}
     records.sort(key=lambda x: x["name"])
     for _, groups in groupby(records, key=lambda x: x["name"]):
         for args in groups:
@@ -197,9 +185,9 @@ def execute_batch_mode(arguments: dict[str]):
                 input_validator.validate_file_existence(args["genome_coordinate"])
 
             # Validate genome and fetch urls
-            if args.get("genome") and args["genome"] not in cache_urls_genome:
-                urls_genome = input_validator.validate_genome_and_fetch_urls(args["genome"])
-                cache_urls_genome[args["genome"]] = urls_genome
+            if args.get("genome") and args["genome"] not in genome_with_server_urls:
+                genome_with_server_urls["genome"] = args["genome"]
+                genome_with_server_urls |= input_validator.get_available_servers()
 
     # Run DAJIN2
     for name, groups in groupby(records, key=lambda x: x["name"]):
@@ -216,14 +204,14 @@ def execute_batch_mode(arguments: dict[str]):
         # Run DAJIN2
         run_DAJIN2(
             groups,
-            cache_urls_genome,
+            genome_with_server_urls,
             is_control=True,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
         )
         run_DAJIN2(
             groups,
-            cache_urls_genome,
+            genome_with_server_urls,
             is_control=False,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
@@ -248,13 +236,13 @@ def execute():
     parser.add_argument("-a", "--allele", type=str, help="Path to a FASTA file")
     parser.add_argument("-n", "--name", type=str, help="Output directory name", default="Results")
     parser.add_argument(
-        "-g", "--genome", type=str, default="", help="Reference genome ID (e.g hg38, mm39) [default: '']"
+        "-g", "--genome", type=str, default=None, help="Reference genome ID (e.g hg38, mm39) [default: '']"
     )
     parser.add_argument(
         "-b",
         "--bed",
         type=str,
-        default="",
+        default=None,
         dest="genome_coordinate",
         help="Path to BED6 file containing genomic coordinates [default: '']",
     )
@@ -318,13 +306,14 @@ def execute():
         args.handler(args)
     else:
         if args.sample is None:
-            raise ValueError("the following arguments are required: -s/--sample")
+            parser.error("the following arguments are required: -s/--sample")
         if args.control is None:
-            raise ValueError("the following arguments are required: -c/--control")
+            parser.error("the following arguments are required: -c/--control")
         if args.allele is None:
-            raise ValueError("the following arguments are required: -a/--allele")
+            parser.error("the following arguments are required: -a/--allele")
         if args.name is None:
-            raise ValueError("the following arguments are required: -n/--name")
+            parser.error("the following arguments are required: -n/--name")
+
         arguments = {}
         arguments["sample"] = args.sample
         arguments["control"] = args.control

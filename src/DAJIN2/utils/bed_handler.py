@@ -1,10 +1,3 @@
-"""
-BED file handling utilities for DAJIN2.
-
-This module provides functions to parse BED files and extract genomic coordinates
-for use in DAJIN2 analysis.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -30,7 +23,8 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
         - chrom: chromosome name
         - start: 0-based start position (int)
         - end: 0-based end position (int)
-        - name: feature name (optional)
+        - genome: feature name (optional)
+        - chrom_size: feature score (optional, int)
         - strand: strand information (optional, + or -)
 
     Raises:
@@ -55,8 +49,8 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
 
                 fields = line.split("\t")
 
-                # BED format requires at least 6 fields for DAJIN2: chrom, start, end, name, score, strand
-                if len(fields) < 6:
+                # BED format requires 6 fields for DAJIN2: chrom, start, end, name, score, strand
+                if len(fields) != 6:
                     raise BEDError(
                         f"Invalid BED format at line {line_num}: "
                         f"DAJIN2 requires BED6 format with strand information. "
@@ -84,19 +78,19 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
                 # Process required BED6 fields - chromosome size validation
                 if len(fields) >= 4 and fields[3]:
                     try:
-                        chrom_size = int(fields[3])
+                        chrom_size = int(fields[4])
                         if chrom_size <= 0:
                             raise BEDError(
                                 f"Invalid chromosome size at line {line_num}: {chrom_size} "
                                 f"(must be a positive integer). Please use the actual chromosome size."
                             )
-                        interval["name"] = fields[3]
+                        interval["genome"] = fields[3]
                         interval["chrom_size"] = chrom_size
                     except ValueError:
                         raise BEDError(
-                            f"Invalid chromosome size format at line {line_num}: '{fields[3]}' "
-                            f"(must be an integer). Please enter the chromosome size in the 4th column of BED6 format. "
-                            f"Example: chr1\t1000000\t1001000\t248956422\t0\t+"
+                            f"Invalid chromosome size format at line {line_num}: '{fields[4]}' "
+                            f"(must be an integer). Please enter the chromosome size in the 5th column of BED6 format. "
+                            f"Example: chr1\t1000000\t1001000\tmm392\t24895642\t+"
                         )
 
                 # Strand is required (field 6)
@@ -134,33 +128,7 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
     return intervals
 
 
-def validate_bed_coordinates(intervals: list[dict[str, any]]) -> None:
-    """
-    Validate BED coordinates for correctness.
-
-    Args:
-        intervals: List of interval dictionaries with 'start' and 'end' keys
-
-    Raises:
-        BEDError: If coordinates are invalid or intervals list is empty
-    """
-    if not intervals:
-        raise BEDError("No intervals provided for validation")
-
-    for i, interval in enumerate(intervals):
-        start = interval.get("start")
-        end = interval.get("end")
-
-        # Check if coordinates are integers
-        if not isinstance(start, int) or not isinstance(end, int):
-            raise BEDError(f"Interval {i + 1}: coordinates must be integers")
-
-        # Check if start < end
-        if start >= end:
-            raise BEDError(f"Interval {i + 1}: start ({start}) must be less than end ({end})")
-
-
-def bed_to_genome_coordinates(bed_path: str | Path, genome: str = "") -> dict[str, any]:
+def bed_to_genome_coordinates(bed_path: str | Path) -> dict[str, any]:
     """
     Convert BED file to DAJIN2 genome_coordinates format.
 
@@ -184,7 +152,7 @@ def bed_to_genome_coordinates(bed_path: str | Path, genome: str = "") -> dict[st
     Raises:
         BEDError: If BED file is invalid
     """
-    intervals = parse_bed_file(bed_path)
+    intervals: list[dict[str, any]] = parse_bed_file(bed_path)
 
     # Use first interval for single-region analysis
     first_interval = intervals[0]
@@ -201,7 +169,7 @@ def bed_to_genome_coordinates(bed_path: str | Path, genome: str = "") -> dict[st
 
     # Convert to DAJIN2 format
     genome_coordinates = {
-        "genome": genome,
+        "genome": first_interval["genome"],
         "chrom": first_interval["chrom"],
         "start": first_interval["start"],  # Already 0-based
         "end": first_interval["end"],  # Already exclusive
@@ -210,26 +178,3 @@ def bed_to_genome_coordinates(bed_path: str | Path, genome: str = "") -> dict[st
     }
 
     return genome_coordinates
-
-
-def format_coordinates_summary(genome_coordinates: dict[str, any]) -> str:
-    """
-    Format genome coordinates for logging/display.
-
-    Args:
-        genome_coordinates: Dictionary in DAJIN2 format
-
-    Returns:
-        Formatted string representation
-    """
-    chrom = genome_coordinates.get("chrom", "unknown")
-    start = genome_coordinates.get("start", 0)
-    end = genome_coordinates.get("end", 0)
-    strand = genome_coordinates.get("strand", "+")
-    genome = genome_coordinates.get("genome", "")
-
-    coord_str = f"{chrom}:{start}-{end}({strand})"
-    if genome:
-        coord_str = f"{genome} {coord_str}"
-
-    return coord_str

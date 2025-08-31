@@ -11,24 +11,24 @@ from DAJIN2.core.preprocess.alignment.mapping import to_sam
 from DAJIN2.utils import io, sam_handler
 
 
-def recalculate_sam_coodinates_to_reference(sam: list[list[str]], GENOME_COODINATES: dict) -> list[str]:
+def recalculate_sam_coordinates_to_reference(sam: list[list[str]], GENOME_COORDINATES: dict) -> list[str]:
     """Recalculate SAM genomic coordinates with the reference genome, not with the FASTA_ALLELE"""
     sam_headers = [s for s in sam if s[0].startswith("@")]
     sam_contents = [s for s in sam if not s[0].startswith("@")]
     for s in sam_headers:
         if s[0] != "@SQ":
             continue
-        s[1] = f"SN:{GENOME_COODINATES['chrom']}"
-        s[2] = f"LN:{GENOME_COODINATES['chrom_size']}"
+        s[1] = f"SN:{GENOME_COORDINATES['chrom']}"
+        s[2] = f"LN:{GENOME_COORDINATES['chrom_size']}"
 
     for s in sam_contents:
-        s[2] = GENOME_COODINATES["chrom"]
+        s[2] = GENOME_COORDINATES["chrom"]
 
-    if GENOME_COODINATES["strand"] == "-":
-        sam_contents = sam_handler.revcomp_sam(sam_contents, GENOME_COODINATES["end"])
+    if GENOME_COORDINATES["strand"] == "-":
+        sam_contents = sam_handler.revcomp_sam(sam_contents, GENOME_COORDINATES["end"])
     else:
         for s in sam_contents:
-            s[3] = str(int(s[3]) + GENOME_COODINATES["start"] - 1)
+            s[3] = str(int(s[3]) + GENOME_COORDINATES["start"] - 1)
 
     return sam_headers + sam_contents
 
@@ -119,37 +119,37 @@ def write_sam_to_bam(sam: list[list[str]], path_bam: str | Path, threads: int = 
     path_sam.unlink()
 
 
-def update_genome_coodinates(sam: list, GENOME_COODINATES: dict = None) -> list:
-    if GENOME_COODINATES is None:
-        GENOME_COODINATES = {}
+def update_genome_coordinates(sam: list, GENOME_COORDINATES: dict = None) -> list:
+    if GENOME_COORDINATES is None:
+        GENOME_COORDINATES = {}
 
     sam_records = sam.copy()
     sam_records = sam_handler.remove_microhomology(sam_records)
     # Update @SQ headers if genome coordinates are available (from --genome or --genome-coordinate)
-    if GENOME_COODINATES.get("chrom") and GENOME_COODINATES.get("chrom_size"):
-        return recalculate_sam_coodinates_to_reference(sam_records, GENOME_COODINATES)
+    if GENOME_COORDINATES.get("chrom") and GENOME_COORDINATES.get("chrom_size"):
+        return recalculate_sam_coordinates_to_reference(sam_records, GENOME_COORDINATES)
     else:
         return convert_pos_to_one_indexed(sam_records)
 
 
-def export_sequence_error_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS) -> None:
+def export_sequence_error_to_bam(TEMPDIR, NAME, GENOME_COORDINATES, THREADS) -> None:
     path_fastq = Path(TEMPDIR, NAME, "fastq", f"{NAME}_sequence_error.fastq.gz")
     path_fasta = Path(TEMPDIR, NAME, "fasta", "control.fasta")
     preset = "map-ont"
 
     sam_records = [record.split("\t") for record in to_sam(path_fasta, path_fastq, preset=preset, threads=THREADS)]
-    sam_updated = update_genome_coodinates(sam_records, GENOME_COODINATES)
+    sam_updated = update_genome_coordinates(sam_records, GENOME_COORDINATES)
 
     # Output SAM and BAM
     path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, f"{NAME}_sequence_error.bam")
     write_sam_to_bam(sam_updated, path_bam_output, THREADS)
 
 
-def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
+def export_to_bam(TEMPDIR, NAME, GENOME_COORDINATES, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
     path_sam_input = Path(TEMPDIR, NAME, "sam", "control", "map-ont.sam")
 
     sam_records = list(io.read_sam(path_sam_input))
-    sam_updated = update_genome_coodinates(sam_records, GENOME_COODINATES)
+    sam_updated = update_genome_coordinates(sam_records, GENOME_COORDINATES)
 
     # Output SAM and BAM
     path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, f"{NAME}.bam")
@@ -163,6 +163,7 @@ def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None,
         qnames_100reads: set[str] = set(list({s[0] for s in sam_contents[:10000]})[:100])
         sam_subset = [s for s in sam_updated if s[0] in qnames_100reads]
         path_bam_output = Path(TEMPDIR, "cache", ".igvjs", NAME, "control.bam")
+        path_bam_output.parent.mkdir(parents=True, exist_ok=True)
         write_sam_to_bam(sam_headers + sam_subset, path_bam_output, THREADS)
     else:
         sam_groups = group_by_allele_name(sam_contents, RESULT_SAMPLE)
@@ -178,4 +179,4 @@ def export_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS, RESULT_SAMPLE=None,
             write_sam_to_bam(sam_headers + sam_subset, path_bam_output, THREADS)
 
     # Export sequence error to BAM
-    export_sequence_error_to_bam(TEMPDIR, NAME, GENOME_COODINATES, THREADS)
+    export_sequence_error_to_bam(TEMPDIR, NAME, GENOME_COORDINATES, THREADS)

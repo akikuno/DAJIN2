@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import ssl
-import xml.etree.ElementTree as ET
+import time
 from pathlib import Path
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
 import mappy
 import pysam
+
+from DAJIN2.utils.bed_handler import BEDError
 
 ########################################################################
 # To accommodate cases where a user might input negative values or
@@ -114,38 +115,31 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 
 
 ########################################################################
-# Check Cache
-########################################################################
-
-
-def exists_cached_control(control: str, tempdir: Path) -> bool:
-    path_cache_hash = Path(tempdir, "cache", "control_hash.txt")
-    if path_cache_hash.exists():
-        current_hash = hashlib.sha256(Path(control).read_bytes()).hexdigest()
-        cashed_hash = path_cache_hash.read_text()
-        if current_hash == cashed_hash:
-            return True
-    return False
-
-
-def exists_cached_genome(genome: str, tempdir: Path, exists_cache_control: bool) -> bool:
-    path_cache_genome = Path(tempdir, "cache", "genome_symbol.txt")
-    if genome and exists_cache_control and path_cache_genome.exists():
-        cashed_genome = path_cache_genome.read_text()
-        if genome == cashed_genome:
-            return True
-    return False
-
-
-########################################################################
 # Check genome and UCSC server
+# BAMファイルのゲノム座標の入手に必要であり、以下に、各Serverの役割を述べる：
+## Blat: BAMファイル出力の際のゲノム座標の入手
+## Goldenpath: chrom.sizeに必要
 ########################################################################
 
 
-def fetch_html_without_verification(url: str) -> str:
+def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 3) -> str:
+    """
+    Fetch HTML with optional retries and clearer error messages.
+    """
     context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
-    with urlopen(url, context=context, timeout=10) as response:
-        return response.read().decode("utf-8")
+
+    for attempt in range(1, retries + 1):
+        try:
+            with urlopen(url, context=context, timeout=timeout) as response:
+                return response.read().decode("utf-8", "ignore")
+        except (HTTPError, URLError, TimeoutError) as e:
+            if attempt < retries:
+                time.sleep(1)
+                continue
+            else:
+                raise TimeoutError(
+                    f"Failed to fetch {url} after {retries} attempts (timeout={timeout}s). Last error: {e}"
+                )
 
 
 def format_url(key: str, url: str) -> str:
@@ -153,47 +147,16 @@ def format_url(key: str, url: str) -> str:
 
 
 def get_first_available_url(key: str, urls: list[str]) -> str | None:
-    search_keys = {"blat": "BLAT Search Genome", "das": "GRCh38/hg38", "goldenpath": "bigZips"}
+    search_keys = {"gggenome": "hg38", "goldenpath": "bigZips"}
     return next(
         (url for url in urls if search_keys[key] in fetch_html_without_verification(format_url(key, url))), None
     )
 
 
-def fetch_xml_without_verification(url: str) -> bytes:
-    """Fetch XML data from a given URL."""
-    context = ssl._create_unverified_context()  # Create an SSL context that temporarily disables verification
-    with urlopen(url, context=context, timeout=10) as response:
-        return response.read()
-
-
-def extract_genome_ids_from_xml(xml_data: bytes) -> set[str]:
-    """Extract genome IDs from XML data."""
-    root = ET.fromstring(xml_data)
-    return {cc.attrib["id"] for child in root for cc in child if cc.tag == "SOURCE"}
-
-
-def get_genome_ids_in_ucsc(url_das: str) -> set[str]:
-    """Get available genome IDs in UCSC."""
-    xml_data = fetch_xml_without_verification(url_das)
-    return extract_genome_ids_from_xml(xml_data)
-
-
-def is_genome_id_available_in_ucsc(genome: str, url_das: str) -> bool:
-    genome_ids = get_genome_ids_in_ucsc(url_das)
-    return genome in genome_ids
-
-
-def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
+def get_available_servers() -> dict[str, str]:
     server_lists = {
-        "blat": [
-            "https://genome.ucsc.edu/cgi-bin/hgBlat",
-            "https://genome-asia.ucsc.edu/cgi-bin/hgBlat",
-            "https://genome-euro.ucsc.edu/cgi-bin/hgBlat",
-        ],
-        "das": [
-            "https://genome.ucsc.edu/cgi-bin/das/dsn/",
-            "https://genome-asia.ucsc.edu/cgi-bin/das/dsn/",
-            "https://genome-euro.ucsc.edu/cgi-bin/das/dsn",
+        "gggenome": [
+            "https://gggenome.dbcls.jp/",
         ],
         "goldenpath": [
             "https://hgdownload.cse.ucsc.edu/goldenPath",
@@ -204,19 +167,13 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
     available_servers = {key: get_first_available_url(key, urls) for key, urls in server_lists.items()}
 
     error_messages = {
-        "blat": "All UCSC blat servers are currently down. Please wait for a while and try again.",
-        "das": "All UCSC DAS servers are currently down. Please wait for a while and try again.",
+        "gggenome": "GGGenome servers are currently down. To avoid accessing the site, please consider specifying the -b/--bed option. Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'",
         "goldenpath": "All UCSC GoldenPath servers are currently down. Please wait for a while and try again.",
     }
 
     for key, message in error_messages.items():
         if available_servers[key] is None:
             raise URLError(message)
-
-    if not is_genome_id_available_in_ucsc(genome, available_servers["das"]):
-        raise ValueError(f"{genome} is not listed. Available genomes are in {available_servers['das']}")
-
-    del available_servers["das"]
 
     return available_servers
 
@@ -226,38 +183,42 @@ def validate_genome_and_fetch_urls(genome: str) -> dict[str, str]:
 ########################################################################
 
 
-def validate_bed_file_and_get_coordinates(bed_path: str, genome: str = "") -> dict:
+def validate_bed_file(bed_path: str) -> None:
     """
-    Validate BED file and convert to genome coordinates format.
+    Validate BED file.
 
     Args:
         bed_path: Path to BED file
         genome: Optional genome assembly name
 
     Returns:
-        Dictionary in DAJIN2 genome_coordinates format
+        Dictionary in DAJIN2 genome_coordinates format:
+        {
+            "genome": genome,
+            "chrom": chromosome,
+            "start": start_position,
+            "end": end_position,
+            "strand": strand,
+            "chrom_size": chrom_size
+        }
 
     Raises:
         FileNotFoundError: If BED file doesn't exist
         ValueError: If BED file is invalid
     """
-    from DAJIN2.utils.bed_handler import BEDError, bed_to_genome_coordinates
 
     try:
         validate_file_existence(bed_path)
 
         # Check file extension
-        path_obj = Path(bed_path)
+        path_bed = Path(bed_path)
         valid_extensions = [".bed", ".bed.gz"]
-        file_suffixes = "".join(path_obj.suffixes).lower()
+        file_suffixes = "".join(path_bed.suffixes).lower()
 
         if not any(file_suffixes.endswith(ext) for ext in valid_extensions):
             raise ValueError(f"BED file must have .bed or .bed.gz extension, got: {bed_path}")
 
-        # Parse and validate BED file
-        genome_coordinates = bed_to_genome_coordinates(bed_path, genome)
-
-        return genome_coordinates
+        return None
 
     except BEDError as e:
         raise ValueError(f"Invalid BED file format: {e}")

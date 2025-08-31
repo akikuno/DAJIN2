@@ -267,25 +267,31 @@ def sanitize_name(file_name: Path | str) -> str:
 
 
 ###########################################################
-# Cache control hash
+# Cache handler
 ###########################################################
 
 
-def cache_control_hash(tempdir: Path, path_allele: str | Path) -> None:
+def cache_file_hash(path_input_file: str | Path, path_output_file: Path) -> None:
     """
     Generate a hash value from the content of the provided file and cache it.
 
     Parameters:
     - tempdir: Path object, the temporary directory path.
-    - path_allele: Path object, the path to the fasta file.
+    - path_input_file: Path object, the path to the fasta file.
     """
-    # Read the content of the file.
-    content = Path(path_allele).read_text()
+    content = Path(path_input_file).read_text()
+
     # Calculate the hash of the content.
     content_hash = hashlib.sha256(content.encode()).hexdigest()
-    # Define the path to save the hash.
-    path_cache_hash = Path(tempdir, "cache", "hash.txt")
-    # Ensure the directory exists.
-    path_cache_hash.parent.mkdir(parents=True, exist_ok=True)
+
     # Save the hash to the file.
-    path_cache_hash.write_text(content_hash)
+    path_output_file.parent.mkdir(parents=True, exist_ok=True)
+    path_output_file.write_text(content_hash)
+
+
+def is_file_cached(path_input_file: Path, path_cached_file: Path) -> bool:
+    current_hash = hashlib.sha256(path_input_file.read_bytes()).hexdigest()
+    cached_hash = path_cached_file.read_text()
+    if current_hash == cached_hash:
+        return True
+    return False

@@ -222,33 +222,33 @@ Options:
 
 ### Using BED Files for Genomic Coordinates
 
-If the reference genome is not from UCSC, you can specify a BED file using the `-b/--bed` option.
+If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGENOME) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
 
 When using the `-b/--bed` option with a BED file, please ensure:
 
 1. **Use BED6 format** (6 columns required):
    ```
-   chr1    1000000    1001000    248956422    0    +
+   chr1    1000000    1001000    mm39    248956422    +
    ```
    
    **Column descriptions:**
    - Column 1: Chromosome name (e.g., chr1, chr2)
    - Column 2: Start position (0-based, inclusive)
    - Column 3: End position (0-based, exclusive)
-   - Column 4: Feature name (**use chromosome size** for proper IGV visualization)
-   - Column 5: Score (typically 0)
+   - Column 4: Name (**genome ID**)
+   - Column 5: Score (**chromosome size for proper IGV visualization**)
    - Column 6: Strand (+ or -, **must match FASTA allele orientation**)
 
-2. **Match strand orientation**: The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.
-   - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file
-   - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
+> [!NOTE]  
+> For the score field (column 5), please enter the size of the chromosome specified in column 1.  
+> While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
 
-3. **Why strand matters**: 
-   - DAJIN2 automatically applies reverse complement processing for minus strand regions
-   - Strand information is preserved in BAM files for proper IGV genome browser visualization
-   - Incorrect strand information can lead to misaligned sequences and inaccurate mutation detection
+> [!IMPORTANT]  
+> **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
+> - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  
+> - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
 
-For detailed BED file usage, see [BED_COORDINATE_USAGE.md](BED_COORDINATE_USAGE.md).
+For detailed BED file usage, see [BED_COORDINATE_USAGE.md](docs/BED_COORDINATE_USAGE.md).
 
 ### Rare Mutation Detection with `--no-filter`
 

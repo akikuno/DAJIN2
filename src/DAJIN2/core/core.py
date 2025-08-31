@@ -25,7 +25,7 @@ def execute_control(arguments: dict):
     ARGS: FormattedInputs = preprocess.format_inputs(arguments)
     preprocess.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
     preprocess.create_report_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
-    io.cache_control_hash(ARGS.tempdir, ARGS.path_allele)
+    io.cache_file_hash(ARGS.path_allele, Path(ARGS.tempdir, "cache", "hash_allele.txt"))
 
     ###########################################################
     # Check caches
