@@ -69,7 +69,7 @@ def fetch_coordinates(genome: str, gggenome_url: str, seq: str) -> dict:
     return {"genome": genome, "chrom": chromosome, "start": start, "end": end, "strand": strand}
 
 
-def fetch_chromosome_size(chrom: str, genome: str, goldenpath_url: str) -> int:
+def fetch_chromosome_size(genome: str, chrom: str, goldenpath_url: str) -> int:
     url = f"{goldenpath_url}/{genome}/bigZips/{genome}.chrom.sizes"
 
     records = fetch_bed_without_verification(url)

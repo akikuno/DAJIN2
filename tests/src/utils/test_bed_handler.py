@@ -1,376 +1,150 @@
-"""
-Tests for BED file handling utilities.
-"""
+# tests/test_bed_utils.py
+# Pytest unit tests for parse_bed_file and bed_to_genome_coordinates.
+# Assumes the module under test is saved as "bed_utils.py" in the test root.
+# If your filename is different, change the import line below accordingly.
 
-import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
-from DAJIN2.utils.bed_handler import (
-    BEDError,
-    bed_to_genome_coordinates,
-    format_coordinates_summary,
-    parse_bed_file,
-    validate_bed_coordinates,
+from DAJIN2.utils.bed_handler import BEDError, bed_to_genome_coordinates, parse_bed_file
+
+
+def write_text(tmp_path: Path, name: str, content: str) -> Path:
+    p = tmp_path / name
+    p.write_text(content, encoding="utf-8")
+    return p
+
+
+@pytest.mark.parametrize(
+    "bed_text,expected",
+    [
+        (
+            # Valid single BED6 line, plus comments/track lines that should be ignored
+            "\n".join(
+                [
+                    "# comment",
+                    "track name=mybed",
+                    "chr1\t0\t100\tmm39\t248956422\t+",
+                ]
+            ),
+            [
+                {
+                    "chrom": "chr1",
+                    "start": 0,
+                    "end": 100,
+                    "genome": "mm39",
+                    "chrom_size": 248956422,
+                    "strand": "+",
+                }
+            ],
+        ),
+        (
+            # Valid minus-strand
+            "chrX\t10\t20\tmm39\t156040895\t-",
+            [
+                {
+                    "chrom": "chrX",
+                    "start": 10,
+                    "end": 20,
+                    "genome": "mm39",
+                    "chrom_size": 156040895,
+                    "strand": "-",
+                }
+            ],
+        ),
+    ],
 )
+def test_parse_bed_file_valid_cases(tmp_path, bed_text, expected):
+    bed = write_text(tmp_path, "ok.bed", bed_text)
+    intervals = parse_bed_file(bed)
+    assert intervals == expected
 
 
-class TestParseBedFile:
-    """Test parse_bed_file function."""
+@pytest.mark.parametrize(
+    "bed_text,err_substr",
+    [
+        # Wrong number of fields
+        ("chr1\t0\t100", "Invalid BED format"),
+        ("chr1\t0\t100\tmm39\t248956422", "Invalid BED format"),
+        ("chr1\t0\t100\tmm39\t248956422\t+\textra", "Invalid BED format"),
+        # Missing/invalid strand
+        ("chr1\t0\t100\tmm39\t248956422\t*", "Invalid or missing strand"),
+        ("chr1\t0\t100\tmm39\t248956422\t.", "Invalid or missing strand"),
+        # Coordinate validation
+        ("chr1\t-1\t10\tmm39\t248956422\t+", "Invalid start position"),
+        ("chr1\t10\t10\tmm39\t248956422\t+", "Invalid end position"),
+        ("chr1\tA\t10\tmm39\t248956422\t+", "Invalid coordinate format"),
+        ("chr1\t10\tB\tmm39\t248956422\t+", "Invalid coordinate format"),
+        # Chrom size validation
+        ("chr1\t0\t10\tmm39\tNA\t+", "Invalid chromosome size format"),
+        ("chr1\t0\t10\tmm39\t0\t+", "Invalid chromosome size"),
+        ("chr1\t0\t10\tmm39\t-5\t+", "Invalid chromosome size"),
+    ],
+)
+def test_parse_bed_file_invalid_cases(tmp_path, bed_text, err_substr):
+    bed = write_text(tmp_path, "bad.bed", bed_text)
+    with pytest.raises(BEDError) as ei:
+        parse_bed_file(bed)
+    assert err_substr in str(ei.value)
 
-    def test_parse_bed_file_basic(self):
-        """Test basic BED file parsing."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t+"
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
+def test_parse_bed_file_empty_or_comments_only(tmp_path):
+    bed = write_text(tmp_path, "empty.bed", "# only comments\ntrack name=x\n")
+    with pytest.raises(BEDError) as ei:
+        parse_bed_file(bed)
+    assert "No valid intervals found" in str(ei.value)
 
-            result = parse_bed_file(f.name)
 
-        Path(f.name).unlink()  # Clean up
+def test_parse_bed_file_file_not_found(tmp_path):
+    missing = tmp_path / "nope.bed"
+    with pytest.raises(FileNotFoundError) as ei:
+        parse_bed_file(missing)
+    assert "BED file not found" in str(ei.value)
 
-        expected = [
-            {"chrom": "chr1", "start": 100, "end": 200, "name": "248956422", "chrom_size": 248956422, "strand": "+"}
-        ]
 
-        assert result == expected
+def test_bed_to_genome_coordinates_single_interval(tmp_path):
+    bed = write_text(tmp_path, "one.bed", "chr2\t100\t200\thg38\t242193529\t+")
+    got = bed_to_genome_coordinates(bed)
+    assert got == {
+        "genome": "hg38",
+        "chrom": "chr2",
+        "start": 100,
+        "end": 200,
+        "strand": "+",
+        "chrom_size": 242193529,
+    }
 
-    def test_parse_bed_file_minimal(self):
-        """Test BED file with minimal 6 columns (BED6 format)."""
-        bed_content = "chr2\t1000\t2000\t195471971\t0\t+"
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-        expected = [
-            {"chrom": "chr2", "start": 1000, "end": 2000, "name": "195471971", "chrom_size": 195471971, "strand": "+"}
-        ]
-
-        assert result == expected
-
-    def test_parse_bed_file_multiple_intervals(self):
-        """Test BED file with multiple intervals."""
-        bed_content = (
-            "chr1\t100\t200\t248956422\t0\t+\nchr2\t300\t400\t195471971\t0\t-\nchr3\t500\t600\t159345973\t0\t+"
+def test_bed_to_genome_coordinates_multiple_intervals_warn_and_use_first(tmp_path, caplog):
+    bed = write_text(
+        tmp_path,
+        "multi.bed",
+        "\n".join(
+            [
+                "chr3\t10\t20\tmm39\t156040895\t+",
+                "chr4\t30\t40\tmm39\t156040895\t-",
+            ]
+        ),
+    )
+    with caplog.at_level("WARNING"):
+        got = bed_to_genome_coordinates(bed)
+        # Check warning message mentions count and first interval
+        assert any(
+            "BED file contains 2 intervals. Using first interval: chr3:10-20" in r.message for r in caplog.records
         )
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-        assert len(result) == 3
-        assert result[0]["chrom"] == "chr1"
-        assert result[1]["chrom"] == "chr2"
-        assert result[2]["chrom"] == "chr3"
-
-    def test_parse_bed_file_with_comments(self):
-        """Test BED file with comments and track lines."""
-        bed_content = """# Comment line
-track name="test track"
-chr1\t100\t200\t248956422\t0\t+
-#another comment
-chr2\t300\t400\t195471971\t0\t-"""
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-        assert len(result) == 2
-        assert result[0]["chrom"] == "chr1"
-        assert result[1]["chrom"] == "chr2"
-
-    def test_parse_bed_file_invalid_coordinates(self):
-        """Test BED file with invalid coordinates."""
-        bed_content = "chr1\t200\t100\t248956422\t0\t+"  # end < start
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="Invalid end position"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_invalid_format_too_few_columns(self):
-        """Test BED file with too few columns."""
-        bed_content = "chr1\t100"  # Only 2 columns
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="DAJIN2 requires BED6 format"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_bed3_format_rejected(self):
-        """Test that BED3 format is rejected (requires strand)."""
-        bed_content = "chr1\t100\t200"  # BED3 format without strand
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="DAJIN2 requires BED6 format"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_bed5_format_rejected(self):
-        """Test that BED5 format is rejected (missing strand)."""
-        bed_content = "chr1\t100\t200\tfeature\t0"  # BED5 format without strand
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="DAJIN2 requires BED6 format"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_invalid_strand(self):
-        """Test BED file with invalid strand."""
-        bed_content = "chr1\t100\t200\t248956422\t0\tx"  # Invalid strand 'x'
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="Invalid or missing strand"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_empty_strand(self):
-        """Test BED file with empty strand field."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t"  # Empty strand
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="Invalid BED format.*Expected 6 fields.*got 5"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_invalid_chromosome_size_string(self):
-        """Test BED file with non-integer chromosome size."""
-        bed_content = "chr1\t100\t200\tfeature_name\t0\t+"  # String instead of integer
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="Invalid chromosome size format"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_negative_chromosome_size(self):
-        """Test BED file with negative chromosome size."""
-        bed_content = "chr1\t100\t200\t-123456\t0\t+"  # Negative chromosome size
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="Invalid chromosome size.*must be a positive integer"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_zero_chromosome_size(self):
-        """Test BED file with zero chromosome size."""
-        bed_content = "chr1\t100\t200\t0\t0\t+"  # Zero chromosome size
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(BEDError, match="Invalid chromosome size.*must be a positive integer"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-    def test_parse_bed_file_valid_chromosome_size(self):
-        """Test BED file with valid chromosome size."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t+"  # Valid chromosome size
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-        expected = [
-            {"chrom": "chr1", "start": 100, "end": 200, "name": "248956422", "chrom_size": 248956422, "strand": "+"}
-        ]
-
-        assert result == expected
-
-    def test_parse_bed_file_nonexistent(self):
-        """Test parsing non-existent BED file."""
-        with pytest.raises(FileNotFoundError):
-            parse_bed_file("/nonexistent/file.bed")
-
-    def test_parse_bed_file_empty(self):
-        """Test parsing empty BED file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write("")  # Empty file
-            f.flush()
-
-            with pytest.raises(BEDError, match="No valid intervals found"):
-                parse_bed_file(f.name)
-
-        Path(f.name).unlink()
-
-
-class TestValidateBedCoordinates:
-    """Test validate_bed_coordinates function."""
-
-    def test_validate_bed_coordinates_valid(self):
-        """Test validation of valid coordinates."""
-        intervals = [{"chrom": "chr1", "start": 100, "end": 200}, {"chrom": "chr2", "start": 300, "end": 400}]
-
-        # Should not raise any exception
-        validate_bed_coordinates(intervals)
-
-    def test_validate_bed_coordinates_invalid_types(self):
-        """Test validation with invalid coordinate types."""
-        intervals = [
-            {"chrom": "chr1", "start": "100", "end": 200}  # start is string
-        ]
-
-        with pytest.raises(BEDError, match="coordinates must be integers"):
-            validate_bed_coordinates(intervals)
-
-    def test_validate_bed_coordinates_invalid_order(self):
-        """Test validation with start >= end."""
-        intervals = [
-            {"chrom": "chr1", "start": 200, "end": 200}  # start == end
-        ]
-
-        with pytest.raises(BEDError, match="start .* must be less than end"):
-            validate_bed_coordinates(intervals)
-
-    def test_validate_bed_coordinates_empty(self):
-        """Test validation with empty intervals."""
-        with pytest.raises(BEDError, match="No intervals provided"):
-            validate_bed_coordinates([])
-
-
-class TestBedToGenomeCoordinates:
-    """Test bed_to_genome_coordinates function."""
-
-    def test_bed_to_genome_coordinates_basic(self):
-        """Test conversion of BED to genome coordinates."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t+"
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = bed_to_genome_coordinates(f.name, "hg38")
-
-        Path(f.name).unlink()
-
-        expected = {
-            "genome": "hg38",
-            "chrom": "chr1",
-            "start": 100,
-            "end": 200,
-            "strand": "+",
-            "chrom_size": 248956422,
-        }
-
-        assert result == expected
-
-    def test_bed_to_genome_coordinates_no_genome(self):
-        """Test conversion without genome specification."""
-        bed_content = "chr2\t500\t600\t195471971\t0\t-"
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = bed_to_genome_coordinates(f.name)
-
-        Path(f.name).unlink()
-
-        assert result["genome"] == ""
-        assert result["chrom"] == "chr2"
-        assert result["start"] == 500
-        assert result["end"] == 600
-        assert result["strand"] == "-"
-        assert result["chrom_size"] == 195471971
-
-    @patch("logging.getLogger")
-    def test_bed_to_genome_coordinates_multiple_intervals_warning(self, mock_logger):
-        """Test that multiple intervals generate a warning."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t+\nchr2\t300\t400\t195471971\t0\t-"
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            result = bed_to_genome_coordinates(f.name, "mm39")
-
-        Path(f.name).unlink()
-
-        # Should use first interval
-        assert result["chrom"] == "chr1"
-        assert result["start"] == 100
-        assert result["end"] == 200
-
-        # Should have logged a warning
-        mock_logger.return_value.warning.assert_called_once()
-
-
-class TestFormatCoordinatesSummary:
-    """Test format_coordinates_summary function."""
-
-    def test_format_coordinates_summary_complete(self):
-        """Test formatting with complete coordinates."""
-        genome_coordinates = {"genome": "hg38", "chrom": "chr1", "start": 100, "end": 200, "strand": "+"}
-
-        result = format_coordinates_summary(genome_coordinates)
-
-        assert result == "hg38 chr1:100-200(+)"
-
-    def test_format_coordinates_summary_no_genome(self):
-        """Test formatting without genome."""
-        genome_coordinates = {"chrom": "chr2", "start": 500, "end": 600, "strand": "-"}
-
-        result = format_coordinates_summary(genome_coordinates)
-
-        assert result == "chr2:500-600(-)"
-
-    def test_format_coordinates_summary_defaults(self):
-        """Test formatting with missing fields."""
-        genome_coordinates = {}
-
-        result = format_coordinates_summary(genome_coordinates)
-
-        assert result == "unknown:0-0(+)"
+    assert got["chrom"] == "chr3"
+    assert got["start"] == 10
+    assert got["end"] == 20
+    assert got["strand"] == "+"
+    assert got["genome"] == "mm39"
+    assert got["chrom_size"] == 156040895
+
+
+def test_parse_bed_file_integrity_double_validation(tmp_path):
+    # start < end validation is checked twice; ensure it trips properly
+    bed = write_text(tmp_path, "bad_coords.bed", "chr5\t50\t50\tmm39\t156040895\t+")
+    with pytest.raises(BEDError) as ei:
+        parse_bed_file(bed)
+    msg = str(ei.value)
+    assert "Invalid end position" in msg or "must be > start" in msg

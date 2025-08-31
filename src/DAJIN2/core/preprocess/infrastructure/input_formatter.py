@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-from DAJIN2.core.preprocess.genome_coodinate.genome_coodinate_generator import (
+from DAJIN2.core.preprocess.genome_coordinate.genome_coordinate_generator import (
     get_genome_coordinates_from_bed,
     get_genome_coordinates_from_server,
 )

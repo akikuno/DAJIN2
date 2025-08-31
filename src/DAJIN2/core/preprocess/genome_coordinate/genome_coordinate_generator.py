@@ -25,6 +25,6 @@ def get_genome_coordinates_from_server(
     genome_coordinates = preprocess.fetch_coordinates(genome, gggenome_url, sequence)
 
     chrom = genome_coordinates["chrom"]
-    genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(chrom, genome, goldenpath_url)
+    genome_coordinates["chrom_size"] = preprocess.fetch_chromosome_size(genome, chrom, goldenpath_url)
 
     return genome_coordinates

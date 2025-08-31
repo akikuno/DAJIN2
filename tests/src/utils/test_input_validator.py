@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -22,7 +21,9 @@ def test_exists():
 def test_return_file_extension():
     with pytest.raises(ValueError) as e:
         test = Path("test.fqq")
-        expected = f"{test} requires extensions either .fastq, .fastq.gz, .fq, .fq.gz, .fasta, .fasta.gz, .fa, .fa.gz, or .bam"
+        expected = (
+            f"{test} requires extensions either .fastq, .fastq.gz, .fq, .fq.gz, .fasta, .fasta.gz, .fa, .fa.gz, or .bam"
+        )
         input_validator.return_file_extension(test)
     assert str(e.value) == expected
 
@@ -85,15 +86,8 @@ def test_fasta_without_error():
 ###############################################################################
 
 server_lists = {
-    "blat": [
-        "https://genome.ucsc.edu/cgi-bin/hgBlat",
-        "https://genome-asia.ucsc.edu/cgi-bin/hgBlat",
-        "https://genome-euro.ucsc.edu/cgi-bin/hgBlat",
-    ],
-    "das": [
-        "https://genome.ucsc.edu/cgi-bin/das/dsn/",
-        "https://genome-asia.ucsc.edu/cgi-bin/das/dsn/",
-        "https://genome-euro.ucsc.edu/cgi-bin/das/dsn",
+    "gggenome": [
+        "https://gggenome.dbcls.jp/",
     ],
     "goldenpath": [
         "https://hgdownload.cse.ucsc.edu/goldenPath",
@@ -103,110 +97,94 @@ server_lists = {
 
 available_servers = {key: input_validator.get_first_available_url(key, urls) for key, urls in server_lists.items()}
 
-
-@pytest.mark.slow
-def test_available_genome_pass():
-    genome = "mm10"
-    url_das = available_servers["das"]
-    assert input_validator.is_genome_id_available_in_ucsc(genome, url_das) is True
-
-
-@pytest.mark.slow
-def test_available_genome_fail():
-    genome = "mm12345"
-    url_das = available_servers["das"]
-    assert input_validator.is_genome_id_available_in_ucsc(genome, url_das) is False
-
-
 ###############################################################################
 # validate BED file
 ###############################################################################
 
 
-class TestValidateBedFileAndGetCoordinates:
-    """Test BED file validation and coordinate extraction."""
+@pytest.fixture
+def noop_validate_exists(monkeypatch):
+    """Make validate_file_existence a no-op by default."""
+    monkeypatch.setattr(input_validator, "validate_file_existence", lambda p: None)
 
-    def test_validate_bed_file_valid(self):
-        """Test validation of valid BED file."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t+"
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
+@pytest.mark.parametrize(
+    "fname",
+    [
+        "ok.bed",
+        "ok.bed.gz",
+        "OK.BED",
+        "OK.BED.GZ",
+        "sample.region.bed",
+        "sample.region.bed.gz",
+    ],
+)
+def test_validate_bed_file_valid_extensions(tmp_path, monkeypatch, noop_validate_exists, fname):
+    # The function only checks extension and calls validate_file_existence;
+    # it does not read file content. Path existence is simulated by the no-op.
+    bed_path = tmp_path / fname
+    # Even though validate_file_existence is a no-op, create the file to be realistic
+    bed_path.write_text("# dummy\n", encoding="utf-8")
 
-            result = input_validator.validate_bed_file_and_get_coordinates(f.name, "hg38")
+    assert input_validator.validate_bed_file(str(bed_path)) is None
 
-        Path(f.name).unlink()
 
-        expected = {
-            "genome": "hg38",
-            "chrom": "chr1",
-            "start": 100,
-            "end": 200,
-            "strand": "+",
-            "chrom_size": 248956422,
-        }
+@pytest.mark.parametrize(
+    "fname",
+    [
+        "bad.txt",
+        "bad.bed.bgz",
+        "bad.gz",
+        "badbed",  # no suffix
+        "bad.bed.zip",
+        "bad.bedgz",  # looks similar but not .bed.gz
+        "bad.bed.GZ.bak",
+    ],
+)
+def test_validate_bed_file_invalid_extensions(tmp_path, monkeypatch, noop_validate_exists, fname):
+    bed_path = tmp_path / fname
+    bed_path.write_text("# dummy\n", encoding="utf-8")
 
-        assert result == expected
+    with pytest.raises(ValueError) as ei:
+        input_validator.validate_bed_file(str(bed_path))
+    msg = str(ei.value)
+    assert "BED file must have .bed or .bed.gz extension" in msg
+    assert str(bed_path) in msg
 
-    def test_validate_bed_file_no_genome(self):
-        """Test BED validation without genome ID."""
-        bed_content = "chr2\t500\t600\t195471971\t0\t-"
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
+def test_validate_bed_file_wraps_bederror(monkeypatch, tmp_path):
+    # Simulate a format error raised by validate_file_existence as BEDError
+    err = input_validator.BEDError("malformed header")
+    monkeypatch.setattr(input_validator, "validate_file_existence", lambda p: (_ for _ in ()).throw(err))
 
-            result = input_validator.validate_bed_file_and_get_coordinates(f.name)
+    bed_path = tmp_path / "looks_ok.bed"
+    bed_path.write_text("# dummy\n", encoding="utf-8")
 
-        Path(f.name).unlink()
+    with pytest.raises(ValueError) as ei:
+        input_validator.validate_bed_file(str(bed_path))
+    assert "Invalid BED file format: malformed header" in str(ei.value)
 
-        assert result["genome"] == ""
-        assert result["chrom"] == "chr2"
-        assert result["start"] == 500
-        assert result["end"] == 600
-        assert result["strand"] == "-"
-        assert result["chrom_size"] == 195471971
 
-    def test_validate_bed_file_nonexistent(self):
-        """Test validation of non-existent BED file."""
-        with pytest.raises(ValueError, match="Error processing BED file.*is not found"):
-            input_validator.validate_bed_file_and_get_coordinates("/nonexistent/file.bed")
+@pytest.mark.parametrize("exc_type", [FileNotFoundError, PermissionError, OSError, RuntimeError])
+def test_validate_bed_file_wraps_other_exceptions(monkeypatch, tmp_path, exc_type):
+    # Any non-BEDError exception should be wrapped with a generic message
+    def raise_exc(_):
+        raise exc_type("boom")
 
-    def test_validate_bed_file_wrong_extension(self):
-        """Test validation of file with wrong extension."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-            f.write("chr1\t100\t200")
-            f.flush()
+    monkeypatch.setattr(input_validator, "validate_file_existence", raise_exc)
 
-            with pytest.raises(ValueError, match="BED file must have .bed or .bed.gz extension"):
-                input_validator.validate_bed_file_and_get_coordinates(f.name)
+    bed_path = tmp_path / "missing.bed"
+    # Do not create the file; existence is checked by the patched function
 
-        Path(f.name).unlink()
+    with pytest.raises(ValueError) as ei:
+        input_validator.validate_bed_file(str(bed_path))
+    msg = str(ei.value)
+    assert f"Error processing BED file {bed_path}" in msg
+    assert "boom" in msg
 
-    def test_validate_bed_file_invalid_format(self):
-        """Test validation of invalid BED format."""
-        bed_content = "chr1\t100"  # Only 2 columns
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            with pytest.raises(ValueError, match="Invalid BED file format"):
-                input_validator.validate_bed_file_and_get_coordinates(f.name)
-
-        Path(f.name).unlink()
-
-    def test_validate_bed_file_gz_extension(self):
-        """Test validation accepts .bed.gz extension."""
-        bed_content = "chr1\t100\t200\t248956422\t0\t+"
-
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".bed.gz", delete=False) as f:
-            f.write(bed_content)
-            f.flush()
-
-            # Should not raise exception for .bed.gz extension
-            result = input_validator.validate_bed_file_and_get_coordinates(f.name)
-            assert result["chrom"] == "chr1"
-
-        Path(f.name).unlink()
+def test_validate_bed_file_accepts_double_suffix_recognition(tmp_path, monkeypatch, noop_validate_exists):
+    # Ensure logic uses all suffixes (e.g., ".bed.gz") rather than only .suffix
+    bed_path = tmp_path / "double.suffix.name.bed.gz"
+    bed_path.write_text("# dummy\n", encoding="utf-8")
+    assert input_validator.validate_bed_file(str(bed_path)) is None
