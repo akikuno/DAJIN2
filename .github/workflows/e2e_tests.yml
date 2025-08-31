@@ -72,6 +72,7 @@ jobs:
                         --debug || exit 1
 
                     # BED file
+                    echo -e "chr5\t129068835\t129073144\tmm39\t151758149\t-" > example_single/stx2_deletion.bed
                     DAJIN2 \
                         --control example_single/control \
                         --sample example_single/sample \
@@ -91,5 +92,6 @@ jobs:
                     fi
                     DAJIN2 batch --file example_batch/batch.csv --threads 4 --debug || exit 1
                     # BED file
+                    echo -e "chr7\t87140312\t87143157\tmm39\t144995196\t-" > example_batch/tyr.bed
                     DAJIN2 batch --file example_batch/batch_bed.csv --threads 4 --debug || exit 1
                   fi
