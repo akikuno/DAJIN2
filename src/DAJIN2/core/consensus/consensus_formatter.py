@@ -136,14 +136,13 @@ def update_label_percent_readnum_name(
 
         if old_label not in readnum_counted_label:
             readnum_by_label[new_label] += clust["READNUM"]
-            readnum_counted_label.add(new_label)
+            readnum_counted_label.add(old_label)
 
     # 2回目のループで READNUM を上書き
     for clust in clust_sample:
         clust["READNUM"] = readnum_by_label[clust["LABEL"]]
 
     return clust_sample
-
 
 
 ###########################################################
