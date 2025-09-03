@@ -88,10 +88,13 @@ def _handle_unknown(group, genome, start, end, header, chromosome) -> tuple[list
     return [result], start, end
 
 
-def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, header) -> list[list[str]]:
-    genome = GENOME_COORDINATES["genome"]
-    chromosome = GENOME_COORDINATES["chrom"]
-    start = end = GENOME_COORDINATES["start"]
+def report_mutations(cssplits_grouped: list[list[str]], genome_coordinates: dict | None, header) -> list[list[str]]:
+    if genome_coordinates is None:
+        genome_coordinates = {}
+
+    genome = genome_coordinates.get("genome")
+    chromosome = genome_coordinates.get("chrom")
+    start = end = genome_coordinates.get("start", 0)
     handlers = {
         "=": _handle_match,
         "*": _handle_substitution,
@@ -117,19 +120,23 @@ def report_mutations(cssplits_grouped: list[list[str]], GENOME_COORDINATES, head
 
 
 def export_to_csv(
-    TEMPDIR: Path, SAMPLE_NAME: str, GENOME_COORDINATES: dict, cons_midsv_tags: dict[str, list[str]]
+    tempdir: Path, sample_name: str, genome_coordinates: dict | None, cons_midsv_tags: dict[str, list[str]]
 ) -> None:
+    if genome_coordinates is None:
+        genome_coordinates = {}
+
     results = []
+
     for header, cons_midsv_tag in cons_midsv_tags.items():
-        if GENOME_COORDINATES.get("strand") == "-":
+        if genome_coordinates.get("strand") == "-":
             cons_midsv_tag = revcomp_cssplits(cons_midsv_tag)
         cons_midsv_tag_inversion = annotate_inversion(cons_midsv_tag)
         cons_midsv_tag_grouped = group_by_mutation(cons_midsv_tag_inversion)
-        result = report_mutations(cons_midsv_tag_grouped, GENOME_COORDINATES, header)
+        result = report_mutations(cons_midsv_tag_grouped, genome_coordinates, header)
         results.extend(result)
 
     col_names = ["Allele ID", "Genome", "Chromosome", "Start", "End", "Mutation"]
     df_results = pd.DataFrame(results, columns=col_names).sort_values(by=["Allele ID", "Start"])
 
-    path_output = Path(TEMPDIR, "report", "MUTATION_INFO", f"{SAMPLE_NAME}.csv")
+    path_output = Path(tempdir, "report", "MUTATION_INFO", f"{sample_name}.csv")
     df_results.to_csv(path_output, index=False, encoding="utf-8", lineterminator="\n")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 
 class BEDError(Exception):
@@ -11,7 +12,7 @@ class BEDError(Exception):
         self.message = message
 
 
-def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
+def parse_bed_file(bed_path: str | Path) -> list[dict[str, Any]]:
     """
     Parse a BED file and return a list of genomic intervals.
 
@@ -128,7 +129,7 @@ def parse_bed_file(bed_path: str | Path) -> list[dict[str, any]]:
     return intervals
 
 
-def bed_to_genome_coordinates(bed_path: str | Path) -> dict[str, any]:
+def bed_to_genome_coordinates(bed_path: str | Path) -> dict[str, Any]:
     """
     Convert BED file to DAJIN2 genome_coordinates format.
 
@@ -152,7 +153,7 @@ def bed_to_genome_coordinates(bed_path: str | Path) -> dict[str, any]:
     Raises:
         BEDError: If BED file is invalid
     """
-    intervals: list[dict[str, any]] = parse_bed_file(bed_path)
+    intervals: list[dict[str, Any]] = parse_bed_file(bed_path)
 
     # Use first interval for single-region analysis
     first_interval = intervals[0]
