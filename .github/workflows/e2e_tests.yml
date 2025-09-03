@@ -26,13 +26,13 @@ jobs:
               with:
                   python-version: ${{ matrix.python-version }}
                   miniconda-version: "latest"
-                  activate-environment: test-env
+                  activate-environment: env-dajin2
                   channels: bioconda, conda-forge, defaults
 
             - name: Create and activate conda environment
               run: |
-                  conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
-                  conda activate env-dajin2
+                  conda install -y python=${{ matrix.python-version }} pip pytest
+                  python -V
 
             - name: Install DAJIN2 and dependencies
               run: |
@@ -41,67 +41,47 @@ jobs:
             - name: Execute specific test case
               env:
                   PYTHONPATH: src
+                  EXAMPLES_DIR: ${{ github.workspace }}/examples
               run: |
                   case="${{ matrix.test-case }}"
 
-                  # -------------------------
-                  # Test for Cables2 Flox
-                  # -------------------------
-                  if [ "$case" == "cables2_flox" ]; then
-                    if [ ! -d example_flox ]; then
-                      curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_flox.tar.gz
-                      tar -xf example_flox.tar.gz
-                    fi
-                    DAJIN2 batch --file example_flox/batch.xlsx --threads 4 --debug || exit 1
+                  if [ "$case" = "cables2_flox" ]; then
+                    DAJIN2 batch --file "$EXAMPLES_DIR/example_flox/batch.xlsx" --threads 4 --debug || exit 1
 
-                  # -------------------------
-                  # Test for Stx2 Deletion
-                  # -------------------------
-                  elif [ "$case" == "stx2_deletion" ]; then
-                    if [ ! -d example_single ]; then
-                      curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
-                      tar -xf example_single.tar.gz
-                    fi
+                  elif [ "$case" = "stx2_deletion" ]; then
                     DAJIN2 \
-                        --control example_single/control \
-                        --sample example_single/sample \
-                        --allele example_single/stx2_deletion.fa \
-                        --name stx2_deletion \
-                        --genome mm39 \
-                        --threads 4 \
-                        --debug || exit 1
+                      --control "$EXAMPLES_DIR/example_single/control" \
+                      --sample  "$EXAMPLES_DIR/example_single/sample" \
+                      --allele  "$EXAMPLES_DIR/example_single/stx2_deletion.fa" \
+                      --name stx2_deletion \
+                      --genome mm39 \
+                      --threads 4 \
+                      --debug || exit 1
 
                     # Without Genome Specification
                     DAJIN2 \
-                        --control example_single/control \
-                        --sample example_single/sample \
-                        --allele example_single/stx2_deletion.fa \
-                        --name stx2_deletion \
-                        --threads 4 \
-                        --debug || exit 1
+                      --control "$EXAMPLES_DIR/example_single/control" \
+                      --sample  "$EXAMPLES_DIR/example_single/sample" \
+                      --allele  "$EXAMPLES_DIR/example_single/stx2_deletion.fa" \
+                      --name stx2_deletion \
+                      --threads 4 \
+                      --debug || exit 1
 
-                    # BED file
-                    echo -e "chr5\t129068835\t129073144\tmm39\t151758149\t-" > example_single/stx2_deletion.bed
+                    # BED file (printfはmacOS/Ubuntu両対応)
+                    printf "chr5\t129068835\t129073144\tmm39\t151758149\t-\n" > "$EXAMPLES_DIR/example_single/stx2_deletion.bed"
                     DAJIN2 \
-                        --control example_single/control \
-                        --sample example_single/sample \
-                        --allele example_single/stx2_deletion.fa \
-                        --name stx2_deletion \
-                        --bed example_single/stx2_deletion.bed \
-                        --threads 4 \
-                        --debug || exit 1
+                      --control "$EXAMPLES_DIR/example_single/control" \
+                      --sample  "$EXAMPLES_DIR/example_single/sample" \
+                      --allele  "$EXAMPLES_DIR/example_single/stx2_deletion.fa" \
+                      --name stx2_deletion \
+                      --bed "$EXAMPLES_DIR/example_single/stx2_deletion.bed" \
+                      --threads 4 \
+                      --debug || exit 1
 
-                  # -------------------------
-                  # Test for Tyr Substitution
-                  # -------------------------
-                  elif [ "$case" == "tyr_substitution" ]; then
-                    if [ ! -d example_batch ]; then
-                      curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
-                      tar -xf example_batch.tar.gz
-                    fi
-                    DAJIN2 batch --file example_batch/batch.csv --threads 4 --debug || exit 1
+                  elif [ "$case" = "tyr_substitution" ]; then
+                    DAJIN2 batch --file "$EXAMPLES_DIR/example_batch/batch.csv" --threads 4 --debug || exit 1
 
                     # BED file
-                    echo -e "chr7\t87140312\t87143157\tmm39\t144995196\t-" > example_batch/tyr.bed
-                    DAJIN2 batch --file example_batch/batch_bed.csv --threads 4 --debug || exit 1
+                    printf "chr7\t87140312\t87143157\tmm39\t144995196\t-\n" > "$EXAMPLES_DIR/example_batch/tyr.bed"
+                    DAJIN2 batch --file "$EXAMPLES_DIR/example_batch/batch_bed.csv" --threads 4 --debug || exit 1
                   fi
