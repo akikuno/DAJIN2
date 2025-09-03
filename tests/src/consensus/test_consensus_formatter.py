@@ -97,7 +97,7 @@ def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
             ["deletion02", "control", "inversion05", "insertion11", "unknown"],
             {"deletion02": "deletion01", "inversion05": "inversion01", "insertion11": "insertion01"},
         ),
-        # Case 6: Conseqtive alleles
+        # Case 6: Consecutive alleles
         (["deletion01", "deletion01", "deletion04"], {"deletion01": "deletion01", "deletion04": "deletion02"}),
     ],
 )
