@@ -15,7 +15,34 @@
 <!-- ############################################################# # -->
 
 
-# v0.7.1 (2025-07-18)
+# v0.7.2 (2025-09-03)
+
+## 🐛 Bug Fixes
+
++ Replaced UCSC BLAT with **GGGenome** to avoid access denial issues.  
+  Additionally, updated the CLI to accept BED files via `-b/--bed`, enabling users to run DAJIN2 in **fully offline mode** while still obtaining the desired BAM outputs.  
+  Special thanks to [@zpashkutz](https://github.com/zpashkutz) for reporting this bug!  
+  See [PR #113](https://github.com/akikuno/DAJIN2/pull/113) for details.
+
++ Updated processing logic to **merge duplicated alleles** so that identical entries (e.g., multiple "intact" alleles with different percentages) are now combined into a single record with aggregated frequency values.  
+  Special thanks to Dr. Gabriel Martínez and Dr. Kazuto Yoshimi for reporting this bug!  
+  See [PR #114](https://github.com/akikuno/DAJIN2/pull/114) for details.
+
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+
+<details>
+<summary> v0.7.1 (2025-07-18) </summary>
 
 ## 🌟 New Features
 
@@ -44,15 +71,9 @@
   - Batch processing via the web interface
 
 
+</details>
 
--------------------------------------------------------------
 
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
 
 <details>
 <summary> v0.7.0 (2025-07-11)</summary>
