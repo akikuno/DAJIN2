@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -103,7 +104,7 @@ def call_allele_name(
 ###########################################################
 
 
-def update_key_by_allele_name(cons: dict[ConsensusKey, any], allele_names: dict[int, str]) -> dict:
+def update_key_by_allele_name(cons: dict[ConsensusKey, Any], allele_names: dict[int, str]) -> dict:
     cons_update = {}
     for consensuskey, value in cons.items():
         allele_name = allele_names[consensuskey.label]
@@ -270,10 +271,10 @@ def merge_duplicated_cons_sequences(
 
 
 def merge_duplicated_cons_others(
-    cons_others: dict[ConsensusKey, any],
+    cons_others: dict[ConsensusKey, Any],
     cons_sequences_merged: dict[ConsensusKey, str],
     label_before_to_after: dict[int, int],
-) -> dict[ConsensusKey, any]:
+) -> dict[ConsensusKey, Any]:
     unique_alleles = {(item.allele, item.label): item.percent for item in cons_sequences_merged}
 
     cons_others_merged = {}
