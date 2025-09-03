@@ -243,13 +243,11 @@ def execute_sample(arguments: dict):
 
     consensus.cache_mutation_loci(ARGS, clust_downsampled, ARGS.no_filter)
 
-    cons_percentages, cons_sequences, cons_midsv_tags = consensus.call_consensus(
+    cons_percentages, cons_sequences, cons_midsv_tags, label_before_to_after = consensus.call_consensus(
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    allele_names = consensus.call_allele_name(
-        ARGS.tempdir, ARGS.sample_name, cons_sequences, cons_percentages, ARGS.fasta_alleles, threshold=50
-    )
+    allele_names = consensus.call_allele_name(cons_sequences, cons_percentages, ARGS.fasta_alleles, sv_threshold=50)
     cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
     cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
     cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)
@@ -265,7 +263,9 @@ def execute_sample(arguments: dict):
     logger.info(f"Output reports of {arguments['sample']}...")
 
     # RESULT
-    RESULT_SAMPLE = consensus.add_key_by_allele_name(clust_sample_removed, allele_names)
+    RESULT_SAMPLE = consensus.update_label_percent_readnum_name(
+        clust_sample_removed, allele_names, label_before_to_after
+    )
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
     io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))

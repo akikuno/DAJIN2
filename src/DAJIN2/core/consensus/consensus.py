@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
 
+from DAJIN2.core.consensus.consensus_formatter import merge_duplicated_cons_others, merge_duplicated_cons_sequences
 from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
 from DAJIN2.utils import io
 from DAJIN2.utils.cssplits_handler import call_sequence
@@ -39,6 +40,7 @@ def convert_to_percentage(
 
 
 def remove_all_n(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    # TODO: In midsv v0.12.0 and later, N is output as `=N`, so update accordingly when upgrading midsv.
     for c in cons_percentage:
         if len(c) == 1 and "N" in c:
             continue
@@ -111,4 +113,9 @@ def call_consensus(
         cons_sequences[key] = call_sequence(cons_percentage)
         cons_midsv_tags[key] = cons_midsv_tag
 
-    return cons_percentages, cons_sequences, cons_midsv_tags
+    # Merge duplicate consensus sequences and percentages
+    cons_sequences, label_before_to_after = merge_duplicated_cons_sequences(cons_sequences)
+    cons_percentages = merge_duplicated_cons_others(cons_percentages, cons_sequences, label_before_to_after)
+    cons_midsv_tags = merge_duplicated_cons_others(cons_midsv_tags, cons_sequences, label_before_to_after)
+
+    return cons_percentages, cons_sequences, cons_midsv_tags, label_before_to_after
