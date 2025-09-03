@@ -46,7 +46,10 @@ jobs:
                   case="${{ matrix.test-case }}"
 
                   if [ "$case" = "cables2_flox" ]; then
-                    DAJIN2 batch --file "$EXAMPLES_DIR/example_flox/batch.xlsx" --threads 4 --debug || exit 1
+                    (
+                      cd "$EXAMPLES_DIR" || exit 1
+                      DAJIN2 batch --file "example_flox/batch.xlsx" --threads 4 --debug
+                    ) || exit 1
 
                   elif [ "$case" = "stx2_deletion" ]; then
                     DAJIN2 \
@@ -67,7 +70,7 @@ jobs:
                       --threads 4 \
                       --debug || exit 1
 
-                    # BED file (printfはmacOS/Ubuntu両対応)
+                    # BED file (printf は macOS/Ubuntu 両対応)
                     printf "chr5\t129068835\t129073144\tmm39\t151758149\t-\n" > "$EXAMPLES_DIR/example_single/stx2_deletion.bed"
                     DAJIN2 \
                       --control "$EXAMPLES_DIR/example_single/control" \
@@ -79,9 +82,10 @@ jobs:
                       --debug || exit 1
 
                   elif [ "$case" = "tyr_substitution" ]; then
-                    DAJIN2 batch --file "$EXAMPLES_DIR/example_batch/batch.csv" --threads 4 --debug || exit 1
-
-                    # BED file
-                    printf "chr7\t87140312\t87143157\tmm39\t144995196\t-\n" > "$EXAMPLES_DIR/example_batch/tyr.bed"
-                    DAJIN2 batch --file "$EXAMPLES_DIR/example_batch/batch_bed.csv" --threads 4 --debug || exit 1
+                    (
+                      cd "$EXAMPLES_DIR" || exit 1
+                      DAJIN2 batch --file "example_batch/batch.csv" --threads 4 --debug
+                      printf "chr7\t87140312\t87143157\tmm39\t144995196\t-\n" > "example_batch/tyr.bed"
+                      DAJIN2 batch --file "example_batch/batch_bed.csv" --threads 4 --debug
+                    ) || exit 1
                   fi
