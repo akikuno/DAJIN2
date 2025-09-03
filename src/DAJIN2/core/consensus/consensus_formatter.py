@@ -138,7 +138,7 @@ def update_label_percent_readnum_name(
             readnum_by_label[new_label] += clust["READNUM"]
             readnum_counted_label.add(old_label)
 
-    # 2回目のループで READNUM を上書き
+    # Overwrite READNUM in the second loop
     for clust in clust_sample:
         clust["READNUM"] = readnum_by_label[clust["LABEL"]]
 
