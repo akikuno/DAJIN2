@@ -94,3 +94,4 @@ def extract_anomal_loci(
         idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut], is_consensus)
         anomal_loci[mut] = idx_outliers
     return anomal_loci
+

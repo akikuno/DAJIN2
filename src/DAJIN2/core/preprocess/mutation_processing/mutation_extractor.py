@@ -41,10 +41,10 @@ def extract_mutation_loci(
     """
     if thresholds is None:
         thresholds = {"*": 0.1, "-": 0.1, "+": 0.1}
-    indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
+    indels_normalized_sample: dict[str, list[float]] = io.load_pickle(path_indels_normalized_sample)
 
     # Extract candidate mutation loci
-    indels_normalized_control = minimize_mutation_counts(
+    indels_normalized_control: dict[str, list[float]] = minimize_mutation_counts(
         io.load_pickle(path_indels_normalized_control), indels_normalized_sample
     )
     anomal_loci: dict[str, set[int]] = extract_anomal_loci(
