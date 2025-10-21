@@ -119,6 +119,10 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
 
     initial_font_size = fig.layout.font.size or 18
     trace_groups_json = json.dumps(trace_groups)
+    export_buttons = [
+        {"format": "png", "label": "Download PNG"},
+    ]
+    export_buttons_json = json.dumps(export_buttons)
 
     style_block = """<style>
         body {
@@ -190,6 +194,20 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 0.75rem;
         }
+        .export-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .export-controls button {
+            padding: 0.5rem 0.9rem;
+            border: none;
+            border-radius: 0.3rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+            background: #4a5568;
+            color: #fff;
+        }
         .color-picker-item {
             display: flex;
             justify-content: space-between;
@@ -248,6 +266,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         <div class="color-controls__title">Bar colors (click label to open picker)</div>
         <div class="color-controls__list" id="color-picker-list"></div>
     </div>
+    <div class="export-controls" id="export-controls"></div>
 """
 
     script_block = f"""
@@ -262,6 +281,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         const applyButton = document.getElementById("plot-style-apply");
         const resetButton = document.getElementById("plot-style-reset");
         const colorPickerList = document.getElementById("color-picker-list");
+        const exportControls = document.getElementById("export-controls");
 
         const clone = (obj) => JSON.parse(JSON.stringify(obj ?? (Array.isArray(obj) ? [] : {{}})));
         const initialData = clone(figure.data);
@@ -269,6 +289,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         const initialFontValue = fontInput.value;
 
         const traceGroups = {trace_groups_json};
+        const exportButtons = {export_buttons_json};
 
         const ensureHex = (color) => {{
             if (typeof color !== "string") {{
@@ -354,9 +375,32 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             buildColorPickers();
         }};
 
+        const buildExportButtons = () => {{
+            exportControls.innerHTML = "";
+            exportButtons.forEach((btn) => {{
+                const button = document.createElement("button");
+                button.textContent = btn.label;
+                button.dataset.format = btn.format;
+                button.addEventListener("click", async () => {{
+                    try {{
+                        await Plotly.downloadImage(figure, {{
+                            format: btn.format,
+                            filename: "read_plot",
+                            scale: 600 / 96,
+                        }});
+                    }} catch (error) {{
+                        console.error("Failed to export image", error);
+                        alert("Failed to export " + btn.format.toUpperCase() + " file. Please ensure Plotly is fully loaded.");
+                    }}
+                }});
+                exportControls.appendChild(button);
+            }});
+        }};
+
         applyButton.addEventListener("click", applyFontSize);
         resetButton.addEventListener("click", resetStyle);
         buildColorPickers();
+        buildExportButtons();
     }})();
     </script>
 """
