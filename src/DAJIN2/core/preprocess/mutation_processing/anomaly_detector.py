@@ -7,6 +7,7 @@ from __future__ import annotations
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 
+
 def cosine_distance(x: list[float], y: list[float]) -> float:
     """Calculate cosine distance between two vectors."""
     # Add 1e-6 to avoid division by zero when calculating cosine similarity

@@ -3,8 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from DAJIN2.core.preprocess.error_correction.homopolymer_handler import extract_sequence_errors_in_homopolymer_loci
+from DAJIN2.core.preprocess.error_correction.sequence_error_handler import (
+    extract_sequence_errors_using_insample_control,
+)
 from DAJIN2.core.preprocess.error_correction.strand_bias_handler import extract_sequence_errors_in_strand_biased_loci
-from DAJIN2.core.preprocess.error_correction.sequence_error_handler import extract_sequence_errors_using_insample_control
 from DAJIN2.core.preprocess.mutation_processing.anomaly_detector import extract_anomal_loci
 from DAJIN2.core.preprocess.mutation_processing.indel_counter import minimize_mutation_counts, summarize_indels
 from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
@@ -74,9 +76,11 @@ def extract_mutation_loci(
         # In contrast, in consensus analysis, if a 1% allele is properly separated,
         # it will be merged as a 100% allele at that stage,
         # and thus should not be treated as an error.
-        errors_using_insample_control: dict[str, set[int]] = extract_sequence_errors_using_insample_control(indels_normalized_sample, sigma_threshold=2.0)
+        errors_using_insample_control: dict[str, set[int]] = extract_sequence_errors_using_insample_control(
+            indels_normalized_sample, sigma_threshold=2.0
+        )
         anomal_loci = discard_errors(anomal_loci, errors_using_insample_control)
-        
+
     anomal_loci_merged = merge_index_of_consecutive_indel(anomal_loci)
     mutation_loci = transpose_mutation_loci(anomal_loci_merged, sequence)
     return mutation_loci
