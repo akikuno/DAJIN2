@@ -9,12 +9,6 @@ from DAJIN2.utils import io
 from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
 
 
-def rename_allele(allele: str) -> str:
-    if allele == "control" or allele.startswith("insertion"):
-        return allele.capitalize()
-    return allele
-
-
 def rename_type(type_: str) -> str:
     if type_ == "intact" or type_ == "indels":
         return type_.capitalize()
@@ -36,7 +30,7 @@ def format_result_info(path_result: Path) -> list[dict[str, str]]:
         reads = {k: reads[k] for k in key_filter}
         # Add Label, Allele, Type from NAME
         label, allele, type_, *_ = reads["NAME"].split("_")
-        reads.update({"Label": label.capitalize(), "Allele": rename_allele(allele), "Type": rename_type(type_)})
+        reads.update({"Label": label.capitalize(), "Allele": allele, "Type": rename_type(type_)})
         del reads["NAME"]
         # Add Sample
         reads["Sample"] = sample_name

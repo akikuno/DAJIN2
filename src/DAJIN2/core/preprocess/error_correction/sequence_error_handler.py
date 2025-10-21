@@ -6,6 +6,8 @@ from typing import Callable
 
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
 from DAJIN2.utils import io
@@ -170,3 +172,65 @@ def replace_midsv_without_sequence_errors(ARGS) -> None:
         midsv_sample = io.read_jsonl(path_midsv)
         midsv_sample_filtered = [m for m in midsv_sample if m["QNAME"] in qnames_without_error]
         io.write_jsonl(midsv_sample_filtered, path_midsv)
+
+
+###############################################################################
+# Detect sequence errors using in-sample control
+###############################################################################
+
+
+def _detect_anomalies_with_gp(
+    mutation_frequencies: list[float],
+    n_train_points: int = 150,
+    length_scale: float = 10.0,
+    noise_level: float = 5.0,
+    sigma_threshold: float = 2.0,
+) -> set[int]:
+    """
+    Detect anomalies in a 1D time-series using Gaussian Process Regression (GPR).
+    This function learns a smooth model from the first and last parts of the data,
+    then flags points that deviate more than `sigma_threshold` standard deviations.
+    """
+
+    # --- Prepare training data using first and last n_train_points ---
+    insample_control = np.concatenate([mutation_frequencies[:n_train_points], mutation_frequencies[-n_train_points:]])
+    x_train = np.arange(len(insample_control)).reshape(-1, 1)
+    y_train = insample_control.astype(float)
+
+    # --- Define kernel (RBF + White noise, with reasonable parameter bounds) ---
+    kernel = ConstantKernel(1.0, (1e-3, 1e3)) * RBF(
+        length_scale=length_scale, length_scale_bounds=(2.0, 200.0)
+    ) + WhiteKernel(noise_level=noise_level, noise_level_bounds=(1e-6, 10.0))
+
+    # --- Initialize and train GP model ---
+    gp = GaussianProcessRegressor(
+        kernel=kernel,
+        alpha=0.0,
+        normalize_y=True,
+        n_restarts_optimizer=5,
+        random_state=0,
+    )
+    gp.fit(x_train, y_train)
+
+    # --- Predict on the full time-series (using time index as input feature) ---
+    x_pred = np.arange(len(mutation_frequencies)).reshape(-1, 1)
+    y_mean, y_std = gp.predict(x_pred, return_std=True)
+
+    # --- Compute anomaly thresholds and mask ---
+    thr_up = y_mean + sigma_threshold * y_std
+    thr_lo = y_mean - sigma_threshold * y_std
+    anomaly_mask = (mutation_frequencies > thr_up) | (mutation_frequencies < thr_lo)
+
+    return {i for i, v in enumerate(anomaly_mask) if v}
+
+
+def extract_sequence_errors_using_insample_control(
+    indels_normalized_sample: dict[str, list[float]], sigma_threshold: float = 2.0
+) -> dict[str, set[int]]:
+    """Extract sequence error loci using in-sample control with Gaussian Process Regression."""
+    errors_using_insample_control: dict[str, set[int]] = {}
+    for mut in {"+", "-", "*"}:
+        mutation_frequencies = indels_normalized_sample[mut]
+        idx_outliers = _detect_anomalies_with_gp(mutation_frequencies, sigma_threshold=sigma_threshold)
+        errors_using_insample_control[mut] = idx_outliers
+    return errors_using_insample_control

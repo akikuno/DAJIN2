@@ -7,7 +7,6 @@ from __future__ import annotations
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 
-
 def cosine_distance(x: list[float], y: list[float]) -> float:
     """Calculate cosine distance between two vectors."""
     # Add 1e-6 to avoid division by zero when calculating cosine similarity
@@ -94,4 +93,3 @@ def extract_anomal_loci(
         idx_outliers = detect_anomalies(values_sample, values_control, thresholds[mut], is_consensus)
         anomal_loci[mut] = idx_outliers
     return anomal_loci
-
