@@ -39,10 +39,16 @@ def set_logging(path_logfile: Path) -> logging.Logger:
     file_handler = DeferredFileHandler(path_logfile)
     file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
 
-    logging.basicConfig(
-        level=logging.INFO,
-        handlers=[stderr_handler, file_handler],
-    )
+    logging.basicConfig(level=logging.INFO, handlers=[stderr_handler, file_handler])
+
+    # Drop noisy kaleido Chromium launch message (see issue #117)
+    def _suppress_chromium_init(record: logging.LogRecord) -> bool:
+        return "Chromium init'ed with kwargs" not in record.getMessage()
+
+    chromium_filter = logging.Filter()
+    chromium_filter.filter = _suppress_chromium_init
+    stderr_handler.addFilter(chromium_filter)
+    file_handler.addFilter(chromium_filter)
 
     # log uncaught exceptions
     def handle_uncaught_exception(exc_type, exc_value, exc_traceback):
