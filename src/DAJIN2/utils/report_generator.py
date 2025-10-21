@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -106,7 +107,268 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     fig.update_xaxes(categoryorder="category ascending")
 
     output_filename = Path(report_directory, "read_plot")
-    fig.write_html(f"{output_filename}.html")
+    html_path = output_filename.with_suffix(".html")
+
+    div_id = "read_plot_fig"
+    fig.write_html(html_path, include_plotlyjs="cdn", full_html=True, div_id=div_id)
+
+    trace_groups: dict[str, list[int]] = {}
+    for index, trace in enumerate(fig.data):
+        name = trace.name or f"Series {index + 1}"
+        trace_groups.setdefault(name, []).append(index)
+
+    initial_font_size = fig.layout.font.size or 18
+    trace_groups_json = json.dumps(trace_groups)
+
+    style_block = """<style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 1.5rem;
+            background-color: #f7f7f7;
+        }
+        #read_plot_fig {
+            height: 800px !important;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        .controls label {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.9rem;
+            font-weight: 600;
+            gap: 0.3rem;
+        }
+        .controls input[type="number"] {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #ccc;
+            border-radius: 0.3rem;
+            min-width: 10rem;
+        }
+        .controls__actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .controls button {
+            padding: 0.5rem 0.9rem;
+            border: none;
+            border-radius: 0.3rem;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        .controls button.apply-btn {
+            background: #1f77b4;
+            color: #fff;
+        }
+        .controls button.reset-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .color-controls {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        .color-controls__title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        .color-controls__list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+        }
+        .color-picker-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.5rem;
+            background: #fafafa;
+        }
+        .color-picker-item span {
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .color-picker-item input[type="color"] {
+            width: 2.4rem;
+            height: 2.4rem;
+            padding: 0;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        .plot-container {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .controls__actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>"""
+
+    controls_block = f"""
+    <div class="controls">
+        <label>
+            Font size
+            <input id="plot-font-size" type="number" min="6" max="72" value="{int(initial_font_size)}">
+        </label>
+        <div class="controls__actions">
+            <button class="apply-btn" id="plot-style-apply">Apply</button>
+            <button class="reset-btn" id="plot-style-reset">Reset</button>
+        </div>
+    </div>
+    <div class="color-controls">
+        <div class="color-controls__title">Bar colors (click label to open picker)</div>
+        <div class="color-controls__list" id="color-picker-list"></div>
+    </div>
+"""
+
+    script_block = f"""
+    <script>
+    (function() {{
+        const figure = document.getElementById("{div_id}");
+        if (!figure) {{
+            return;
+        }}
+
+        const fontInput = document.getElementById("plot-font-size");
+        const applyButton = document.getElementById("plot-style-apply");
+        const resetButton = document.getElementById("plot-style-reset");
+        const colorPickerList = document.getElementById("color-picker-list");
+
+        const clone = (obj) => JSON.parse(JSON.stringify(obj ?? (Array.isArray(obj) ? [] : {{}})));
+        const initialData = clone(figure.data);
+        const initialLayout = clone(figure.layout);
+        const initialFontValue = fontInput.value;
+
+        const traceGroups = {trace_groups_json};
+
+        const ensureHex = (color) => {{
+            if (typeof color !== "string") {{
+                return "#1f77b4";
+            }}
+            if (color.startsWith("#")) {{
+                if (color.length === 4) {{
+                    return "#" + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+                }}
+                return color;
+            }}
+            const rgbMatch = color.match(/rgba?\\(([^)]+)\\)/i);
+            if (rgbMatch) {{
+                const parts = rgbMatch[1].split(",").map((item) => parseFloat(item.trim()));
+                const toHex = (value) => {{
+                    const v = Math.max(0, Math.min(255, Math.round(value)));
+                    return v.toString(16).padStart(2, "0");
+                }};
+                return "#" + toHex(parts[0]) + toHex(parts[1]) + toHex(parts[2]);
+            }}
+            return "#1f77b4";
+        }};
+
+        const getTraceColor = (trace) => {{
+            if (!trace || !trace.marker) {{
+                return "#1f77b4";
+            }}
+            const color = trace.marker.color;
+            if (Array.isArray(color) && color.length > 0) {{
+                return ensureHex(color[0]);
+            }}
+            if (typeof color === "string") {{
+                return ensureHex(color);
+            }}
+            return "#1f77b4";
+        }};
+
+        const buildColorPickers = () => {{
+            colorPickerList.innerHTML = "";
+            Object.entries(traceGroups).forEach(([name, indices]) => {{
+                const trace = figure.data[indices[0]];
+
+                const wrapper = document.createElement("label");
+                wrapper.className = "color-picker-item";
+
+                const title = document.createElement("span");
+                title.textContent = name;
+
+                const picker = document.createElement("input");
+                picker.type = "color";
+                picker.value = getTraceColor(trace);
+
+                picker.addEventListener("input", () => {{
+                    Plotly.restyle(figure, {{"marker.color": picker.value}}, indices);
+                }});
+                title.addEventListener("click", () => picker.click());
+
+                wrapper.appendChild(title);
+                wrapper.appendChild(picker);
+                colorPickerList.appendChild(wrapper);
+            }});
+        }};
+
+        const applyFontSize = () => {{
+            const fontSize = parseInt(fontInput.value, 10);
+            if (Number.isNaN(fontSize) || fontSize <= 0) {{
+                return;
+            }}
+            Plotly.relayout(figure, {{
+                "font.size": fontSize,
+                "xaxis.title.font.size": fontSize,
+                "xaxis.tickfont.size": fontSize,
+                "yaxis.title.font.size": fontSize,
+                "yaxis.tickfont.size": fontSize,
+                "legend.font.size": fontSize
+            }});
+            Plotly.restyle(figure, {{"textfont.size": fontSize}});
+        }};
+
+        const resetStyle = () => {{
+            Plotly.react(figure, clone(initialData), clone(initialLayout));
+            fontInput.value = initialFontValue;
+            buildColorPickers();
+        }};
+
+        applyButton.addEventListener("click", applyFontSize);
+        resetButton.addEventListener("click", resetStyle);
+        buildColorPickers();
+    }})();
+    </script>
+"""
+
+    html_content = html_path.read_text(encoding="utf-8")
+    if "</head>" in html_content:
+        html_content = html_content.replace("</head>", f"{style_block}\n</head>", 1)
+    if "<body>" in html_content:
+        html_content = html_content.replace("<body>", "<body>\n", 1)
+    html_content = html_content.replace("</body>", f"{controls_block}\n{script_block}\n</body>", 1)
+
+    html_path.write_text(html_content, encoding="utf-8")
     # if kaleido is installed, output a pdf
     try:
         fig.write_image(f"{output_filename}.pdf")
