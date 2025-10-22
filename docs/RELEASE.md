@@ -15,7 +15,36 @@
 <!-- ############################################################# # -->
 
 
-# v0.7.2 (2025-09-03)
+# v0.7.3 (2025-10-22)
+
+## 🌟 New Features
+
++ Added interactive controls to `read_plot.html`, letting users adjust font sizes, recolor allele bars, and export publication-ready PNGs directly from the report viewer. Issue [#115](https://github.com/akikuno/DAJIN2/issues/115)
+
+## 🐛 Bug Fixes
+
++ Reduced consensus-mode false positives by learning sequence-error profiles from in-sample control regions with Gaussian Process anomaly detection. Issue [#116](https://github.com/akikuno/DAJIN2/issues/116)
+
+## 🔧 Maintenance
+
++ Suppressed the verbose Kaleido Chromium launch log to keep CLI output focused on DAJIN2 progress. Issue [#117](https://github.com/akikuno/DAJIN2/issues/117)
++ Reformatted touched modules with Ruff to keep styling and imports consistent. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/68af15d6a680a8b53cd6a392d84024cf725dcf56)]
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+
+<details>
+<summary> v0.7.2 (2025-09-03) </summary>
 
 ## 🐛 Bug Fixes
 
@@ -29,15 +58,8 @@
   See [PR #114](https://github.com/akikuno/DAJIN2/pull/114) for details.
 
 
+</details>
 
--------------------------------------------------------------
-
-# Past Releases
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
 
 
 
