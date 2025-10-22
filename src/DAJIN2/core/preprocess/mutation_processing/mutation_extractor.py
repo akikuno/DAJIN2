@@ -1,12 +1,11 @@
-"""
-Preprocess-specific mutation extraction functionality.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
 
 from DAJIN2.core.preprocess.error_correction.homopolymer_handler import extract_sequence_errors_in_homopolymer_loci
+from DAJIN2.core.preprocess.error_correction.sequence_error_handler import (
+    extract_sequence_errors_using_insample_control,
+)
 from DAJIN2.core.preprocess.error_correction.strand_bias_handler import extract_sequence_errors_in_strand_biased_loci
 from DAJIN2.core.preprocess.mutation_processing.anomaly_detector import extract_anomal_loci
 from DAJIN2.core.preprocess.mutation_processing.indel_counter import minimize_mutation_counts, summarize_indels
@@ -41,10 +40,10 @@ def extract_mutation_loci(
     """
     if thresholds is None:
         thresholds = {"*": 0.1, "-": 0.1, "+": 0.1}
-    indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
+    indels_normalized_sample: dict[str, list[float]] = io.load_pickle(path_indels_normalized_sample)
 
     # Extract candidate mutation loci
-    indels_normalized_control = minimize_mutation_counts(
+    indels_normalized_control: dict[str, list[float]] = minimize_mutation_counts(
         io.load_pickle(path_indels_normalized_control), indels_normalized_sample
     )
     anomal_loci: dict[str, set[int]] = extract_anomal_loci(
@@ -64,8 +63,23 @@ def extract_mutation_loci(
     bias_in_strandness: dict[str, set[int]] = extract_sequence_errors_in_strand_biased_loci(
         path_midsv_sample, transpose_mutation_loci(anomal_loci, sequence)
     )
+
     anomal_loci = discard_errors(anomal_loci, errors_in_homopolymer)
     anomal_loci = discard_errors(anomal_loci, bias_in_strandness)
+
+    if is_consensus:
+        # Extract errors using in-sample control
+        # In consensus analysis, errors are removed more strictly.
+        # Reason not applied to non-consensus analysis:
+        # Applying overly strict filtering from the beginning may cause minor variants
+        # at around 1% frequency to be mistakenly removed as errors.
+        # In contrast, in consensus analysis, if a 1% allele is properly separated,
+        # it will be merged as a 100% allele at that stage,
+        # and thus should not be treated as an error.
+        errors_using_insample_control: dict[str, set[int]] = extract_sequence_errors_using_insample_control(
+            indels_normalized_sample, sigma_threshold=2.0
+        )
+        anomal_loci = discard_errors(anomal_loci, errors_using_insample_control)
 
     anomal_loci_merged = merge_index_of_consecutive_indel(anomal_loci)
     mutation_loci = transpose_mutation_loci(anomal_loci_merged, sequence)
