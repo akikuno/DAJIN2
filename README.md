@@ -226,7 +226,7 @@ If the reference genome is not from UCSC, or if the external servers that DAJIN2
 
 When using the `-b/--bed` option with a BED file, please ensure:
 
-1. **Use BED6 format** (6 columns required):
+**Use BED6 format** (6 columns required):
    ```
    chr1    1000000    1001000    mm39    248956422    +
    ```

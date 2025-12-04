@@ -86,7 +86,7 @@ def validate_fasta_content(path_fasta: str, allele_file: bool = False) -> None:
 
 def validate_bam_content(path_bam: str) -> None:
     try:
-        _ = pysam.AlignmentFile(path_bam, "rb")
+        _ = pysam.AlignmentFile(path_bam, "rb", check_sq=False)
     except ValueError:
         raise ValueError(f"{path_bam} is not a proper BAM format")
 

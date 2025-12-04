@@ -213,13 +213,15 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
+        # Skip if sam file does not exist
         if not Path(ARGS.tempdir, name, "sam", allele).exists():
             continue
 
         path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele)
         path_midsv_directory.mkdir(parents=True, exist_ok=True)
-
-        if Path(path_midsv_directory, f"{name}.jsonl").exists():
+        path_output_jsonl = Path(path_midsv_directory, f"{name}.jsonl")
+        # Skip if midsv jsonl already exists and is not empty
+        if path_output_jsonl.exists() and path_output_jsonl.stat().st_size > 0:
             continue
 
         if is_control and is_sv:

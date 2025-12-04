@@ -65,10 +65,11 @@ def extract_extention(path_file: str | Path) -> str:
 
 def convert_bam_to_fastq(path_bam: str | Path, path_fastq: str | Path, quality_score: str = "I"):
     """Convert a BAM file to a gzipped FASTQ file."""
-    with pysam.AlignmentFile(str(path_bam), "rb") as bam_file, gzip.open(path_fastq, "wt") as fastq_file:
+    with (
+        pysam.AlignmentFile(str(path_bam), "rb", check_sq=False) as bam_file,
+        gzip.open(path_fastq, "wt") as fastq_file,
+    ):
         for read in bam_file:
-            if read.is_unmapped:
-                continue
             if read.qual is None:  # FASTA format
                 read.qual = quality_score * len(read.query_sequence)
             fastq_entry = f"@{read.query_name}\n{read.query_sequence}\n+\n{read.qual}\n"
@@ -127,6 +128,17 @@ def save_fastx_files_to_single_fastq(TEMPDIR: Path, path_input_files: list[Path]
     path_concatenated_fastx.unlink(missing_ok=True)
 
 
+def _get_path_input_files(path_directory: Path, file_suffix: set[str]) -> list[Path]:
+    path_input_files = []
+    for path in path_directory.iterdir():
+        ext = extract_extention(path)
+        if ext.endswith(".fai") or ext.endswith(".bai"):
+            continue
+        if ext in file_suffix:
+            path_input_files.append(path)
+    return path_input_files
+
+
 def save_inputs_as_single_fastq(ARGS, is_control: bool = False) -> None:
     tempdir = ARGS.tempdir
     if is_control:
@@ -137,8 +149,9 @@ def save_inputs_as_single_fastq(ARGS, is_control: bool = False) -> None:
         sample_name = ARGS.sample_name
 
     file_suffix = {".fa", ".fq", ".fasta", ".fastq", ".fa.gz", ".fq.gz", ".fasta.gz", ".fastq.gz", ".bam"}
-    path_input_files = [path for path in path_directory.iterdir() if extract_extention(path) in file_suffix]
-    if all(extract_extention(path) == ".bam" for path in path_directory.iterdir()):
+    path_input_files = _get_path_input_files(path_directory, file_suffix)
+
+    if path_input_files and all(extract_extention(path) == ".bam" for path in path_input_files):
         save_bam_files_to_single_fastq(tempdir, path_input_files, sample_name)
     else:
         save_fastx_files_to_single_fastq(tempdir, path_input_files, sample_name)

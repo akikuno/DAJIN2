@@ -15,7 +15,33 @@
 <!-- ############################################################# # -->
 
 
-# v0.7.3 (2025-10-22)
+# v0.7.4 (2025-12-04)
+
+## 🐛 Bug Fixes
+
++ Fixed an error that occurred during basecalling with Dorado when no reference sequence was specified, due to the absence of the SQ header. Issue [#120](https://github.com/akikuno/DAJIN2/issues/120)
+
++ Fixed a bug where index files (.fai, .bai) in the input directory were being read mistakenly. Issue [#108](https://github.com/akikuno/DAJIN2/issues/108)
+
+
+## 📝 Documentation
+
++ In the DAJIN2 issue template, the Version field is now optional instead of mandatory.
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.7.3 (2025-10-22) </summary>
 
 ## 🌟 New Features
 
@@ -30,18 +56,7 @@
 + Suppressed the verbose Kaleido Chromium launch log to keep CLI output focused on DAJIN2 progress. Issue [#117](https://github.com/akikuno/DAJIN2/issues/117)
 + Reformatted touched modules with Ruff to keep styling and imports consistent. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/68af15d6a680a8b53cd6a392d84024cf725dcf56)]
 
-
--------------------------------------------------------------
-
-# Past Releases
-
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
-
-
+</details>
 
 <details>
 <summary> v0.7.2 (2025-09-03) </summary>
