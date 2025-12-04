@@ -1,4 +1,4 @@
-# BED File Coordinate Support - Issue #26
+# BED File Coordinate Support
 
 This document describes the new `--genome-coordinate` option added to DAJIN2.
 
@@ -11,11 +11,7 @@ DAJIN2 now supports specifying genomic coordinates via BED files using the `-b/-
 ### Command Line Interface
 
 ```bash
-# Using BED file only
 DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment1 --bed coordinates.bed
-
-# Using BED file with genome ID (BED takes precedence)
-DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment1 --genome hg38 --bed coordinates.bed
 ```
 
 ### Priority Rules
@@ -27,22 +23,15 @@ DAJIN2 --sample sample/ --control control/ --allele alleles.fa --name experiment
 
 ### BED File Format
 
-DAJIN2 accepts standard BED format files with the following requirements:
+DAJIN2 accepts BED6 format files with the following requirements:
 
-#### Minimum Format (3 columns)
-```
-chr1	1000000	1001000
-chr2	2000000	2001000
-```
-
-#### Extended Format (6 columns - REQUIRED)
 ```
 chr1	1000000	1001000	mm39	248956422	+
 chr2	2000000	2001000	mm39	242193529	-
 ```
 
 #### Column Definitions
-- **Column 1**: Chromosome name (e.g., `chr1`, `chr2`, `chrX`)
+- **Column 1**: Chromosome name (e.g., `chr1`, `chr2`, `chrX`, or `1`, `2`, `X`)
 - **Column 2**: Start position (0-based, inclusive)
 - **Column 3**: End position (0-based, exclusive)
 - **Column 4**: Name (**genome ID**, e.g., `mm39`, `hg38`)
@@ -66,7 +55,7 @@ chrX    5000000    5001000    mm39    156040895    +
 ```
 
 **How to find chromosome sizes:**
-- Human (hg38): https://genome.ucsc.edu/cgi-bin/hgTracks?chromInfoPage=
+- Human (hg38): https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&chromInfoPage=
 - Mouse (mm39): https://genome.ucsc.edu/cgi-bin/hgTracks?db=mm39&chromInfoPage=
 - Or use: `samtools faidx genome.fa` to get chromosome sizes from FASTA index
 
@@ -115,12 +104,12 @@ sample3/,control/,alleles.fa,exp3,mm39,
 
 **coordinates.bed:**
 ```
-chr7	140453136	140753136	CFTR_locus	0	+
+chr1	140453136	140753136	mm39	248956422	+
 ```
 
 **Command:**
 ```bash
-DAJIN2 --sample cf_sample/ --control cf_control/ --allele cftr_alleles.fa --name cftr_analysis --bed coordinates.bed
+DAJIN2 --sample test_sample/ --control test_control/ --allele test_alleles.fa --name test_analysis --bed coordinates.bed
 ```
 
 ### Example 2: Batch Mode with Mixed Coordinate Sources
@@ -199,22 +188,3 @@ When genomic coordinates are provided via BED file:
 - Existing batch files without `genome_coordinate` column continue to work
 - No changes to output formats or file structures
 
-## Testing
-
-The BED coordinate feature includes comprehensive test coverage:
-
-```bash
-# Run BED handler tests
-pytest tests/src/utils/test_bed_handler.py -v
-
-# Run input validator tests
-pytest tests/src/utils/test_input_validator.py::TestValidateBedFileAndGetCoordinates -v
-```
-
-## Future Enhancements
-
-Potential future improvements:
-- Support for multiple genomic regions in a single analysis
-- BED file output format for detected mutations
-- Integration with additional genome browsers
-- Support for BED detail formats (BED12, etc.)
