@@ -14,10 +14,10 @@ body:
     - type: input
       id: dajin2_version
       attributes:
-          label: "🔖 DAJIN2 Version"
+          label: "🔖 DAJIN2 Version (Optional)"
           description: "Required: Specify the DAJIN2 version you are using. You can find this information in the `DAJIN2 --version` command."
       validations:
-          required: true
+          required: false
 
     - type: textarea
       id: environment
