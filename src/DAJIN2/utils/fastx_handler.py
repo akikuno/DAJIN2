@@ -131,8 +131,8 @@ def save_fastx_files_to_single_fastq(TEMPDIR: Path, path_input_files: list[Path]
 def _get_path_input_files(path_directory: Path, file_suffix: set[str]) -> list[Path]:
     path_input_files = []
     for path in path_directory.iterdir():
-        ext = path.suffix
-        if ext in {".fai", ".bai"}:  # Ignore BAM index files
+        ext = extract_extention(path)
+        if ext.endswith(".fai") or ext.endswith(".bai"):
             continue
         if ext in file_suffix:
             path_input_files.append(path)
