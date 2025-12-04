@@ -65,10 +65,11 @@ def extract_extention(path_file: str | Path) -> str:
 
 def convert_bam_to_fastq(path_bam: str | Path, path_fastq: str | Path, quality_score: str = "I"):
     """Convert a BAM file to a gzipped FASTQ file."""
-    with pysam.AlignmentFile(str(path_bam), "rb") as bam_file, gzip.open(path_fastq, "wt") as fastq_file:
+    with (
+        pysam.AlignmentFile(str(path_bam), "rb", check_sq=False) as bam_file,
+        gzip.open(path_fastq, "wt") as fastq_file,
+    ):
         for read in bam_file:
-            if read.is_unmapped:
-                continue
             if read.qual is None:  # FASTA format
                 read.qual = quality_score * len(read.query_sequence)
             fastq_entry = f"@{read.query_name}\n{read.query_sequence}\n+\n{read.qual}\n"
