@@ -152,15 +152,6 @@ def read_fasta(path_fasta: str | Path) -> Iterator[dict]:
         return
 
 
-def write_fasta(data: list[dict] | Iterator[dict], file_path: str | Path, is_gzip: bool = True) -> None:
-    open_func = gzip.open if is_gzip else open
-    mode = "wt" if is_gzip else "w"
-
-    with open_func(file_path, mode) as f:
-        for record in data:
-            f.write(f"{record['identifier']}\n{record['sequence']}\n")
-
-
 def write_fastq(data: list[dict] | Iterator[dict], file_path: str | Path, is_gzip: bool = True) -> None:
     open_func = gzip.open if is_gzip else open
     mode = "wt" if is_gzip else "w"
@@ -287,11 +278,3 @@ def cache_file_hash(path_input_file: str | Path, path_output_file: Path) -> None
     # Save the hash to the file.
     path_output_file.parent.mkdir(parents=True, exist_ok=True)
     path_output_file.write_text(content_hash)
-
-
-def is_file_cached(path_input_file: Path, path_cached_file: Path) -> bool:
-    current_hash = hashlib.sha256(path_input_file.read_bytes()).hexdigest()
-    cached_hash = path_cached_file.read_text()
-    if current_hash == cached_hash:
-        return True
-    return False

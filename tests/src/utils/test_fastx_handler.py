@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import gzip
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import pytest
 
 from DAJIN2.utils import fastx_handler

@@ -22,34 +22,6 @@ from DAJIN2.utils.cssplits_handler import convert_cssplits_to_sequence
 ###############################################################################
 
 
-def get_index_of_sv(misdv_string: str, sv_type: str, mutation_loci: list[set[str]]) -> list[int]:
-    """Return a list with the start index of SV using the MIDSV tags"""
-
-    tags = misdv_string.split(",")
-    index_of_sv = []
-    previous_tag = tags[0]
-
-    for i, current_tag in enumerate(tags):
-        if sv_type in ("deletion", "inversion"):
-            if sv_type == "deletion":
-                current_tag_is_sv = current_tag.startswith("-") and "-" in mutation_loci[i]
-                previous_tag_is_not_sv = not previous_tag.startswith("-")
-            else:  # inversion
-                current_tag_is_sv = current_tag.islower()
-                previous_tag_is_not_sv = not previous_tag.islower()
-
-            # If the current tag is an SV and the previous tag is not an SV
-            if current_tag_is_sv and previous_tag_is_not_sv:
-                index_of_sv.append(i)
-
-        elif sv_type == "insertion":
-            if current_tag.startswith("+") and "+" in mutation_loci[i]:
-                index_of_sv.append(i)
-
-        previous_tag = current_tag
-    return index_of_sv
-
-
 def group_similar_indices(index_of_sv: list[int], distance: int = 5, min_coverage: float = 5.0) -> list[list[int]]:
     """The presence of indels causes shifts in the start index of SVs detected by Nanopore.
     To correct these shifts, group SV start indices that are within a specified distance of each other."""
