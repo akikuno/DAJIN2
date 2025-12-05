@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-import midsv
-
+from DAJIN2.utils import io
 from DAJIN2.utils.sam_handler import (
     calculate_alignment_length,
     is_header,
@@ -100,10 +98,10 @@ def test_remove_overlapped_reads_real_sample():
     # Non-overlapped reads in tyr albino:
         - a224e9ca-d634-4490-bf77-abd9d5cbd7bc
     """
-    sam = midsv.read_sam("tests/data/report/report_bam/remove_overlap.sam")
+    sam = io.read_sam("tests/data/report/report_bam/remove_overlap.sam")
     sam = list(sam)
     test = remove_overlapped_reads(sam)
-    answer = midsv.read_sam("tests/data/report/report_bam/answer.sam")
+    answer = io.read_sam("tests/data/report/report_bam/answer.sam")
     answer = list(answer)
     assert test == answer
 
@@ -114,7 +112,7 @@ def test_remove_overlapped_reads_real_sample():
 
 
 def test_remove_microhomology_ACGT():
-    sam = midsv.read_sam("tests/data/report/microhomology/microhomology-ACGT.sam")
+    sam = io.read_sam("tests/data/report/microhomology/microhomology-ACGT.sam")
     sam = list(sam)
     test = remove_microhomology(sam)
     answer = Path("tests/data/report/microhomology/microhomology-ACGT-answer.txt").read_text()
@@ -123,7 +121,7 @@ def test_remove_microhomology_ACGT():
 
 
 def test_remove_microhomology_insertion():
-    sam = midsv.read_sam("tests/data/report/microhomology/microhomology-insertion.sam")
+    sam = io.read_sam("tests/data/report/microhomology/microhomology-insertion.sam")
     sam = list(sam)
     test = remove_microhomology(sam)
     answer = Path("tests/data/report/microhomology/microhomology-insertion-answer.txt").read_text()
@@ -132,7 +130,7 @@ def test_remove_microhomology_insertion():
 
 
 def test_remove_microhomology_deletion():
-    sam = midsv.read_sam("tests/data/report/microhomology/microhomology-deletion.sam")
+    sam = io.read_sam("tests/data/report/microhomology/microhomology-deletion.sam")
     sam = list(sam)
     test = remove_microhomology(sam)
     answer = Path("tests/data/report/microhomology/microhomology-deletion-answer.txt").read_text()
@@ -141,31 +139,31 @@ def test_remove_microhomology_deletion():
 
 
 def test_remove_microhomology_overlapped_softclip():
-    sam = midsv.read_sam("tests/data/report/report_bam/cables2_barcode34_microhomology.sam")
+    sam = io.read_sam("tests/data/report/report_bam/cables2_barcode34_microhomology.sam")
     sam = list(sam)
     test = remove_microhomology(sam)
-    answer = list(midsv.read_sam("tests/data/report/report_bam/answer_cables2_barcode34_microhomology.sam"))
+    answer = list(io.read_sam("tests/data/report/report_bam/answer_cables2_barcode34_microhomology.sam"))
     assert test == answer
 
 
 def test_remove_microhomology_real_singe_read():
     seq_id = "0ef147016ef0"
-    sam = midsv.read_sam("tests/data/report/report_bam/barcode54_allele2_before.sam")
+    sam = io.read_sam("tests/data/report/report_bam/barcode54_allele2_before.sam")
     sam = list(sam)
     sam_headers = [s for s in sam if s[0].startswith("@")]
     sam_contents = [s for s in sam if seq_id in s[0] and s[9] != "*"]
     sam = sam_headers + sam_contents
     test = remove_microhomology(sam)
-    answer = midsv.read_sam(f"tests/data/report/report_bam/barcode54_allele2_{seq_id}_after.sam")
+    answer = io.read_sam(f"tests/data/report/report_bam/barcode54_allele2_{seq_id}_after.sam")
     answer = list(answer)
     assert test == answer
 
 
 def test_remove_microhomology_real_all_500_reads():
-    sam = midsv.read_sam("tests/data/report/report_bam/barcode54_allele2_before.sam")
+    sam = io.read_sam("tests/data/report/report_bam/barcode54_allele2_before.sam")
     sam = list(sam)
     test = remove_microhomology(sam)
-    answer = midsv.read_sam("tests/data/report/report_bam/barcode54_allele2_after.sam")
+    answer = io.read_sam("tests/data/report/report_bam/barcode54_allele2_after.sam")
     answer = list(answer)
     assert test == answer
 

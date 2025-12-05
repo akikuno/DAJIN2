@@ -50,8 +50,8 @@ def test_discard_matches_and_ns():
     percent_discarded = [
         {"=A,=A,=A": 10, "=A,+I,=A": 20},
         {"=C,=C,=C": 15, "=C,+I,=C": 25},
-        {"=A,N,=A": 10, "=A,+I,=A": 10},
-        {"=A,=A,=A": 10, "=A,N,=A": 40},
+        {"=A,=N,=A": 10, "=A,+I,=A": 10},
+        {"=A,=A,=A": 10, "=A,=N,=A": 40},
         {},
     ]
     result = score_handler.discard_matches_and_ns(percent_discarded)
