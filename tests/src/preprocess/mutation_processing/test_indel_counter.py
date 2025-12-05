@@ -23,10 +23,10 @@ class TestCountIndels:
         """Test basic indel counting functionality."""
         sequence = "ACGTACGT"
         midsv_data = [
-            {"CSSPLIT": "=A,=C,=G,=T,=A,=C,=G,=T"},
-            {"CSSPLIT": "=A,=C,+G,=T,=A,=C,=G,=T"},
-            {"CSSPLIT": "=A,=C,=G,-T,=A,=C,=G,=T"},
-            {"CSSPLIT": "=A,=C,=G,*T,=A,=C,=G,=T"},
+            {"MIDSV": "=A,=C,=G,=T,=A,=C,=G,=T"},
+            {"MIDSV": "=A,=C,+G,=T,=A,=C,=G,=T"},
+            {"MIDSV": "=A,=C,=G,-T,=A,=C,=G,=T"},
+            {"MIDSV": "=A,=C,=G,*T,=A,=C,=G,=T"},
         ]
 
         result = count_indels(iter(midsv_data), sequence)
@@ -46,8 +46,8 @@ class TestCountIndels:
         """Test that N and lowercase characters are skipped."""
         sequence = "ACGT"
         midsv_data = [
-            {"CSSPLIT": "=A,N,=G,=T"},
-            {"CSSPLIT": "=A,=c,=G,=T"},  # lowercase
+            {"MIDSV": "=A,N,=G,=T"},
+            {"MIDSV": "=A,=c,=G,=T"},  # lowercase
         ]
 
         result = count_indels(iter(midsv_data), sequence)
@@ -148,8 +148,8 @@ class TestSummarizeIndels:
     def test_summarize_indels_integration(self, mock_read_jsonl):
         """Test integration of count_indels and normalize_indels."""
         mock_read_jsonl.return_value = [
-            {"CSSPLIT": "=A,=C,=G,=T"},
-            {"CSSPLIT": "=A,+C,=G,=T"},
+            {"MIDSV": "=A,=C,=G,=T"},
+            {"MIDSV": "=A,+C,=G,=T"},
         ]
 
         path_midsv = Path("dummy.jsonl")

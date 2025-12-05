@@ -27,7 +27,7 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     merge_index_of_consecutive_indel,
     transpose_mutation_loci,
 )
-from DAJIN2.utils import config, io
+from DAJIN2.utils import config, cssplits_handler, io
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:
@@ -87,7 +87,9 @@ def extract_path_n_filtered_control(
     path_output.parent.mkdir(parents=True, exist_ok=True)
 
     midsv_control = io.read_jsonl(path_control)
-    n_counts = np.array([sum(1 if cs == "N" else 0 for cs in c["CSSPLIT"].split(",")) for c in midsv_control])
+    n_counts = np.array(
+        [sum(1 if cssplits_handler.is_n_tag(cs) else 0 for cs in c["MIDSV"].split(",")) for c in midsv_control]
+    )
 
     kmeans = MiniBatchKMeans(n_clusters=2, random_state=0).fit(n_counts.reshape(-1, 1))
     threshold = kmeans.cluster_centers_.mean()

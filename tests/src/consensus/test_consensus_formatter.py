@@ -21,12 +21,12 @@ from DAJIN2.core.consensus.consensus_formatter import (
 @pytest.mark.parametrize(
     "cons_per, threshold, expected",
     [
-        ([{"N": 90, "=C": 10}], 1, True),  # one "N"
+        ([{"=N": 90, "=C": 10}], 1, True),  # one "=N"
         ([{"+G|+G|=A": 80, "=C": 20}], 1, True),  # two insertions
         ([{"-A": 100}, {"-A": 100}, {"-A": 100}], 3, True),  # three deletions
         ([{"*AT": 100}, {"*AT": 100}, {"*AT": 100}, {"*AT": 100}], 4, True),  # four substitutions
         ([{"=a": 100}], 5, True),  # inversion
-        ([{"N": 90, "=C": 10}], 2, False),  # fails threshold
+        ([{"=N": 90, "=C": 10}], 2, False),  # fails threshold
     ],
 )
 def test_detect_sv(cons_per, threshold, expected):

@@ -24,9 +24,8 @@ def scale_percentage(clust_sample_removed: list[dict]) -> list[dict]:
 def detect_sv(cons_per: list[dict[str, float]], threshold: int = 50) -> bool:
     cons_midsv_tag: str = "".join([max(tag, key=tag.get) for tag in cons_per])
 
-    # TODO: "N" should be replaced with "=N" in the next MIDSV update
     patterns = [
-        rf"N{{{threshold}}}",  # Consecutive "N" exceeding the threshold
+        rf"(=N|=n){{{threshold}}}",  # Consecutive "=N" exceeding the threshold
         rf"(\+[ACGTN]\|){{{threshold}}}",  # Insertions
         rf"(\-[ACGTN]){{{threshold}}}",  # Deletions
         rf"(\*[ACGTN][ACGTN]){{{threshold}}}",  # Substitutions

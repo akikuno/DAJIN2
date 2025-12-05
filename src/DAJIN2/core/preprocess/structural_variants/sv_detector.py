@@ -124,8 +124,7 @@ def load_data(tempdir, sample_name, control_name):
 def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int, int]:
     """Process SV indices and group them based on proximity."""
     index_of_sv = [
-        list(get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, None).keys())
-        for m in io.read_jsonl(path_midsv)
+        list(get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, None).keys()) for m in io.read_jsonl(path_midsv)
     ]
     index_of_sv = sorted(chain.from_iterable(index_of_sv))
     grouped_indices = group_similar_indices(index_of_sv, distance=5, min_coverage=max(5, coverage * 0.05))
@@ -136,7 +135,7 @@ def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int
 def extract_sv_features(midsv_path, sv_type, mutation_loci, index_converter) -> list[dict[int, int]]:
     """Extract SV start indices and sizes."""
     return [
-        get_index_and_sv_size(m["CSSPLIT"], sv_type, mutation_loci, index_converter) for m in io.read_jsonl(midsv_path)
+        get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, index_converter) for m in io.read_jsonl(midsv_path)
     ]
 
 
@@ -226,9 +225,9 @@ def get_midsv_consensus_by_label(
 
             return dict(consensus_insertion_by_label)
 
-        cssplits_iter = (m["CSSPLIT"].split(",") for m in io.read_jsonl(path_midsv_sample))
+        midsv_iter = (m["MIDSV"].split(",") for m in io.read_jsonl(path_midsv_sample))
         cssplits_by_label = defaultdict(list)
-        for label, cssplits in zip(labels, cssplits_iter):
+        for label, cssplits in zip(labels, midsv_iter):
             cssplits_by_label[label].append(cssplits)
 
         consensus_insertion_by_label = get_consensus_insertion_by_label(

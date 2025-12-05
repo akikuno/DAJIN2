@@ -21,7 +21,7 @@ def count_strandless_of_indels(
     count_strandness = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
 
     for samp in io.read_jsonl(path_midsv_sample):
-        for i, cs in enumerate(samp["CSSPLIT"].split(",")):
+        for i, cs in enumerate(samp["MIDSV"].split(",")):
             if anomal_loci_transposed[i] == set():
                 continue
             for mut in anomal_loci_transposed[i]:

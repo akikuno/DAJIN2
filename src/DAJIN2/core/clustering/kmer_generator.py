@@ -36,7 +36,7 @@ def generate_mutation_kmers(
     path_sample: Path | str, mutation_loci: list[set[str]], compress_ins: bool = True
 ) -> Iterator[list[str]]:
     midsv_sample = io.read_jsonl(path_sample)
-    for cssplit in (cs["CSSPLIT"].split(",") for cs in midsv_sample):
+    for cssplit in (cs["MIDSV"].split(",") for cs in midsv_sample):
         mutation_kmers = ["@,@,@"]
         for i in range(1, len(cssplit) - 1):
             if mutation_loci[i] == set():

@@ -31,6 +31,7 @@ def generate_report(name: str, logger: logging.Logger) -> None:
     report_generator.report(name)
     logger.info(f"\N{PARTY POPPER} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.")
 
+
 ################################################################################
 # Single mode
 ################################################################################

@@ -40,11 +40,11 @@ def convert_to_percentage(
 
 
 def remove_all_n(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
-    # TODO: In midsv v0.12.0 and later, N is output as `=N`, so update accordingly when upgrading midsv.
     for c in cons_percentage:
-        if len(c) == 1 and "N" in c:
+        if len(c) == 1 and any(key in c for key in {"=N", "=n"}):
             continue
-        c.pop("N", None)
+        for key in {"=N", "=n"}:
+            c.pop(key, None)
 
     return cons_percentage
 
@@ -96,7 +96,7 @@ def call_consensus(
         path_consensus = Path(tempdir, sample_name, "consensus", allele, str(label))
         cons_mutation_loci = io.load_pickle(Path(path_consensus, "mutation_loci.pickle"))
 
-        cssplits = [cs["CSSPLIT"].split(",") for cs in clust]
+        cssplits = [cs["MIDSV"].split(",") for cs in clust]
         cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]

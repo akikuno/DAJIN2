@@ -10,7 +10,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
-from DAJIN2.utils import io
+from DAJIN2.utils import cssplits_handler, io
 from DAJIN2.utils.fastx_handler import read_fastq
 
 ###############################################################################
@@ -20,7 +20,7 @@ from DAJIN2.utils.fastx_handler import read_fastq
 
 def convert_nm_tag(csv_tags: list[list[str]]) -> str:
     """Create a tag with N for bases that reads are truncated and M for bases that are mapped"""
-    return "".join(["N" if tag.startswith("N") or tag.startswith("n") else "M" for tag in csv_tags])
+    return "".join(["N" if cssplits_handler.is_n_tag(tag) else "M" for tag in csv_tags])
 
 
 def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:
@@ -39,7 +39,7 @@ def detect_sequence_error_reads_in_control(ARGS) -> None:
     midsv_control = io.read_jsonl(
         Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl")
     )
-    nm_tags, qnames = zip(*[(convert_nm_tag(m["CSSPLIT"].split(",")), m["QNAME"]) for m in midsv_control])
+    nm_tags, qnames = zip(*[(convert_nm_tag(m["MIDSV"].split(",")), m["QNAME"]) for m in midsv_control])
 
     X = extract_n_features(nm_tags)
     kmeans = KMeans(n_clusters=2, random_state=1)
@@ -72,7 +72,7 @@ def load_midsv_to_nm_tags(file_path: Path, filter_condition: Callable) -> list[s
     """Load MIDSV file and convert to NM tags"""
     midsv = io.read_jsonl(file_path)
     filtered_midsv = (m for m in midsv if filter_condition(m))
-    return [convert_nm_tag(m["CSSPLIT"].split(",")) for m in filtered_midsv]
+    return [convert_nm_tag(m["MIDSV"].split(",")) for m in filtered_midsv]
 
 
 def detect_sequence_error_reads_in_sample(ARGS) -> None:
@@ -95,7 +95,7 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
 
     path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}.jsonl")
     midsv_sample = io.read_jsonl(path_midsv_sample)
-    nm_tags_sample = [convert_nm_tag(m["CSSPLIT"].split(",")) for m in midsv_sample]
+    nm_tags_sample = [convert_nm_tag(m["MIDSV"].split(",")) for m in midsv_sample]
 
     n_features_sample = extract_n_features(nm_tags_sample)
     labels = clf.predict(n_features_sample)

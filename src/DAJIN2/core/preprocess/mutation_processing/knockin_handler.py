@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pickle
+import tempfile
 from pathlib import Path
 
 import midsv
@@ -20,14 +21,19 @@ def is_valid_file(control_fasta: Path, knockin_fasta: Path) -> bool:
 
 def get_index_of_knockin_loci(control_fasta: Path, knockin_fasta: Path) -> set[int]:
     alignments = mapping.to_sam(knockin_fasta, control_fasta, preset="map-ont")
-    alignments = [a.split("\t") for a in alignments]
-    alignments_midsv = list(midsv.transform(alignments, midsv=False, cssplit=True, qscore=False))
-    if not alignments_midsv:
-        return set()
-    alignments_midsv = next(iter(midsv.transform(alignments, midsv=False, cssplit=True, qscore=False)))
-    cssplits = alignments_midsv["CSSPLIT"].split(",")
+    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".sam") as tmp:
+        path_sam = Path(tmp.name)
+        for alignment in alignments:
+            tmp.write(alignment if alignment.endswith("\n") else f"{alignment}\n")
 
-    return {i for i, cs in enumerate(cssplits) if cs.startswith("-")}
+    try:
+        alignments_midsv = midsv.transform(path_sam=path_sam, qscore=False)
+        if not alignments_midsv:
+            return set()
+        midsv_tags = alignments_midsv[0]["MIDSV"].split(",")
+        return {i for i, cs in enumerate(midsv_tags) if cs.startswith("-")}
+    finally:
+        path_sam.unlink(missing_ok=True)
 
 
 def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:

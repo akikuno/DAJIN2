@@ -5,20 +5,24 @@ import re
 import cstag
 
 
+def is_n_tag(tag: str) -> bool:
+    return tag.endswith("N") or tag.endswith("n")
+
+
 def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
     """Find the boundaries of contiguous Ns which aren't at the ends."""
 
     # Find the left boundary
     left_idx_n = 0
     for char in cssplits:
-        if char != "N":
+        if not is_n_tag(char):
             break
         left_idx_n += 1
 
     # Find the right boundary
     right_idx_n = len(cssplits) - 1
     for char in reversed(cssplits):
-        if char != "N":
+        if not is_n_tag(char):
             break
         right_idx_n -= 1
 
@@ -125,15 +129,23 @@ def _add_match_operator_to_n(cssplits: list[str]) -> list[str]:
     """Add "=" (match operator) to the sequences with "N"."""
     cssplits_add_match_op = []
     for cs in cssplits:
-        if cs.startswith("N") or cs.startswith("n"):
-            cssplits_add_match_op.append("=" + cs)
-        elif cs.startswith("+") and (cs[-1] == "N" or cs[-1] == "n"):
+        if cs.startswith("+") and is_n_tag(cs.split("|")[-1]):
             cs_ins = cs.split("|")
-            cs_last = "=" + cs_ins[-1]
-            cs = "|".join(cs_ins[:-1]) + "|" + cs_last
-            cssplits_add_match_op.append(cs)
-        else:
-            cssplits_add_match_op.append(cs)
+            last_tag = cs_ins[-1]
+            if not last_tag.startswith("="):
+                last_tag = "=" + last_tag[-1]
+            cs_ins[-1] = last_tag
+            cssplits_add_match_op.append("|".join(cs_ins))
+            continue
+
+        if is_n_tag(cs):
+            if cs.startswith("="):
+                cssplits_add_match_op.append(cs)
+            else:
+                cssplits_add_match_op.append("=" + cs[-1])
+            continue
+
+        cssplits_add_match_op.append(cs)
     return cssplits_add_match_op
 
 

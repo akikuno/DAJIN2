@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -70,9 +70,8 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
     return dict(best_preset)
 
 
-def extract_best_alignment_length_from_sam(
-    path_sam_files: list[Path], best_preset: dict[str, str]
-) -> Iterator[list[str]]:
+def extract_best_alignment_length_from_sam(path_sam_files: list[Path], best_preset: dict[str, str]) -> list[list[str]]:
+    best_alignments: list[list[str]] = []
     flag_header = False
     for path in path_sam_files:
         preset = path.stem
@@ -80,36 +79,45 @@ def extract_best_alignment_length_from_sam(
         for record in sam:
             if record[0].startswith("@"):
                 if not flag_header:
-                    yield record
+                    best_alignments.append(record)
             else:
                 qname = record[0]
                 if best_preset.get(qname) == preset:
-                    yield record
+                    best_alignments.append(record)
         flag_header = True
+    return best_alignments
 
 
-def transform_to_midsv_format(sam: Iterator[list[str]]) -> Iterator[list[dict]]:
-    yield from midsv.transform(sam, midsv=False, cssplit=True, qscore=False, keep={"FLAG"})
+def write_sam(alignments: list[list[str]], path_output: Path) -> Path:
+    path_output.parent.mkdir(parents=True, exist_ok=True)
+    with open(path_output, "w") as f:
+        for record in alignments:
+            f.write("\t".join(record) + "\n")
+    return path_output
+
+
+def transform_to_midsv_format(path_sam: Path) -> list[dict]:
+    return midsv.transform(path_sam=path_sam, qscore=False, keep={"FLAG"})
 
 
 def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -> Iterator[list[dict]]:
     """
     Replace internal 'N's with 'D' in a given sequence.
-    This function modifies the 'CSSPLIT' field in the input sample. It identifies
+    This function modifies the 'MIDSV' field in the input sample. It identifies
     the boundaries of consecutive 'N's and replaces any 'N' within these boundaries
     with the corresponding character from the provided sequence. 'N's at the boundaries
     remain unchanged.
     """
     for samp in midsv_sample:
-        cssplits = samp["CSSPLIT"].split(",")
+        midsv_tags = samp["MIDSV"].split(",")
 
-        left_idx_n, right_idx_n = cssplits_handler.find_n_boundaries(cssplits)
+        left_idx_n, right_idx_n = cssplits_handler.find_n_boundaries(midsv_tags)
 
-        for j, (cs, seq_char) in enumerate(zip(cssplits, sequence)):
-            if left_idx_n < j < right_idx_n and cs == "N":
-                cssplits[j] = f"-{seq_char}"
+        for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence)):
+            if left_idx_n < j < right_idx_n and cssplits_handler.is_n_tag(cs):
+                midsv_tags[j] = f"-{seq_char}"
 
-        samp["CSSPLIT"] = ",".join(cssplits)
+        samp["MIDSV"] = ",".join(midsv_tags)
         yield samp
 
 
@@ -130,11 +138,14 @@ def convert_flag_to_strand(midsv_sample: Iterator[list[dict]]) -> Iterator[list[
 
 
 def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int = 95) -> Iterator[list[dict]]:
-    """Filters out the samples from the input Iterator where the proportion of 'N' in the 'CSSPLIT' field is 95% or higher."""
+    """Filters out the samples from the input Iterator where the proportion of 'N' in the 'MIDSV' field is 95% or higher."""
     for samp in midsv_sample:
-        cssplits = samp.get("CSSPLIT", "").split(",")
-        count = Counter(cssplits)
-        n_percentage = count["N"] / sum(count.values()) * 100
+        midsv_tags = samp.get("MIDSV", "").split(",")
+        total = len(midsv_tags)
+        if total == 0:
+            continue
+        n_count = sum(1 for tag in midsv_tags if cssplits_handler.is_n_tag(tag))
+        n_percentage = n_count / total * 100
         if n_percentage < threshold:
             yield samp
 
@@ -192,7 +203,7 @@ def convert_consecutive_indels(midsv_sample: Iterator) -> Iterator[list[dict]]:
     For example, although it should be "=C,=T", it gets replaced by "-C,+C|=T". In such cases, a process is performed to revert it back to "=C,=T".
     """
     for m in midsv_sample:
-        m["CSSPLIT"] = convert_consecutive_indels_to_match(m["CSSPLIT"])
+        m["MIDSV"] = convert_consecutive_indels_to_match(m["MIDSV"])
         yield m
 
 
@@ -240,7 +251,10 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         preset_cigar_by_qname = extract_preset_and_cigar_by_qname(path_sam_files)
         best_preset = extract_best_preset(preset_cigar_by_qname)
         sam_best_alignments = extract_best_alignment_length_from_sam(path_sam_files, best_preset)
-        midsv_chaind = transform_to_midsv_format(sam_best_alignments)
+        if not any(record and not record[0].startswith("@") for record in sam_best_alignments):
+            continue
+        path_best_sam = write_sam(sam_best_alignments, Path(path_midsv_directory, f"{name}_best.sam"))
+        midsv_chaind = transform_to_midsv_format(path_best_sam)
         midsv_sample = replace_internal_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)

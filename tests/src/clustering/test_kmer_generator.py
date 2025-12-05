@@ -7,7 +7,7 @@ from src.DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 
 # io.read_jsonlのモック
 def mock_read_jsonl(path):
-    return [{"CSSPLIT": "=A,-g,+t|t|t|=A,*ac,N"}, {"CSSPLIT": "=A,-g,=T,*gt,N"}]
+    return [{"MIDSV": "=A,-g,+t|t|t|=A,*ac,N"}, {"MIDSV": "=A,-g,=T,*gt,N"}]
 
 
 @pytest.fixture

@@ -20,7 +20,7 @@ def score_allele(path_midsv: Path, allele: str) -> list[dict]:
     midsv_sample = io.read_jsonl(path_midsv)
     scored_alleles = []
     for dict_midsv in midsv_sample:
-        score = calc_match(dict_midsv["CSSPLIT"])
+        score = calc_match(dict_midsv["MIDSV"])
         dict_midsv.update({"SCORE": score, "ALLELE": allele})
         scored_alleles.append(dict_midsv)
 

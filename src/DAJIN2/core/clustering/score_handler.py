@@ -42,8 +42,8 @@ def discard_matches_and_ns(percent_discarded: list[dict[str, float]]) -> list[di
         for mutation, percent in mutation_percent.items():
             # Extract the center part of the mutation string
             mutation_center = mutation.split(",")[1]
-            # Skip mutations that start with '=' or are 'N'
-            if mutation_center.startswith("=") or mutation_center == "N":
+            # Skip mutations that start with '='
+            if mutation_center.startswith("="):
                 continue
             # Add to the filtered dictionary if it passed the conditions
             filtered_dict[mutation] = percent

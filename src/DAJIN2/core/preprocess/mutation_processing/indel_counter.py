@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from DAJIN2.utils import io
+from DAJIN2.utils import cssplits_handler, io
 
 
 def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[int]]:
@@ -17,8 +17,8 @@ def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[
     len_sequence = len(sequence)
     count = {"=": [0] * len_sequence, "+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:
-        for i, cs in enumerate(samp["CSSPLIT"].split(",")):
-            if cs == "N" or cs.islower():
+        for i, cs in enumerate(samp["MIDSV"].split(",")):
+            if cssplits_handler.is_n_tag(cs) or cs.islower():
                 continue
             if cs.startswith("="):
                 count["="][i] += 1
