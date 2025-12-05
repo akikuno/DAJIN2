@@ -113,9 +113,43 @@ pip install DAJIN2
 
 ## Required Files
 
+
 ### FASTQ/FASTA/BAM Files for Sample and Control
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
+
+#### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
+
+For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
+
+```text
+bam_pass
+├── barcode01
+│   └── EXP-PBC096_barcode01.bam
+├── barcode02
+│   └── EXP-PBC096_barcode02.bam
+├── ...
+└── unclassified
+│   └── EXP-PBC096_unclassified.bam
+```
+
+> [!IMPORTANT]
+> Store each BAM file in a separate directory. The directory names can be set arbitrarily.
+
+
+Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://github.com/nanoporetech/dorado#read-error-correction) in separate directories.
+
+```text
+dorado_correct
+├── barcode01
+│   └── EXP-PBC096_barcode01.fasta
+└── barcode02
+    └── EXP-PBC096_barcode02.fasta
+```
+
+> [!NOTE]
+> For detailed dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
+
 
 #### Basecalling with [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
 After basecalling with Guppy, the following file structure will be output:
@@ -137,42 +171,6 @@ Assuming barcode01 is the control and barcode02 is the sample, the respective di
 + Control: `fastq_pass/barcode01`
 + Sample: `fastq_pass/barcode02`
 
-
-#### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
-
-For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
-
-```text
-dorado_demultiplex
-├── EXP-PBC096_barcode01.bam
-└── EXP-PBC096_barcode02.bam
-```
-
-> [!IMPORTANT]
-> Store each BAM file in a separate directory. The directory names can be set arbitrarily.
-
-```text
-dorado_demultiplex
-├── barcode01
-│   └── EXP-PBC096_barcode01.bam
-└── barcode02
-    └── EXP-PBC096_barcode02.bam
-```
-
-Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://github.com/nanoporetech/dorado) in separate directories.
-
-```text
-dorado_correct
-├── barcode01
-│   └── EXP-PBC096_barcode01.fasta
-└── barcode02
-    └── EXP-PBC096_barcode02.fasta
-```
-
-Assuming barcode01 is the control and barcode02 is the sample, the respective directories are specified as follows:
-
-+ Control: `dorado_demultiplex/barcode01` / `dorado_correct/barcode01`
-+ Sample: `dorado_demultiplex/barcode02` / `dorado_correct/barcode02`
 
 ### FASTA File Including Anticipated Allele Sequences
 
@@ -248,7 +246,8 @@ When using the `-b/--bed` option with a BED file, please ensure:
 > - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  
 > - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
 
-For detailed BED file usage, see [BED_COORDINATE_USAGE.md](docs/BED_COORDINATE_USAGE.md).
+> [!NOTE]
+> For detailed BED file usage, see [BED_COORDINATE_USAGE.md](docs/BED_COORDINATE_USAGE.md).
 
 ### Rare Mutation Detection with `--no-filter`
 
