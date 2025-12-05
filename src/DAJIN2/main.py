@@ -10,7 +10,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import argparse
 import importlib.metadata
-import json
 import logging
 import shutil
 import sys
@@ -32,26 +31,6 @@ def generate_report(name: str, logger: logging.Logger) -> None:
     report_generator.report(name)
     logger.info(f"\N{PARTY POPPER} Finished! Open {config.DAJIN_RESULTS_DIR}/{name} to see the report.")
 
-
-def cache_bed_coordinates(name: str, genome_coordinates: dict, logger: logging.Logger) -> None:
-    """Cache BED file coordinates to genome_coordinates.jsonl."""
-    try:
-        # Create cache directory structure: .tempdir/{NAME}/cache/
-        cache_dir = Path(config.DAJIN_RESULTS_DIR) / ".tempdir" / name / "cache"
-        cache_dir.mkdir(parents=True, exist_ok=True)
-
-        # Save to genome_coordinates.jsonl
-        cache_file = cache_dir / "genome_coordinates.jsonl"
-        with open(cache_file, "w") as f:
-            json.dump(genome_coordinates, f)
-            f.write("\n")
-
-        logger.debug(f"Cached BED coordinates to {cache_file}")
-
-    except Exception as e:
-        logger.warning(f"Failed to cache BED coordinates: {e}")
-
-
 ################################################################################
 # Single mode
 ################################################################################
@@ -63,6 +42,12 @@ def execute_single_mode(arguments: dict[str]):
     logger = config.set_logging(path_logfile)
     logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
     logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
+
+    # Remove existing output directories if they exist
+    if Path("DAJIN_Results", arguments["name"]).exists():
+        shutil.rmtree(Path("DAJIN_Results", arguments["name"]))
+    if Path("DAJIN_Results", ".tempdir", arguments["name"]).exists():
+        shutil.rmtree(Path("DAJIN_Results", ".tempdir", arguments["name"]))
 
     # Validate input files
     input_validator.validate_files(arguments["sample"], arguments["control"], arguments["allele"])
@@ -200,6 +185,12 @@ def execute_batch_mode(arguments: dict[str]):
         logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
         logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
         logger.info(f"\N{LEFT-POINTING MAGNIFYING GLASS} Handling {name}")
+
+        # Remove existing output directories if they exist
+        if Path("DAJIN_Results", name).exists():
+            shutil.rmtree(Path("DAJIN_Results", name))
+        if Path("DAJIN_Results", ".tempdir", name).exists():
+            shutil.rmtree(Path("DAJIN_Results", ".tempdir", name))
 
         # Run DAJIN2
         run_DAJIN2(
