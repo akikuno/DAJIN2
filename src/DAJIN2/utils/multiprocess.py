@@ -6,7 +6,7 @@ import sys
 import traceback
 from collections.abc import Callable, Iterator
 from itertools import islice
-from multiprocessing import Process, Queue
+from multiprocessing import Queue, get_context
 
 
 def get_error_message_prefix(arg: dict) -> str:
@@ -59,12 +59,13 @@ def run(function: Callable, arguments: list[dict], num_workers: int = 1) -> None
     """Run a function in parallel over a list of arguments."""
     logger = logging.getLogger(__name__)
 
-    queue = Queue()
+    ctx = get_context("spawn")
+    queue = ctx.Queue()
 
     arguments_chunked = generate_chunks(arguments, num_workers)
     for args in arguments_chunked:
         processes = [
-            Process(
+            ctx.Process(
                 target=target,
                 args=(function, arg, queue),
                 name=get_error_message_prefix(arg),

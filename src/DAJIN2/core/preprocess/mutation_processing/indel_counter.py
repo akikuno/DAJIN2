@@ -38,7 +38,12 @@ def normalize_indels(count: dict[str, list[int]]) -> dict[str, np.array]:
     for mut, indel_count in count.items():
         numerator = np.array(indel_count)
         denominator = numerator + match_count
-        count_normalized[mut] = np.where(denominator == 0, 0, numerator / denominator * 100)
+        count_normalized[mut] = np.divide(
+            numerator * 100,
+            denominator,
+            out=np.zeros_like(numerator, dtype=float),
+            where=denominator != 0,
+        )
     return count_normalized
 
 

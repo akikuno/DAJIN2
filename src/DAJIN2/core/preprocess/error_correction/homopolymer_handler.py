@@ -39,15 +39,20 @@ def extract_sequence_errors_in_homopolymer_loci(
             continue
         sequence_errors = set()
         for start, end in repeat_regions:
-            x = np.array(indels_normalized_sample[mut][start:end])
-            y = np.array(indels_normalized_control[mut][start:end])
+            x = np.array(indels_normalized_sample[mut][start:end], dtype=float)
+            y = np.array(indels_normalized_control[mut][start:end], dtype=float)
 
             # コントロールで3%以上みられる変異はホモポリマーのシークエンスエラーとみなして、sampleの値に置換
             # sampleの値に置換する理由は、cosine similarityの値を上げるため
             mask = y >= 3
             y[mask] = x[mask]
 
-            cos_sim = 1 - cosine(x, y)
+            if x.size == 0 or y.size == 0:
+                cos_sim = 0.0
+            else:
+                norm_x = np.linalg.norm(x)
+                norm_y = np.linalg.norm(y)
+                cos_sim = 0.0 if norm_x == 0 or norm_y == 0 else 1 - cosine(x, y)
             # spearman_corr, _ = spearmanr(x, y)
             if cos_sim > 0.8:
                 sequence_errors.update(range(start, end + 1))

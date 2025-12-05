@@ -4,16 +4,31 @@ Anomaly detection utilities for mutation extraction.
 
 from __future__ import annotations
 
+from warnings import catch_warnings, filterwarnings
+
 import numpy as np
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPClassifier
 
 
 def cosine_distance(x: list[float], y: list[float]) -> float:
     """Calculate cosine distance between two vectors."""
-    # Add 1e-6 to avoid division by zero when calculating cosine similarity
-    x = np.array(x) + 1e-6
-    y = np.array(y) + 1e-6
-    return 1 - float(np.dot(x, y) / (np.linalg.norm(x) * np.linalg.norm(y)))
+    x_arr = np.array(x, dtype=float)
+    y_arr = np.array(y, dtype=float)
+
+    # Early return when vectors are empty to avoid invalid divisions.
+    if x_arr.size == 0 or y_arr.size == 0:
+        return 0.0
+
+    # Add 1e-6 to avoid division by zero when calculating cosine similarity.
+    x_arr = x_arr + 1e-6
+    y_arr = y_arr + 1e-6
+
+    denominator = np.linalg.norm(x_arr) * np.linalg.norm(y_arr)
+    if denominator == 0:
+        return 0.0
+
+    return 1 - float(np.dot(x_arr, y_arr) / denominator)
 
 
 def is_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> bool:
@@ -70,8 +85,16 @@ def detect_anomalies(values_sample, values_control, threshold: float, is_consens
     X = np.concatenate([matrix_error, matrix_mutation], axis=0)
     y = [0] * (total_size) + [1] * (total_size)
 
-    clf = MLPClassifier(solver="lbfgs", alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1)
-    clf.fit(X, y)
+    clf = MLPClassifier(
+        solver="lbfgs",
+        alpha=1e-5,
+        hidden_layer_sizes=(5, 2),
+        random_state=1,
+        max_iter=1000,
+    )
+    with catch_warnings():
+        filterwarnings("ignore", category=ConvergenceWarning)
+        clf.fit(X, y)
 
     results = clf.predict(np.array([values_control, values_sample]).T)
 
