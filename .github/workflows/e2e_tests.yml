@@ -11,7 +11,7 @@ jobs:
             max-parallel: 6
             matrix:
                 os: [ubuntu-latest, macos-latest]
-                python-version: ["3.12"]
+                python-version: ["3.13"]
                 test-case: [cables2_flox, stx2_deletion, tyr_substitution]
 
         defaults:

@@ -28,7 +28,7 @@ jobs:
                       match = re.match(r'>=(\d+)\.(\d+),<(\d+)\.(\d+)', constraint)
                       if not match:
                           # Return default values
-                          return ["3.9", "3.10", "3.11", "3.12"]
+                          return ["3.10", "3.11", "3.12", "3.13"]
                       
                       min_major, min_minor, max_major, max_minor = map(int, match.groups())
                       versions = []
@@ -60,11 +60,11 @@ jobs:
                           versions = parse_python_constraint(constraint)
                           print(json.dumps(versions))
                       else:
-                          print('["3.9", "3.10", "3.11", "3.12"]')  # Default
+                          print('["3.10", "3.11", "3.12", "3.13"]')  # Default
                           
                   except Exception as e:
                       print(f"Error: {e}", file=sys.stderr)
-                      print('["3.9", "3.10", "3.11", "3.12"]')  # Default on error
+                      print('["3.10", "3.11", "3.12", "3.13"]')  # Default on error
                   EOF
                   )
 
