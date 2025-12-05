@@ -253,7 +253,8 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         sam_best_alignments = extract_best_alignment_length_from_sam(path_sam_files, best_preset)
         if not any(record and not record[0].startswith("@") for record in sam_best_alignments):
             continue
-        path_best_sam = write_sam(sam_best_alignments, Path(path_midsv_directory, f"{name}_best.sam"))
+        best_sam_name = f"{ARGS.sample_name}_best.sam" if is_control and is_sv else f"{name}_best.sam"
+        path_best_sam = write_sam(sam_best_alignments, Path(path_midsv_directory, best_sam_name))
         midsv_chaind = transform_to_midsv_format(path_best_sam)
         midsv_sample = replace_internal_n_to_d(midsv_chaind, sequence)
         midsv_sample = convert_flag_to_strand(midsv_sample)
