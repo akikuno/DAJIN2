@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from DAJIN2.core.preprocess.structural_variants import sv_handler
 
 

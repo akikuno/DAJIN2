@@ -10,12 +10,36 @@ from DAJIN2.utils import io
 from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
 
 
-def rename_type(type_: str) -> str:
-    if type_ == "intact" or type_ == "indels":
-        return type_.capitalize()
-    elif type_ == "sv":
-        return "SV"
-    return type_
+def parse_name_field(name_field: str) -> tuple[str, str, str]:
+    """
+    name_field format: allele{ID}_{allele_name}_{percent}%
+    Parse NAME into (Label, Allele display name, raw type).
+    """
+
+    parts = name_field.split("_")
+
+    # Separate trailing percent if present
+    percent_part = parts[-1]
+    remainder = parts[:-1] if percent_part.endswith("%") else parts
+
+    label = remainder[0]
+    allele_name = "_".join(remainder[1:]) if len(remainder) > 1 else ""
+
+    if allele_name.endswith("_with_indels"):
+        type_raw = "indels"
+        allele_name = allele_name.rsplit("_with_indels", 1)[0]
+    elif allele_name.startswith("unintended_"):
+        base = allele_name.removeprefix("unintended_")
+        base_type = base.split("_", 1)[0] if base else ""
+        if base_type in {"insertion", "deletion", "inversion"}:
+            type_raw = base_type
+        else:
+            type_raw = "sv"
+    else:
+        type_raw = "intact"
+
+    allele_display = allele_name.replace("_", " ")
+    return label, allele_display, type_raw
 
 
 def format_result_info(path_result: Path) -> list[dict[str, str]]:
@@ -30,8 +54,8 @@ def format_result_info(path_result: Path) -> list[dict[str, str]]:
         # Filter keys
         reads = {k: reads[k] for k in key_filter}
         # Add Label, Allele, Type from NAME
-        label, allele, type_, *_ = reads["NAME"].split("_")
-        reads.update({"Label": label.capitalize(), "Allele": allele, "Type": rename_type(type_)})
+        label, allele, type_raw = parse_name_field(reads["NAME"])
+        reads.update({"Label": label.capitalize(), "Allele": allele, "Type": type_raw})
         del reads["NAME"]
         # Add Sample
         reads["Sample"] = sample_name
@@ -72,18 +96,26 @@ def summarize_info(results_all: list[dict[str, str]]) -> list[dict[str, str]]:
 
 def add_allele_type(results_summary: list[dict[str, str]]) -> list[dict[str, str]]:
     for row in results_summary:
-        row["Allele type"] = f"{row['Allele']} {row['Type']}"
+        allele = row["Allele"]
+        type_ = row["Type"]
+        # Avoid duplicated wording like "unintended insertion 1 insertion"
+        if type_.lower() in allele.lower():
+            row["Allele type"] = allele
+        else:
+            row["Allele type"] = f"{allele} {type_}"
     return results_summary
 
 
 def order_allele_type(results_summary: list[dict[str, str]]) -> list[str]:
     alleles = {a["Allele"] for a in results_summary}
-    alleles_insertion = {a for a in alleles if a.startswith("Insertion")}
-    alleles_order = ["Control"] + sorted(alleles - alleles_insertion - {"Control"}) + sorted(alleles_insertion)
+    alleles_insertion = {a for a in alleles if a.startswith("insertion") or a.startswith("unintended insertion")}
+    alleles_order = ["control"] + sorted(alleles - alleles_insertion - {"control"}) + sorted(alleles_insertion)
 
+    type_priority = ["intact", "indels", "insertion", "deletion", "inversion", "sv"]
+    types_present = [t for t in type_priority if t in {a["Type"] for a in results_summary}]
     allele_type_order = []
     for allele in alleles_order:
-        for type_ in ["Intact", "Indels", "SV"]:
+        for type_ in types_present:
             allele_type_order.append(f"{allele} {type_}")
 
     allele_type = {a["Allele type"] for a in results_summary}

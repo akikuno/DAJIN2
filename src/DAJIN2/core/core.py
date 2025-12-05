@@ -265,9 +265,13 @@ def execute_sample(arguments: dict):
 
     sv_name_map = sv_handler.load_sv_name_map(ARGS.tempdir, ARGS.sample_name)
 
-    allele_names = consensus.call_allele_name(
+    allele_names, final_sv_name_map = consensus.call_allele_name(
         cons_sequences, cons_percentages, ARGS.fasta_alleles, sv_threshold=50, sv_name_map=sv_name_map
     )
+    # Update SV name map with final display names for downstream reporting
+    if final_sv_name_map:
+        sv_handler.save_sv_name_map(ARGS.tempdir, ARGS.sample_name, final_sv_name_map)
+        sv_name_map = final_sv_name_map
     cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
     cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
     cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)

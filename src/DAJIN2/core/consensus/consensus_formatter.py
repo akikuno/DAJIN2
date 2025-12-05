@@ -81,7 +81,7 @@ def call_allele_name(
     FASTA_ALLELES: dict[str, str],
     sv_threshold: int = 50,
     sv_name_map: dict[str, str] | None = None,
-) -> dict[int, str]:
+) -> tuple[dict[int, str], dict[str, str]]:
     digits = max(2, len(str(len(cons_percentages))))
     exists_sv = {key: detect_sv(cons_percentages[key], sv_threshold) for key in cons_percentages}
 
@@ -94,20 +94,52 @@ def call_allele_name(
             return prefix, name[len(prefix) :]
         return "", name
 
-    allele_display_names = [sv_name_map.get(key.allele, key.allele) for key in sorted_keys]
-    allele_bases = [split_display_prefix(name)[1] for name in allele_display_names]
-    allele_mapping = generate_allele_mapping(allele_bases)
+    def get_base_name(key: ConsensusKey) -> str:
+        display = sv_name_map.get(key.allele, key.allele)
+        _, base = split_display_prefix(display)
+        return base
+
+    def classify_sv_type(base: str) -> str | None:
+        for sv_type in ("insertion", "deletion", "inversion"):
+            if base.startswith(sv_type):
+                return sv_type
+        return None
+
+    # Rank SV alleles by percent within each type
+    sv_rank_map: dict[ConsensusKey, int] = {}
+    sv_keys_by_type: dict[str, list[ConsensusKey]] = defaultdict(list)
+    for key in sorted_keys:
+        sv_type = classify_sv_type(get_base_name(key))
+        if sv_type:
+            sv_keys_by_type[sv_type].append(key)
+    for sv_type, keys in sv_keys_by_type.items():
+        keys_sorted = sorted(keys, key=lambda k: k.percent, reverse=True)
+        for idx, key in enumerate(keys_sorted, 1):
+            sv_rank_map[key] = idx
+
+    def format_non_sv_name(base_name: str, suffix: str) -> str:
+        if base_name == "control":
+            return "control" if suffix == "intact" else "control_with_indels"
+        if suffix in {"indels", "SV"}:
+            return f"{base_name}_with_indels"
+        return base_name
 
     allele_names = {}
-    for keys, display_name in zip(sorted_keys, allele_display_names):
-        allele_id = f"{keys.label:0{digits}}"
-        display_prefix, base_name = split_display_prefix(display_name)
-        allele_name = allele_mapping.get(base_name, base_name)
-        allele_name = f"{display_prefix}{allele_name}"
-        suffix = determine_suffix(cons_sequences[keys], FASTA_ALLELES[keys.allele], exists_sv[keys])
-        allele_names[keys.label] = f"allele{allele_id}_{allele_name}_{suffix}_{keys.percent}%"
+    final_sv_name_map: dict[str, str] = {}
+    for key in sorted_keys:
+        allele_id = f"{key.label:0{digits}}"
+        base_name = get_base_name(key)
+        sv_type = classify_sv_type(base_name)
+        if sv_type:
+            rank = sv_rank_map.get(key, 1)
+            allele_name = f"unintended_{sv_type}_{rank}"
+            final_sv_name_map[key.allele] = allele_name
+        else:
+            suffix = determine_suffix(cons_sequences[key], FASTA_ALLELES[key.allele], exists_sv[key])
+            allele_name = format_non_sv_name(base_name, suffix)
+        allele_names[key.label] = f"allele{allele_id}_{allele_name}_{key.percent}%"
 
-    return allele_names
+    return allele_names, final_sv_name_map
 
 
 ###########################################################

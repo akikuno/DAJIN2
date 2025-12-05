@@ -76,11 +76,25 @@ def test_call_allele_name_uses_sv_display_map():
     fasta_alleles = {"deletion001__uuid": "A"}
     sv_name_map = {"deletion001__uuid": "DAJIN_deletion01"}
 
-    result = call_allele_name(
+    allele_names, final_sv_map = call_allele_name(
         cons_sequences, cons_percentages, fasta_alleles, sv_threshold=1, sv_name_map=sv_name_map
     )
 
-    assert result[1].startswith("allele01_DAJIN_deletion01_SV_60")
+    assert allele_names[1].startswith("allele01_unintended_deletion_1_60")
+    assert final_sv_map == {"deletion001__uuid": "unintended_deletion_1"}
+
+
+def test_call_allele_name_non_sv_readable_labels():
+    key_control = ConsensusKeyData(allele="control", label=1, percent=70.0)
+    key_sample = ConsensusKeyData(allele="flox", label=2, percent=30.0)
+    cons_sequences = {key_control: "AC", key_sample: "AT"}
+    cons_percentages = {key_control: [{"=A": 100.0}], key_sample: [{"*AC": 100.0}]}
+    fasta_alleles = {"control": "AC", "flox": "AC"}
+
+    allele_names, _ = call_allele_name(cons_sequences, cons_percentages, fasta_alleles, sv_threshold=1)
+
+    assert allele_names[1].startswith("allele01_control_70")
+    assert allele_names[2].startswith("allele02_flox_with_indels_30")
 
 
 @pytest.mark.parametrize(

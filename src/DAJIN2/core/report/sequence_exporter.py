@@ -24,14 +24,18 @@ def extract_allele_from_header(header: str) -> str:
     Returns:
         str: The extracted allele name
     """
-    # Pattern to match: allele{digits}_{allele_name}_{suffix}_{percent}%
-    # suffix can be: intact, indels, SV
-    # percent can be integer or decimal
-    pattern = r"^allele\d+_(.+)_(intact|indels|SV)_\d+(?:\.\d+)?%$"
+    # New pattern: allele{digits}_{allele_name}_{percent}%
+    pattern = r"^allele\d+_(.+)_\d+(?:\.\d+)?%$"
     match = re.match(pattern, header)
 
     if match:
         return match.group(1)
+
+    # Fallback to legacy pattern: allele{digits}_{allele_name}_{suffix}_{percent}%
+    legacy_pattern = r"^allele\d+_(.+)_(intact|indels|SV)_\d+(?:\.\d+)?%$"
+    match_legacy = re.match(legacy_pattern, header)
+    if match_legacy:
+        return match_legacy.group(1)
 
     # Fallback to original method for unexpected formats
     return header.split("_")[1] if "_" in header else header
@@ -65,6 +69,14 @@ def convert_to_html(
         midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
     else:
         allele_key = allele_internal if allele_internal in FASTA_ALLELES else allele
+        if allele_key not in FASTA_ALLELES and allele.endswith("_with_indels"):
+            base_allele = allele.rsplit("_with_indels", 1)[0]
+            if base_allele in FASTA_ALLELES:
+                allele_key = base_allele
+        if allele_key not in FASTA_ALLELES and allele.startswith("control"):
+            allele_key = "control" if "control" in FASTA_ALLELES else allele_key
+        if allele_key not in FASTA_ALLELES:
+            raise KeyError(f"Allele '{allele}' is not found in FASTA_ALLELES.")
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele_key])]
 
     return to_html(
@@ -107,7 +119,11 @@ def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str, sv_name_map: dict
 
 
 def export_to_html(
-    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_midsv_tags: dict[list], sv_name_map: dict[str, str] | None = None
+    TEMPDIR: Path,
+    SAMPLE_NAME: str,
+    FASTA_ALLELES: dict,
+    cons_midsv_tags: dict[list],
+    sv_name_map: dict[str, str] | None = None,
 ) -> None:
     for header, cons_midsv_tag in cons_midsv_tags.items():
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
