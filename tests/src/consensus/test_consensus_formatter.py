@@ -3,6 +3,8 @@ from typing import NamedTuple
 import pytest
 
 from DAJIN2.core.consensus.consensus_formatter import (
+    ConsensusKey as ConsensusKeyData,
+    call_allele_name,
     detect_sv,
     determine_suffix,
     format_allele_label,
@@ -65,6 +67,20 @@ def test_format_allele_label(label, total_labels, expected_output):
 def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
     result = determine_suffix(cons_seq, fasta_allele, is_sv)
     assert result == expected_output
+
+
+def test_call_allele_name_uses_sv_display_map():
+    key_sv = ConsensusKeyData(allele="deletion001__uuid", label=1, percent=60.0)
+    cons_sequences = {key_sv: "A"}
+    cons_percentages = {key_sv: [{"-A": 100.0}]}
+    fasta_alleles = {"deletion001__uuid": "A"}
+    sv_name_map = {"deletion001__uuid": "DAJIN_deletion01"}
+
+    result = call_allele_name(
+        cons_sequences, cons_percentages, fasta_alleles, sv_threshold=1, sv_name_map=sv_name_map
+    )
+
+    assert result[1].startswith("allele01_DAJIN_deletion01_SV_60")
 
 
 @pytest.mark.parametrize(

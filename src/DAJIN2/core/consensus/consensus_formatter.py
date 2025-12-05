@@ -80,19 +80,31 @@ def call_allele_name(
     cons_percentages: dict[ConsensusKey, list],
     FASTA_ALLELES: dict[str, str],
     sv_threshold: int = 50,
+    sv_name_map: dict[str, str] | None = None,
 ) -> dict[int, str]:
     digits = max(2, len(str(len(cons_percentages))))
-    exists_sv = [detect_sv(cons_per, sv_threshold) for cons_per in cons_percentages.values()]
+    exists_sv = {key: detect_sv(cons_percentages[key], sv_threshold) for key in cons_percentages}
 
     sorted_keys = sorted(cons_percentages, key=lambda x: x.percent, reverse=True)
-    alleles = [key.allele for key in sorted_keys]
-    allele_mapping = generate_allele_mapping(alleles)
+    sv_name_map = sv_name_map or {}
+
+    def split_display_prefix(name: str) -> tuple[str, str]:
+        prefix = "DAJIN_"
+        if name.startswith(prefix):
+            return prefix, name[len(prefix) :]
+        return "", name
+
+    allele_display_names = [sv_name_map.get(key.allele, key.allele) for key in sorted_keys]
+    allele_bases = [split_display_prefix(name)[1] for name in allele_display_names]
+    allele_mapping = generate_allele_mapping(allele_bases)
 
     allele_names = {}
-    for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
+    for keys, display_name in zip(sorted_keys, allele_display_names):
         allele_id = f"{keys.label:0{digits}}"
-        allele_name = allele_mapping.get(keys.allele, keys.allele)
-        suffix = determine_suffix(cons_seq, FASTA_ALLELES[keys.allele], is_sv)
+        display_prefix, base_name = split_display_prefix(display_name)
+        allele_name = allele_mapping.get(base_name, base_name)
+        allele_name = f"{display_prefix}{allele_name}"
+        suffix = determine_suffix(cons_sequences[keys], FASTA_ALLELES[keys.allele], exists_sv[keys])
         allele_names[keys.label] = f"allele{allele_id}_{allele_name}_{suffix}_{keys.percent}%"
 
     return allele_names

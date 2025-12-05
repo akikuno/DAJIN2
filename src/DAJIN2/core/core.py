@@ -6,6 +6,7 @@ from pathlib import Path
 
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.infrastructure.input_formatter import FormattedInputs
+from DAJIN2.core.preprocess.structural_variants import sv_handler
 from DAJIN2.utils import fastx_handler, io
 
 logger = logging.getLogger(__name__)
@@ -165,13 +166,28 @@ def execute_sample(arguments: dict):
     }
 
     preprocess.detect_sv_alleles(
-        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="insertion"
+        ARGS.tempdir,
+        ARGS.sample_name,
+        ARGS.control_name,
+        ARGS.fasta_alleles,
+        sv_type="insertion",
+        sv_internal_suffix=ARGS.uuid,
     )
     preprocess.detect_sv_alleles(
-        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="deletion"
+        ARGS.tempdir,
+        ARGS.sample_name,
+        ARGS.control_name,
+        ARGS.fasta_alleles,
+        sv_type="deletion",
+        sv_internal_suffix=ARGS.uuid,
     )
     preprocess.detect_sv_alleles(
-        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
+        ARGS.tempdir,
+        ARGS.sample_name,
+        ARGS.control_name,
+        ARGS.fasta_alleles,
+        sv_type="inversion",
+        sv_internal_suffix=ARGS.uuid,
     )
 
     paths_sv_fasta = set()
@@ -247,7 +263,11 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    allele_names = consensus.call_allele_name(cons_sequences, cons_percentages, ARGS.fasta_alleles, sv_threshold=50)
+    sv_name_map = sv_handler.load_sv_name_map(ARGS.tempdir, ARGS.sample_name)
+
+    allele_names = consensus.call_allele_name(
+        cons_sequences, cons_percentages, ARGS.fasta_alleles, sv_threshold=50, sv_name_map=sv_name_map
+    )
     cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
     cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
     cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)
@@ -272,10 +292,12 @@ def execute_sample(arguments: dict):
 
     # FASTA
     report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)
-    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
+    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name, sv_name_map)
 
     # HTML
-    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags)
+    report.sequence_exporter.export_to_html(
+        ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags, sv_name_map
+    )
 
     # CSV (Allele Info)
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)

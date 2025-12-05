@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from rapidfuzz import process
@@ -52,26 +53,39 @@ def _check_duplicates_of_sets(set1: set[str], set2: set[str]) -> bool:
 
 
 def add_unique_allele_keys(
-    fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, set], key: str
-) -> dict[str, str]:
+    fasta_sv_alleles: dict[str, str],
+    FASTA_ALLELES: dict[str, set],
+    key: str,
+    internal_suffix: str = "",
+    display_prefix: str = "DAJIN_",
+) -> tuple[dict[str, str], dict[str, str]]:
     """
     Update keys to avoid duplicating user-specified alleles.
     If the allele 'insertion01' exists in FASTA_ALLELES, increment the digits.
     (insertion01 -> insertion001 -> insertion0001...)
+
+    Returns:
+        tuple[dict[str, str], dict[str, str]]:
+            - A dictionary whose keys are internal allele names (optionally suffixed with `internal_suffix`)
+            - A mapping from the internal allele name to the display allele name (prefixed with `display_prefix`)
     """
     user_defined_alleles = set(FASTA_ALLELES)
     key_duplicated_alleles = {allele for allele in user_defined_alleles if key in allele}
 
     if key_duplicated_alleles == set():
-        return {f"{key}{(i + 1):02}": value for i, value in enumerate(fasta_sv_alleles.values())}
+        base_names = [f"{key}{(i + 1):02}" for i, _ in enumerate(fasta_sv_alleles.values())]
+    else:
+        num_digits = 3  # 001
+        while True:
+            base_names = [f"{key}{(i + 1):0{num_digits}}" for i, _ in enumerate(fasta_sv_alleles)]
+            if not _check_duplicates_of_sets(set(base_names), key_duplicated_alleles):
+                break
+            num_digits += 1
 
-    key_candidate_alleles = set()
-    num_digits = 3  # 001
-    while _check_duplicates_of_sets(key_candidate_alleles, key_duplicated_alleles):
-        key_candidate_alleles = {f"{key}{(i + 1):0{num_digits}}" for i, _ in enumerate(fasta_sv_alleles)}
-        num_digits += 1
+    internal_names = [f"{name}__{internal_suffix}" if internal_suffix else name for name in base_names]
+    display_names = [f"{display_prefix}{name}" if display_prefix else name for name in base_names]
 
-    return dict(zip(key_candidate_alleles, fasta_sv_alleles.values()))
+    return dict(zip(internal_names, fasta_sv_alleles.values())), dict(zip(internal_names, display_names))
 
 
 ###########################################################
@@ -89,3 +103,23 @@ def save_midsv(TEMPDIR: Path | str, SAMPLE_NAME: str, midsv_sv_alleles: dict[str
     Path(TEMPDIR, SAMPLE_NAME, "midsv").mkdir(parents=True, exist_ok=True)
     for header, midsv_tag in midsv_sv_alleles.items():
         io.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{header}.jsonl"))
+
+
+def save_sv_name_map(TEMPDIR: Path | str, SAMPLE_NAME: str, name_map: dict[str, str]) -> None:
+    """Persist internal->display SV allele name mapping for later report generation."""
+    path_map = Path(TEMPDIR, SAMPLE_NAME, "fasta", "sv_name_map.json")
+    path_map.parent.mkdir(parents=True, exist_ok=True)
+    path_map.write_text(json.dumps(name_map, indent=2))
+
+
+def load_sv_name_map(TEMPDIR: Path | str, SAMPLE_NAME: str) -> dict[str, str]:
+    """Load internal->display SV allele name mapping if it exists."""
+    path_map = Path(TEMPDIR, SAMPLE_NAME, "fasta", "sv_name_map.json")
+    if not path_map.exists():
+        return {}
+    return json.loads(path_map.read_text())
+
+
+def invert_sv_name_map(name_map: dict[str, str]) -> dict[str, str]:
+    """Invert {internal: display} to {display: internal}."""
+    return {display: internal for internal, display in name_map.items()}
