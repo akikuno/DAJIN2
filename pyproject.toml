@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "DAJIN2"
-version = "0.7.4"
+version = "0.7.5"
 description = "Comprehensive genotyping tool for targeted long-read sequencing analysis"
 authors = ["Akihiro Kuno <akuno@md.tsukuba.ac.jp>"]
 readme = "README.md"
@@ -27,10 +27,10 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-# Specify 3.9–3.12 due to dependencies on mappy and pysam
+# Specify 3.10–3.13 due to dependencies on mappy and pysam
 # mappy: https://anaconda.org/bioconda/mappy/files
 # pysam: https://anaconda.org/bioconda/pysam/files
-python = ">=3.9,<3.13"
+python = ">=3.10,<3.14"
 
 # Bioinformatics
 mappy = ">=2.24"
@@ -55,7 +55,7 @@ Jinja2 = ">=3.1.0"
 
 # Custom packages
 cstag = ">=1.0.0"
-midsv = "0.11.1"
+midsv = ">=0.12.1"
 wslPath = ">=0.4.1"
 
 [tool.poetry.scripts]
