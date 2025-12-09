@@ -34,11 +34,12 @@ def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[
 def normalize_indels(count: dict[str, list[int]]) -> dict[str, np.array]:
     """Normalize indel counts by total coverage."""
     count_normalized = {}
-    match_count = np.array(count["="])
+    match_count = np.array(count["="], dtype=float)
     for mut, indel_count in count.items():
-        numerator = np.array(indel_count)
+        numerator = np.array(indel_count, dtype=float)
         denominator = numerator + match_count
-        count_normalized[mut] = np.where(denominator == 0, 0, numerator / denominator * 100)
+        ratio = np.divide(numerator, denominator, out=np.zeros_like(denominator, dtype=float), where=denominator != 0)
+        count_normalized[mut] = ratio * 100
     return count_normalized
 
 
