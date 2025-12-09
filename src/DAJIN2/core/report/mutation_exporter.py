@@ -127,7 +127,8 @@ def export_to_csv(
 
     results = []
 
-    for header, cons_midsv_tag in cons_midsv_tags.items():
+    for key, cons_midsv_tag in cons_midsv_tags.items():
+        header = key.replace("|", "_")
         if genome_coordinates.get("strand") == "-":
             cons_midsv_tag = revcomp_cssplits(cons_midsv_tag)
         cons_midsv_tag_inversion = annotate_inversion(cons_midsv_tag)

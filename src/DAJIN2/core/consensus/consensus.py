@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
 
 from DAJIN2.core.consensus.consensus_formatter import merge_duplicated_cons_others, merge_duplicated_cons_sequences
 from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
 from DAJIN2.utils import io
+from DAJIN2.utils.config import ConsensusKey
 from DAJIN2.utils.cssplits_handler import call_sequence
 
 ###########################################################
@@ -74,13 +74,6 @@ def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]], se
 ###########################################################
 
 
-@dataclass(frozen=True)
-class ConsensusKey:
-    allele: str
-    label: int
-    percent: float
-
-
 def call_consensus(
     tempdir: Path, sample_name: str, fasta_alleles: dict[str, str], clust_downsampled: list[dict]
 ) -> tuple[dict[list], dict[str], dict[str]]:
@@ -100,15 +93,16 @@ def call_consensus(
         cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
-        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
 
+        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
         if path_sv_midsv_tag.exists():
             sv_midsv_tag = list(io.read_jsonl(path_sv_midsv_tag))
             cons_midsv_tag = annotate_sv_allele(cons_midsv_tag, sv_midsv_tag)
             if allele.startswith("deletion"):
                 cons_midsv_tag = annotate_insertions_within_deletion(cons_midsv_tag, sv_midsv_tag)
 
-        key = ConsensusKey(allele, label, clust[0]["PERCENT"])
+        percent = clust[0]["PERCENT"]
+        key = ConsensusKey(allele, label, percent)
         cons_percentages[key] = cons_percentage
         cons_sequences[key] = call_sequence(cons_percentage)
         cons_midsv_tags[key] = cons_midsv_tag

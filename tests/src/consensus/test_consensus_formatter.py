@@ -6,7 +6,6 @@ from DAJIN2.core.consensus.consensus_formatter import (
     detect_sv,
     determine_suffix,
     format_allele_label,
-    generate_allele_mapping,
     merge_duplicated_cons_others,
     merge_duplicated_cons_sequences,
     update_key_by_allele_name,
@@ -67,44 +66,6 @@ def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
     assert result == expected_output
 
 
-@pytest.mark.parametrize(
-    "alleles, expected",
-    [
-        # Case 1: Standard mapping
-        (
-            ["deletion02", "control", "deletion04", "inversion05", "insertion11"],
-            {
-                "deletion02": "deletion01",
-                "deletion04": "deletion02",
-                "inversion05": "inversion01",
-                "insertion11": "insertion01",
-            },
-        ),
-        # Case 2: Only one allele in each group
-        (
-            ["deletion01", "inversion01", "insertion01"],
-            {"deletion01": "deletion01", "inversion01": "inversion01", "insertion01": "insertion01"},
-        ),
-        # Case 3: No valid alleles
-        (["control", "unknown"], {}),
-        # Case 4: Multiple alleles in a single group
-        (
-            ["deletion01", "deletion02", "deletion03"],
-            {"deletion01": "deletion01", "deletion02": "deletion02", "deletion03": "deletion03"},
-        ),
-        # Case 5: Mixed valid and invalid alleles
-        (
-            ["deletion02", "control", "inversion05", "insertion11", "unknown"],
-            {"deletion02": "deletion01", "inversion05": "inversion01", "insertion11": "insertion01"},
-        ),
-        # Case 6: Consecutive alleles
-        (["deletion01", "deletion01", "deletion04"], {"deletion01": "deletion01", "deletion04": "deletion02"}),
-    ],
-)
-def test_generate_allele_mapping(alleles, expected):
-    assert generate_allele_mapping(alleles) == expected
-
-
 class ConsensusKey(NamedTuple):
     allele: str
     label: int
@@ -145,7 +106,7 @@ def test_update_key_by_allele_name(cons, allele_names, expected_output):
                 {"LABEL": 2, "PERCENT": 10, "READNUM": 20},
                 {"LABEL": 3, "PERCENT": 10, "READNUM": 10},
             ],
-            {1: "name1_30%", 3: "name3_10%"},
+            {1: "name1|30%", 3: "name3|10%"},
             {2: 1},
             [
                 {"LABEL": 1, "NAME": "name1_30%", "PERCENT": 30.0, "READNUM": 50},

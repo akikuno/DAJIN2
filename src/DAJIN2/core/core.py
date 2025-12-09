@@ -247,10 +247,10 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    allele_names = consensus.call_allele_name(cons_sequences, cons_percentages, ARGS.fasta_alleles, sv_threshold=50)
-    cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
-    cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
-    cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)
+    map_label_name, map_name_allele = consensus.call_allele_name(cons_sequences, ARGS.fasta_alleles)
+    cons_percentages = consensus.update_key_by_allele_name(cons_percentages, map_label_name)
+    cons_sequences = consensus.update_key_by_allele_name(cons_sequences, map_label_name)
+    cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, map_label_name)
 
     io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
     io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
@@ -264,7 +264,7 @@ def execute_sample(arguments: dict):
 
     # RESULT
     RESULT_SAMPLE = consensus.update_label_percent_readnum_name(
-        clust_sample_removed, allele_names, label_before_to_after
+        clust_sample_removed, map_label_name, label_before_to_after
     )
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
@@ -275,7 +275,9 @@ def execute_sample(arguments: dict):
     report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
 
     # HTML
-    report.sequence_exporter.export_to_html(ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags)
+    report.sequence_exporter.export_to_html(
+        ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags, map_name_allele
+    )
 
     # CSV (Allele Info)
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)

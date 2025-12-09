@@ -58,17 +58,20 @@ def add_unique_allele_keys(
     Update keys to avoid duplicating user-specified alleles.
     If the allele 'insertion01' exists in FASTA_ALLELES, increment the digits.
     (insertion01 -> insertion001 -> insertion0001...)
+    Also, add _DAJIN2predicted suffix to indicate that it is a DAJIN2-predicted allele.
     """
     user_defined_alleles = set(FASTA_ALLELES)
     key_duplicated_alleles = {allele for allele in user_defined_alleles if key in allele}
 
     if key_duplicated_alleles == set():
-        return {f"{key}{(i + 1):02}": value for i, value in enumerate(fasta_sv_alleles.values())}
+        return {f"{key}{(i + 1):02}_DAJIN2predicted": value for i, value in enumerate(fasta_sv_alleles.values())}
 
     key_candidate_alleles = set()
     num_digits = 3  # 001
     while _check_duplicates_of_sets(key_candidate_alleles, key_duplicated_alleles):
-        key_candidate_alleles = {f"{key}{(i + 1):0{num_digits}}" for i, _ in enumerate(fasta_sv_alleles)}
+        key_candidate_alleles = {
+            f"{key}{(i + 1):0{num_digits}}_DAJIN2predicted" for i, _ in enumerate(fasta_sv_alleles)
+        }
         num_digits += 1
 
     return dict(zip(key_candidate_alleles, fasta_sv_alleles.values()))

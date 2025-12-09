@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from DAJIN2.utils import io
 from DAJIN2.utils.sam_handler import (
     calculate_alignment_length,

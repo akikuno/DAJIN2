@@ -2,15 +2,9 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import Any
 
-
-@dataclass(frozen=True)
-class ConsensusKey:
-    allele: str
-    label: int
-    percent: float
+from DAJIN2.utils.config import ConsensusKey
 
 
 def scale_percentage(clust_sample_removed: list[dict]) -> list[dict]:
@@ -49,53 +43,63 @@ def determine_suffix(cons_seq: str, fasta_allele: str, is_sv: bool) -> str:
         return "indels"
 
 
-def generate_allele_mapping(alleles: list[str]) -> dict[str, str]:
-    # Define the mapping and groups
-    groups = {}
-    # Group alleles by prefix (deletion, inversion, insertion)
-    for allele in alleles:
-        match = re.match(r"(deletion|inversion|insertion)(\d+)", allele)
-        if match:
-            prefix, _ = match.groups()
-            if prefix not in groups:
-                groups[prefix] = []
-            groups[prefix].append(allele)
+# def generate_allele_mapping(alleles: list[str]) -> dict[str, str]:
+#     # Define the mapping and groups
+#     groups = {}
+#     # Group alleles by prefix (deletion, inversion, insertion)
+#     for allele in alleles:
+#         match = re.match(r"(deletion|inversion|insertion)(\d+)", allele)
+#         if match:
+#             prefix, _ = match.groups()
+#             if prefix not in groups:
+#                 groups[prefix] = []
+#             groups[prefix].append(allele)
 
-    # Sort each group by percent (descending) and assign new numbers
-    allele_mapping = {}
-    for prefix, group in groups.items():
-        digits = max(2, len(str(len(group))))
-        allele_id = 1
-        for allele in group:
-            if allele not in allele_mapping:
-                new_allele = f"{prefix}{(allele_id):0{digits}}"
-                allele_mapping[allele] = new_allele
-                allele_id += 1
+#     # Sort each group by percent (descending) and assign new numbers
+#     allele_mapping = {}
+#     for prefix, group in groups.items():
+#         digits = max(2, len(str(len(group))))
+#         allele_id = 1
+#         for allele in group:
+#             if allele not in allele_mapping:
+#                 new_allele = f"{prefix}{(allele_id):0{digits}}"
+#                 allele_mapping[allele] = new_allele
+#                 allele_id += 1
 
-    return allele_mapping
+#     return allele_mapping
 
 
 def call_allele_name(
     cons_sequences: dict[ConsensusKey, str],
-    cons_percentages: dict[ConsensusKey, list],
     FASTA_ALLELES: dict[str, str],
-    sv_threshold: int = 50,
-) -> dict[int, str]:
-    digits = max(2, len(str(len(cons_percentages))))
-    exists_sv = [detect_sv(cons_per, sv_threshold) for cons_per in cons_percentages.values()]
+) -> tuple[dict[int, str], dict[int, str]]:
+    """
+    Nomenculature:
+    allele{id}|{allele_name}|{allele_type}|{percent}%
+    - allele01|control|intact|75%
+    - allele02|unassigned|insertion|25%
+    """
+    digits = max(2, len(str(len(cons_sequences))))
 
-    sorted_keys = sorted(cons_percentages, key=lambda x: x.percent, reverse=True)
-    alleles = [key.allele for key in sorted_keys]
-    allele_mapping = generate_allele_mapping(alleles)
+    map_label_name = {}
+    map_name_allele = {}
+    for key, cons_seq in cons_sequences.items():
+        allele_id = f"{key.label:0{digits}}"
+        allele_name = key.allele
+        if allele_name.endswith("_DAJIN2predicted"):
+            match = re.match(r"(deletion|inversion|insertion)(\d+)", allele_name)
+            allele_type = match.groups()[0]  # deletion, inversion, insertion
+            allele_name = "unassigned"
+        else:
+            if cons_seq == FASTA_ALLELES[key.allele]:
+                allele_type = "intact"
+            else:
+                allele_type = "indels"
 
-    allele_names = {}
-    for is_sv, (keys, cons_seq) in zip(exists_sv, cons_sequences.items()):
-        allele_id = f"{keys.label:0{digits}}"
-        allele_name = allele_mapping.get(keys.allele, keys.allele)
-        suffix = determine_suffix(cons_seq, FASTA_ALLELES[keys.allele], is_sv)
-        allele_names[keys.label] = f"allele{allele_id}_{allele_name}_{suffix}_{keys.percent}%"
+        map_label_name[key.label] = f"allele{allele_id}|{allele_name}|{allele_type}|{key.percent}%"
+        map_name_allele[f"allele{allele_id}|{allele_name}|{allele_type}|{key.percent}%"] = key.allele
 
-    return allele_names
+    return map_label_name, map_name_allele
 
 
 ###########################################################
@@ -119,26 +123,28 @@ def update_key_by_allele_name(cons: dict[ConsensusKey, Any], allele_names: dict[
 
 
 def update_label_percent_readnum_name(
-    clust_sample: list[dict], allele_names: dict[int, str], label_before_to_after: dict[int, int]
+    clust_sample: list[dict], map_label_name: dict[int, str], label_before_to_after: dict[int, int]
 ) -> list[dict]:
     readnum_by_label = defaultdict(int)
 
     readnum_counted_label = set()
     for clust in clust_sample:
         old_label = clust["LABEL"]
+        # Update LABEL, NAME, PERCENT
         new_label = label_before_to_after.get(old_label, old_label)
-        new_name = allele_names[new_label]
-        new_percent = float(new_name.split("_")[-1].rstrip("%"))
+        new_name = map_label_name[new_label].replace("|", "_")
+        new_percent = float(map_label_name[new_label].split("|")[-1].rstrip("%"))
 
         clust["LABEL"] = new_label
         clust["NAME"] = new_name
         clust["PERCENT"] = new_percent
 
+        # Sum READNUM for merged labels
         if old_label not in readnum_counted_label:
             readnum_by_label[new_label] += clust["READNUM"]
             readnum_counted_label.add(old_label)
 
-    # Overwrite READNUM in the second loop
+    # Finally, update READNUM
     for clust in clust_sample:
         clust["READNUM"] = readnum_by_label[clust["LABEL"]]
 

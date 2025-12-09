@@ -4,12 +4,20 @@ import datetime
 import logging
 import sys
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
 
 from sklearn.exceptions import ConvergenceWarning
 
 DAJIN_RESULTS_DIR = Path("DAJIN_Results")
 TEMP_ROOT_DIR = Path(DAJIN_RESULTS_DIR, ".tempdir")
+
+
+@dataclass(frozen=True)
+class ConsensusKey:
+    allele: str
+    label: int
+    percent: float
 
 
 class DeferredFileHandler(logging.FileHandler):

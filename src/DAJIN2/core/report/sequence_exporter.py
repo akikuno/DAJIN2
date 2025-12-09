@@ -46,9 +46,8 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 
 
 def convert_to_html(
-    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, header: str, cons_midsv_tag: list[str]
+    TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, allele: str, header: str, cons_midsv_tag: str
 ) -> str:
-    allele = extract_allele_from_header(header)
     path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}.jsonl")
     is_sv_allele = False
     if path_midsv_sv.exists():
@@ -68,7 +67,8 @@ def convert_to_html(
 
 
 def export_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str, cons_sequence: dict) -> None:
-    for header, sequence in cons_sequence.items():
+    for key, sequence in cons_sequence.items():
+        header = key.replace("|", "_")
         path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta")
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
             f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
@@ -93,11 +93,19 @@ def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
             f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
 
 
-def export_to_html(TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, cons_midsv_tags: dict[list]) -> None:
-    for header, cons_midsv_tag in cons_midsv_tags.items():
+def export_to_html(
+    TEMPDIR: Path,
+    SAMPLE_NAME: str,
+    FASTA_ALLELES: dict[str, str],
+    cons_midsv_tags: dict[str, str],
+    map_name_allele: dict[str, str],
+) -> None:
+    for key, cons_midsv_tag in cons_midsv_tags.items():
+        allele = map_name_allele[key]
+        header = key.replace("|", "_")
         path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
-            f.write(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, header, cons_midsv_tag))
+            f.write(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, allele, header, cons_midsv_tag))
 
 
 # TODO: Implement to_vcf
