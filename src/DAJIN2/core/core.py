@@ -255,6 +255,12 @@ def execute_sample(arguments: dict):
     io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
     io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
     io.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
+    io.save_pickle(
+        map_label_name, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_label_name.pickle")
+    )
+    io.save_pickle(
+        map_name_allele, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_name_allele.pickle")
+    )
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
