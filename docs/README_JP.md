@@ -112,7 +112,7 @@ pip install DAJIN2
 
 ## 必要なファイル
 
-### サンプルおよびコントロールファイル
+### 1. サンプルおよびコントロールファイル
 
 DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲノム編集を受けていないコントロールサンプル**が必要です。  
 ゲノム編集サンプルとコントロールのFASTQ/FASTA（gzip圧縮・非圧縮どちらも対応可能）、またはBAMファイルを含むディレクトリを指定します。
@@ -166,13 +166,8 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
-上記のbarcode01をコントロール、barcode02をサンプルとすると、それぞれのディレクトリは下記の通りに指定します：
 
-+ コントロール: `fastq_pass/barcode01`
-+ サンプル: `fastq_pass/barcode02`
-
-
-### 想定アレル配列のFASTAファイル
+### 2. 想定アレル配列のFASTAファイル
 
 FASTAファイルには、ゲノム編集によって想定されるアレルを記述します。
 
@@ -220,34 +215,52 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   -v, --version             バージョンの出力
 ```
 
+### 実行例
+
+```bash
+# Example datasetのダウンロード
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+tar -xf example_single.tar.gz
+
+# DAJIN2の実行（単一サンプル解析）
+DAJIN2 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2_deletion.fa \
+    --name stx2_deletion \
+    --genome mm39 \
+    --threads 4
+```
+
+
 ### BEDファイルを用いたゲノム座標の指定
 
 参照ゲノムがUCSC提供のものではない場合、あるいはDAJIN2が依存する外部サーバー（UCSC Genome BrowserおよびGGGENOME）が停止している場合には、`-b/--bed`オプションを用いてBEDファイルを指定することで、オフラインで動作させることが可能です。  
 
 `-b/--bed`オプションを使用する際の注意点は以下の通りです：
 
-1. **必ずBED6形式（6列）を使用してください：**
-    
-    ```
-    chr1    1000000    1001000    mm39    248956422    +
-    ```
+**必ずBED6形式**を使用してください：
 
-    **各列の説明：**
-    - 1列目：染色体名（例：chr1、chr2）
-    - 2列目：開始位置（0ベース、inclusive）
-    - 3列目：終了位置（0ベース、exclusive）
-    - 4列目：名前（**ゲノムID**）
-    - 5列目：スコア（**IGVでの正しい可視化のため、染色体サイズを指定**）
-    - 6列目：鎖（`+` または `-`、**FASTAアレル配列の向きと一致させる必要あり**）
+```
+chr1    1000000    1001000    mm39    248956422    +
+```
+
+**各列の説明：**
+- 1列目：染色体名（例：chr1、chr2）
+- 2列目：開始位置（0インデックス）
+- 3列目：終了位置（0インデックス）
+- 4列目：名前（**ゲノムID**）
+- 5列目：スコア（**染色体サイズを指定**）
+- 6列目：鎖（`+` または `-`、**FASTAアレル配列の向きと一致させる必要あり**）
 
 > [!NOTE]  
 > 5列目のスコアには、1列目で指定した染色体のサイズを入力してください。  
 > BED形式本来のスコアの上限は1000ですが、本ツールでは**染色体サイズを記載して問題ありません**。  
 
 > [!IMPORTANT]  
-> **鎖の向きの一致が必須です**。BEDファイルの6列目（鎖：`+`または`-`）は、FASTAアレル配列の鎖の向きに合わせてください。  
-> - FASTA配列が **フォワード鎖（5'→3'）** の場合：`+`  
-> - FASTA配列が **リバース鎖（3'→5'）** の場合：`-`
+> BEDファイルの6列目（鎖：`+`または`-`）は、**参照ゲノム配列に対するFASTAアレル配列の鎖の向きに合わせてください**。  
+> - 参照配列が「ACCG」、FASTA配列が「ACCG」 → **フォワード鎖（5'→3'）** ：`+`  
+> - 参照配列が「ACCG」、FASTA配列が「CGGT」 → **リバース鎖（3'→5'）** ：`-`
 
 >[!NOTE]
 > 詳細なBEDファイルの使用方法については、[BED_COORDINATE_USAGE.md](./BED_COORDINATE_USAGE.md)をご覧ください。
@@ -276,22 +289,6 @@ DAJIN2 \
 > [!CAUTION]
 > `--no-filter`の使用は、結果にノイズや偽陽性を増加させる可能性があります。希少アレルについては、追加の実験手法による検証を推奨します。
 
-### 実行例
-
-```bash
-# Example datasetのダウンロード
-curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
-tar -xf example_single.tar.gz
-
-# DAJIN2の実行（単一サンプル解析）
-DAJIN2 \
-    --control example_single/control \
-    --sample example_single/sample \
-    --allele example_single/stx2_deletion.fa \
-    --name stx2_deletion \
-    --genome mm39 \
-    --threads 4
-```
 
 ## 複数サンプルの一括処理
 

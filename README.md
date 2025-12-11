@@ -114,7 +114,7 @@ pip install DAJIN2
 ## Required Files
 
 
-### FASTQ/FASTA/BAM Files for Sample and Control
+### 1. FASTQ/FASTA/BAM Files for Sample and Control
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
@@ -166,13 +166,8 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
-Assuming barcode01 is the control and barcode02 is the sample, the respective directories are specified as follows:
 
-+ Control: `fastq_pass/barcode01`
-+ Sample: `fastq_pass/barcode02`
-
-
-### FASTA File Including Anticipated Allele Sequences
+### 2. FASTA File Including Anticipated Allele Sequences
 
 The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
 
@@ -218,6 +213,23 @@ Options:
 -v, --version           Display the version number and exit.
 ```
 
+### Example
+
+```bash
+# Download example dataset
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+tar -xf example_single.tar.gz
+
+# Run DAJIN2
+DAJIN2 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2_deletion.fa \
+    --name stx2_deletion \
+    --genome mm39 \
+    --threads 4
+```
+
 ### Using BED Files for Genomic Coordinates
 
 If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGENOME) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
@@ -225,17 +237,18 @@ If the reference genome is not from UCSC, or if the external servers that DAJIN2
 When using the `-b/--bed` option with a BED file, please ensure:
 
 **Use BED6 format** (6 columns required):
-   ```
-   chr1    1000000    1001000    mm39    248956422    +
-   ```
-   
-   **Column descriptions:**
-   - Column 1: Chromosome name (e.g., chr1, chr2)
-   - Column 2: Start position (0-based, inclusive)
-   - Column 3: End position (0-based, exclusive)
-   - Column 4: Name (**genome ID**)
-   - Column 5: Score (**chromosome size for proper IGV visualization**)
-   - Column 6: Strand (+ or -, **must match FASTA allele orientation**)
+
+```
+chr1    1000000    1001000    mm39    248956422    +
+```
+
+**Column descriptions:**
+- Column 1: Chromosome name (e.g., chr1, chr2)
+- Column 2: Start position (0-indexed)
+- Column 3: End position (0-indexed)
+- Column 4: Name (**genome ID**)
+- Column 5: Score (**chromosome size for proper IGV visualization**)
+- Column 6: Strand (+ or -, **must match FASTA allele orientation**)
 
 > [!NOTE]  
 > For the score field (column 5), please enter the size of the chromosome specified in column 1.  
@@ -273,22 +286,6 @@ DAJIN2 \
 > [!CAUTION]
 > Using `--no-filter` may increase noise and false positives in the results. It is recommended to validate rare alleles through additional experimental methods.
 
-### Example
-
-```bash
-# Download example dataset
-curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
-tar -xf example_single.tar.gz
-
-# Run DAJIN2
-DAJIN2 \
-    --control example_single/control \
-    --sample example_single/sample \
-    --allele example_single/stx2_deletion.fa \
-    --name stx2_deletion \
-    --genome mm39 \
-    --threads 4
-```
 
 ## Batch Processing
 
@@ -334,6 +331,7 @@ tar -xf example_batch.tar.gz
 # Run DAJIN2
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
+
 
 ## GUI (Graphical User Interface) Mode
 
