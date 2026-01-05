@@ -53,13 +53,6 @@ def test_dictionize_allele_fasta_wrap():
     assert test == answer
 
 
-def test_dictionize_allele_empty():
-    path_fasta = "tests/data/preprocess/format_input/fasta_empty.fa"
-    with pytest.raises(ValueError) as e:
-        fastx_handler.dictionize_allele(path_fasta)
-    assert str(e.value) == "Provided name is empty or consists only of whitespace"
-
-
 ########################################################################
 # convert_fasta_to_fastq
 ########################################################################

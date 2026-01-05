@@ -11,6 +11,7 @@ import mappy
 import pysam
 
 from DAJIN2.utils.bed_handler import BEDError
+from DAJIN2.utils.io import read_fasta
 
 ########################################################################
 # To accommodate cases where a user might input negative values or
@@ -66,8 +67,9 @@ def validate_fastq_content(path_fastq: str) -> None:
 
 def validate_fasta_content(path_fasta: str, allele_file: bool = False) -> None:
     try:
-        headers, seqs = zip(*[(n, s) for n, s, _ in mappy.fastx_read(path_fasta)])
-        # Remove empty elements
+        headers, seqs = zip(
+            *[(record["identifier"], record["sequence"]) for record in read_fasta(path_fasta)]
+        )  # Remove empty elements
         headers = [header for header in headers if header]
         seqs = [seq for seq in seqs if seq]
 

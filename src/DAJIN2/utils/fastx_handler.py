@@ -8,7 +8,6 @@ from collections.abc import Iterator
 from itertools import islice
 from pathlib import Path
 
-import mappy
 import pysam
 
 from DAJIN2.utils.io import detect_fastx_format, is_gzip_file, read_fasta, read_fastq, sanitize_name, write_fastq
@@ -30,7 +29,7 @@ def extract_filename(path_fasta: Path | str) -> str:
 
 
 def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
-    return {sanitize_name(name): seq.upper() for name, seq, _ in mappy.fastx_read(str(path_fasta))}
+    return {sanitize_name(record["identifier"]): record["sequence"] for record in read_fasta(path_fasta)}
 
 
 #################################################
@@ -107,9 +106,7 @@ def convert_fasta_to_fastq(path_fasta: str | Path, path_fastq: str | Path, quali
     fasta: Iterator[dict[str, str]] = read_fasta(path_fasta)
     with gzip.open(path_fastq, "wt") as fastq_file:
         for record in fasta:
-            identifier = record["identifier"]
-            if record["identifier"].startswith(">"):
-                identifier = f"@{record['identifier'][1:]}"
+            identifier = f"@{record['identifier']}"
             sequence = record["sequence"]
             separator = "+"
             quality = quality_score * len(sequence)

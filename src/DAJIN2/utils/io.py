@@ -141,15 +141,21 @@ def read_fastq(path_fastx: str | Path) -> Iterator[dict]:
 
 
 def read_fasta(path_fasta: str | Path) -> Iterator[dict]:
-    """Read a FASTA file and yield each record as a dictionary."""
-    iterator = read_lines(path_fasta)
-    try:
-        while True:
-            identifier = next(iterator).strip()
-            sequence = next(iterator).strip()
-            yield {"identifier": identifier, "sequence": sequence}
-    except StopIteration:
-        return
+    """Read a FASTA file (multi-line supported) and yield each record as a dictionary."""
+    header = None
+    seq_lines: list[str] = []
+
+    for line in read_lines(path_fasta):
+        if line.startswith(">"):
+            if header:
+                yield {"identifier": header, "sequence": "".join(seq_lines)}
+            header = line[1:].strip()  # '>'を除去
+            seq_lines = []
+        else:
+            seq_lines.append(line)
+
+    if header:
+        yield {"identifier": header, "sequence": "".join(seq_lines)}
 
 
 def write_fastq(data: list[dict] | Iterator[dict], file_path: str | Path, is_gzip: bool = True) -> None:
@@ -238,15 +244,6 @@ def sanitize_name(file_name: Path | str) -> str:
         'leading-space-txt'
         >>> sanitize_name("file name with spaces")
         'file-name-with-spaces'
-
-    Args:
-        file_name (Path | str): The original file name.
-
-    Returns:
-        str: The sanitized file name with invalid characters replaced by '-'.
-
-    Raises:
-        ValueError: If the provided file name is empty or contains only whitespace.
     """
     file_name = str(file_name).strip()
     if not file_name:
