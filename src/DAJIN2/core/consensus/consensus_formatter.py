@@ -15,60 +15,6 @@ def scale_percentage(clust_sample_removed: list[dict]) -> list[dict]:
     return clust_sample_removed
 
 
-def detect_sv(cons_per: list[dict[str, float]], threshold: int = 50) -> bool:
-    cons_midsv_tag: str = "".join([max(tag, key=tag.get) for tag in cons_per])
-
-    patterns = [
-        rf"(=N|=n){{{threshold}}}",  # Consecutive "=N" exceeding the threshold
-        rf"(\+[ACGTN]\|){{{threshold}}}",  # Insertions
-        rf"(\-[ACGTN]){{{threshold}}}",  # Deletions
-        rf"(\*[ACGTN][ACGTN]){{{threshold}}}",  # Substitutions
-        r"[acgtn]",  # Inversions (lowercase nucleotides)
-    ]
-
-    return any(re.search(pattern, cons_midsv_tag) for pattern in patterns)
-
-
-def format_allele_label(label: int, total_labels: int) -> str:
-    digits = max(2, len(str(total_labels)))  # minimum of 2 digits (01, 02, 03...)
-    return f"{label:0{digits}}"
-
-
-def determine_suffix(cons_seq: str, fasta_allele: str, is_sv: bool) -> str:
-    if is_sv:
-        return "SV"
-    elif cons_seq == fasta_allele:
-        return "intact"
-    else:
-        return "indels"
-
-
-# def generate_allele_mapping(alleles: list[str]) -> dict[str, str]:
-#     # Define the mapping and groups
-#     groups = {}
-#     # Group alleles by prefix (deletion, inversion, insertion)
-#     for allele in alleles:
-#         match = re.match(r"(deletion|inversion|insertion)(\d+)", allele)
-#         if match:
-#             prefix, _ = match.groups()
-#             if prefix not in groups:
-#                 groups[prefix] = []
-#             groups[prefix].append(allele)
-
-#     # Sort each group by percent (descending) and assign new numbers
-#     allele_mapping = {}
-#     for prefix, group in groups.items():
-#         digits = max(2, len(str(len(group))))
-#         allele_id = 1
-#         for allele in group:
-#             if allele not in allele_mapping:
-#                 new_allele = f"{prefix}{(allele_id):0{digits}}"
-#                 allele_mapping[allele] = new_allele
-#                 allele_id += 1
-
-#     return allele_mapping
-
-
 def call_allele_name(
     cons_sequences: dict[ConsensusKey, str],
     FASTA_ALLELES: dict[str, str],
@@ -163,7 +109,7 @@ def update_label_percent_readnum_name(
 # -----------------------------
 
 
-def group_by_allele_and_seq(cons_sequences: dict[ConsensusKey, str]) -> dict[tuple, list[ConsensusKey]]:
+def _group_by_allele_and_seq(cons_sequences: dict[ConsensusKey, str]) -> dict[tuple, list[ConsensusKey]]:
     """
     Group ConsensusKey objects by (allele, sequence).
 
@@ -179,7 +125,7 @@ def group_by_allele_and_seq(cons_sequences: dict[ConsensusKey, str]) -> dict[tup
 # -----------------------------
 # 2) Merge (pick representative & sum percentages & build before→rep mapping)
 # -----------------------------
-def merge_groups(groups: dict[tuple, list[ConsensusKey]]) -> tuple[list[dict], dict[int, int]]:
+def _merge_groups(groups: dict[tuple, list[ConsensusKey]]) -> tuple[list[dict], dict[int, int]]:
     """
     For each group:
         - Create an interim_label (a temporary label after merging but before sorting by percentage).
@@ -206,7 +152,7 @@ def merge_groups(groups: dict[tuple, list[ConsensusKey]]) -> tuple[list[dict], d
 # -----------------------------
 # 3) Ranking (representative label → scores 1..N)
 # -----------------------------
-def rank_labels_by_percent(merged_records: list[dict]) -> dict[int, int]:
+def _rank_labels_by_percent(merged_records: list[dict]) -> dict[int, int]:
     """
     Reassign labels 1, 2, 3, ... in descending order of the summed percentage.
 
@@ -221,7 +167,7 @@ def rank_labels_by_percent(merged_records: list[dict]) -> dict[int, int]:
 # -----------------------------
 # 4) Compose mapping (original label → final label)
 # -----------------------------
-def compose_original_to_final_mapping(
+def _compose_original_to_final_mapping(
     before_to_interim: dict[int, int], interim_to_rank: dict[int, int]
 ) -> dict[int, int]:
     """
@@ -260,10 +206,10 @@ def merge_duplicated_cons_sequences(
         label_before_to_after:
             {original_label: final_rank_label, ...}
     """
-    groups = group_by_allele_and_seq(cons_sequences)
-    merged_records, before_to_interim = merge_groups(groups)
-    interim_to_rank = rank_labels_by_percent(merged_records)
-    label_before_to_after = compose_original_to_final_mapping(before_to_interim, interim_to_rank)
+    groups = _group_by_allele_and_seq(cons_sequences)
+    merged_records, before_to_interim = _merge_groups(groups)
+    interim_to_rank = _rank_labels_by_percent(merged_records)
+    label_before_to_after = _compose_original_to_final_mapping(before_to_interim, interim_to_rank)
 
     # Rebuild the dict with rank labels
     cons_sequences_merged: dict[ConsensusKey, str] = {}

@@ -29,7 +29,7 @@ def extract_filename(path_fasta: Path | str) -> str:
 
 
 def dictionize_allele(path_fasta: str | Path) -> dict[str, str]:
-    return {sanitize_name(record["identifier"]): record["sequence"] for record in read_fasta(path_fasta)}
+    return {sanitize_name(record["identifier"]): record["sequence"].upper() for record in read_fasta(path_fasta)}
 
 
 #################################################

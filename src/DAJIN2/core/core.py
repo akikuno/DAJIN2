@@ -175,9 +175,9 @@ def execute_sample(arguments: dict):
     )
 
     paths_sv_fasta = set()
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*_DAJIN2predicted.fasta")}
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*_DAJIN2predicted.fasta")}
+    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*_DAJIN2predicted.fasta")}
 
     paths_sv_fasta -= paths_predefined_fasta
 
@@ -284,15 +284,16 @@ def execute_sample(arguments: dict):
     # CSV (Allele Info)
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
 
+    # VCF
+    # # TODO
+    # report.vcf_exporter.export_to_vcf(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_sequences)
+
     # BAM
     report.bam_exporter.export_to_bam(
         ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, ARGS.threads, RESULT_SAMPLE
     )
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
-
-    # VCF
-    # TODO: working in progress
 
     ###########################################################
     # Finish call

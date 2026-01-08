@@ -7,14 +7,19 @@ from DAJIN2.core.classification.allele_merger import merge_minor_alleles
 from DAJIN2.utils import io
 
 
-def calc_match(cssplit: str) -> int:
-    match_score = cssplit.count("=")
-    match_score -= cssplit.count("+")  # insertion
-    match_score -= cssplit.count("-")  # deletion
-    match_score -= sum(cs.islower() for cs in cssplit)  # inversion
+def calc_match(midsv_tags: str) -> int:
+    """
+    Calculate match score from MIDSV tags.
+    1. Perfect match: 0
+    2. Mismatch (insertion, deletion, inversion): -1 per event
+    """
+    mismatch_score = 0
 
-    return match_score
+    mismatch_score += midsv_tags.count("+")  # insertion
+    mismatch_score += midsv_tags.count("-")  # deletion
+    mismatch_score += sum(tags.islower() for tags in midsv_tags)  # inversion
 
+    return -mismatch_score
 
 def score_allele(path_midsv: Path, allele: str) -> list[dict]:
     midsv_sample = io.read_jsonl(path_midsv)
