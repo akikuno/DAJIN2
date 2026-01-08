@@ -9,7 +9,8 @@ from DAJIN2.core.classification import classifier
         ("=A,=C,=G,=T", 0),  # perfect match
         ("=A,=C,+T|+T|=G,=T", -2),  # insertion
         ("=A,-C,-G,=T", -2),  # deletion
-        ("=A,*CT,=G,=T", 1),  # substitution
+        ("=A,*CT,=G,=T", -1),  # substitution
+        ("=A,=c,=g,=T", -2),  # inversion
     ],
 )
 def test_calc_match(input_str, expected_output):

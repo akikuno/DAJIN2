@@ -17,6 +17,7 @@ def calc_match(midsv_tags: str) -> int:
 
     mismatch_score += midsv_tags.count("+")  # insertion
     mismatch_score += midsv_tags.count("-")  # deletion
+    mismatch_score += midsv_tags.count("*")  # substitution
     mismatch_score += sum(tags.islower() for tags in midsv_tags)  # inversion
 
     return -mismatch_score
