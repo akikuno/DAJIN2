@@ -175,9 +175,15 @@ def execute_sample(arguments: dict):
     )
 
     paths_sv_fasta = set()
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*_DAJIN2predicted.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*_DAJIN2predicted.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*_DAJIN2predicted.fasta")}
+    paths_sv_fasta |= {
+        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*_DAJIN2predicted.fasta")
+    }
+    paths_sv_fasta |= {
+        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*_DAJIN2predicted.fasta")
+    }
+    paths_sv_fasta |= {
+        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*_DAJIN2predicted.fasta")
+    }
 
     paths_sv_fasta -= paths_predefined_fasta
 

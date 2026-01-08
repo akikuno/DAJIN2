@@ -20,10 +20,13 @@ def call_allele_name(
     FASTA_ALLELES: dict[str, str],
 ) -> tuple[dict[int, str], dict[int, str]]:
     """
+    Input:
+        cons_sequences: {ConsensusKey(allele, label, percent): sequence, ...}
+        allele: name from FASTA_ALLELES or DAJIN2predicted
     Nomenculature:
-    allele{id}|{allele_name}|{allele_type}|{percent}%
-    - allele01|control|intact|75%
-    - allele02|unassigned|insertion|25%
+        allele{id}|{allele_name}|{allele_type}|{percent}%
+        - allele01|control|intact|75%
+        - allele02|unassigned|insertion|25%
     """
     digits = max(2, len(str(len(cons_sequences))))
 

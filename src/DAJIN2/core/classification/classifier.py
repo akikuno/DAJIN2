@@ -21,6 +21,7 @@ def calc_match(midsv_tags: str) -> int:
 
     return -mismatch_score
 
+
 def score_allele(path_midsv: Path, allele: str) -> list[dict]:
     midsv_sample = io.read_jsonl(path_midsv)
     scored_alleles = []
