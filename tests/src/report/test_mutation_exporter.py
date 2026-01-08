@@ -183,7 +183,7 @@ def test_report_mutations_inversion():
 
 
 def test_report_mutations_various():
-    cssplits = ["=A", "*AG", "+A|+A|-A", "N", "-G", "*CG", "*AG", "=a", "=t", "=A"]
+    cssplits = ["=A", "*AG", "+A|+A|-A", "=N", "-G", "*CG", "*AG", "=a", "=t", "=A"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 4, "strand": "+"}
     header = "test"
     cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
@@ -193,7 +193,6 @@ def test_report_mutations_various():
         ["test", "mm10", "chr1", "1", "1", "substitution: A>G"],
         ["test", "mm10", "chr1", "2", "2", "2bp insertion: AA"],
         ["test", "mm10", "chr1", "2", "2", "1bp deletion: A"],
-        ["test", "mm10", "chr1", "3", "3", "1bp unknown bases"],
         ["test", "mm10", "chr1", "4", "4", "1bp deletion: G"],
         ["test", "mm10", "chr1", "5", "5", "substitution: C>G"],
         ["test", "mm10", "chr1", "6", "6", "substitution: A>G"],

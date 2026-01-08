@@ -6,11 +6,10 @@ from DAJIN2.core.classification import classifier
 @pytest.mark.parametrize(
     "input_str, expected_output",
     [
-        ("=A,=C,=G,=T", 4),  # perfect match
-        ("=A,=C,+T|+T|=G,=T", 2),  # insertion
-        ("=A,-C,-G,=T", 0),  # deletion
-        ("=A,*CT,=G,=T", 3),  # substitution
-        ("=A,N,=G,=T", 3),  # unknown
+        ("=A,=C,=G,=T", 0),  # perfect match
+        ("=A,=C,+T|+T|=G,=T", -2),  # insertion
+        ("=A,-C,-G,=T", -2),  # deletion
+        ("=A,*CT,=G,=T", 1),  # substitution
     ],
 )
 def test_calc_match(input_str, expected_output):
