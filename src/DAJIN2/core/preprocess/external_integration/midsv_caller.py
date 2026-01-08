@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
@@ -236,23 +237,25 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
             continue
 
         if is_control and is_sv:
-            """
-            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.jsonl` when control is barcode01, sample is barcode02, and the allele is insertion1.
-            """
+            # Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.jsonl`
+            # when control is barcode01, sample is barcode02, and the allele is insertion1.
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"{ARGS.sample_name}_*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
         else:
-            """
-            Set the destination for midsv as `barcode02/midsv/insertion1.jsonl` when the sample is barcode02 and the allele is insertion1.
-            """
+            # Set the destination for midsv as `barcode02/midsv/insertion1.jsonl`
+            # when the sample is barcode02 and the allele is insertion1.
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob("*.sam"))
             path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}.jsonl")
 
         preset_cigar_by_qname = extract_preset_and_cigar_by_qname(path_sam_files)
         best_preset = extract_best_preset(preset_cigar_by_qname)
         sam_best_alignments = extract_best_alignment_length_from_sam(path_sam_files, best_preset)
-        if not any(record and not record[0].startswith("@") for record in sam_best_alignments):
+
+        # Remove path_midsv_directory if there are no alignments
+        if sum(1 for record in sam_best_alignments if not record[0].startswith("@")) == 0:
+            shutil.rmtree(path_midsv_directory, ignore_errors=True)
             continue
+
         best_sam_name = f"{ARGS.sample_name}_best.sam" if is_control and is_sv else f"{name}_best.sam"
         path_best_sam = write_sam(sam_best_alignments, Path(path_midsv_directory, best_sam_name))
         midsv_chaind = transform_to_midsv_format(path_best_sam)
