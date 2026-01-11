@@ -124,7 +124,7 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 ########################################################################
 
 
-def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 3) -> str:
+def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 5) -> str:
     """
     Fetch HTML with optional retries and clearer error messages.
     """
@@ -139,9 +139,7 @@ def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 
                 time.sleep(1)
                 continue
             else:
-                raise TimeoutError(
-                    f"Failed to fetch {url} after {retries} attempts (timeout={timeout}s). Last error: {e}"
-                )
+                return ""
 
 
 def format_url(key: str, url: str) -> str:
@@ -169,8 +167,16 @@ def get_available_servers() -> dict[str, str]:
     available_servers = {key: get_first_available_url(key, urls) for key, urls in server_lists.items()}
 
     error_messages = {
-        "gggenome": "GGGenome servers are currently down. To avoid accessing the site, please consider specifying the -b/--bed option. Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'",
-        "goldenpath": "All UCSC GoldenPath servers are currently down. Please wait for a while and try again.",
+        "gggenome": """
+        GGGenome servers are currently down.
+        To avoid accessing the site, please consider specifying the -b/--bed option. 
+        Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'
+        """,
+        "goldenpath": """
+        All UCSC GoldenPath servers are currently down.
+        To avoid accessing the site, please consider specifying the -b/--bed option. 
+        Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'
+        """,
     }
 
     for key, message in error_messages.items():

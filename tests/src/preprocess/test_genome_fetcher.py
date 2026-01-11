@@ -3,11 +3,11 @@ import pytest
 from DAJIN2.core.preprocess.genome_coordinate import genome_fetcher
 from DAJIN2.utils.input_validator import get_available_servers
 
-genome_urls = get_available_servers()
-
 
 @pytest.mark.slow
 def test_fetch_seq_coodinates_strand_plus():
+    genome_urls = get_available_servers()
+
     genome = "mm39"
     gggenome_url = genome_urls["gggenome"]
     seq = "GTTAGGATTTTCAGGGTGACGACCTCCCAAGTACTCATCTGTGCAAATGT"
@@ -18,6 +18,8 @@ def test_fetch_seq_coodinates_strand_plus():
 
 @pytest.mark.slow
 def test_fetch_seq_coodinates_strand_minus():
+    genome_urls = get_available_servers()
+
     genome = "mm39"
     gggenome_url = genome_urls["gggenome"]
     seq = "ACATTTGCACAGATGAGTACTTGGGAGGTCGTCACCCTGAAAATCCTAAC"
@@ -75,6 +77,7 @@ def test_fetch_seq_coordinates_no_items(monkeypatch):
 
 @pytest.mark.slow
 def test_fetch_chromosome_size():
+    genome_urls = get_available_servers()
     genome = "mm39"
     chrom = "chr7"
     test = genome_fetcher.fetch_chromosome_size(genome, chrom, genome_urls["goldenpath"])

@@ -12,21 +12,12 @@
 
 <!-- ############################################################# # -->
 
+# v0.7.5 (2026-MM-DD)
+
+## 🔧 Maintenance
++ Clarify the error message shown when GGGenome or the UCSC Genome Browser is inaccessible, and improve it to prompt users to use the offline mode with a BED file. Issue [#123](
+
 <!-- ############################################################# # -->
-
-
-# v0.7.4 (2025-12-04)
-
-## 🐛 Bug Fixes
-
-+ Fixed an error that occurred during basecalling with Dorado when no reference sequence was specified, due to the absence of the SQ header. Issue [#120](https://github.com/akikuno/DAJIN2/issues/120)
-
-+ Fixed a bug where index files (.fai, .bai) in the input directory were being read mistakenly. Issue [#108](https://github.com/akikuno/DAJIN2/issues/108)
-
-
-## 📝 Documentation
-
-+ In the DAJIN2 issue template, the Version field is now optional instead of mandatory.
 
 
 -------------------------------------------------------------
@@ -38,6 +29,21 @@
 <summary> v0.X.X (2025-MM-DD) </summary>
 
 </details> -->
+
+<details>
+<summary> v0.7.4(2025-12-04) </summary>
+
+## 🐛 Bug Fixes
+
++ Fixed an error that occurred during basecalling with Dorado when no reference sequence was specified, due to the absence of the SQ header. Issue [#120](https://github.com/akikuno/DAJIN2/issues/120)
+
++ Fixed a bug where index files (.fai, .bai) in the input directory were being read mistakenly. Issue [#108](https://github.com/akikuno/DAJIN2/issues/108)
+
+
+## 📝 Documentation
+
++ In the DAJIN2 issue template, the Version field is now optional instead of mandatory.
+</details>
 
 
 <details>
