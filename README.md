@@ -254,6 +254,11 @@ chr1    1000000    1001000    mm39    248956422    +
 > For the score field (column 5), please enter the size of the chromosome specified in column 1.  
 > While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
 
+> [!NOTE]
+> chromosome sizes can be found at the following URL:  
+> `https://hgdownload.soe.ucsc.edu/goldenPath/[genome]/bigZips/[genome].chrom.sizes`  
+> (e.g.: https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes)
+
 > [!IMPORTANT]  
 > **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
 > - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  

@@ -14,10 +14,15 @@
 
 # v0.7.5 (2026-MM-DD)
 
+## 📝 Documentation
+
+Add instructions for obtaining chromosome size (chrom size) to the README.  
+  Issue [#125](https://github.com/akikuno/DAJIN2/issues/125)
+
 ## 🔧 Maintenance
 
 + Clarify the error message shown when GGGenome or the UCSC Genome Browser is inaccessible, and improve it to prompt users to use the offline mode with a BED file.   
-  Issue [#124]
+  Issue [#124](https://github.com/akikuno/DAJIN2/issues/124)
 
 <!-- ############################################################# # -->
 
