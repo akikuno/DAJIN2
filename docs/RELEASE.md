@@ -15,7 +15,9 @@
 # v0.7.5 (2026-MM-DD)
 
 ## 🔧 Maintenance
-+ Clarify the error message shown when GGGenome or the UCSC Genome Browser is inaccessible, and improve it to prompt users to use the offline mode with a BED file. Issue [#123](
+
++ Clarify the error message shown when GGGenome or the UCSC Genome Browser is inaccessible, and improve it to prompt users to use the offline mode with a BED file.   
+  Issue [#124]
 
 <!-- ############################################################# # -->
 
