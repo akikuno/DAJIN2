@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pytest
-
-from DAJIN2.core.preprocess.external_integration.midsv_caller import (
+from DAJIN2.core.preprocess.alignment.midsv_caller import (
     convert_consecutive_indels_to_match,
     convert_flag_to_strand,
     replace_internal_n_to_d,
