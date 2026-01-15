@@ -36,6 +36,10 @@
 + Remove code related to the `splice` preset.  
   Issue [#126](https://github.com/akikuno/DAJIN2/issues/126)
 
+
++ Supporting the major changes introduced in MIDSV > v0.12.0  
+  Issue [#76](https://github.com/akikuno/DAJIN2/issues/76)
+
 <!-- ############################################################# # -->
 
 
