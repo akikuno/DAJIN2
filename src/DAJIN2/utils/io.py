@@ -66,10 +66,12 @@ def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> Non
 
 def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Strip whitespace from column names and string values in all cells.
+    1. Strip whitespace from column names and string values in all cells.
+    2. Remove NaN records
     """
-    df.columns = df.columns.str.strip()
-    return df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    df.columns = df.columns.str.strip()  # ← Remove spaces from column names
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)  # ← Remove spaces from string values
+    return df.dropna() # ← Remove NaN records
 
 
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
@@ -84,6 +86,7 @@ def read_csv(file_path: str | Path) -> list[dict[str, str]]:
     """
     Load data from a CSV file with BOM handling, stripping whitespace.
     """
+    # Remove BOM if present (utf-8-sig handles BOM automatically)
     df = pd.read_csv(file_path, encoding="utf-8-sig")
     return _clean_dataframe(df).to_dict(orient="records")
 
