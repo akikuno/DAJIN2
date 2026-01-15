@@ -9,8 +9,8 @@ from src.DAJIN2.core.consensus.consensus import (
 
 
 def test_adjust_to_100_percent():
-    test = [{"A": 25, "C": 25}, {"N": 100}]
-    expected = [{"A": 50, "C": 50}, {"N": 100}]
+    test = [{"=A": 25, "=C": 25}, {"=N": 100}]
+    expected = [{"=A": 50, "=C": 50}, {"=N": 100}]
     assert adjust_to_100_percent(test) == expected
 
 

@@ -86,15 +86,15 @@ def test_convert_fasta_to_fastq(tmp_path, fasta_content, expected_fastq_content)
 @pytest.mark.parametrize(
     "filenames, suffixes, expected",
     [
-        # 単純なケース：suffix一致
+        # Simple case: suffix match
         (["a.txt", "b.csv", "c.txt"], {".txt"}, ["a.txt", "c.txt"]),
-        # .fai, .baiを除外
+        # Exclude .fai and .bai
         (["ref.fai", "sample.bam", "sample.bai"], {".bam"}, ["sample.bam"]),
-        # 一致なし
+        # No matches
         (["a.txt", "b.csv"], {".tsv"}, []),
-        # 複数のsuffixを許可
+        # Allow multiple suffixes
         (["a.txt", "b.csv", "c.tsv"], {".csv", ".tsv"}, ["b.csv", "c.tsv"]),
-        # ディレクトリが空の場合
+        # Empty directory
         ([], {".txt"}, []),
     ],
 )

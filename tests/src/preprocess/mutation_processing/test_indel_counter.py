@@ -46,7 +46,7 @@ class TestCountIndels:
         """Test that N and lowercase characters are skipped."""
         sequence = "ACGT"
         midsv_data = [
-            {"MIDSV": "=A,N,=G,=T"},
+            {"MIDSV": "=A,=N,=G,=T"},
             {"MIDSV": "=A,=c,=G,=T"},  # lowercase
         ]
 

@@ -33,7 +33,7 @@ def test_fetch_seq_coordinates_multiple_regions(monkeypatch):
     gggenome_url = "https://gggenome.example"
     seq_subset = "GACCCTCTCTTGT"
 
-    # fetch_bed_without_verification が複数領域を返すケース
+    # Case where fetch_bed_without_verification returns multiple regions
     def fake_fetch_bed(url):
         return [
             "track header",
@@ -57,7 +57,7 @@ def test_fetch_seq_coordinates_no_items(monkeypatch):
     gggenome_url = "https://gggenome.example"
     seq_subset = "GACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGT"
 
-    # fetch_bed_without_verification が "### No items found. ###" を返すケース
+    # Case where fetch_bed_without_verification returns "### No items found. ###"
     def fake_fetch_bed(url):
         return [
             "track header",

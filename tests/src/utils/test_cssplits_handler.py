@@ -12,9 +12,9 @@ from DAJIN2.utils import cssplits_handler
 @pytest.mark.parametrize(
     "cssplits, expected",
     [
-        (["N", "N", "A", "B", "N", "N"], (1, 4)),
-        (["N", "N", "A", "B", "A", "B"], (1, 6)),
-        (["A", "B", "A", "B", "N", "N"], (-1, 4)),
+        (["=N", "=N", "A", "B", "=N", "=N"], (1, 4)),
+        (["=N", "=N", "A", "B", "A", "B"], (1, 6)),
+        (["A", "B", "A", "B", "=N", "=N"], (-1, 4)),
         (["A", "B", "A", "B", "A", "B"], (-1, 6)),
     ],
 )
@@ -69,8 +69,8 @@ def test_convert_cssplits_to_sequence(cssplits, expected):
     [
         ([], []),
         (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
-        (["N", "=C", "N"], ["=N", "=C", "=N"]),
-        (["=A", "+G|+G|+G|N", "=T"], ["=A", "+G|+G|+G|=N", "=T"]),
+        (["=N", "=C", "=N"], ["=N", "=C", "=N"]),
+        (["=A", "+G|+G|+G|=N", "=T"], ["=A", "+G|+G|+G|=N", "=T"]),
     ],
 )
 def test_add_match_operator_to_n(cssplits, expected):
@@ -121,7 +121,7 @@ def test_convert_cssplits_to_cstag(cssplits, expected):
         ([{"=A": 1.0}, {"+G|+G|+G|=A": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGAT"),  # insertion match
         ([{"=A": 1.0}, {"+G|+G|+G|-A": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGT"),  # insertion deletion
         ([{"=A": 1.0}, {"+G|+G|+G|*AT": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGTT"),  # insertion substitution
-        ([{"=A": 1.0}, {"+G|+G|+G|N": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGNT"),  # insertion N
+        ([{"=A": 1.0}, {"+G|+G|+G|=N": 0.9, "-A": 0.1}, {"=T": 1.0}], "AGGGNT"),  # insertion N
         ([{"=A": 1.0}], "A"),
     ],
 )

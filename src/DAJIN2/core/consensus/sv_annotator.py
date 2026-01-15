@@ -54,7 +54,7 @@ def annotate_sv_allele(cons_midsv_tag: list[str], sv_midsv_tag: list[str]) -> li
 
                 idx_insertion += 1
 
-            # last_tagが欠失の場合にスキップする
+            # Skip when last_tag is missing
             while cons_midsv_tag[idx_insertion].startswith("-"):
                 num_insertion += 1
                 idx_insertion += 1

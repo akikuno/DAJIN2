@@ -15,9 +15,9 @@ def test_revcomp_cssplits_substitution():
 
 
 def test_revcomp_cssplits_substitution_with_N():
-    cssplits = ["=A", "*AN", "N", "=G"]
+    cssplits = ["=A", "*AN", "=N", "=G"]
     test = report.mutation_exporter.revcomp_cssplits(cssplits)
-    answer = ["=C", "N", "*TN", "=T"]
+    answer = ["=C", "=N", "*TN", "=T"]
     assert test == answer
 
 
@@ -43,9 +43,9 @@ def test_revcomp_cssplits_insertion_with_substitution():
 
 
 def test_revcomp_cssplits_insertion_with_N():
-    cssplits = ["N", "+A|+A|+T|+G|N", "=G"]
+    cssplits = ["=N", "+A|+A|+T|+G|=N", "=G"]
     test = report.mutation_exporter.revcomp_cssplits(cssplits)
-    answer = ["=C", "N", "+C|+A|+T|+T|N"]
+    answer = ["=C", "=N", "+C|+A|+T|+T|=N"]
     assert test == answer
 
 
@@ -57,9 +57,9 @@ def test_revcomp_cssplits_deletion():
 
 
 def test_revcomp_cssplits_N():
-    cssplits = ["=A", "N", "N", "=G"]
+    cssplits = ["=A", "=N", "=N", "=G"]
     test = report.mutation_exporter.revcomp_cssplits(cssplits)
-    answer = ["=C", "N", "N", "=T"]
+    answer = ["=C", "=N", "=N", "=T"]
     assert test == answer
 
 

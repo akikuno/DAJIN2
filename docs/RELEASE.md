@@ -14,9 +14,14 @@
 
 # v0.8.0 (2026-MM-DD)
 
+## 💥 Breaking
+
++ Rename allele labels to more intuitive and descriptive names.  
+  Issue [#123](https://github.com/akikuno/DAJIN2/issues/123)
+
 ## 📝 Documentation
 
-Add instructions for obtaining chromosome size (chrom size) to the README.  
++ Add instructions for obtaining chromosome size (chrom size) to the README.  
   Issue [#125](https://github.com/akikuno/DAJIN2/issues/125)
 
 ## 🔧 Maintenance

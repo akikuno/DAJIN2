@@ -152,7 +152,7 @@ def read_fasta(path_fasta: str | Path) -> Iterator[dict]:
         if line.startswith(">"):
             if header:
                 yield {"identifier": header, "sequence": "".join(seq_lines)}
-            header = line[1:].strip()  # '>'を除去
+            header = line[1:].strip()  # Remove leading ">"
             seq_lines = []
         else:
             seq_lines.append(line)

@@ -118,9 +118,9 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 
 ########################################################################
 # Check genome and UCSC server
-# BAMファイルのゲノム座標の入手に必要であり、以下に、各Serverの役割を述べる：
-## Blat: BAMファイル出力の際のゲノム座標の入手
-## Goldenpath: chrom.sizeに必要
+# Required to fetch genome coordinates for BAM files; roles of each server:
+# - Blat: genome coordinates for BAM output
+# - Goldenpath: required for chrom.sizes
 ########################################################################
 
 

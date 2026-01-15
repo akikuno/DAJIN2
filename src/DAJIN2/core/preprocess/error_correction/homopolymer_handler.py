@@ -54,8 +54,8 @@ def extract_sequence_errors_in_homopolymer_loci(
             x = np.array(indels_normalized_sample[mut][start:end], dtype=float)
             y = np.array(indels_normalized_control[mut][start:end], dtype=float)
 
-            # コントロールで3%以上みられる変異はホモポリマーのシークエンスエラーとみなして、sampleの値に置換
-            # sampleの値に置換する理由は、cosine similarityの値を上げるため
+            # Treat variants >= 3% in the control as homopolymer sequence errors and replace with sample values.
+            # Replacing with sample values increases the cosine similarity.
             mask = y >= 3
             y[mask] = x[mask]
 

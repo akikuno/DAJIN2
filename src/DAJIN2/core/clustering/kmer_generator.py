@@ -25,7 +25,7 @@ def compress_insertion(cssplit: list[str], index: int, compress_ins: bool) -> st
 
 
 def annotate_cs_tag(cssplit: str, mutation: set[str]) -> str:
-    cs = cssplit[0]  # +, - , *, =, or N
+    cs = cssplit[0]  # +, -, *, or =
     if cs in mutation:
         return cssplit
     else:
@@ -42,7 +42,7 @@ def generate_mutation_kmers(
             if mutation_loci[i] == set():
                 mutation_kmers.append("@,@,@")
                 continue
-            cs_current = cssplit[i][0]  # +, - , *, =, N
+            cs_current = cssplit[i][0]  # +, -, *, or =
             if cs_current == "+":
                 cssplit = compress_insertion(cssplit, i, compress_ins)
             if cs_current in mutation_loci[i]:
