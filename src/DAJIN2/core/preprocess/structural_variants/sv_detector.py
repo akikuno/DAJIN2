@@ -113,8 +113,8 @@ def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[
 # Data Loading
 def load_data(tempdir, sample_name, control_name):
     mutation_loci = io.load_pickle(Path(tempdir, sample_name, "mutation_loci", "control", "mutation_loci.pickle"))
-    path_midsv_sample = Path(tempdir, sample_name, "midsv", "control", f"{sample_name}.jsonl")
-    path_midsv_control = Path(tempdir, control_name, "midsv", "control", f"{control_name}.jsonl")
+    path_midsv_sample = Path(tempdir, sample_name, "midsv", "control", f"{sample_name}_midsv.jsonl")
+    path_midsv_control = Path(tempdir, control_name, "midsv", "control", f"{control_name}_midsv.jsonl")
     coverage_sample = io.count_newlines(path_midsv_sample)
     coverage_control = io.count_newlines(path_midsv_control)
 

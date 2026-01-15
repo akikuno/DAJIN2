@@ -18,7 +18,7 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 def convert_to_html(
     TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, allele: str, header: str, cons_midsv_tag: str
 ) -> str:
-    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}.jsonl")
+    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}_midsv.jsonl")
     is_sv_allele = False
     if path_midsv_sv.exists():
         is_sv_allele = True

@@ -94,7 +94,7 @@ def call_consensus(
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
 
-        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}.jsonl")
+        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}_midsv.jsonl")
         if path_sv_midsv_tag.exists():
             sv_midsv_tag = list(io.read_jsonl(path_sv_midsv_tag))
             cons_midsv_tag = annotate_sv_allele(cons_midsv_tag, sv_midsv_tag)

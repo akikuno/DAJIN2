@@ -15,7 +15,9 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
     labels_result = []
     max_label = 1
 
-    strand_sample = count_strand_distribution(Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}.jsonl"))
+    strand_sample = count_strand_distribution(
+        Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}_midsv.jsonl")
+    )
     classif_sample.sort(key=lambda x: x["ALLELE"])
     min_cluster_size = max(5, int(len(classif_sample) * 0.5 // 100))  # 0.5% of the samples
 
@@ -23,9 +25,9 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         # Cache data to temporary files
 
         # For insertion/inversion allele # TODO: insertion/inversion allele names may have changed
-        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}.jsonl")
+        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}_midsv.jsonl")
         if not path_control.exists():
-            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}.jsonl")
+            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}_midsv.jsonl")
 
         # Write the group to a temporary JSONL file
         unique_id = str(uuid.uuid4())

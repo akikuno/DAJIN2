@@ -96,7 +96,7 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
         if not is_control:
             prefix = ARGS.sample_name
         else:
-            path_insertion = Path(ARGS.tempdir, ARGS.control_name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
+            path_insertion = Path(ARGS.tempdir, ARGS.control_name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
             if path_insertion.exists():
                 prefix = ARGS.sample_name
             else:
@@ -105,7 +105,11 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
         if Path(path_mutation_loci, f"{prefix}_count.pickle").exists():
             continue
 
-        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele, f"{prefix}.jsonl")
+        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele, f"{prefix}_midsv.jsonl")
+        # skip if midsv file does not exist or is empty
+        if not path_midsv.exists() or path_midsv.stat().st_size == 0:
+            continue
+
         indels_count, indels_normalized = summarize_indels(path_midsv, sequence)
         io.save_pickle(indels_count, Path(path_mutation_loci, f"{prefix}_count.pickle"))
         io.save_pickle(indels_normalized, Path(path_mutation_loci, f"{prefix}_normalized.pickle"))
@@ -119,7 +123,11 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         return None
 
     for allele, sequence in ARGS.fasta_alleles.items():
-        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
+        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
+        # skip if midsv file does not exist or is empty
+        if not path_midsv_sample.exists() or path_midsv_sample.stat().st_size == 0:
+            continue
+
         path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele)
         path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci", allele)
 

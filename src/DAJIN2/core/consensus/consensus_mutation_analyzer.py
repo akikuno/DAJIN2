@@ -65,8 +65,8 @@ def extract_path_control(tempdir: Path, control_name: str, sample_name: str, all
     """Extract the appropriate control path."""
     # Define potential file paths
     paths = [
-        Path(tempdir, control_name, "midsv", allele, f"{control_name}.jsonl"),
-        Path(tempdir, control_name, "midsv", allele, f"{sample_name}.jsonl"),
+        Path(tempdir, control_name, "midsv", allele, f"{control_name}_midsv.jsonl"),
+        Path(tempdir, control_name, "midsv", allele, f"{sample_name}_midsv.jsonl"),
     ]
     # Return the first path that exists
     for path in paths:

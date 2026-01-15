@@ -37,7 +37,7 @@ def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:
 def detect_sequence_error_reads_in_control(ARGS) -> None:
     # Convert CSV strings to MIDSV tags
     midsv_control = io.read_jsonl(
-        Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl")
+        Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}_midsv.jsonl")
     )
     nm_tags, qnames = zip(*[(convert_nm_tag(m["MIDSV"].split(",")), m["QNAME"]) for m in midsv_control])
 
@@ -79,7 +79,7 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     path_qnames_without_error = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_without_error.txt")
     qnames_without_error = set(path_qnames_without_error.read_text().splitlines())
 
-    path_midsv_control = Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}.jsonl")
+    path_midsv_control = Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}_midsv.jsonl")
     nm_tags_without_error = load_midsv_to_nm_tags(path_midsv_control, lambda m: m["QNAME"] in qnames_without_error)
     nm_tags_with_error: list[str] = load_midsv_to_nm_tags(
         path_midsv_control,
@@ -93,7 +93,7 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     y = np.array([0] * len(n_features_without_error) + [1] * len(n_features_with_error))
     clf = LogisticRegression(random_state=0).fit(X, y)
 
-    path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}.jsonl")
+    path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}_midsv.jsonl")
     midsv_sample = io.read_jsonl(path_midsv_sample)
     nm_tags_sample = [convert_nm_tag(m["MIDSV"].split(",")) for m in midsv_sample]
 
@@ -168,7 +168,7 @@ def replace_midsv_without_sequence_errors(ARGS) -> None:
     path_qnames_without_error = Path(ARGS.tempdir, ARGS.sample_name, "sequence_error", "qnames_without_error.txt")
     qnames_without_error = set(path_qnames_without_error.read_text().splitlines())
 
-    for path_midsv in Path(ARGS.tempdir, ARGS.sample_name, "midsv").glob(f"*/{ARGS.sample_name}.jsonl"):
+    for path_midsv in Path(ARGS.tempdir, ARGS.sample_name, "midsv").glob(f"*/{ARGS.sample_name}_midsv.jsonl"):
         midsv_sample = io.read_jsonl(path_midsv)
         midsv_sample_filtered = [m for m in midsv_sample if m["QNAME"] in qnames_without_error]
         io.write_jsonl(midsv_sample_filtered, path_midsv)

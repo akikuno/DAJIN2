@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from DAJIN2.core.preprocess.alignment.midsv_caller import (
     convert_consecutive_indels_to_match,
     convert_flag_to_strand,
