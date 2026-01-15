@@ -57,7 +57,7 @@ jobs:
                   # flox-1nt-deletion_allele03_unassigned_insertion_6.673%.bam
                   # flox-1nt-deletion_allele04_unassigned_insertion_4.844%.bam
 
-                  if [ "$(find "$EXAMPLES_DIR/DAJIN_Results/cables2-flox-ki/BAM/flox-1nt-deletion/" -type f -name "*.bam" -printf "%f\n" | grep -c "allele")" -ne 4 ]; then
+                  if [ "$(find "$EXAMPLES_DIR/DAJIN_Results/cables2-flox-ki/BAM/flox-1nt-deletion/" -type f -name "*.bam" | grep -c "allele")" -ne 4 ]; then
                       exit 1
                   fi
 
