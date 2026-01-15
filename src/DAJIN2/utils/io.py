@@ -71,7 +71,7 @@ def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
     df.columns = df.columns.str.strip()  # ← Remove spaces from column names
     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)  # ← Remove spaces from string values
-    return df.dropna() # ← Remove NaN records
+    return df.dropna()  # ← Remove NaN records
 
 
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:

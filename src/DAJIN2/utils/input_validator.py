@@ -134,7 +134,7 @@ def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 
         try:
             with urlopen(url, context=context, timeout=timeout) as response:
                 return response.read().decode("utf-8", "ignore")
-        except (HTTPError, URLError, TimeoutError) as e:
+        except (HTTPError, URLError, TimeoutError):
             if attempt < retries:
                 time.sleep(1)
                 continue
