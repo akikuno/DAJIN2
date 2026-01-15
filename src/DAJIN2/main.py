@@ -182,6 +182,7 @@ def execute_batch_mode(arguments: dict[str]):
         config.reset_logging()
         path_logfile = config.get_logfile()
         logger = config.set_logging(path_logfile)
+        os.environ["DAJIN2_LOGFILE"] = str(path_logfile)
 
         logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
         logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
@@ -214,6 +215,7 @@ def execute_batch_mode(arguments: dict[str]):
         shutil.move(path_logfile, Path("DAJIN_Results", name))
         if not arguments["debug"]:
             shutil.rmtree(Path("DAJIN_Results", ".tempdir", name))
+        os.environ.pop("DAJIN2_LOGFILE", None)
 
 
 def execute():
