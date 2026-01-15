@@ -10,19 +10,6 @@ import midsv
 from DAJIN2.utils import cssplits_handler, io, sam_handler
 
 
-def has_inversion_in_splice(CIGAR: str) -> bool:
-    previous_insertion = False
-    for cigar in sam_handler.split_cigar(CIGAR):
-        if cigar.endswith("I"):
-            previous_insertion = True
-            continue
-        if previous_insertion and cigar.endswith("N"):
-            return True
-        else:
-            previous_insertion = False
-    return False
-
-
 def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[str, str]]:
     preset_cigar_by_qname = defaultdict(dict)
     # Extract preset and CIGAR
@@ -45,10 +32,6 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
     best_preset = defaultdict(str)
     for qname in preset_cigar_by_qname:
         preset_cigar = preset_cigar_by_qname[qname]
-        # If there is an inversion in the splice preset, remove it
-        if "splice" in preset_cigar and has_inversion_in_splice(preset_cigar["splice"]):
-            preset_cigar.pop("splice")
-
         if preset_cigar == {}:
             continue
 

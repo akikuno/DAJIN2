@@ -1,65 +1,12 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
-from DAJIN2.core.preprocess.alignment.mapping import to_sam
 from DAJIN2.core.preprocess.external_integration.midsv_caller import (
     convert_consecutive_indels_to_match,
     convert_flag_to_strand,
-    has_inversion_in_splice,
     replace_internal_n_to_d,
 )
-
-
-###########################################################
-# has_inversion_in_splice
-###########################################################
-def test_has_inversion_in_splice():
-    # Test cases where there is an inversion in splice (insertion followed by deletion)
-    assert has_inversion_in_splice("4M1I4N")
-    assert has_inversion_in_splice("10M1I5N")
-    assert has_inversion_in_splice("1I1N")
-
-    # Test cases where there is no inversion in splice
-    assert not has_inversion_in_splice("10M")
-    assert not has_inversion_in_splice("5N5M")
-    assert not has_inversion_in_splice("1I1M")
-
-
-def test_has_inversion_in_splice_random_inversion():
-    path_reference = Path("tests", "data", "preprocess", "midsv_caller", "reference.fa")
-    path_query = Path("tests", "data", "preprocess", "midsv_caller", "query_inversion.fq")
-    preset = "splice"
-    test = list(to_sam(str(path_reference), str(path_query), preset=preset))
-    test = [s.split("\t") for s in test]
-    test_cigar = [s[5] for s in test if not s[0].startswith("@")]
-    assert has_inversion_in_splice(test_cigar[0])
-
-
-def test_has_inversion_in_splice_random_deletion():
-    path_reference = Path("tests", "data", "preprocess", "midsv_caller", "reference.fa")
-    path_query = Path("tests", "data", "preprocess", "midsv_caller", "query_deletion.fq")
-    preset = "splice"
-    test = list(to_sam(str(path_reference), str(path_query), preset=preset))
-    test = [s.split("\t") for s in test]
-    test_cigar = [s[5] for s in test if not s[0].startswith("@")]
-    assert not has_inversion_in_splice(test_cigar[0])
-
-
-"""
-- insertionはmap-ontで１本のリードとして表現されるので、has_inversion_in_spliceは実行されない
-"""
-# def test_has_inversion_in_splice_random_insertion():
-#     path_reference = Path("tests", "data", "preprocess", "midsv_caller", "reference.fa")
-#     path_query = Path("tests", "data", "preprocess", "midsv_caller", "query_insertion.fq")
-#     preset = "splice"
-#     preset = "map-ont"
-#     test = list(to_sam(str(path_reference), str(path_query), preset=preset))
-#     test = [s.split("\t") for s in test]
-#     test_cigar = [s[5] for s in test if not s[0].startswith("@")]
-#     assert not has_inversion_in_splice(test_cigar[0])
 
 
 ###########################################################
@@ -70,7 +17,7 @@ def test_has_inversion_in_splice_random_deletion():
 def test_replace_internal_n_to_d():
     sequence = "XYZABCDEF"
 
-    # 既存のテストケース
+    # Existing test cases
     midsv_samples = [{"MIDSV": "N,N,A,B,N,N"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "N,N,A,B,N,N"}]
@@ -79,28 +26,28 @@ def test_replace_internal_n_to_d():
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,-Z,-A,C,D"}]
 
-    # 新しいテストケース
-    # 1. Nが連続していない場合の置換
+    # New test cases
+    # 1. Replace when Ns are not consecutive
     midsv_samples = [{"MIDSV": "A,N,B,N,C"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,-Y,B,-A,C"}]
 
-    # 2. Nが最初と最後に連続している場合
+    # 2. Keep Ns when they are at the start and end
     midsv_samples = [{"MIDSV": "N,N,N,A,B,C,N,N"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "N,N,N,A,B,C,N,N"}]
 
-    # 3. Nが複数回連続している場合の置換
+    # 3. Replace when Ns appear in multiple consecutive groups
     midsv_samples = [{"MIDSV": "A,B,N,N,C,N,N,D"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,-Z,-A,C,-C,-D,D"}]
 
-    # 4. Nが1つだけ存在する場合の置換
+    # 4. Replace when there is a single N
     midsv_samples = [{"MIDSV": "A,B,N,C,D"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,-Z,C,D"}]
 
-    # 5. Nが存在しない場合の確認
+    # 5. Keep when there are no Ns
     midsv_samples = [{"MIDSV": "A,B,C,D,E"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,C,D,E"}]
@@ -130,13 +77,13 @@ def test_replace_internal_n_to_d_large_n():
 @pytest.mark.parametrize(
     "input_sample, expected_output",
     [
-        # FLAGが16の場合
+        # FLAG is 16
         ([{"FLAG": 16}], [{"STRAND": "-"}]),
-        # FLAGが2064の場合
+        # FLAG is 2064
         ([{"FLAG": 2064}], [{"STRAND": "-"}]),
-        # FLAGが上記のいずれでもない場合
+        # FLAG is neither of the above
         ([{"FLAG": 32}], [{"STRAND": "+"}]),
-        # 複数のサンプルをテスト
+        # Test multiple samples
         ([{"FLAG": 16}, {"FLAG": 2064}, {"FLAG": 32}], [{"STRAND": "-"}, {"STRAND": "-"}, {"STRAND": "+"}]),
     ],
 )

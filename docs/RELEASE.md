@@ -12,7 +12,7 @@
 
 <!-- ############################################################# # -->
 
-# v0.7.5 (2026-MM-DD)
+# v0.8.0 (2026-MM-DD)
 
 ## 📝 Documentation
 
@@ -28,6 +28,8 @@ Add instructions for obtaining chromosome size (chrom size) to the README.
 + Remove unused functions across the repository.  
   Issue [#121](https://github.com/akikuno/DAJIN2/issues/121)
 
++ Remove code related to the `splice` preset.  
+  Issue [#126](https://github.com/akikuno/DAJIN2/issues/126)
 
 <!-- ############################################################# # -->
 

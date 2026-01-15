@@ -23,15 +23,6 @@ def test_to_sam_stx2():
     assert test == answer
 
 
-def test_to_sam_stx2_splice():
-    path_reference_fasta = Path("tests", "data", "preprocess", "mappy", "stx2_control.fa")
-    path_query_fastx = Path("tests", "data", "preprocess", "mappy", "stx2_splice.fq")
-    test = mapping.to_sam(str(path_reference_fasta), str(path_query_fastx), preset="splice")
-    test = list(test)
-    answer = eval(Path("tests", "data", "preprocess", "mappy", "answer_stx2_splice.txt").read_text())
-    assert test == answer
-
-
 def test_to_sam_threads():
     path_reference_fasta = Path("tests", "data", "preprocess", "mappy", "tyr_control.fa")
     path_query_fastx = Path("tests", "data", "preprocess", "mappy", "tyr_query.fq")
