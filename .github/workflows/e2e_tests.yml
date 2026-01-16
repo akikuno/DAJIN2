@@ -103,7 +103,7 @@ jobs:
                     # sample_allele04_deletion_indels_0.828%.bam
                     # --------------------------------------------------
 
-                    if [ "$(find "$EXAMPLES_DIR"/DAJIN_Results/stx2_deletion/BAM/sample/ -type f -name "*.bam" | grep -c "allele")" -ne 4 ]; then
+                    if [ "$(find DAJIN_Results/stx2_deletion/BAM/sample -type f -name "*.bam" | grep -c "allele")" -ne 4 ]; then
                         exit 1
                     fi
 
