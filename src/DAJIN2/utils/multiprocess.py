@@ -48,7 +48,9 @@ def setup_child_logging() -> None:
     path_logfile = os.environ.get("DAJIN2_LOGFILE")
     if not path_logfile:
         return
-    config.set_logging(Path(path_logfile))
+    level_name = os.environ.get("DAJIN2_LOGLEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    config.set_logging(Path(path_logfile), level=level)
 
 
 def handle_exception_and_enqueue(queue: Queue[str], arg: dict) -> None:

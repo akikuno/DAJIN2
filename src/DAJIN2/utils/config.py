@@ -37,7 +37,7 @@ def get_logfile() -> Path:
     return Path(f"DAJIN2_log_{current_time}.txt")
 
 
-def set_logging(path_logfile: Path) -> logging.Logger:
+def set_logging(path_logfile: Path, level: int = logging.INFO) -> logging.Logger:
     log_format = "%(asctime)s, %(levelname)s, %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
 
@@ -47,7 +47,7 @@ def set_logging(path_logfile: Path) -> logging.Logger:
     file_handler = DeferredFileHandler(path_logfile)
     file_handler.setFormatter(logging.Formatter(log_format, datefmt=date_format))
 
-    logging.basicConfig(level=logging.INFO, handlers=[stderr_handler, file_handler])
+    logging.basicConfig(level=level, handlers=[stderr_handler, file_handler])
 
     # Drop noisy kaleido Chromium launch message (see issue #117)
     def _suppress_chromium_init(record: logging.LogRecord) -> bool:
