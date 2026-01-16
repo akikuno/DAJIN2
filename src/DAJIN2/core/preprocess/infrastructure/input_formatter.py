@@ -9,7 +9,7 @@ from DAJIN2.core.preprocess.genome_coordinate.genome_coordinate_generator import
     get_genome_coordinates_from_bed,
     get_genome_coordinates_from_server,
 )
-from DAJIN2.utils import config, fastx_handler, io
+from DAJIN2.utils import config, fastx_handler, fileio
 
 
 def parse_arguments(arguments: dict, tempdir: Path) -> tuple:
@@ -34,7 +34,7 @@ def parse_arguments(arguments: dict, tempdir: Path) -> tuple:
         goldenpath_url = arguments["goldenpath"]
         control_seq = fastx_handler.dictionize_allele(arguments["allele"])["control"]
         if cache_file.exists():
-            genome_coordinates = next(io.read_jsonl(cache_file))
+            genome_coordinates = next(fileio.read_jsonl(cache_file))
             if genome_coordinates.get("genome") != genome:
                 genome_coordinates = fetch_and_cache_genome_coordinates(
                     genome, gggenome_url, goldenpath_url, control_seq
@@ -55,9 +55,9 @@ def parse_arguments(arguments: dict, tempdir: Path) -> tuple:
 
 
 def convert_input_paths_to_posix(sample: str, control: str, allele: str) -> tuple:
-    sample = io.convert_to_posix(sample)
-    control = io.convert_to_posix(control)
-    allele = io.convert_to_posix(allele)
+    sample = fileio.convert_to_posix(sample)
+    control = fileio.convert_to_posix(control)
+    allele = fileio.convert_to_posix(allele)
 
     return sample, control, allele
 
@@ -96,8 +96,8 @@ def format_inputs(arguments: dict) -> FormattedInputs:
         path_sample,
         path_control,
         path_allele,
-        io.sanitize_name(sample_name),
-        io.sanitize_name(control_name),
+        fileio.sanitize_name(sample_name),
+        fileio.sanitize_name(control_name),
         fasta_alleles,
         tempdir,
         genome_coordinates,

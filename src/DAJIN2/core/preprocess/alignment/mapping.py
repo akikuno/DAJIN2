@@ -8,7 +8,6 @@ import mappy
 
 from DAJIN2.utils import dna_handler
 
-
 def to_sam(
     path_reference_fasta: Path,
     path_query_fastx: Path,

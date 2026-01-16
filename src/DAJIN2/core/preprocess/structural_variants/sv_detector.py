@@ -13,7 +13,7 @@ from DAJIN2.core.preprocess.structural_variants.sv_handler import (
     save_fasta,
     save_midsv,
 )
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 from DAJIN2.utils.cssplits_handler import convert_cssplits_to_sequence
 
 ###############################################################################
@@ -112,11 +112,11 @@ def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[
 
 # Data Loading
 def load_data(tempdir, sample_name, control_name):
-    mutation_loci = io.load_pickle(Path(tempdir, sample_name, "mutation_loci", "control", "mutation_loci.pickle"))
+    mutation_loci = fileio.load_pickle(Path(tempdir, sample_name, "mutation_loci", "control", "mutation_loci.pickle"))
     path_midsv_sample = Path(tempdir, sample_name, "midsv", "control", f"{sample_name}_midsv.jsonl")
     path_midsv_control = Path(tempdir, control_name, "midsv", "control", f"{control_name}_midsv.jsonl")
-    coverage_sample = io.count_newlines(path_midsv_sample)
-    coverage_control = io.count_newlines(path_midsv_control)
+    coverage_sample = fileio.count_newlines(path_midsv_sample)
+    coverage_control = fileio.count_newlines(path_midsv_control)
 
     return mutation_loci, path_midsv_sample, path_midsv_control, coverage_sample, coverage_control
 
@@ -124,7 +124,7 @@ def load_data(tempdir, sample_name, control_name):
 def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int, int]:
     """Process SV indices and group them based on proximity."""
     index_of_sv = [
-        list(get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, None).keys()) for m in io.read_jsonl(path_midsv)
+        list(get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, None).keys()) for m in fileio.read_jsonl(path_midsv)
     ]
     index_of_sv = sorted(chain.from_iterable(index_of_sv))
     grouped_indices = group_similar_indices(index_of_sv, distance=5, min_coverage=max(5, coverage * 0.05))
@@ -135,7 +135,7 @@ def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int
 def extract_sv_features(midsv_path, sv_type, mutation_loci, index_converter) -> list[dict[int, int]]:
     """Extract SV start indices and sizes."""
     return [
-        get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, index_converter) for m in io.read_jsonl(midsv_path)
+        get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, index_converter) for m in fileio.read_jsonl(midsv_path)
     ]
 
 
@@ -225,7 +225,7 @@ def get_midsv_consensus_by_label(
 
             return dict(consensus_insertion_by_label)
 
-        midsv_iter = (m["MIDSV"].split(",") for m in io.read_jsonl(path_midsv_sample))
+        midsv_iter = (m["MIDSV"].split(",") for m in fileio.read_jsonl(path_midsv_sample))
         cssplits_by_label = defaultdict(list)
         for label, cssplits in zip(labels, midsv_iter):
             cssplits_by_label[label].append(cssplits)

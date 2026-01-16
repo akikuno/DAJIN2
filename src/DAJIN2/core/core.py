@@ -6,7 +6,7 @@ from pathlib import Path
 
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.infrastructure.input_formatter import FormattedInputs
-from DAJIN2.utils import fastx_handler, io
+from DAJIN2.utils import fastx_handler, fileio
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def execute_control(arguments: dict):
     ARGS: FormattedInputs = preprocess.format_inputs(arguments)
     preprocess.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
     preprocess.create_report_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
-    io.cache_file_hash(ARGS.path_allele, Path(ARGS.tempdir, "cache", "hash_allele.txt"))
+    fileio.cache_file_hash(ARGS.path_allele, Path(ARGS.tempdir, "cache", "hash_allele.txt"))
 
     ###########################################################
     # Check caches
@@ -204,7 +204,7 @@ def execute_sample(arguments: dict):
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
         preprocess.cache_mutation_loci(ARGS, is_control=False)
 
-    io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
+    fileio.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
 
     ########################################################################
     # Classify alleles
@@ -216,7 +216,7 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.no_filter
     )
 
-    io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
+    fileio.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
 
     ########################################################################
     # Clustering
@@ -230,7 +230,7 @@ def execute_sample(arguments: dict):
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
 
-    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clustering", "clust_sample.pickle"))
+    fileio.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clustering", "clust_sample.pickle"))
 
     ########################################################################
     # Consensus call
@@ -258,11 +258,11 @@ def execute_sample(arguments: dict):
     cons_sequences = consensus.update_key_by_allele_name(cons_sequences, map_label_name)
     cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, map_label_name)
 
-    io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
-    io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
-    io.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
-    io.save_pickle(map_label_name, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_label_name.pickle"))
-    io.save_pickle(map_name_allele, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_name_allele.pickle"))
+    fileio.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
+    fileio.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
+    fileio.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
+    fileio.save_pickle(map_label_name, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_label_name.pickle"))
+    fileio.save_pickle(map_name_allele, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_name_allele.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
@@ -276,7 +276,7 @@ def execute_sample(arguments: dict):
     )
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
-    io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
+    fileio.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
 
     # FASTA
     report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)

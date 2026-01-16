@@ -5,14 +5,14 @@ import pytest
 from src.DAJIN2.core.clustering.kmer_generator import generate_mutation_kmers
 
 
-# Mock for io.read_jsonl
+# Mock for fileio.read_jsonl
 def mock_read_jsonl(path):
     return [{"MIDSV": "=A,-g,+t|t|t|=A,*ac,=N"}, {"MIDSV": "=A,-g,=T,*gt,=N"}]
 
 
 @pytest.fixture
 def mock_io_read_jsonl(monkeypatch):
-    monkeypatch.setattr("DAJIN2.utils.io.read_jsonl", mock_read_jsonl)
+    monkeypatch.setattr("DAJIN2.utils.fileio.read_jsonl", mock_read_jsonl)
 
 
 # Test 1: Check if the function returns a generator

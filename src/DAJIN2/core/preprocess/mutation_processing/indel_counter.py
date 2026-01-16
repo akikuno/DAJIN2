@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from DAJIN2.utils import cssplits_handler, io
+from DAJIN2.utils import cssplits_handler, fileio
 
 
 def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[int]]:
@@ -57,6 +57,6 @@ def minimize_mutation_counts(
 
 def summarize_indels(path_midsv: Path, sequence: str) -> tuple:
     """Returns indels, coverages, normalized indels, and kmer indels."""
-    indels_count = count_indels(io.read_jsonl(path_midsv), sequence)
+    indels_count = count_indels(fileio.read_jsonl(path_midsv), sequence)
     indels_normalized = normalize_indels(indels_count)
     return indels_count, indels_normalized

@@ -29,7 +29,6 @@
 + Clarify the error message shown when GGGenome or the UCSC Genome Browser is inaccessible, and improve it to prompt users to use the offline mode with a BED file.   
   Issue [#124](https://github.com/akikuno/DAJIN2/issues/124)
 
-
 + Remove unused functions across the repository.  
   Issue [#121](https://github.com/akikuno/DAJIN2/issues/121)
 
@@ -39,6 +38,9 @@
 
 + Supporting the major changes introduced in MIDSV > v0.12.0  
   Issue [#76](https://github.com/akikuno/DAJIN2/issues/76)
+
++ Rename utils.io module to utils.fileio to avoid conflict with the built-in io module  
+  Issue [#127](https://github.com/akikuno/DAJIN2/issues/127)
 
 <!-- ############################################################# # -->
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import plotly.express as px
 
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
 
 
@@ -18,7 +18,7 @@ def format_result_info(path_result: Path) -> list[dict[str, str]]:
     key_order = ["Sample", "Read ID", "Label", "Allele", "Type", "Number of reads", "Percent of reads"]
 
     result_format = []
-    for reads in io.read_jsonl(path_result):
+    for reads in fileio.read_jsonl(path_result):
         # Filter keys
         reads = {k: reads[k] for k in key_filter}
         # Add Label, Allele, Type from NAME
@@ -426,7 +426,7 @@ def report(NAME: str) -> None:
     results_summary = summarize_info(results_all)
 
     # Write to Excel
-    io.write_xlsx(results_summary, Path(report_directory, "read_summary.xlsx"))
+    fileio.write_xlsx(results_summary, Path(report_directory, "read_summary.xlsx"))
 
     # Write to plot as HTML and PDF
     output_plot(results_summary, report_directory)

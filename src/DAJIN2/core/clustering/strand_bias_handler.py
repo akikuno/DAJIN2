@@ -6,7 +6,7 @@ from pathlib import Path
 from scipy.stats import fisher_exact
 from sklearn.tree import DecisionTreeClassifier
 
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 """
 Nanopore sequencing results often results in strand specific mutations even though the mutation is not strand specific, thus they are considered as sequencing errors and should be removed.
@@ -22,7 +22,7 @@ def count_strand_distribution(path_midsv: Path) -> dict[str, int]:
     Counts the distribution of '+' and '-' strands in the given control file.
     """
     strand_count = defaultdict(int)
-    for sample in io.read_jsonl(path_midsv):
+    for sample in fileio.read_jsonl(path_midsv):
         strand_count[sample["STRAND"]] += 1
 
     # Ensure '+' and '-' are present for all labels
@@ -73,7 +73,7 @@ def determine_strand_biases(
 
 def annotate_strand_bias_by_labels(path_sample: Path, labels: list[int], strand_sample: dict[str, int]) -> bool:
     """Determine whether there is strand bias in the samples based on the provided labels."""
-    samples = io.read_jsonl(path_sample)
+    samples = fileio.read_jsonl(path_sample)
     strand_counts_by_labels = count_strand_by_label(samples, labels)
     return determine_strand_biases(strand_counts_by_labels, strand_sample)
 
@@ -119,7 +119,7 @@ def remove_biased_clusters(
     labels_corrected = labels
     while len(set(strand_biases.values())) > 1 and iteration_count < 1000:
         # Re-allocation of labels of biased clusters to unbiased clusters
-        scores = io.read_jsonl(path_score_sample)
+        scores = fileio.read_jsonl(path_score_sample)
         train_data, train_labels, test_data = prepare_training_testing_sets(labels, scores, strand_biases)
         dtree = train_decision_tree(train_data, train_labels)
         labels_corrected = allocate_labels(labels, strand_biases, dtree, test_data)

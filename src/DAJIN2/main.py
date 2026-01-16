@@ -19,7 +19,7 @@ from pathlib import Path
 
 from DAJIN2 import gui, view
 from DAJIN2.core import core
-from DAJIN2.utils import config, input_validator, io, multiprocess, report_generator
+from DAJIN2.utils import config, input_validator, fileio, multiprocess, report_generator
 
 try:
     DAJIN_VERSION = importlib.metadata.version("DAJIN2")
@@ -149,12 +149,12 @@ def run_DAJIN2(
 
 
 def execute_batch_mode(arguments: dict[str]):
-    path_batchfile = io.convert_to_posix(arguments["file"])
+    path_batchfile = fileio.convert_to_posix(arguments["file"])
 
     if not Path(path_batchfile).exists():
         raise FileNotFoundError(f"'{path_batchfile}' does not exist.")
 
-    records = io.load_batchfile(path_batchfile)
+    records = fileio.load_batchfile(path_batchfile)
 
     # Validate Column of the batch file
     headers = set(records[0].keys())

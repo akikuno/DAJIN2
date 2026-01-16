@@ -4,7 +4,7 @@ from itertools import groupby
 from pathlib import Path
 
 from DAJIN2.core.classification.allele_merger import merge_minor_alleles
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 
 def calc_match(midsv_tags: str) -> int:
@@ -24,7 +24,7 @@ def calc_match(midsv_tags: str) -> int:
 
 
 def score_allele(path_midsv: Path, allele: str) -> list[dict]:
-    midsv_sample = io.read_jsonl(path_midsv)
+    midsv_sample = fileio.read_jsonl(path_midsv)
     scored_alleles = []
     for dict_midsv in midsv_sample:
         score = calc_match(dict_midsv["MIDSV"])

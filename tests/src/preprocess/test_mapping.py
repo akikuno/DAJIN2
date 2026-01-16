@@ -31,28 +31,3 @@ def test_to_sam_threads():
     answer = Path("tests", "data", "preprocess", "mappy", "tyr_query.sam").read_text().strip().split("\n")
     assert test == answer
 
-
-########################################################################
-# Create faidx
-########################################################################
-
-
-def test_make_faidx():
-    path_fasta = "tests/data/preprocess/mappy/fasta.fa"
-    test = mapping.make_faidx(path_fasta)
-    answer = Path("tests/data/preprocess/mappy/fasta.fa.fai").read_text()
-    assert test == answer
-
-
-def test_make_faidx_wrap():
-    path_fasta = "tests/data/preprocess/mappy/fasta_wrap.fa"
-    test = mapping.make_faidx(path_fasta)
-    answer = Path("tests/data/preprocess/mappy/fasta_wrap.fa.fai").read_text()
-    assert test == answer
-
-
-def test_make_faidx_real():
-    path_fasta = "tests/data/preprocess/mappy/tyr_control.fa"
-    test = mapping.make_faidx(path_fasta)
-    answer = Path("tests/data/preprocess/mappy/tyr_control.fa.fai").read_text()
-    assert test == answer

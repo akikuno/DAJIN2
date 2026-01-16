@@ -7,7 +7,7 @@ from pathlib import Path
 
 import midsv
 
-from DAJIN2.utils import cssplits_handler, io, sam_handler
+from DAJIN2.utils import cssplits_handler, fileio, sam_handler
 
 
 def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[str, str]]:
@@ -15,7 +15,7 @@ def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[s
     # Extract preset and CIGAR
     for path in path_sam_files:
         preset = path.stem
-        sam: list[list[str]] = io.read_sam(path)
+        sam: list[list[str]] = fileio.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
                 continue
@@ -59,7 +59,7 @@ def extract_best_alignment_length_from_sam(path_sam_files: list[Path], best_pres
     flag_header = False
     for path in path_sam_files:
         preset = path.stem
-        sam = io.read_sam(path)
+        sam = fileio.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
                 if not flag_header:
@@ -247,4 +247,4 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
         midsv_sample = append_best_preset(midsv_sample, best_preset)
-        io.write_jsonl(midsv_sample, path_midsv_output)
+        fileio.write_jsonl(midsv_sample, path_midsv_output)

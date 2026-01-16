@@ -11,7 +11,7 @@ from sklearn.metrics import silhouette_score
 
 from DAJIN2.core.clustering.score_handler import subset_scores
 from DAJIN2.core.clustering.strand_bias_handler import remove_biased_clusters
-from DAJIN2.utils import config, io
+from DAJIN2.utils import config, fileio
 
 config.set_warnings_ignore()
 
@@ -60,21 +60,21 @@ def return_labels(
 ) -> list[int]:
     np.random.seed(seed=1)
 
-    score_control = list(io.read_jsonl(path_score_control))
+    score_control = list(fileio.read_jsonl(path_score_control))
     X_control = csr_matrix(score_control)
 
     # Subset to 1000 reads of controls in the most common cluster to remove outliers and reduce computation time
     # TODO: This KMeans for X_control may become unnecessary because we removed sequence error reads in the previous step
     labels_control = BisectingKMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
-    scores_control_subset = subset_scores(labels_control, io.read_jsonl(path_score_control), label_most_common, 1000)
+    scores_control_subset = subset_scores(labels_control, fileio.read_jsonl(path_score_control), label_most_common, 1000)
 
-    scores_sample = list(io.read_jsonl(path_score_sample))
+    scores_sample = list(fileio.read_jsonl(path_score_sample))
     X = np.array(list(chain(scores_sample, scores_control_subset)))
 
     X = csr_matrix(X)
 
-    coverage_sample = io.count_newlines(path_score_sample)
+    coverage_sample = fileio.count_newlines(path_score_sample)
     coverage_control = len(scores_control_subset)
     labels = optimize_labels(X, coverage_sample, coverage_control)
 

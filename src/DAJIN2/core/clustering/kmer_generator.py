@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from pathlib import Path
 
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 
 def compress_insertion(cssplit: list[str], index: int, compress_ins: bool) -> str:
@@ -35,7 +35,7 @@ def annotate_cs_tag(cssplit: str, mutation: set[str]) -> str:
 def generate_mutation_kmers(
     path_sample: Path | str, mutation_loci: list[set[str]], compress_ins: bool = True
 ) -> Iterator[list[str]]:
-    midsv_sample = io.read_jsonl(path_sample)
+    midsv_sample = fileio.read_jsonl(path_sample)
     for cssplit in (cs["MIDSV"].split(",") for cs in midsv_sample):
         mutation_kmers = ["@,@,@"]
         for i in range(1, len(cssplit) - 1):

@@ -8,7 +8,7 @@ from pathlib import Path
 import pysam
 
 from DAJIN2.core.preprocess.alignment.mapping import to_sam
-from DAJIN2.utils import io, sam_handler
+from DAJIN2.utils import fileio, sam_handler
 
 
 def recalculate_sam_coordinates_to_reference(sam: list[list[str]], genome_coordinates: dict) -> list[str]:
@@ -148,7 +148,7 @@ def export_sequence_error_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS) -> 
 def export_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
     path_sam_input = Path(TEMPDIR, NAME, "sam", "control", "map-ont.sam")
 
-    sam_records = list(io.read_sam(path_sam_input))
+    sam_records = list(fileio.read_sam(path_sam_input))
     sam_updated = update_genome_coordinates(sam_records, genome_coordinates)
 
     # Output SAM and BAM

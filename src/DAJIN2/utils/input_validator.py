@@ -11,7 +11,7 @@ import mappy
 import pysam
 
 from DAJIN2.utils.bed_handler import BEDError
-from DAJIN2.utils.io import read_fasta
+from DAJIN2.utils.fileio import read_fasta
 
 ########################################################################
 # To accommodate cases where a user might input negative values or

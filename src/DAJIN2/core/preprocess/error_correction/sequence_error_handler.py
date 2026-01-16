@@ -10,7 +10,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
-from DAJIN2.utils import cssplits_handler, io
+from DAJIN2.utils import cssplits_handler, fileio
 from DAJIN2.utils.fastx_handler import read_fastq
 
 ###############################################################################
@@ -36,7 +36,7 @@ def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:
 
 def detect_sequence_error_reads_in_control(ARGS) -> None:
     # Convert CSV strings to MIDSV tags
-    midsv_control = io.read_jsonl(
+    midsv_control = fileio.read_jsonl(
         Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}_midsv.jsonl")
     )
     nm_tags, qnames = zip(*[(convert_nm_tag(m["MIDSV"].split(",")), m["QNAME"]) for m in midsv_control])
@@ -70,7 +70,7 @@ def detect_sequence_error_reads_in_control(ARGS) -> None:
 
 def load_midsv_to_nm_tags(file_path: Path, filter_condition: Callable) -> list[str]:
     """Load MIDSV file and convert to NM tags"""
-    midsv = io.read_jsonl(file_path)
+    midsv = fileio.read_jsonl(file_path)
     filtered_midsv = (m for m in midsv if filter_condition(m))
     return [convert_nm_tag(m["MIDSV"].split(",")) for m in filtered_midsv]
 
@@ -94,13 +94,13 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     clf = LogisticRegression(random_state=0).fit(X, y)
 
     path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}_midsv.jsonl")
-    midsv_sample = io.read_jsonl(path_midsv_sample)
+    midsv_sample = fileio.read_jsonl(path_midsv_sample)
     nm_tags_sample = [convert_nm_tag(m["MIDSV"].split(",")) for m in midsv_sample]
 
     n_features_sample = extract_n_features(nm_tags_sample)
     labels = clf.predict(n_features_sample)
 
-    midsv_sample = io.read_jsonl(path_midsv_sample)
+    midsv_sample = fileio.read_jsonl(path_midsv_sample)
     qnames_without_error = [m["QNAME"] for m, label in zip(midsv_sample, labels) if label == 0]
 
     # Output QNAMEs of sequences with sequence errors and the fraction of sequence errors
@@ -169,9 +169,9 @@ def replace_midsv_without_sequence_errors(ARGS) -> None:
     qnames_without_error = set(path_qnames_without_error.read_text().splitlines())
 
     for path_midsv in Path(ARGS.tempdir, ARGS.sample_name, "midsv").glob(f"*/{ARGS.sample_name}_midsv.jsonl"):
-        midsv_sample = io.read_jsonl(path_midsv)
+        midsv_sample = fileio.read_jsonl(path_midsv)
         midsv_sample_filtered = [m for m in midsv_sample if m["QNAME"] in qnames_without_error]
-        io.write_jsonl(midsv_sample_filtered, path_midsv)
+        fileio.write_jsonl(midsv_sample_filtered, path_midsv)
 
 
 ###############################################################################

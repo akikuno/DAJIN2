@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 
 from DAJIN2.core.report.html_builder import to_html
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:
@@ -22,7 +22,7 @@ def convert_to_html(
     is_sv_allele = False
     if path_midsv_sv.exists():
         is_sv_allele = True
-        midsv_sv_allele = list(io.read_jsonl(path_midsv_sv))
+        midsv_sv_allele = list(fileio.read_jsonl(path_midsv_sv))
     else:
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 

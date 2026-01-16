@@ -5,7 +5,7 @@ from pathlib import Path
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 
 def extract_unique_sv(
@@ -91,4 +91,4 @@ def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_sv_alleles: dict[str
 def save_midsv(TEMPDIR: Path | str, SAMPLE_NAME: str, midsv_sv_alleles: dict[str, list[str]]) -> None:
     Path(TEMPDIR, SAMPLE_NAME, "midsv").mkdir(parents=True, exist_ok=True)
     for header, midsv_tag in midsv_sv_alleles.items():
-        io.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{header}_midsv.jsonl"))
+        fileio.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{header}_midsv.jsonl"))

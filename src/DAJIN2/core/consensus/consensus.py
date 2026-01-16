@@ -6,7 +6,7 @@ from pathlib import Path
 
 from DAJIN2.core.consensus.consensus_formatter import merge_duplicated_cons_others, merge_duplicated_cons_sequences
 from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 from DAJIN2.utils.config import ConsensusKey
 from DAJIN2.utils.cssplits_handler import call_sequence
 
@@ -87,7 +87,7 @@ def call_consensus(
         sequence = fasta_alleles[allele]
 
         path_consensus = Path(tempdir, sample_name, "consensus", allele, str(label))
-        cons_mutation_loci = io.load_pickle(Path(path_consensus, "mutation_loci.pickle"))
+        cons_mutation_loci = fileio.load_pickle(Path(path_consensus, "mutation_loci.pickle"))
 
         cssplits = [cs["MIDSV"].split(",") for cs in clust]
         cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
@@ -96,7 +96,7 @@ def call_consensus(
 
         path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}_midsv.jsonl")
         if path_sv_midsv_tag.exists():
-            sv_midsv_tag = list(io.read_jsonl(path_sv_midsv_tag))
+            sv_midsv_tag = list(fileio.read_jsonl(path_sv_midsv_tag))
             cons_midsv_tag = annotate_sv_allele(cons_midsv_tag, sv_midsv_tag)
             if allele.startswith("deletion"):
                 cons_midsv_tag = annotate_insertions_within_deletion(cons_midsv_tag, sv_midsv_tag)

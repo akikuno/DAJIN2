@@ -27,7 +27,7 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     merge_index_of_consecutive_indel,
     transpose_mutation_loci,
 )
-from DAJIN2.utils import config, cssplits_handler, io
+from DAJIN2.utils import config, cssplits_handler, fileio
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:
@@ -47,8 +47,8 @@ def get_thresholds(path_indels_normalized_sample, path_indels_normalized_control
     """
     For the consensus threshold, the minimum threshold for "sample - control" was set to be at least 10%.
     """
-    indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
-    indels_normalized_control = io.load_pickle(path_indels_normalized_control)
+    indels_normalized_sample = fileio.load_pickle(path_indels_normalized_sample)
+    indels_normalized_control = fileio.load_pickle(path_indels_normalized_control)
     indels_normalized_minimize_control = minimize_mutation_counts(indels_normalized_control, indels_normalized_sample)
     thresholds = {}
     for mut in {"+", "-", "*"}:
@@ -86,7 +86,7 @@ def extract_path_n_filtered_control(
 
     path_output.parent.mkdir(parents=True, exist_ok=True)
 
-    midsv_control = io.read_jsonl(path_control)
+    midsv_control = fileio.read_jsonl(path_control)
     n_counts = np.array(
         [sum(1 if cssplits_handler.is_n_tag(cs) else 0 for cs in c["MIDSV"].split(",")) for c in midsv_control]
     )
@@ -94,8 +94,8 @@ def extract_path_n_filtered_control(
     kmeans = MiniBatchKMeans(n_clusters=2, random_state=0).fit(n_counts.reshape(-1, 1))
     threshold = kmeans.cluster_centers_.mean()
     labels = np.where(n_counts <= threshold, True, False)
-    midsv_filtered_control = (m for m, label in zip(io.read_jsonl(path_control), labels) if label)
-    io.write_jsonl(midsv_filtered_control, path_output)
+    midsv_filtered_control = (m for m, label in zip(fileio.read_jsonl(path_control), labels) if label)
+    fileio.write_jsonl(midsv_filtered_control, path_output)
 
     return path_output
 
@@ -116,8 +116,8 @@ def cache_normalized_indels(ARGS, path_consensus_sample: Path, allele: str, no_f
     _, indels_normalized_sample = summarize_indels(path_consensus_sample, sequence)
     _, indels_normalized_control = summarize_indels(path_midsv_similar_control, sequence)
 
-    io.save_pickle(indels_normalized_sample, Path(path_consensus_sample.parent, "normalized_sample.pickle"))
-    io.save_pickle(indels_normalized_control, Path(path_consensus_sample.parent, "normalized_control.pickle"))
+    fileio.save_pickle(indels_normalized_sample, Path(path_consensus_sample.parent, "normalized_sample.pickle"))
+    fileio.save_pickle(indels_normalized_control, Path(path_consensus_sample.parent, "normalized_control.pickle"))
 
 
 def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False) -> None:
@@ -129,7 +129,7 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False)
         path_consensus.mkdir(parents=True, exist_ok=True)
 
         path_consensus_sample = Path(path_consensus, f"{ARGS.sample_name}_sample.jsonl")
-        io.write_jsonl(group, path_consensus_sample)
+        fileio.write_jsonl(group, path_consensus_sample)
 
         cache_normalized_indels(ARGS, path_consensus_sample, allele, no_filter)
 
@@ -142,11 +142,11 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False)
         thresholds = get_thresholds(path_indels_normalized_sample, path_indels_normalized_control)
 
         # Extract mutation loci for consensus
-        indels_normalized_sample = io.load_pickle(path_indels_normalized_sample)
+        indels_normalized_sample = fileio.load_pickle(path_indels_normalized_sample)
 
         # Extract candidate mutation loci
         indels_normalized_control = minimize_mutation_counts(
-            io.load_pickle(path_indels_normalized_control), indels_normalized_sample
+            fileio.load_pickle(path_indels_normalized_control), indels_normalized_sample
         )
         anomal_loci: dict[str, set[int]] = extract_anomal_loci(
             indels_normalized_sample, indels_normalized_control, thresholds, is_consensus=True
@@ -154,7 +154,7 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False)
 
         # Merge all mutations and knockin loci
         if path_knockin.exists():
-            knockin_loci = io.load_pickle(path_knockin)
+            knockin_loci = fileio.load_pickle(path_knockin)
             anomal_loci = add_knockin_loci(anomal_loci, knockin_loci)
 
         # Extract error loci in homopolymer regions
@@ -171,4 +171,4 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False)
         anomal_loci_merged = merge_index_of_consecutive_indel(anomal_loci)
         mutation_loci = transpose_mutation_loci(anomal_loci_merged, sequence)
 
-        io.save_pickle(mutation_loci, Path(path_consensus, "mutation_loci.pickle"))
+        fileio.save_pickle(mutation_loci, Path(path_consensus, "mutation_loci.pickle"))
