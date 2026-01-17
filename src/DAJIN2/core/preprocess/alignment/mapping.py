@@ -131,14 +131,3 @@ def generate_sam(
 
             path_sam_file.write_text("\n".join(sam))
 
-
-########################################################################
-# Create faidx
-########################################################################
-
-
-def make_faidx(path_fasta: str | Path) -> str:
-    fasta = Path(path_fasta).read_text().split()
-    name, length, offset = fasta[0].strip(">"), len("".join(fasta[1:])), len(fasta[0]) + 1
-    linebase, linewidth = len(fasta[1]), len(fasta[1]) + 1
-    return "\t".join(map(str, [name, length, offset, linebase, linewidth])) + "\n"
