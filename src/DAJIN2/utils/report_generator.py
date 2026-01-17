@@ -68,6 +68,47 @@ def add_allele_type(results_summary: list[dict[str, str]]) -> list[dict[str, str
     return results_summary
 
 
+def build_html_lookup(report_directory: Path) -> dict[tuple[str, str, str, str], str]:
+    html_root = Path(report_directory, "HTML")
+    if not html_root.exists():
+        return {}
+
+    lookup: dict[tuple[str, str, str, str], str] = {}
+    for sample_dir in sorted(html_root.iterdir()):
+        if not sample_dir.is_dir():
+            continue
+        sample_name = sample_dir.name
+        sample_prefix = f"{sample_name}_"
+        for html_file in sorted(sample_dir.glob("*.html")):
+            stem = html_file.stem
+            if not stem.lower().startswith(sample_prefix.lower()):
+                continue
+            header = stem[len(sample_prefix) :]
+            parts = header.split("_")
+            if len(parts) < 3:
+                continue
+            label = parts[0]
+            allele = parts[1]
+            type_ = parts[2]
+            key = (sample_name.lower(), label.lower(), allele.lower(), type_.lower())
+            lookup.setdefault(key, html_file.relative_to(report_directory).as_posix())
+
+    return lookup
+
+
+def attach_html_paths(results_summary: list[dict[str, str]], report_directory: Path) -> list[dict[str, str]]:
+    html_lookup = build_html_lookup(report_directory)
+    for row in results_summary:
+        key = (
+            str(row.get("Sample", "")).lower(),
+            str(row.get("Label", "")).lower(),
+            str(row.get("Allele", "")).lower(),
+            str(row.get("Type", "")).lower(),
+        )
+        row["HTML path"] = html_lookup.get(key, "")
+    return results_summary
+
+
 def order_allele_type(results_summary: list[dict[str, str]]) -> list[str]:
     alleles = {a["Allele"] for a in results_summary}
     alleles_insertion = {a for a in alleles if a.startswith("Insertion")}
@@ -82,8 +123,29 @@ def order_allele_type(results_summary: list[dict[str, str]]) -> list[str]:
     return [at for at in allele_type_order if at in allele_type]
 
 
+def build_style_block(base_css: str, extra_css: str = "") -> str:
+    return f"<style>\n{base_css}\n{extra_css}\n</style>"
+
+
+def inject_plot_assets(
+    html_path: Path,
+    style_block: str,
+    body_blocks: list[str],
+    script_blocks: list[str],
+) -> None:
+    html_content = html_path.read_text(encoding="utf-8")
+    if "</head>" in html_content:
+        html_content = html_content.replace("</head>", f"{style_block}\n</head>", 1)
+    if "<body>" in html_content:
+        html_content = html_content.replace("<body>", "<body>\n", 1)
+    body_injection = "\n".join(body_blocks + script_blocks)
+    html_content = html_content.replace("</body>", f"{body_injection}\n</body>", 1)
+    html_path.write_text(html_content, encoding="utf-8")
+
+
 def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     results_plot = add_allele_type(results_summary)
+    results_plot = attach_html_paths(results_plot, report_directory)
     alleletype_order = order_allele_type(results_summary)
 
     fig = px.bar(
@@ -94,6 +156,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         text="Percent of reads",
         labels={"Sample": "Samples", "Percent of reads": "Percent of reads", "Allele type": "Alelle type"},
         category_orders={"Allele type": alleletype_order},
+        custom_data=["HTML path", "Label", "Allele", "Type", "Percent of reads"],
     )
     fig.update_traces(textposition="inside", cliponaxis=False)
     fig.update_xaxes(categoryorder="category ascending")
@@ -116,7 +179,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     ]
     export_buttons_json = json.dumps(export_buttons)
 
-    style_block = """<style>
+    base_css = """
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -241,7 +304,8 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
                 justify-content: flex-start;
             }
         }
-    </style>"""
+    """
+    style_block = build_style_block(base_css)
 
     controls_block = f"""
     <div class="controls">
@@ -397,14 +461,192 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     </script>
 """
 
-    html_content = html_path.read_text(encoding="utf-8")
-    if "</head>" in html_content:
-        html_content = html_content.replace("</head>", f"{style_block}\n</head>", 1)
-    if "<body>" in html_content:
-        html_content = html_content.replace("<body>", "<body>\n", 1)
-    html_content = html_content.replace("</body>", f"{controls_block}\n{script_block}\n</body>", 1)
+    inject_plot_assets(
+        html_path,
+        style_block,
+        [controls_block],
+        [script_block],
+    )
 
-    html_path.write_text(html_content, encoding="utf-8")
+    report_html_path = Path(report_directory, "report.html")
+    fig.write_html(report_html_path, include_plotlyjs="cdn", full_html=True, div_id=div_id)
+
+    report_hint_block = """
+    <div class="report-hint">
+        Click an allele segment to open the detailed report.
+    </div>
+    """
+
+    modal_block = """
+    <div class="modal" id="allele-modal" aria-hidden="true">
+        <div class="modal__backdrop" data-modal-close></div>
+        <div class="modal__content" role="dialog" aria-modal="true" aria-labelledby="allele-modal-title">
+            <div class="modal__header">
+                <div class="modal__title" id="allele-modal-title">Allele report</div>
+                <button class="modal__close" id="allele-modal-close" type="button">Close</button>
+            </div>
+            <iframe class="modal__frame" id="allele-modal-frame" title="Allele report"></iframe>
+            <div class="modal__footer">
+                <a class="modal__link" id="allele-modal-link" target="_blank" rel="noopener">Open in new tab</a>
+            </div>
+        </div>
+    </div>
+    """
+
+    modal_css = """
+        .report-hint {
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            color: #2d3748;
+        }
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            z-index: 1000;
+        }
+        .modal.is-open {
+            display: flex;
+        }
+        .modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+        }
+        .modal__content {
+            position: relative;
+            background: #ffffff;
+            border-radius: 0.75rem;
+            width: min(1100px, 94vw);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            z-index: 1;
+        }
+        .modal__header,
+        .modal__footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.9rem 1.2rem;
+            background: #f7fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modal__footer {
+            border-top: 1px solid #e2e8f0;
+            border-bottom: none;
+        }
+        .modal__title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .modal__close {
+            border: none;
+            background: #e2e8f0;
+            color: #1a202c;
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+        }
+        .modal__frame {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            background: #ffffff;
+        }
+        .modal__link {
+            text-decoration: none;
+            color: #3182ce;
+            font-weight: 600;
+        }
+    """
+
+    report_style_block = build_style_block(base_css, modal_css)
+
+    report_script_block = """
+    <script>
+    (function() {
+        const figure = document.getElementById("read_plot_fig");
+        const modal = document.getElementById("allele-modal");
+        const modalTitle = document.getElementById("allele-modal-title");
+        const modalFrame = document.getElementById("allele-modal-frame");
+        const modalLink = document.getElementById("allele-modal-link");
+        const modalClose = document.getElementById("allele-modal-close");
+        const modalBackdrop = modal ? modal.querySelector("[data-modal-close]") : null;
+
+        if (!figure || !modal) {
+            return;
+        }
+
+        const formatPercent = (value) => {
+            if (value === null || value === undefined || value === "") {
+                return "";
+            }
+            const text = String(value);
+            return text.includes("%") ? text : `${text}%`;
+        };
+
+        const buildTitle = (point) => {
+            const custom = Array.isArray(point.customdata) ? point.customdata : [];
+            const label = custom[1];
+            const allele = custom[2];
+            const type = custom[3];
+            const percent = formatPercent(custom[4]);
+            const parts = [point.x, label, allele, type, percent].filter(Boolean);
+            return parts.join(" ");
+        };
+
+        const openModal = (path, title) => {
+            modal.classList.add("is-open");
+            modal.setAttribute("aria-hidden", "false");
+            modalFrame.src = path;
+            modalTitle.textContent = title || "Allele report";
+            modalLink.href = path;
+        };
+
+        const closeModal = () => {
+            modal.classList.remove("is-open");
+            modal.setAttribute("aria-hidden", "true");
+            modalFrame.src = "";
+            modalTitle.textContent = "Allele report";
+            modalLink.removeAttribute("href");
+        };
+
+        modalClose.addEventListener("click", closeModal);
+        if (modalBackdrop) {
+            modalBackdrop.addEventListener("click", closeModal);
+        }
+
+        figure.on("plotly_click", (event) => {
+            if (!event || !event.points || !event.points.length) {
+                return;
+            }
+            const point = event.points[0];
+            const custom = Array.isArray(point.customdata) ? point.customdata : [];
+            const detailPath = custom[0];
+            if (!detailPath) {
+                alert("No detailed report found for this allele.");
+                return;
+            }
+            openModal(detailPath, buildTitle(point));
+        });
+    })();
+    </script>
+    """
+
+    inject_plot_assets(
+        report_html_path,
+        report_style_block,
+        [report_hint_block, controls_block, modal_block],
+        [script_block, report_script_block],
+    )
     # if kaleido is installed, output a pdf
     try:
         fig.write_image(f"{output_filename}.pdf")
