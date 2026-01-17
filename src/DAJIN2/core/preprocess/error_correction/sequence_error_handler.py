@@ -10,7 +10,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
-from DAJIN2.utils import cssplits_handler, fileio
+from DAJIN2.utils import fileio, midsv_handler
 from DAJIN2.utils.fastx_handler import read_fastq
 
 ###############################################################################
@@ -20,7 +20,7 @@ from DAJIN2.utils.fastx_handler import read_fastq
 
 def convert_nm_tag(csv_tags: list[list[str]]) -> str:
     """Create a tag with N for bases that reads are truncated and M for bases that are mapped"""
-    return "".join(["N" if cssplits_handler.is_n_tag(tag) else "M" for tag in csv_tags])
+    return "".join(["N" if midsv_handler.is_n_tag(tag) else "M" for tag in csv_tags])
 
 
 def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:

@@ -3,69 +3,69 @@ from __future__ import annotations
 from src.DAJIN2.core import report
 
 ###########################################################
-# revcomp_cssplits
+# revcomp_midsvs
 ###########################################################
 
 
-def test_revcomp_cssplits_substitution():
-    cssplits = ["=A", "*AG", "=C", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_substitution():
+    midsv_tags = ["=A", "*AG", "=C", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=G", "*TC", "=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_substitution_with_N():
-    cssplits = ["=A", "*AN", "=N", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_substitution_with_N():
+    midsv_tags = ["=A", "*AN", "=N", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=N", "*TN", "=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_insertion():
-    cssplits = ["=A", "+A|+A|+T|+G|=A", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_insertion():
+    midsv_tags = ["=A", "+A|+A|+T|+G|=A", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=T", "+C|+A|+T|+T|=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_insertion_long():
-    cssplits = ["=A", "=A", "+A|+A|+T|+G|=A", "=G", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_insertion_long():
+    midsv_tags = ["=A", "=A", "+A|+A|+T|+G|=A", "=G", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=C", "=T", "+C|+A|+T|+T|=T", "=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_insertion_with_substitution():
-    cssplits = ["=A", "+A|+A|+T|+G|*AG", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_insertion_with_substitution():
+    midsv_tags = ["=A", "+A|+A|+T|+G|*AG", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "*TC", "+C|+A|+T|+T|=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_insertion_with_N():
-    cssplits = ["=N", "+A|+A|+T|+G|=N", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_insertion_with_N():
+    midsv_tags = ["=N", "+A|+A|+T|+G|=N", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=N", "+C|+A|+T|+T|=N"]
     assert test == answer
 
 
-def test_revcomp_cssplits_deletion():
-    cssplits = ["=A", "-C", "-A", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_deletion():
+    midsv_tags = ["=A", "-C", "-A", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "-T", "-G", "=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_N():
-    cssplits = ["=A", "=N", "=N", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_N():
+    midsv_tags = ["=A", "=N", "=N", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=N", "=N", "=T"]
     assert test == answer
 
 
-def test_revcomp_cssplits_inversion():
-    cssplits = ["=A", "=a", "=g", "=G"]
-    test = report.mutation_exporter.revcomp_cssplits(cssplits)
+def test_revcomp_midsvs_inversion():
+    midsv_tags = ["=A", "=a", "=g", "=G"]
+    test = report.mutation_exporter.revcomp_midsvs(midsv_tags)
     answer = ["=C", "=c", "=t", "=T"]
     assert test == answer
 
@@ -76,8 +76,8 @@ def test_revcomp_cssplits_inversion():
 
 
 def test_annotate_inversion():
-    cssplits = ["=A", "=a", "=g", "=G"]
-    test = report.mutation_exporter.annotate_inversion(cssplits)
+    midsv_tags = ["=A", "=a", "=g", "=G"]
+    test = report.mutation_exporter.annotate_inversion(midsv_tags)
     answer = ["=A", "@=a", "@=g", "=G"]
     assert test == answer
 
@@ -88,22 +88,22 @@ def test_annotate_inversion():
 
 
 def test_group_by_mutation_deletion():
-    cssplits = ["=A", "-G", "-T", "=G"]
-    test = report.mutation_exporter.group_by_mutation(cssplits)
+    midsv_tags = ["=A", "-G", "-T", "=G"]
+    test = report.mutation_exporter.group_by_mutation(midsv_tags)
     answer = [["=A"], ["-G", "-T"], ["=G"]]
     assert test == answer
 
 
 def test_group_by_mutation_insertion():
-    cssplits = ["=A", "+A|+A|=G", "=G"]
-    test = report.mutation_exporter.group_by_mutation(cssplits)
+    midsv_tags = ["=A", "+A|+A|=G", "=G"]
+    test = report.mutation_exporter.group_by_mutation(midsv_tags)
     answer = [["=A"], ["+A|+A|=G"], ["=G"]]
     assert test == answer
 
 
 def test_group_by_mutation_inversion():
-    cssplits = ["=A", "@=a", "@=g", "=G"]
-    test = report.mutation_exporter.group_by_mutation(cssplits)
+    midsv_tags = ["=A", "@=a", "@=g", "=G"]
+    test = report.mutation_exporter.group_by_mutation(midsv_tags)
     answer = [["=A"], ["@=a", "@=g"], ["=G"]]
     assert test == answer
 
@@ -114,23 +114,23 @@ def test_group_by_mutation_inversion():
 
 
 def test_report_mutations_substitution():
-    cssplits = ["=A", "*AG", "=G"]
+    midsv_tags = ["=A", "*AG", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 2, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [["test", "mm10", "chr1", "1", "1", "substitution: A>G"]]
     assert test == answer
 
 
 def test_report_mutations_consecutive_substitution():
-    cssplits = ["=A", "*AG", "*CT", "=G"]
+    midsv_tags = ["=A", "*AG", "*CT", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [
         ["test", "mm10", "chr1", "1", "1", "substitution: A>G"],
         ["test", "mm10", "chr1", "2", "2", "substitution: C>T"],
@@ -139,56 +139,56 @@ def test_report_mutations_consecutive_substitution():
 
 
 def test_report_mutations_deletion():
-    cssplits = ["=A", "-G", "-T", "=G"]
+    midsv_tags = ["=A", "-G", "-T", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [["test", "mm10", "chr1", "1", "2", "2bp deletion: GT"]]
     assert test == answer
 
 
 def test_report_mutations_insertion():
-    cssplits = ["=A", "+G|+T|=A", "=G"]
+    midsv_tags = ["=A", "+G|+T|=A", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [["test", "mm10", "chr1", "1", "1", "2bp insertion: GT"]]
     assert test == answer
 
 
 def test_report_mutations_insertion_with_substitution():
-    cssplits = ["=A", "+G|+T|*GA", "=G"]
+    midsv_tags = ["=A", "+G|+T|*GA", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 3, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [["test", "mm10", "chr1", "1", "1", "2bp insertion: GT"]]
     assert test == answer
 
 
 def test_report_mutations_inversion():
-    cssplits = ["=A", "=a", "=t", "=G"]
+    midsv_tags = ["=A", "=a", "=t", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 4, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [["test", "mm10", "chr1", "1", "2", "2bp inversion: AT"]]
     assert test == answer
 
 
 def test_report_mutations_various():
-    cssplits = ["=A", "*AG", "+A|+A|-A", "=N", "-G", "*CG", "*AG", "=a", "=t", "=A"]
+    midsv_tags = ["=A", "*AG", "+A|+A|-A", "=N", "-G", "*CG", "*AG", "=a", "=t", "=A"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chr1", "start": 0, "end": 4, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [
         ["test", "mm10", "chr1", "1", "1", "substitution: A>G"],
         ["test", "mm10", "chr1", "2", "2", "2bp insertion: AA"],
@@ -202,11 +202,11 @@ def test_report_mutations_various():
 
 
 def test_report_mutations_genome_coodinates():
-    cssplits = ["=A", "*AG", "=G"]
+    midsv_tags = ["=A", "*AG", "=G"]
     GENOME_COODINATES = {"genome": "mm10", "chrom": "chrX", "start": 100, "end": 103, "strand": "+"}
     header = "test"
-    cssplits_inversion = report.mutation_exporter.annotate_inversion(cssplits)
-    cssplits_grouped = report.mutation_exporter.group_by_mutation(cssplits_inversion)
-    test = report.mutation_exporter.report_mutations(cssplits_grouped, GENOME_COODINATES, header)
+    midsv_tags_inversion = report.mutation_exporter.annotate_inversion(midsv_tags)
+    midsv_tags_grouped = report.mutation_exporter.group_by_mutation(midsv_tags_inversion)
+    test = report.mutation_exporter.report_mutations(midsv_tags_grouped, GENOME_COODINATES, header)
     answer = [["test", "mm10", "chrX", "101", "101", "substitution: A>G"]]
     assert test == answer

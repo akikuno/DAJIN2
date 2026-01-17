@@ -14,7 +14,7 @@ from DAJIN2.core.preprocess.structural_variants.sv_handler import (
     save_midsv,
 )
 from DAJIN2.utils import fileio
-from DAJIN2.utils.cssplits_handler import convert_cssplits_to_sequence
+from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence
 
 ###############################################################################
 # Extract features for clustering
@@ -124,7 +124,8 @@ def load_data(tempdir, sample_name, control_name):
 def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int, int]:
     """Process SV indices and group them based on proximity."""
     index_of_sv = [
-        list(get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, None).keys()) for m in fileio.read_jsonl(path_midsv)
+        list(get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, None).keys())
+        for m in fileio.read_jsonl(path_midsv)
     ]
     index_of_sv = sorted(chain.from_iterable(index_of_sv))
     grouped_indices = group_similar_indices(index_of_sv, distance=5, min_coverage=max(5, coverage * 0.05))
@@ -135,7 +136,8 @@ def process_sv_indices(path_midsv, sv_type, mutation_loci, coverage) -> dict[int
 def extract_sv_features(midsv_path, sv_type, mutation_loci, index_converter) -> list[dict[int, int]]:
     """Extract SV start indices and sizes."""
     return [
-        get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, index_converter) for m in fileio.read_jsonl(midsv_path)
+        get_index_and_sv_size(m["MIDSV"], sv_type, mutation_loci, index_converter)
+        for m in fileio.read_jsonl(midsv_path)
     ]
 
 
@@ -205,16 +207,16 @@ def get_midsv_consensus_by_label(
     else:  # sv_type == "insertion"
 
         def get_consensus_insertion_by_label(
-            cssplits_by_label: dict[int, list[str]], consensus_index_and_sv_size_by_label: dict[int, int]
+            midsv_tags_by_label: dict[int, list[str]], consensus_index_and_sv_size_by_label: dict[int, int]
         ) -> dict[int, dict[int, str]]:
             consensus_insertion_by_label = defaultdict(dict)
-            for label, cssplits in cssplits_by_label.items():
+            for label, midsv_tags in midsv_tags_by_label.items():
                 index_and_sv_size = consensus_index_and_sv_size_by_label[label]
                 for index, size in index_and_sv_size.items():
                     insertions = []
                     if size == 0:
                         continue
-                    for midsv_tag in cssplits:
+                    for midsv_tag in midsv_tags:
                         if not midsv_tag[index].startswith("+"):
                             continue
                         if midsv_tag[index].count("|") == size:
@@ -226,12 +228,12 @@ def get_midsv_consensus_by_label(
             return dict(consensus_insertion_by_label)
 
         midsv_iter = (m["MIDSV"].split(",") for m in fileio.read_jsonl(path_midsv_sample))
-        cssplits_by_label = defaultdict(list)
-        for label, cssplits in zip(labels, midsv_iter):
-            cssplits_by_label[label].append(cssplits)
+        midsv_tags_by_label = defaultdict(list)
+        for label, midsv_tags in zip(labels, midsv_iter):
+            midsv_tags_by_label[label].append(midsv_tags)
 
         consensus_insertion_by_label = get_consensus_insertion_by_label(
-            cssplits_by_label, consensus_index_and_sv_size_by_label
+            midsv_tags_by_label, consensus_index_and_sv_size_by_label
         )
 
         ###################################################
@@ -311,7 +313,7 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
         index_and_sv_size_by_label, path_midsv_sample, labels, sv_type, FASTA_ALLELES["control"]
     )
 
-    fasta_by_label = {label: convert_cssplits_to_sequence(midsv_tag) for label, midsv_tag in midsv_by_label.items()}
+    fasta_by_label = {label: convert_midsvs_to_sequence(midsv_tag) for label, midsv_tag in midsv_by_label.items()}
 
     # Discard -1 due to minor allele
     midsv_by_label = {label: tag for label, tag in midsv_by_label.items() if label != -1}

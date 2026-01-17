@@ -7,7 +7,7 @@ from pathlib import Path
 
 import midsv
 
-from DAJIN2.utils import cssplits_handler, fileio, sam_handler
+from DAJIN2.utils import fileio, midsv_handler, sam_handler
 
 
 def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[str, str]]:
@@ -95,10 +95,10 @@ def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -
     for samp in midsv_sample:
         midsv_tags = samp["MIDSV"].split(",")
 
-        left_idx_n, right_idx_n = cssplits_handler.find_n_boundaries(midsv_tags)
+        left_idx_n, right_idx_n = midsv_handler.find_n_boundaries(midsv_tags)
 
         for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence)):
-            if left_idx_n < j < right_idx_n and cssplits_handler.is_n_tag(cs):
+            if left_idx_n < j < right_idx_n and midsv_handler.is_n_tag(cs):
                 midsv_tags[j] = f"-{seq_char}"
 
         samp["MIDSV"] = ",".join(midsv_tags)
@@ -128,7 +128,7 @@ def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int 
         total = len(midsv_tags)
         if total == 0:
             continue
-        n_count = sum(1 for tag in midsv_tags if cssplits_handler.is_n_tag(tag))
+        n_count = sum(1 for tag in midsv_tags if midsv_handler.is_n_tag(tag))
         n_percentage = n_count / total * 100
         if n_percentage < threshold:
             yield samp
@@ -139,11 +139,11 @@ def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int 
 ###########################################################
 
 
-def convert_consecutive_indels_to_match(cssplit: str) -> str:
+def convert_consecutive_indels_to_match(midsv: str) -> str:
     i = 0
-    cssplit_reversed = cssplit.split(",")[::-1]
-    while i < len(cssplit_reversed):
-        current_cs = cssplit_reversed[i]
+    midsv_reversed = midsv.split(",")[::-1]
+    while i < len(midsv_reversed):
+        current_cs = midsv_reversed[i]
 
         if not current_cs.startswith("+"):
             i += 1
@@ -155,10 +155,10 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
         deletions = []
 
         for j in range(1, len(insertions) + 1):
-            if i + j >= len(cssplit_reversed):
+            if i + j >= len(midsv_reversed):
                 break
 
-            next_cs = cssplit_reversed[i + j]
+            next_cs = midsv_reversed[i + j]
 
             if not next_cs.startswith("-"):
                 break
@@ -170,15 +170,15 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
             continue
 
         # Format insertions
-        cssplit_reversed[i] = current_cs.split("|")[-1]
+        midsv_reversed[i] = current_cs.split("|")[-1]
 
         # Format deletions
         for k, _ in enumerate(insertions, 1):
-            cssplit_reversed[i + k] = cssplit_reversed[i + k].replace("-", "=")
+            midsv_reversed[i + k] = midsv_reversed[i + k].replace("-", "=")
 
         i += len(insertions) + 1
 
-    return ",".join(cssplit_reversed[::-1])
+    return ",".join(midsv_reversed[::-1])
 
 
 def convert_consecutive_indels(midsv_sample: Iterator) -> Iterator[list[dict]]:

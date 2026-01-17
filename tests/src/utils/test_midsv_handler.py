@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from DAJIN2.utils import cssplits_handler
+from DAJIN2.utils import midsv_handler
 
 ###########################################################
 # find_n_boundaries
@@ -10,7 +10,7 @@ from DAJIN2.utils import cssplits_handler
 
 
 @pytest.mark.parametrize(
-    "cssplits, expected",
+    "midsv_tags, expected",
     [
         (["=N", "=N", "A", "B", "=N", "=N"], (1, 4)),
         (["=N", "=N", "A", "B", "A", "B"], (1, 6)),
@@ -18,12 +18,12 @@ from DAJIN2.utils import cssplits_handler
         (["A", "B", "A", "B", "A", "B"], (-1, 6)),
     ],
 )
-def test_find_n_boundaries(cssplits, expected):
-    assert cssplits_handler.find_n_boundaries(cssplits) == expected
+def test_find_n_boundaries(midsv_tags, expected):
+    assert midsv_handler.find_n_boundaries(midsv_tags) == expected
 
 
 ###########################################################
-# convert cssplits to DNA sequence
+# convert midsv_tags to DNA sequence
 ###########################################################
 
 
@@ -39,11 +39,11 @@ def test_find_n_boundaries(cssplits, expected):
     ],
 )
 def test_revcomp_inversion(sequence, expected):
-    assert cssplits_handler._revcomp_inversion(sequence) == expected
+    assert midsv_handler._revcomp_inversion(sequence) == expected
 
 
 @pytest.mark.parametrize(
-    "cssplits, expected",
+    "midsv_tags, expected",
     [
         (
             ["=A", "=n", "+a|+t|+g|=a", "=c", "=g", "=A", "=a", "=c", "=c", "=N"],
@@ -52,20 +52,20 @@ def test_revcomp_inversion(sequence, expected):
         (["=A", "=T", "=C", "=G"], "ATCG"),  # Simple match only
         (["+a|+t|+g|=a"], "tcat"),  # Single insertion with match
         (["=a", "=c", "=t"], "agt"),  # Simple inversion
-        ([], ""),  # Empty cssplits
+        ([], ""),  # Empty midsv_tags
     ],
 )
-def test_convert_cssplits_to_sequence(cssplits, expected):
-    assert cssplits_handler.convert_cssplits_to_sequence(cssplits) == expected
+def test_convert_midsvs_to_sequence(midsv_tags, expected):
+    assert midsv_handler.convert_midsvs_to_sequence(midsv_tags) == expected
 
 
 ###########################################################
-# convert cssplits to cstag
+# convert midsv_tags to cstag
 ###########################################################
 
 
 @pytest.mark.parametrize(
-    "cssplits, expected",
+    "midsv_tags, expected",
     [
         ([], []),
         (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
@@ -73,24 +73,24 @@ def test_convert_cssplits_to_sequence(cssplits, expected):
         (["=A", "+G|+G|+G|=N", "=T"], ["=A", "+G|+G|+G|=N", "=T"]),
     ],
 )
-def test_add_match_operator_to_n(cssplits, expected):
-    assert cssplits_handler._add_match_operator_to_n(cssplits) == expected
+def test_add_match_operator_to_n(midsv_tags, expected):
+    assert midsv_handler._add_match_operator_to_n(midsv_tags) == expected
 
 
 @pytest.mark.parametrize(
-    "input_cssplits, expected",
+    "input_midsv_tags, expected",
     [
         ([], []),
         (["=ACGT"], ["=ACGT"]),
         (["=ACGT", "*GC", "=ACGT"], ["=ACGT", "*gc", "=ACGT"]),
     ],
 )
-def test_standardize_case(input_cssplits, expected):
-    assert cssplits_handler._standardize_case(input_cssplits) == expected
+def test_standardize_case(input_midsv_tags, expected):
+    assert midsv_handler._standardize_case(input_midsv_tags) == expected
 
 
 @pytest.mark.parametrize(
-    "cssplits, expected",
+    "midsv_tags, expected",
     [
         ([], ""),
         (["=A", "=C", "=G", "=T"], "=ACGT"),
@@ -102,8 +102,8 @@ def test_standardize_case(input_cssplits, expected):
         (["=A", "=C", "+A|+C|=G", "-C", "-G", "*CG"], "=AC+ac=G-cg*cg"),
     ],
 )
-def test_convert_cssplits_to_cstag(cssplits, expected):
-    assert cssplits_handler.convert_cssplits_to_cstag(cssplits) == expected
+def test_convert_midsvs_to_cstag(midsv_tags, expected):
+    assert midsv_handler.convert_midsvs_to_cstag(midsv_tags) == expected
 
 
 ###########################################################
@@ -126,4 +126,4 @@ def test_convert_cssplits_to_cstag(cssplits, expected):
     ],
 )
 def test_call_sequence(cons_percentage, expected_sequence):
-    assert cssplits_handler.call_sequence(cons_percentage) == expected_sequence
+    assert midsv_handler.call_sequence(cons_percentage) == expected_sequence

@@ -9,19 +9,19 @@ def is_n_tag(tag: str) -> bool:
     return tag.endswith("N") or tag.endswith("n")
 
 
-def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
+def find_n_boundaries(midsv_tags: list[str]) -> tuple[int, int]:
     """Find the boundaries of contiguous Ns which aren't at the ends."""
 
     # Find the left boundary
     left_idx_n = 0
-    for char in cssplits:
+    for char in midsv_tags:
         if not is_n_tag(char):
             break
         left_idx_n += 1
 
     # Find the right boundary
-    right_idx_n = len(cssplits) - 1
-    for char in reversed(cssplits):
+    right_idx_n = len(midsv_tags) - 1
+    for char in reversed(midsv_tags):
         if not is_n_tag(char):
             break
         right_idx_n -= 1
@@ -30,7 +30,7 @@ def find_n_boundaries(cssplits: list[str]) -> tuple[int, int]:
 
 
 ###########################################################
-# Convert cssplits to DNA sequence
+# Convert midsv_tags to DNA sequence
 ###########################################################
 
 
@@ -52,9 +52,9 @@ def _revcomp_inversion(sequence: str) -> str:
     return "".join(result)
 
 
-def convert_cssplits_to_sequence(cssplits: list[str]) -> str:
+def convert_midsvs_to_sequence(midsv_tags: list[str]) -> str:
     sequence = []
-    for tag in cssplits:
+    for tag in midsv_tags:
         if tag.startswith("-"):  # deletion
             pass
         elif tag.startswith("+"):  # insertion
@@ -73,101 +73,101 @@ def convert_cssplits_to_sequence(cssplits: list[str]) -> str:
 
 
 ###########################################################
-# reverse complement to cssplits
+# reverse complement to midsv_tags
 ###########################################################
 
 
-def _reverse_cssplits(cssplits: list[str]) -> list[str]:
-    for i, cs in enumerate(cssplits):
+def _reverse_midsvs(midsv_tags: list[str]) -> list[str]:
+    for i, cs in enumerate(midsv_tags):
         if cs.startswith("+"):
-            cssplits[i] = "+" + "|".join(cs.split("|")[::-1])
-    return cssplits[::-1]
+            midsv_tags[i] = "+" + "|".join(cs.split("|")[::-1])
+    return midsv_tags[::-1]
 
 
-def _realign_insertion(cssplits: list[str]) -> list[str]:
-    for i, cs in enumerate(cssplits):
+def _realign_insertion(midsv_tags: list[str]) -> list[str]:
+    for i, cs in enumerate(midsv_tags):
         if not cs.startswith("+"):
             continue
         if re.search(rf"[{cs[1]}]", "[ACGTacgt]"):
             continue
-        if i + 1 == len(cssplits):
+        if i + 1 == len(midsv_tags):
             continue
         cs_current = cs.split("|")
-        cssplits[i] = cs_current[0].replace("+", "")
-        cssplits[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + cssplits[i + 1]
-    return cssplits
+        midsv_tags[i] = cs_current[0].replace("+", "")
+        midsv_tags[i + 1] = "|".join(c[0] + c[-1] for c in cs_current[1:]) + "|" + midsv_tags[i + 1]
+    return midsv_tags
 
 
-def _complement_cssplit(cssplits: list[str]) -> list[str]:
+def _complement_midsv(midsv_tags: list[str]) -> list[str]:
     comp = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N", "a": "t", "c": "g", "g": "c", "t": "a", "n": "n"}
-    for i, cs in enumerate(cssplits):
+    for i, cs in enumerate(midsv_tags):
         op = cs[0]
         if op == "*":
-            cssplits[i] = op + comp[cs[1]] + comp[cs[2]]
+            midsv_tags[i] = op + comp[cs[1]] + comp[cs[2]]
         elif op == "+":
-            cssplits[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|"))
+            midsv_tags[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|"))
         else:  # Match or Deletion or N
-            cssplits[i] = op + comp[cs[-1]]
-        cssplits[i] = cssplits[i].replace("NN", "N")
-        cssplits[i] = cssplits[i].replace("nn", "n")
-    return cssplits
+            midsv_tags[i] = op + comp[cs[-1]]
+        midsv_tags[i] = midsv_tags[i].replace("NN", "N")
+        midsv_tags[i] = midsv_tags[i].replace("nn", "n")
+    return midsv_tags
 
 
-def revcomp_cssplits(cssplits: list[str]) -> list[str]:
-    cssplits_reversed = _reverse_cssplits(cssplits)
-    cssplits_realigned = _realign_insertion(cssplits_reversed)
-    cssplits_revcomped = _complement_cssplit(cssplits_realigned)
-    return cssplits_revcomped
+def revcomp_midsvs(midsv_tags: list[str]) -> list[str]:
+    midsv_tags_reversed = _reverse_midsvs(midsv_tags)
+    midsv_tags_realigned = _realign_insertion(midsv_tags_reversed)
+    midsv_tags_revcomped = _complement_midsv(midsv_tags_realigned)
+    return midsv_tags_revcomped
 
 
 ###########################################################
-# convert cssplits to cstag
+# convert midsv_tags to cstag
 ###########################################################
 
 
-def _add_match_operator_to_n(cssplits: list[str]) -> list[str]:
+def _add_match_operator_to_n(midsv_tags: list[str]) -> list[str]:
     """Add "=" (match operator) to the sequences with "N"."""
-    cssplits_add_match_op = []
-    for cs in cssplits:
+    midsv_tags_add_match_op = []
+    for cs in midsv_tags:
         if cs.startswith("+") and is_n_tag(cs.split("|")[-1]):
             cs_ins = cs.split("|")
             last_tag = cs_ins[-1]
             if not last_tag.startswith("="):
                 last_tag = "=" + last_tag[-1]
             cs_ins[-1] = last_tag
-            cssplits_add_match_op.append("|".join(cs_ins))
+            midsv_tags_add_match_op.append("|".join(cs_ins))
             continue
 
         if is_n_tag(cs):
             if cs.startswith("="):
-                cssplits_add_match_op.append(cs)
+                midsv_tags_add_match_op.append(cs)
             else:
-                cssplits_add_match_op.append("=" + cs[-1])
+                midsv_tags_add_match_op.append("=" + cs[-1])
             continue
 
-        cssplits_add_match_op.append(cs)
-    return cssplits_add_match_op
+        midsv_tags_add_match_op.append(cs)
+    return midsv_tags_add_match_op
 
 
-def _split_cssplits_by_delimiter(cssplits: list[str]) -> list[str]:
-    cssplits_break = []
-    for cs in cssplits:
+def _split_midsvs_by_delimiter(midsv_tags: list[str]) -> list[str]:
+    midsv_tags_break = []
+    for cs in midsv_tags:
         if cs.startswith("+"):
-            cssplits_break.extend(cs.split("|"))
+            midsv_tags_break.extend(cs.split("|"))
         else:
-            cssplits_break.append(cs)
-    return cssplits_break
+            midsv_tags_break.append(cs)
+    return midsv_tags_break
 
 
-def _combine_cssplits_by_prefix(cssplits: list[str]) -> list[str]:
-    if not cssplits:
+def _combine_midsvs_by_prefix(midsv_tags: list[str]) -> list[str]:
+    if not midsv_tags:
         return []
 
-    combined_cssplits = []
-    prev_prefix: str = cssplits[0][0]
-    current_cs: list[str] = [cssplits[0][1:]]
+    combined_midsv_tags = []
+    prev_prefix: str = midsv_tags[0][0]
+    current_cs: list[str] = [midsv_tags[0][1:]]
 
-    for item in cssplits[1:]:
+    for item in midsv_tags[1:]:
         current_prefix, cs = item[0], item[1:]
         if prev_prefix == current_prefix:
             if current_prefix == "*":
@@ -175,20 +175,20 @@ def _combine_cssplits_by_prefix(cssplits: list[str]) -> list[str]:
             else:
                 current_cs.append(cs)
         else:
-            combined_cssplits.append(prev_prefix + "".join(current_cs))
+            combined_midsv_tags.append(prev_prefix + "".join(current_cs))
             prev_prefix = current_prefix
             current_cs = [cs]
 
-    combined_cssplits.append(prev_prefix + "".join(current_cs))
-    return combined_cssplits
+    combined_midsv_tags.append(prev_prefix + "".join(current_cs))
+    return combined_midsv_tags
 
 
-def _standardize_case(cssplits: list[str]) -> list[str]:
+def _standardize_case(midsv_tags: list[str]) -> list[str]:
     """Standardize the case of characters based on mutation types."""
     transformations = {"*": str.lower, "-": str.lower, "+": str.lower, "~": str.lower, "=": str.upper}
 
     transformed = []
-    for cs in cssplits:
+    for cs in midsv_tags:
         prefix = cs[0]
         trans_func = transformations.get(prefix)
         transformed.append(prefix + trans_func(cs[1:]))
@@ -196,15 +196,15 @@ def _standardize_case(cssplits: list[str]) -> list[str]:
     return transformed
 
 
-def convert_cssplits_to_cstag(cssplits: list[str]) -> str:
-    cssplits_matched_op = _add_match_operator_to_n(cssplits)
-    cssplits_splitted = _split_cssplits_by_delimiter(cssplits_matched_op)
-    cssplits_combined = _combine_cssplits_by_prefix(cssplits_splitted)
-    return "".join(_standardize_case(cssplits_combined))
+def convert_midsvs_to_cstag(midsv_tags: list[str]) -> str:
+    midsv_tags_matched_op = _add_match_operator_to_n(midsv_tags)
+    midsv_tags_splitted = _split_midsvs_by_delimiter(midsv_tags_matched_op)
+    midsv_tags_combined = _combine_midsvs_by_prefix(midsv_tags_splitted)
+    return "".join(_standardize_case(midsv_tags_combined))
 
 
 ###########################################################
-# convert cssplits to sequence
+# convert midsv_tags to sequence
 ###########################################################
 
 
@@ -213,8 +213,8 @@ def call_sequence(cons_percentage: list[dict[str, float]]) -> str:
 
     consensus_sequence = []
     for cons_per in cons_percentage:
-        cssplits = max(cons_per, key=cons_per.get)
-        cs_tag = convert_cssplits_to_cstag([cssplits])
+        midsv_tags = max(cons_per, key=cons_per.get)
+        cs_tag = convert_midsvs_to_cstag([midsv_tags])
         seq = cstag.to_sequence(cs_tag)
         consensus_sequence.append(seq)
     return "".join(consensus_sequence)

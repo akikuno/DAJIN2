@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from DAJIN2.utils.cssplits_handler import revcomp_cssplits
+from DAJIN2.utils.midsv_handler import revcomp_midsvs
 
 ###########################################################
 # group by mutation
@@ -88,7 +88,7 @@ def _handle_unknown(group, genome, start, end, header, chromosome) -> tuple[list
     return [result], start, end
 
 
-def report_mutations(cssplits_grouped: list[list[str]], genome_coordinates: dict | None, header) -> list[list[str]]:
+def report_mutations(midsv_tags_grouped: list[list[str]], genome_coordinates: dict | None, header) -> list[list[str]]:
     if genome_coordinates is None:
         genome_coordinates = {}
 
@@ -104,7 +104,7 @@ def report_mutations(cssplits_grouped: list[list[str]], genome_coordinates: dict
         "N": _handle_unknown,
     }
     results = []
-    for group in cssplits_grouped:
+    for group in midsv_tags_grouped:
         for prefix, handler in handlers.items():
             if group[0].startswith(prefix):
                 result, start, end = handler(group, genome, start, end, header, chromosome)
@@ -130,7 +130,7 @@ def export_to_csv(
     for key, cons_midsv_tag in cons_midsv_tags.items():
         header = key.replace("|", "_")
         if genome_coordinates.get("strand") == "-":
-            cons_midsv_tag = revcomp_cssplits(cons_midsv_tag)
+            cons_midsv_tag = revcomp_midsvs(cons_midsv_tag)
         cons_midsv_tag_inversion = annotate_inversion(cons_midsv_tag)
         cons_midsv_tag_grouped = group_by_mutation(cons_midsv_tag_inversion)
         result = report_mutations(cons_midsv_tag_grouped, genome_coordinates, header)

@@ -12,8 +12,8 @@ def subset_scores(labels: list[int], scores: list[int], label_most: int, length:
     return subset[:length]
 
 
-def call_count(cssplits: Iterator[list[str]]) -> list[dict[str, int]]:
-    return [dict(Counter(cssplit)) for cssplit in zip(*cssplits)]
+def call_count(midsv_tags: Iterator[list[str]]) -> list[dict[str, int]]:
+    return [dict(Counter(midsv)) for midsv in zip(*midsv_tags)]
 
 
 def call_percent(counts: list[dict[str, int]]) -> list[dict[str, float]]:
@@ -115,10 +115,10 @@ def update_insertion_score(
 def make_score(
     path_sample, path_control, mutation_loci: list[set[int]], knockin_loci: list[set[int]]
 ) -> list[dict[str, float]]:
-    cssplits_sample = generate_mutation_kmers(path_sample, mutation_loci, compress_ins=True)
-    cssplits_control = generate_mutation_kmers(path_control, mutation_loci, compress_ins=True)
-    counts_sample = call_count(cssplits_sample)
-    counts_control = call_count(cssplits_control)
+    midsv_tags_sample = generate_mutation_kmers(path_sample, mutation_loci, compress_ins=True)
+    midsv_tags_control = generate_mutation_kmers(path_control, mutation_loci, compress_ins=True)
+    counts_sample = call_count(midsv_tags_sample)
+    counts_control = call_count(midsv_tags_control)
     percent_sample = call_percent(counts_sample)
     percent_control = call_percent(counts_control)
     percent_subtraction = subtract_percentage(percent_sample, percent_control, knockin_loci)
@@ -134,9 +134,9 @@ def make_score(
 
 
 def annotate_score(path_sample, mutation_score, mutation_loci, is_control=False) -> Iterator[list[float]]:
-    for cssplit_kmer in generate_mutation_kmers(path_sample, mutation_loci):
-        score = [0 for _ in range(len(cssplit_kmer))]
-        for i, (cs_kmer, mut_score) in enumerate(zip(cssplit_kmer, mutation_score)):
+    for midsv_kmer in generate_mutation_kmers(path_sample, mutation_loci):
+        score = [0 for _ in range(len(midsv_kmer))]
+        for i, (cs_kmer, mut_score) in enumerate(zip(midsv_kmer, mutation_score)):
             if mut_score == {}:
                 continue
             # Mutation sites are not considered in controls because they should be sample-specific.

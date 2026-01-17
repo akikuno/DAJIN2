@@ -30,4 +30,3 @@ def test_to_sam_threads():
     test = list(test)
     answer = Path("tests", "data", "preprocess", "mappy", "tyr_query.sam").read_text().strip().split("\n")
     assert test == answer
-

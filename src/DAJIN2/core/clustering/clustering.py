@@ -67,7 +67,9 @@ def return_labels(
     # TODO: This KMeans for X_control may become unnecessary because we removed sequence error reads in the previous step
     labels_control = BisectingKMeans(n_clusters=2, random_state=1).fit_predict(X_control)
     label_most_common = get_label_most_common(labels_control)
-    scores_control_subset = subset_scores(labels_control, fileio.read_jsonl(path_score_control), label_most_common, 1000)
+    scores_control_subset = subset_scores(
+        labels_control, fileio.read_jsonl(path_score_control), label_most_common, 1000
+    )
 
     scores_sample = list(fileio.read_jsonl(path_score_sample))
     X = np.array(list(chain(scores_sample, scores_control_subset)))

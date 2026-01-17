@@ -19,7 +19,7 @@ from pathlib import Path
 
 from DAJIN2 import gui, view
 from DAJIN2.core import core
-from DAJIN2.utils import config, input_validator, fileio, multiprocess, report_generator
+from DAJIN2.utils import config, fileio, input_validator, multiprocess, report_generator
 
 try:
     DAJIN_VERSION = importlib.metadata.version("DAJIN2")

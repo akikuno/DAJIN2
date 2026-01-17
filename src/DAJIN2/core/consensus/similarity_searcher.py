@@ -17,9 +17,9 @@ Additionally, the mutation regions in the alleles after clustering should be ide
 def onehot_by_mutations(midsv_sample: list[dict]) -> dict[str, np.ndarray]:
     mut_onehot = defaultdict(list)
     for c in midsv_sample:
-        cssplits = c["MIDSV"].split(",")
+        midsv_tags = c["MIDSV"].split(",")
         for mut in {"+", "-", "*"}:
-            onehot = [1 if cs.startswith(mut) else 0 for cs in cssplits]
+            onehot = [1 if cs.startswith(mut) else 0 for cs in midsv_tags]
             mut_onehot[mut].append(onehot)
     return {mut: np.array(value) for mut, value in mut_onehot.items()}
 
@@ -86,8 +86,8 @@ def filter_control(
     """
     find similar control reads compared to sample reads
     """
-    cssplits = (m["MIDSV"].split(",") for m in fileio.read_jsonl(path_consensus_sample))
-    coverage_match = np.array([sum(1 for cs in cssplit if cs.startswith("=")) for cssplit in zip(*cssplits)])
+    midsv_tags = (m["MIDSV"].split(",") for m in fileio.read_jsonl(path_consensus_sample))
+    coverage_match = np.array([sum(1 for cs in midsv if cs.startswith("=")) for midsv in zip(*midsv_tags)])
     mut_onehot_sample = onehot_by_mutations(fileio.read_jsonl(path_consensus_sample))
 
     path_mut_onehot_control = Path(

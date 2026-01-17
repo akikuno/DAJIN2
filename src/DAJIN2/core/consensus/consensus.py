@@ -8,7 +8,7 @@ from DAJIN2.core.consensus.consensus_formatter import merge_duplicated_cons_othe
 from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
 from DAJIN2.utils import fileio
 from DAJIN2.utils.config import ConsensusKey
-from DAJIN2.utils.cssplits_handler import call_sequence
+from DAJIN2.utils.midsv_handler import call_sequence
 
 ###########################################################
 # call position weight matrix (cons_pergentage)
@@ -16,17 +16,17 @@ from DAJIN2.utils.cssplits_handler import call_sequence
 
 
 def convert_to_percentage(
-    cssplits: list[list[str]], mutation_loci: list[set[str]], sequence: str
+    midsv_tags: list[list[str]], mutation_loci: list[set[str]], sequence: str
 ) -> list[dict[str, float]]:
     """
     Convert sequences and mutations into percentages, annotating sequence errors as "SEQERROR".
     """
-    # Transpose the cssplits to facilitate per-position processing
-    cssplits_transposed = [list(cs) for cs in zip(*cssplits)]
-    coverage = len(cssplits_transposed[0])
+    # Transpose the midsv_tags to facilitate per-position processing
+    midsv_tags_transposed = [list(cs) for cs in zip(*midsv_tags)]
+    coverage = len(midsv_tags_transposed[0])
 
     cons_percentage = []
-    for cs_transposed, mut_loci, nucleotide in zip(cssplits_transposed, mutation_loci, sequence):
+    for cs_transposed, mut_loci, nucleotide in zip(midsv_tags_transposed, mutation_loci, sequence):
         count_cs = defaultdict(float)
         for cs in cs_transposed:
             operator = cs[0]
@@ -62,9 +62,9 @@ def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[
     return adjusted_percentages
 
 
-def call_percentage(cssplits: list[list[str]], mutation_loci: list[set[str]], sequence: str) -> list[dict[str, float]]:
+def call_percentage(midsv_tags: list[list[str]], mutation_loci: list[set[str]], sequence: str) -> list[dict[str, float]]:
     """Call position weight matrix in different loci. Non-different loci are annotated as "Match"."""
-    cons_percentage = convert_to_percentage(cssplits, mutation_loci, sequence)
+    cons_percentage = convert_to_percentage(midsv_tags, mutation_loci, sequence)
     cons_percentage = remove_all_n(cons_percentage)
     return adjust_to_100_percent(cons_percentage)
 
@@ -89,8 +89,8 @@ def call_consensus(
         path_consensus = Path(tempdir, sample_name, "consensus", allele, str(label))
         cons_mutation_loci = fileio.load_pickle(Path(path_consensus, "mutation_loci.pickle"))
 
-        cssplits = [cs["MIDSV"].split(",") for cs in clust]
-        cons_percentage = call_percentage(cssplits, cons_mutation_loci, sequence)
+        midsv_tags = [cs["MIDSV"].split(",") for cs in clust]
+        cons_percentage = call_percentage(midsv_tags, cons_mutation_loci, sequence)
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
 
