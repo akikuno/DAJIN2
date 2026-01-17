@@ -161,11 +161,9 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     fig.update_traces(textposition="inside", cliponaxis=False)
     fig.update_xaxes(categoryorder="category ascending")
 
-    output_filename = Path(report_directory, "read_plot")
-    html_path = output_filename.with_suffix(".html")
-
     div_id = "read_plot_fig"
-    fig.write_html(html_path, include_plotlyjs="cdn", full_html=True, div_id=div_id)
+    report_html_path = Path(report_directory, "report.html")
+    fig.write_html(report_html_path, include_plotlyjs="cdn", full_html=True, div_id=div_id)
 
     trace_groups: dict[str, list[int]] = {}
     for index, trace in enumerate(fig.data):
@@ -176,6 +174,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     trace_groups_json = json.dumps(trace_groups)
     export_buttons = [
         {"format": "png", "label": "Download PNG"},
+        {"format": "svg", "label": "Download SVG"},
     ]
     export_buttons_json = json.dumps(export_buttons)
 
@@ -305,8 +304,6 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             }
         }
     """
-    style_block = build_style_block(base_css)
-
     controls_block = f"""
     <div class="controls">
         <label>
@@ -460,16 +457,6 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     }})();
     </script>
 """
-
-    inject_plot_assets(
-        html_path,
-        style_block,
-        [controls_block],
-        [script_block],
-    )
-
-    report_html_path = Path(report_directory, "report.html")
-    fig.write_html(report_html_path, include_plotlyjs="cdn", full_html=True, div_id=div_id)
 
     report_hint_block = """
     <div class="report-hint">
@@ -647,11 +634,6 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         [report_hint_block, controls_block, modal_block],
         [script_block, report_script_block],
     )
-    # if kaleido is installed, output a pdf
-    try:
-        fig.write_image(f"{output_filename}.pdf")
-    except Exception:
-        pass
 
 
 ###################################################################
