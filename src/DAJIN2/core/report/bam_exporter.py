@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import random
 import uuid
 from collections import defaultdict
-from itertools import groupby
 from pathlib import Path
 
 import pysam
@@ -78,17 +78,17 @@ def group_by_allele_name(sam_contents: list[str], result_sample: list[dict]) -> 
 ###############################################################################
 
 
-def subset_qnames(result_sample: list[dict], readnum: int = 100) -> dict[set[str]]:
-    qnames_by_name = defaultdict(set)
-    for name, group in groupby(result_sample, key=lambda x: x["NAME"]):
-        group = list(group)
-        qnames = [res["QNAME"] for res in group[:readnum]]
-        qnames_by_name[name] = set(qnames)
-    return dict(qnames_by_name)
+def sample_unique_qnames(qnames: list[str], max_reads: int, rng: random.Random) -> set[str]:
+    unique_qnames = list(dict.fromkeys(qnames))
+    if len(unique_qnames) <= max_reads:
+        return set(unique_qnames)
+    return set(rng.sample(unique_qnames, max_reads))
 
 
-def subset_reads(sam_content: list[str], qnames: set[str]) -> list[str]:
-    return [sam for sam in sam_content if sam[0] in qnames]
+def sample_sam_by_qname(sam_content: list[list[str]], max_reads: int, rng: random.Random) -> list[list[str]]:
+    qnames = [sam[0] for sam in sam_content]
+    sampled_qnames = sample_unique_qnames(qnames, max_reads, rng)
+    return [sam for sam in sam_content if sam[0] in sampled_qnames]
 
 
 ###############################################################################
@@ -151,6 +151,9 @@ def export_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS, RESULT_SAMPLE=None
     sam_records = list(fileio.read_sam(path_sam_input))
     sam_updated = update_genome_coordinates(sam_records, genome_coordinates)
 
+    rng = random.Random()
+    max_reads_igvjs = 1000
+
     # Output SAM and BAM
     path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, f"{NAME}.bam")
     write_sam_to_bam(sam_updated, path_bam_output, THREADS)
@@ -159,22 +162,19 @@ def export_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS, RESULT_SAMPLE=None
     sam_headers, sam_contents = split_headers_and_contents(sam_updated)
 
     if is_control:
-        # subset 100 reads with uqniue qnames for igv.js
-        qnames_100reads: set[str] = set(list({s[0] for s in sam_contents[:10000]})[:100])
-        sam_subset = [s for s in sam_updated if s[0] in qnames_100reads]
+        sam_subset = sample_sam_by_qname(sam_contents, max_reads_igvjs, rng)
         path_bam_output = Path(TEMPDIR, "cache", ".igvjs", NAME, "control.bam")
         path_bam_output.parent.mkdir(parents=True, exist_ok=True)
         write_sam_to_bam(sam_headers + sam_subset, path_bam_output, THREADS)
     else:
         sam_groups = group_by_allele_name(sam_contents, RESULT_SAMPLE)
-        qnames_by_name = subset_qnames(RESULT_SAMPLE)
         # Output SAM and BAM
         for name, sam_content in sam_groups.items():
             # BAM
             path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, f"{NAME}_{name}.bam")
             write_sam_to_bam(sam_headers + sam_content, path_bam_output, THREADS)
             # igvjs
-            sam_subset = subset_reads(sam_content, qnames_by_name[name])
+            sam_subset = sample_sam_by_qname(sam_content, max_reads_igvjs, rng)
             path_bam_output = Path(TEMPDIR, "report", ".igvjs", NAME, f"{name}.bam")
             write_sam_to_bam(sam_headers + sam_subset, path_bam_output, THREADS)
 

@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 import plotly.express as px
+import pysam
 
 from DAJIN2.utils import fileio
 from DAJIN2.utils.config import DAJIN_RESULTS_DIR, TEMP_ROOT_DIR
@@ -66,6 +67,42 @@ def add_allele_type(results_summary: list[dict[str, str]]) -> list[dict[str, str
     for row in results_summary:
         row["Allele type"] = f"{row['Allele']} {row['Type']}"
     return results_summary
+
+
+def load_genome_coordinates(report_name: str) -> dict | None:
+    path_coordinates = Path(TEMP_ROOT_DIR, report_name, "cache", "genome_coordinates.jsonl")
+    if not path_coordinates.exists():
+        return None
+    try:
+        return next(fileio.read_jsonl(path_coordinates))
+    except StopIteration:
+        return None
+
+
+def ensure_reference_indexes(report_directory: Path) -> None:
+    fasta_root = Path(report_directory, "FASTA")
+    if not fasta_root.exists():
+        return
+    for control_fasta in fasta_root.glob("*/control.fasta"):
+        path_fai = Path(str(control_fasta) + ".fai")
+        if not path_fai.exists():
+            pysam.faidx(str(control_fasta))
+
+
+def copy_report_launchers(report_directory: Path) -> None:
+    source_root = Path(__file__).resolve().parent.parent
+    launcher_names = ["launch_report_server.bat", "launch_report_server.command"]
+    for name in launcher_names:
+        source_path = Path(source_root, name)
+        if not source_path.exists():
+            continue
+        target_path = Path(report_directory, name)
+        shutil.copy2(source_path, target_path)
+        if target_path.suffix == ".command":
+            try:
+                target_path.chmod(0o755)
+            except PermissionError:
+                pass
 
 
 def build_html_lookup(report_directory: Path) -> dict[tuple[str, str, str, str], str]:
@@ -143,7 +180,7 @@ def inject_plot_assets(
     html_path.write_text(html_content, encoding="utf-8")
 
 
-def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
+def output_plot(results_summary: list[dict[str, str]], report_directory: Path, genome_coordinates: dict | None = None):
     results_plot = add_allele_type(results_summary)
     results_plot = attach_html_paths(results_plot, report_directory)
     alleletype_order = order_allele_type(results_summary)
@@ -460,7 +497,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
 
     report_hint_block = """
     <div class="report-hint">
-        Click an allele segment to open the detailed report.
+        Click an allele segment to open the detailed report and genome browser.
     </div>
     """
 
@@ -472,7 +509,14 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
                 <div class="modal__title" id="allele-modal-title">Allele report</div>
                 <button class="modal__close" id="allele-modal-close" type="button">Close</button>
             </div>
-            <iframe class="modal__frame" id="allele-modal-frame" title="Allele report"></iframe>
+            <div class="modal__body">
+                <iframe class="modal__frame" id="allele-modal-frame" title="Allele report"></iframe>
+                <div class="modal__igv">
+                    <div class="modal__igv-title">Genome browser (IGV)</div>
+                    <div class="modal__igv-status" id="allele-igv-status">Waiting for allele selection.</div>
+                    <div class="modal__igv-view" id="allele-igv-view"></div>
+                </div>
+            </div>
             <div class="modal__footer">
                 <a class="modal__link" id="allele-modal-link" target="_blank" rel="noopener">Open in new tab</a>
             </div>
@@ -515,6 +559,11 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             overflow: hidden;
             z-index: 1;
         }
+        .modal__body {
+            display: grid;
+            grid-template-rows: minmax(260px, 1fr) minmax(220px, 0.8fr);
+            background: #ffffff;
+        }
         .modal__header,
         .modal__footer {
             display: flex;
@@ -544,9 +593,34 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         }
         .modal__frame {
             width: 100%;
-            height: 70vh;
+            height: 100%;
             border: none;
             background: #ffffff;
+        }
+        .modal__igv {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem 1rem;
+            border-top: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+        .modal__igv-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .modal__igv-status {
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+        .modal__igv-view {
+            width: 100%;
+            height: 260px;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #f7fafc;
         }
         .modal__link {
             text-decoration: none;
@@ -556,6 +630,20 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     """
 
     report_style_block = build_style_block(base_css, modal_css)
+
+    genome_info = None
+    if genome_coordinates:
+        genome = genome_coordinates.get("genome")
+        chrom = genome_coordinates.get("chrom")
+        start = genome_coordinates.get("start")
+        end = genome_coordinates.get("end")
+        if genome and chrom and start is not None and end is not None:
+            genome_info = {"genome": genome, "locus": f"{chrom}:{start}-{end}"}
+    genome_info_json = json.dumps(genome_info)
+
+    igv_lib_block = """
+    <script src="https://cdn.jsdelivr.net/npm/igv@2.13.1/dist/igv.min.js"></script>
+    """
 
     report_script_block = """
     <script>
@@ -567,6 +655,10 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
         const modalLink = document.getElementById("allele-modal-link");
         const modalClose = document.getElementById("allele-modal-close");
         const modalBackdrop = modal ? modal.querySelector("[data-modal-close]") : null;
+        const igvStatus = document.getElementById("allele-igv-status");
+        const igvView = document.getElementById("allele-igv-view");
+        const igvGenomeInfo = __GENOME_INFO__;
+        let igvBrowser = null;
 
         if (!figure || !modal) {
             return;
@@ -580,6 +672,16 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             return text.includes("%") ? text : `${text}%`;
         };
 
+        const encodePath = (path) => {
+            if (!path) {
+                return "";
+            }
+            return path
+                .split("/")
+                .map((segment) => encodeURIComponent(segment))
+                .join("/");
+        };
+
         const buildTitle = (point) => {
             const custom = Array.isArray(point.customdata) ? point.customdata : [];
             const label = custom[1];
@@ -590,12 +692,96 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             return parts.join(" ");
         };
 
+        const buildIgvPaths = (path) => {
+            if (!path) {
+                return null;
+            }
+            const parts = path.split("/");
+            if (parts.length < 3) {
+                return null;
+            }
+            const htmlIndex = parts.indexOf("HTML");
+            const baseIndex = htmlIndex >= 0 ? htmlIndex : 0;
+            if (parts.length <= baseIndex + 2) {
+                return null;
+            }
+            const sample = parts[baseIndex + 1];
+            const filename = parts[parts.length - 1];
+            const stem = filename.replace(/\\.html?$/i, "");
+            const prefix = `${sample}_`;
+            const header = stem.startsWith(prefix) ? stem.slice(prefix.length) : stem;
+            return {
+                sample,
+                bam: encodePath([".igvjs", sample, `${header}.bam`].join("/")),
+                bai: encodePath([".igvjs", sample, `${header}.bam.bai`].join("/")),
+            };
+        };
+
+        const buildIgvOptions = (sample, bamUrl, baiUrl, trackName) => {
+            const baseOptions = igvGenomeInfo
+                ? { genome: igvGenomeInfo.genome, locus: igvGenomeInfo.locus }
+                : {
+                      reference: {
+                          fastaURL: encodePath(`FASTA/${sample}/control.fasta`),
+                          indexURL: encodePath(`FASTA/${sample}/control.fasta.fai`),
+                      },
+                  };
+            return {
+                ...baseOptions,
+                tracks: [
+                    {
+                        name: trackName || "Allele",
+                        url: bamUrl,
+                        indexURL: baiUrl,
+                        indexurl: baiUrl,
+                        type: "alignment",
+                        format: "bam",
+                        autoHeight: true,
+                        viewAsPairs: true,
+                        samplingDepth: 1000,
+                        showInsertionText: true,
+                        showDeletionText: true,
+                    },
+                ],
+            };
+        };
+
+        const updateIgv = async (path, title) => {
+            if (!igvView || !igvStatus) {
+                return;
+            }
+            const igvPaths = buildIgvPaths(path);
+            if (!igvPaths) {
+                igvStatus.textContent = "No BAM file available for this allele.";
+                igvView.innerHTML = "";
+                return;
+            }
+            if (!window.igv) {
+                igvStatus.textContent = "IGV library is not available.";
+                igvView.innerHTML = "";
+                return;
+            }
+            igvStatus.textContent = "Loading IGV...";
+            igvView.innerHTML = "";
+            igvBrowser = null;
+            const options = buildIgvOptions(igvPaths.sample, igvPaths.bam, igvPaths.bai, title);
+            try {
+                igvBrowser = await igv.createBrowser(igvView, options);
+                igvStatus.textContent = "";
+            } catch (error) {
+                console.error("Failed to load IGV", error);
+                igvStatus.textContent = "Failed to load IGV track.";
+            }
+        };
+
         const openModal = (path, title) => {
             modal.classList.add("is-open");
             modal.setAttribute("aria-hidden", "false");
-            modalFrame.src = path;
+            const encodedPath = encodePath(path);
+            modalFrame.src = encodedPath;
             modalTitle.textContent = title || "Allele report";
-            modalLink.href = path;
+            modalLink.href = encodedPath;
+            updateIgv(path, title);
         };
 
         const closeModal = () => {
@@ -604,6 +790,13 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
             modalFrame.src = "";
             modalTitle.textContent = "Allele report";
             modalLink.removeAttribute("href");
+            if (igvView) {
+                igvView.innerHTML = "";
+            }
+            if (igvStatus) {
+                igvStatus.textContent = "Waiting for allele selection.";
+            }
+            igvBrowser = null;
         };
 
         modalClose.addEventListener("click", closeModal);
@@ -628,11 +821,13 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path):
     </script>
     """
 
+    report_script_block = report_script_block.replace("__GENOME_INFO__", genome_info_json)
+
     inject_plot_assets(
         report_html_path,
         report_style_block,
         [report_hint_block, controls_block, modal_block],
-        [script_block, report_script_block],
+        [script_block, igv_lib_block, report_script_block],
     )
 
 
@@ -645,6 +840,7 @@ def report(NAME: str) -> None:
     report_directory = Path(DAJIN_RESULTS_DIR, NAME)
     report_directory.mkdir(exist_ok=True, parents=True)
     shutil.copytree(Path(TEMP_ROOT_DIR, NAME, "report"), report_directory, dirs_exist_ok=True)
+    copy_report_launchers(report_directory)
 
     results_all = extract_all_info(Path(TEMP_ROOT_DIR, NAME, "result"))
     results_summary = summarize_info(results_all)
@@ -653,4 +849,7 @@ def report(NAME: str) -> None:
     fileio.write_xlsx(results_summary, Path(report_directory, "read_summary.xlsx"))
 
     # Write to plot as HTML and PDF
-    output_plot(results_summary, report_directory)
+    genome_coordinates = load_genome_coordinates(NAME)
+    if genome_coordinates is None:
+        ensure_reference_indexes(report_directory)
+    output_plot(results_summary, report_directory, genome_coordinates)
