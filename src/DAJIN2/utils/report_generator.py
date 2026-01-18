@@ -948,8 +948,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             if (value === null || value === undefined || value === "") {
                 return "";
             }
-            const text = String(value);
-            return text.includes("%") ? text : `${text}%`;
+            return `${value}%`;
         };
 
         const encodePath = (path) => {
@@ -982,8 +981,15 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             const type = custom[3];
             const percent = formatPercent(custom[4]);
             const alleleType = formatAlleleType(allele, type);
-            const parts = [point.x, label, alleleType, percent].filter(Boolean);
-            return parts.join(" ");
+            const labelText = label ? label.toLowerCase() : "";
+            const percentText = percent ? `(${percent})` : "";
+            const parts = [
+                point.x,
+                labelText ? `${labelText}` : "",
+                alleleType || "",
+                percentText,
+            ].filter(Boolean);
+            return parts.join(" ").replace(/\s+/g, " ").trim();
         };
 
         const buildIgvPaths = (path) => {
