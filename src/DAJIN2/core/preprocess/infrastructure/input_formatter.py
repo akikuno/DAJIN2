@@ -43,6 +43,9 @@ def parse_arguments(arguments: dict, tempdir: Path) -> tuple:
             genome_coordinates = fetch_and_cache_genome_coordinates(genome, gggenome_url, goldenpath_url, control_seq)
     elif bed:
         genome_coordinates = get_genome_coordinates_from_bed(bed)
+        with open(cache_file, "w") as f:
+            json.dump(genome_coordinates, f)
+            f.write("\n")
 
     return (
         Path(arguments["sample"]),
