@@ -207,6 +207,7 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
         const htmlPath = params.get("html") || "";
         const bamPath = params.get("bam") || "";
         const baiPath = params.get("bai") || "";
+        const vcfPath = params.get("vcf") || "";
         const sample = params.get("sample") || "";
         const title = params.get("title") || "Allele report";
         const frame = document.getElementById("viewer-frame");
@@ -295,9 +296,11 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
             }}
         }}
 
-        if (!bamPath || !baiPath) {{
+        const hasBam = Boolean(bamPath && baiPath);
+        const hasVcf = Boolean(vcfPath);
+        if (!hasBam && !hasVcf) {{
             if (status) {{
-                status.textContent = "No BAM file available.";
+                status.textContent = "No IGV tracks available.";
             }}
             return;
         }}
@@ -318,19 +321,31 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
                   }},
               }};
         const options = {{ ...baseOptions, tracks: [] }};
-        const track = {{
-            name: title,
-            url: encodePath(bamPath),
-            indexURL: encodePath(baiPath),
-            indexurl: encodePath(baiPath),
-            type: "alignment",
-            format: "bam",
-            autoHeight: true,
-            viewAsPairs: true,
-            samplingDepth: 30,
-            showInsertionText: true,
-            showDeletionText: true,
-        }};
+        const alignmentTrack = hasBam
+            ? {{
+                  name: title,
+                  url: encodePath(bamPath),
+                  indexURL: encodePath(baiPath),
+                  indexurl: encodePath(baiPath),
+                  type: "alignment",
+                  format: "bam",
+                  autoHeight: true,
+                  viewAsPairs: true,
+                  samplingDepth: 30,
+                  showInsertionText: true,
+                  showDeletionText: true,
+              }}
+            : null;
+        const variantTrack = hasVcf
+            ? {{
+                  name: `${{title}} variants`,
+                  url: encodePath(vcfPath),
+                  type: "variant",
+                  format: "vcf",
+                  displayMode: "EXPANDED",
+                  showAllSites: true,
+              }}
+            : null;
 
         igv.createBrowser(igvView, options)
             .then((browser) => {{
@@ -362,27 +377,34 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
                     const refseqIndex = target.tracks.findIndex((t) =>
                         String(t?.name ?? "").toLowerCase().includes("refseq curated")
                     );
-                    const alignmentTrack = target.tracks.find(
+                    const alignmentTrackLoaded = target.tracks.find(
                         (t) => t?.type === "alignment" && String(t?.name ?? "") === String(trackConfig?.name ?? "")
                     );
-                    if (refseqIndex === -1 || !alignmentTrack) {{
+                    if (refseqIndex === -1 || !alignmentTrackLoaded) {{
                         return;
                     }}
-                    const alignmentIndex = target.tracks.indexOf(alignmentTrack);
+                    const alignmentIndex = target.tracks.indexOf(alignmentTrackLoaded);
                     if (alignmentIndex > refseqIndex) {{
                         return;
                     }}
                     if (typeof target.removeTrack === "function") {{
-                        target.removeTrack(alignmentTrack);
+                        target.removeTrack(alignmentTrackLoaded);
                         if (typeof target.loadTrack === "function") {{
                             await target.loadTrack(trackConfig);
                         }}
                     }}
                 }};
+                const loadTrackSafe = async (target, trackConfig) => {{
+                    if (!trackConfig || typeof target?.loadTrack !== "function") {{
+                        return;
+                    }}
+                    await target.loadTrack(trackConfig);
+                }};
                 if (browser && typeof browser.loadTrack === "function") {{
                     return waitForRefseq(browser)
-                        .then(() => browser.loadTrack(track))
-                        .then(() => enforceTrackOrder(browser, track))
+                        .then(() => loadTrackSafe(browser, alignmentTrack))
+                        .then(() => (alignmentTrack ? enforceTrackOrder(browser, alignmentTrack) : null))
+                        .then(() => loadTrackSafe(browser, variantTrack))
                         .then(() => browser);
                 }}
                 return browser;
@@ -1063,6 +1085,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 sample,
                 bam: [".igvjs", sample, `${header}.bam`].join("/"),
                 bai: [".igvjs", sample, `${header}.bam.bai`].join("/"),
+                vcf: ["VCF", sample, `${sample}_${header}.vcf`].join("/"),
             };
         };
 
@@ -1075,6 +1098,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 html: path,
                 bam: igvPaths.bam,
                 bai: igvPaths.bai,
+                vcf: igvPaths.vcf,
                 sample: igvPaths.sample,
                 title: title || "",
             });
@@ -1107,6 +1131,15 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             showDeletionText: true,
         });
 
+        const buildVcfTrack = (vcfUrl, trackName) => ({
+            name: trackName ? `${trackName} variants` : "Variants",
+            url: vcfUrl,
+            type: "variant",
+            format: "vcf",
+            displayMode: "EXPANDED",
+            showAllSites: true,
+        });
+
         const resetIgvView = () => {
             if (!igvContainer) {
                 return;
@@ -1126,12 +1159,19 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             }
             const igvPaths = buildIgvPaths(path);
             if (!igvPaths) {
-                igvStatus.textContent = "No BAM file available for this allele.";
+                igvStatus.textContent = "No IGV tracks available for this allele.";
                 igvView.innerHTML = "";
                 return;
             }
             if (!window.igv) {
                 igvStatus.textContent = "IGV library is not available.";
+                igvView.innerHTML = "";
+                return;
+            }
+            const hasBam = Boolean(igvPaths.bam && igvPaths.bai);
+            const hasVcf = Boolean(igvPaths.vcf);
+            if (!hasBam && !hasVcf) {
+                igvStatus.textContent = "No IGV tracks available for this allele.";
                 igvView.innerHTML = "";
                 return;
             }
@@ -1146,13 +1186,19 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                     const joiner = url.includes("?") ? "&" : "?";
                     return `${url}${joiner}v=${seed}`;
                 };
-                const track = buildIgvTrack(igvPaths.bam, igvPaths.bai, title);
-                const encodedTrackUrl = addCacheBuster(encodePath(track.url), currentRequestId);
-                const encodedIndexUrl = addCacheBuster(encodePath(track.indexURL), currentRequestId);
-                track.url = encodedTrackUrl;
-                track.indexURL = encodedIndexUrl;
-                track.indexurl = encodedIndexUrl;
-                const nextSignature = [igvPaths.bam, igvPaths.bai, title || ""].join("|");
+                const track = hasBam ? buildIgvTrack(igvPaths.bam, igvPaths.bai, title) : null;
+                if (track) {
+                    const encodedTrackUrl = addCacheBuster(encodePath(track.url), currentRequestId);
+                    const encodedIndexUrl = addCacheBuster(encodePath(track.indexURL), currentRequestId);
+                    track.url = encodedTrackUrl;
+                    track.indexURL = encodedIndexUrl;
+                    track.indexurl = encodedIndexUrl;
+                }
+                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf, title) : null;
+                if (variantTrack) {
+                    variantTrack.url = addCacheBuster(encodePath(variantTrack.url), currentRequestId);
+                }
+                const nextSignature = [igvPaths.bam, igvPaths.bai, igvPaths.vcf, title || ""].join("|");
                 const previousSignature = igvView.dataset.igvSignature || "";
                 igvView.dataset.igvSignature = nextSignature;
                 if (igvBrowser && typeof igvBrowser.dispose === "function") {
@@ -1192,8 +1238,13 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                     });
                 if (browser && typeof browser.loadTrack === "function") {
                     await waitForRefseq(browser);
-                    await browser.loadTrack(track);
-                    await enforceTrackOrder(browser, track);
+                    if (track) {
+                        await browser.loadTrack(track);
+                        await enforceTrackOrder(browser, track);
+                    }
+                    if (variantTrack) {
+                        await browser.loadTrack(variantTrack);
+                    }
                 }
                 igvBrowser = browser;
                 window.__igvBrowser = browser;
