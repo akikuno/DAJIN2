@@ -45,7 +45,7 @@ def convert_pos_to_one_indexed(sam_lines: list[list[str]]) -> list[list[str]]:
 
 
 def group_by_allele_name(sam_contents: list[str], result_sample: list[dict]) -> dict[list]:
-    """Group alignments in map-ont.sam by allele name (NAME)"""
+    """Group alignments in the input SAM by allele name (NAME)."""
     sam_contents.sort()
     result_sample_sorted = sorted(result_sample, key=lambda x: x["QNAME"])
 
@@ -132,6 +132,13 @@ def update_genome_coordinates(sam: list, genome_coordinates: dict | None) -> lis
         return convert_pos_to_one_indexed(sam_records)
 
 
+def resolve_best_sam_path(tempdir: str | Path, name: str, allele: str = "control") -> Path:
+    path_best_sam = Path(tempdir, name, "midsv", allele, f"{name}_best.sam")
+    if path_best_sam.exists():
+        return path_best_sam
+    return Path(tempdir, name, "sam", allele, "map-ont.sam")
+
+
 def export_sequence_error_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS) -> None:
     path_fastq = Path(TEMPDIR, NAME, "fastq", f"{NAME}_sequence_error.fastq.gz")
     path_fasta = Path(TEMPDIR, NAME, "fasta", "control.fasta")
@@ -146,7 +153,7 @@ def export_sequence_error_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS) -> 
 
 
 def export_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS, RESULT_SAMPLE=None, is_control=False) -> None:
-    path_sam_input = Path(TEMPDIR, NAME, "sam", "control", "map-ont.sam")
+    path_sam_input = resolve_best_sam_path(TEMPDIR, NAME, allele="control")
 
     sam_records = list(fileio.read_sam(path_sam_input))
     sam_updated = update_genome_coordinates(sam_records, genome_coordinates)
