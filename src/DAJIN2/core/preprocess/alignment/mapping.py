@@ -130,4 +130,3 @@ def generate_sam(
                 path_sam_file = Path(path_sam_directory, f"{preset}.sam")
 
             path_sam_file.write_text("\n".join(sam))
-

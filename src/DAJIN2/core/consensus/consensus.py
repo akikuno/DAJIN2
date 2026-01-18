@@ -62,7 +62,9 @@ def adjust_to_100_percent(cons_percentage: list[dict[str, float]]) -> list[dict[
     return adjusted_percentages
 
 
-def call_percentage(midsv_tags: list[list[str]], mutation_loci: list[set[str]], sequence: str) -> list[dict[str, float]]:
+def call_percentage(
+    midsv_tags: list[list[str]], mutation_loci: list[set[str]], sequence: str
+) -> list[dict[str, float]]:
     """Call position weight matrix in different loci. Non-different loci are annotated as "Match"."""
     cons_percentage = convert_to_percentage(midsv_tags, mutation_loci, sequence)
     cons_percentage = remove_all_n(cons_percentage)
