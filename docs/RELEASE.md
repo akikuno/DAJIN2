@@ -19,6 +19,11 @@
 + Rename allele labels to more intuitive and descriptive names.  
   Issue [#123](https://github.com/akikuno/DAJIN2/issues/123)
 
+## 🌟 New Features
+
++ Align the BAM output with the best preset.  
+  Issue [#81](https://github.com/akikuno/DAJIN2/issues/81)
+
 ## 📝 Documentation
 
 + Add instructions for obtaining chromosome size (chrom size) to the README.  
