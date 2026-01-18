@@ -317,28 +317,77 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
                       indexURL: sample ? encodePath(`FASTA/${{sample}}/control.fasta.fai`) : "",
                   }},
               }};
-
-        const options = {{
-            ...baseOptions,
-            tracks: [
-                {{
-                    name: title,
-                    url: encodePath(bamPath),
-                    indexURL: encodePath(baiPath),
-                    indexurl: encodePath(baiPath),
-                    type: "alignment",
-                    format: "bam",
-                    autoHeight: true,
-                    viewAsPairs: true,
-                    samplingDepth: 1000,
-                    showInsertionText: true,
-                    showDeletionText: true,
-                }},
-            ],
+        const options = {{ ...baseOptions, tracks: [] }};
+        const track = {{
+            name: title,
+            url: encodePath(bamPath),
+            indexURL: encodePath(baiPath),
+            indexurl: encodePath(baiPath),
+            type: "alignment",
+            format: "bam",
+            autoHeight: true,
+            viewAsPairs: true,
+            samplingDepth: 30,
+            showInsertionText: true,
+            showDeletionText: true,
         }};
 
         igv.createBrowser(igvView, options)
-            .then(() => {{
+            .then((browser) => {{
+                const waitForRefseq = (target, timeoutMs = 2000) =>
+                    new Promise((resolve) => {{
+                        const start = Date.now();
+                        const check = () => {{
+                            const hasRefseq = Array.isArray(target?.tracks)
+                                ? target.tracks.some((t) =>
+                                      String(t?.name ?? "").toLowerCase().includes("refseq curated")
+                                  )
+                                : false;
+                            if (hasRefseq) {{
+                                resolve(true);
+                                return;
+                            }}
+                            if (Date.now() - start >= timeoutMs) {{
+                                resolve(false);
+                                return;
+                            }}
+                            setTimeout(check, 100);
+                        }};
+                        check();
+                    }});
+                const enforceTrackOrder = async (target, trackConfig) => {{
+                    if (!target || !Array.isArray(target.tracks)) {{
+                        return;
+                    }}
+                    const refseqIndex = target.tracks.findIndex((t) =>
+                        String(t?.name ?? "").toLowerCase().includes("refseq curated")
+                    );
+                    const alignmentTrack = target.tracks.find(
+                        (t) => t?.type === "alignment" && String(t?.name ?? "") === String(trackConfig?.name ?? "")
+                    );
+                    if (refseqIndex === -1 || !alignmentTrack) {{
+                        return;
+                    }}
+                    const alignmentIndex = target.tracks.indexOf(alignmentTrack);
+                    if (alignmentIndex > refseqIndex) {{
+                        return;
+                    }}
+                    if (typeof target.removeTrack === "function") {{
+                        target.removeTrack(alignmentTrack);
+                        if (typeof target.loadTrack === "function") {{
+                            await target.loadTrack(trackConfig);
+                        }}
+                    }}
+                }};
+                if (browser && typeof browser.loadTrack === "function") {{
+                    return waitForRefseq(browser)
+                        .then(() => browser.loadTrack(track))
+                        .then(() => enforceTrackOrder(browser, track))
+                        .then(() => browser);
+                }}
+                return browser;
+            }})
+            .then((browser) => {{
                 if (status) {{
                     status.textContent = "";
                 }}
@@ -1032,7 +1081,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             return `allele_viewer.html?${params.toString()}`;
         };
 
-        const buildIgvOptions = (sample, bamUrl, baiUrl, trackName) => {
+        const buildIgvBaseOptions = (sample) => {
             const baseOptions = igvGenomeInfo
                 ? { genome: igvGenomeInfo.genome, locus: igvGenomeInfo.locus }
                 : {
@@ -1041,25 +1090,22 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                           indexURL: encodePath(`FASTA/${sample}/control.fasta.fai`),
                       },
                   };
-            return {
-                ...baseOptions,
-                tracks: [
-                    {
-                        name: trackName || "Allele",
-                        url: encodePath(bamUrl),
-                        indexURL: encodePath(baiUrl),
-                        indexurl: encodePath(baiUrl),
-                        type: "alignment",
-                        format: "bam",
-                        autoHeight: true,
-                        viewAsPairs: true,
-                        samplingDepth: 1000,
-                        showInsertionText: true,
-                        showDeletionText: true,
-                    },
-                ],
-            };
+            return { ...baseOptions, tracks: [] };
         };
+
+        const buildIgvTrack = (bamUrl, baiUrl, trackName) => ({
+            name: trackName || "Allele",
+            url: bamUrl,
+            indexURL: baiUrl,
+            indexurl: baiUrl,
+            type: "alignment",
+            format: "bam",
+            autoHeight: true,
+            viewAsPairs: true,
+                        samplingDepth: 30,
+            showInsertionText: true,
+            showDeletionText: true,
+        });
 
         const resetIgvView = () => {
             if (!igvContainer) {
@@ -1090,7 +1136,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 return;
             }
             igvStatus.textContent = "Loading IGV...";
-            const options = buildIgvOptions(igvPaths.sample, igvPaths.bam, igvPaths.bai, title);
+            const options = buildIgvBaseOptions(igvPaths.sample);
             const currentRequestId = ++igvRequestId;
             try {
                 const addCacheBuster = (url, seed) => {
@@ -1100,11 +1146,12 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                     const joiner = url.includes("?") ? "&" : "?";
                     return `${url}${joiner}v=${seed}`;
                 };
-                const encodedTrackUrl = addCacheBuster(encodePath(igvPaths.bam), currentRequestId);
-                const encodedIndexUrl = addCacheBuster(encodePath(igvPaths.bai), currentRequestId);
-                options.tracks[0].url = encodedTrackUrl;
-                options.tracks[0].indexURL = encodedIndexUrl;
-                options.tracks[0].indexurl = encodedIndexUrl;
+                const track = buildIgvTrack(igvPaths.bam, igvPaths.bai, title);
+                const encodedTrackUrl = addCacheBuster(encodePath(track.url), currentRequestId);
+                const encodedIndexUrl = addCacheBuster(encodePath(track.indexURL), currentRequestId);
+                track.url = encodedTrackUrl;
+                track.indexURL = encodedIndexUrl;
+                track.indexurl = encodedIndexUrl;
                 const nextSignature = [igvPaths.bam, igvPaths.bai, title || ""].join("|");
                 const previousSignature = igvView.dataset.igvSignature || "";
                 igvView.dataset.igvSignature = nextSignature;
@@ -1122,6 +1169,32 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                     }
                     return;
                 }
+                const waitForRefseq = (target, timeoutMs = 2000) =>
+                    new Promise((resolve) => {
+                        const start = Date.now();
+                        const check = () => {
+                            const hasRefseq = Array.isArray(target?.tracks)
+                                ? target.tracks.some((t) =>
+                                      String(t?.name ?? "").toLowerCase().includes("refseq curated")
+                                  )
+                                : false;
+                            if (hasRefseq) {
+                                resolve(true);
+                                return;
+                            }
+                            if (Date.now() - start >= timeoutMs) {
+                                resolve(false);
+                                return;
+                            }
+                            setTimeout(check, 100);
+                        };
+                        check();
+                    });
+                if (browser && typeof browser.loadTrack === "function") {
+                    await waitForRefseq(browser);
+                    await browser.loadTrack(track);
+                    await enforceTrackOrder(browser, track);
+                }
                 igvBrowser = browser;
                 window.__igvBrowser = browser;
                 window.__igvLastOptions = options;
@@ -1129,6 +1202,31 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             } catch (error) {
                 console.error("Failed to load IGV", error);
                 igvStatus.textContent = "Failed to load IGV track.";
+            }
+        };
+
+        const enforceTrackOrder = async (browser, trackConfig) => {
+            if (!browser || !Array.isArray(browser.tracks)) {
+                return;
+            }
+            const refseqIndex = browser.tracks.findIndex((t) =>
+                String(t?.name ?? "").toLowerCase().includes("refseq curated")
+            );
+            const alignmentTrack = browser.tracks.find(
+                (t) => t?.type === "alignment" && String(t?.name ?? "") === String(trackConfig?.name ?? "")
+            );
+            if (refseqIndex === -1 || !alignmentTrack) {
+                return;
+            }
+            const alignmentIndex = browser.tracks.indexOf(alignmentTrack);
+            if (alignmentIndex > refseqIndex) {
+                return;
+            }
+            if (typeof browser.removeTrack === "function") {
+                browser.removeTrack(alignmentTrack);
+                if (typeof browser.loadTrack === "function") {
+                    await browser.loadTrack(trackConfig);
+                }
             }
         };
 

@@ -159,7 +159,7 @@ def export_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS, RESULT_SAMPLE=None
     sam_updated = update_genome_coordinates(sam_records, genome_coordinates)
 
     rng = random.Random()
-    max_reads_igvjs = 1000
+    max_reads_igvjs = 100
 
     # Output SAM and BAM
     path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, f"{NAME}.bam")
