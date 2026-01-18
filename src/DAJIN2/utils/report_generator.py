@@ -65,8 +65,19 @@ def summarize_info(results_all: list[dict[str, str]]) -> list[dict[str, str]]:
 
 def add_allele_type(results_summary: list[dict[str, str]]) -> list[dict[str, str]]:
     for row in results_summary:
-        row["Allele type"] = f"{row['Allele']} {row['Type']}"
+        row["Allele type"] = format_allele_type_label(row.get("Allele", ""), row.get("Type", ""))
     return results_summary
+
+
+def format_allele_type_label(allele: str, type_: str) -> str:
+    allele_text = str(allele).strip()
+    type_text = str(type_).strip()
+    type_lower = type_text.lower()
+    if type_lower in {"", "intact"}:
+        return allele_text
+    if type_lower == "indels":
+        return f"{allele_text} with indels".strip()
+    return f"{allele_text} {type_text}".strip()
 
 
 def load_genome_coordinates(report_name: str) -> dict | None:
@@ -103,6 +114,250 @@ def copy_report_launchers(report_directory: Path) -> None:
                 target_path.chmod(0o755)
             except PermissionError:
                 pass
+
+
+def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None) -> None:
+    genome_info = None
+    if genome_coordinates:
+        genome = genome_coordinates.get("genome")
+        chrom = genome_coordinates.get("chrom")
+        start = genome_coordinates.get("start")
+        end = genome_coordinates.get("end")
+        if genome and chrom and start is not None and end is not None:
+            genome_info = {"genome": genome, "locus": f"{chrom}:{start}-{end}"}
+    genome_info_json = json.dumps(genome_info)
+    viewer_template = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Allele report</title>
+    <script src="__IGV_URL__"></script>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }}
+        .viewer {{
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }}
+        .viewer__frame {{
+            flex: 1 1 60%;
+            width: 100%;
+            border: none;
+            background: #ffffff;
+            min-height: 180px;
+        }}
+        .viewer__divider {{
+            height: 16px;
+            min-height: 16px;
+            flex: 0 0 16px;
+            background: #e2e8f0;
+            cursor: row-resize;
+            border-top: 1px solid #cbd5e0;
+            border-bottom: 1px solid #cbd5e0;
+            touch-action: none;
+            user-select: none;
+        }}
+        .viewer__igv {{
+            flex: 1 1 40%;
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 1rem 1rem;
+            gap: 0.5rem;
+            background: #ffffff;
+            min-height: 180px;
+        }}
+        .viewer__title {{
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a202c;
+        }}
+        .viewer__status {{
+            font-size: 0.85rem;
+            color: #4a5568;
+        }}
+        .viewer__igv-view {{
+            flex: 1 1 auto;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #f7fafc;
+        }}
+    </style>
+</head>
+<body>
+    <div class="viewer" id="viewer">
+        <iframe class="viewer__frame" id="viewer-frame" title="Allele report"></iframe>
+        <div class="viewer__divider" id="viewer-divider" role="separator" aria-orientation="horizontal"></div>
+        <div class="viewer__igv" id="viewer-igv">
+            <div class="viewer__title" id="viewer-title">Genome browser (IGV)</div>
+            <div class="viewer__status" id="viewer-status">Loading...</div>
+            <div class="viewer__igv-view" id="viewer-igv-view"></div>
+        </div>
+    </div>
+    <script>
+    (function() {{
+        const params = new URLSearchParams(window.location.search);
+        const htmlPath = params.get("html") || "";
+        const bamPath = params.get("bam") || "";
+        const baiPath = params.get("bai") || "";
+        const sample = params.get("sample") || "";
+        const title = params.get("title") || "Allele report";
+        const frame = document.getElementById("viewer-frame");
+        const status = document.getElementById("viewer-status");
+        const igvView = document.getElementById("viewer-igv-view");
+        const divider = document.getElementById("viewer-divider");
+        const igvContainer = document.getElementById("viewer-igv");
+        const viewer = document.getElementById("viewer");
+        let splitRatio = 0.6;
+
+        const encodePath = (path) => {
+            if (!path) {
+                return "";
+            }
+            return path
+                .split("/")
+                .map((segment) => encodeURIComponent(segment))
+                .join("/");
+        };
+
+        if (frame) {{
+            frame.src = encodePath(htmlPath);
+        }}
+        if (document.getElementById("viewer-title")) {{
+            document.getElementById("viewer-title").textContent = title;
+        }}
+
+        const applySplit = (topHeight) => {{
+            if (!viewer || !frame || !igvContainer || !divider) {{
+                return;
+            }}
+            const total = viewer.clientHeight - divider.offsetHeight;
+            const minTop = 180;
+            const minBottom = 180;
+            const clampedTop = Math.max(minTop, Math.min(total - minBottom, topHeight));
+            frame.style.flex = "0 0 auto";
+            igvContainer.style.flex = "0 0 auto";
+            frame.style.height = `${{clampedTop}}px`;
+            igvContainer.style.height = `${{total - clampedTop}}px`;
+            splitRatio = clampedTop / total;
+        }};
+
+        if (divider && viewer) {{
+            let startY = 0;
+            let startTop = 0;
+            let isDragging = false;
+            const onMove = (event) => {{
+                if (!isDragging) {{
+                    return;
+                }}
+                event.preventDefault();
+                applySplit(startTop + (event.clientY - startY));
+            }};
+            const stopDragging = (event) => {{
+                if (!isDragging) {{
+                    return;
+                }}
+                isDragging = false;
+                document.body.style.cursor = "";
+                if (event && divider.hasPointerCapture?.(event.pointerId)) {{
+                    divider.releasePointerCapture(event.pointerId);
+                }}
+            }};
+            divider.addEventListener("pointerdown", (event) => {{
+                isDragging = true;
+                startY = event.clientY;
+                startTop = frame ? frame.getBoundingClientRect().height : 0;
+                document.body.style.cursor = "row-resize";
+                event.preventDefault();
+                if (divider.setPointerCapture) {{
+                    divider.setPointerCapture(event.pointerId);
+                }}
+            }});
+            divider.addEventListener("pointermove", onMove);
+            divider.addEventListener("pointerup", stopDragging);
+            divider.addEventListener("pointercancel", stopDragging);
+            window.addEventListener("resize", () => {{
+                if (viewer.clientHeight > 0) {{
+                    applySplit(viewer.clientHeight * splitRatio);
+                }}
+            }});
+            if (viewer.clientHeight > 0) {{
+                requestAnimationFrame(() => {{
+                    applySplit(viewer.clientHeight * splitRatio);
+                }});
+            }}
+        }}
+
+        if (!bamPath || !baiPath) {{
+            if (status) {{
+                status.textContent = "No BAM file available.";
+            }}
+            return;
+        }}
+        if (!window.igv) {{
+            if (status) {{
+                status.textContent = "IGV library is not available.";
+            }}
+            return;
+        }}
+
+        const igvGenomeInfo = __GENOME_INFO__;
+        const baseOptions = igvGenomeInfo
+            ? {{ genome: igvGenomeInfo.genome, locus: igvGenomeInfo.locus }}
+            : {{
+                  reference: {{
+                      fastaURL: sample ? encodePath(`FASTA/${{sample}}/control.fasta`) : "",
+                      indexURL: sample ? encodePath(`FASTA/${{sample}}/control.fasta.fai`) : "",
+                  }},
+              }};
+
+        const options = {{
+            ...baseOptions,
+            tracks: [
+                {{
+                    name: title,
+                    url: encodePath(bamPath),
+                    indexURL: encodePath(baiPath),
+                    indexurl: encodePath(baiPath),
+                    type: "alignment",
+                    format: "bam",
+                    autoHeight: true,
+                    viewAsPairs: true,
+                    samplingDepth: 1000,
+                    showInsertionText: true,
+                    showDeletionText: true,
+                }},
+            ],
+        }};
+
+        igv.createBrowser(igvView, options)
+            .then(() => {{
+                if (status) {{
+                    status.textContent = "";
+                }}
+            }})
+            .catch((error) => {{
+                console.error("Failed to load IGV", error);
+                if (status) {{
+                    status.textContent = "Failed to load IGV track.";
+                }}
+            }});
+    }})();
+    </script>
+</body>
+</html>
+"""
+    viewer_html = viewer_template.replace("{{", "{").replace("}}", "}")
+    viewer_html = viewer_html.replace("__GENOME_INFO__", genome_info_json)
+    viewer_html = viewer_html.replace("__IGV_URL__", "https://cdn.jsdelivr.net/npm/igv@3.7.3/dist/igv.min.js")
+    Path(report_directory, "allele_viewer.html").write_text(viewer_html, encoding="utf-8")
 
 
 def build_html_lookup(report_directory: Path) -> dict[tuple[str, str, str, str], str]:
@@ -154,7 +409,7 @@ def order_allele_type(results_summary: list[dict[str, str]]) -> list[str]:
     allele_type_order = []
     for allele in alleles_order:
         for type_ in ["Intact", "Indels", "SV"]:
-            allele_type_order.append(f"{allele} {type_}")
+            allele_type_order.append(format_allele_type_label(allele, type_))
 
     allele_type = {a["Allele type"] for a in results_summary}
     return [at for at in allele_type_order if at in allele_type]
@@ -511,6 +766,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             </div>
             <div class="modal__body">
                 <iframe class="modal__frame" id="allele-modal-frame" title="Allele report"></iframe>
+                <div class="modal__divider" id="allele-modal-divider" role="separator" aria-orientation="horizontal"></div>
                 <div class="modal__igv">
                     <div class="modal__igv-title">Genome browser (IGV)</div>
                     <div class="modal__igv-status" id="allele-igv-status">Waiting for allele selection.</div>
@@ -552,6 +808,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             background: #ffffff;
             border-radius: 0.75rem;
             width: min(1100px, 94vw);
+            height: 90vh;
             max-height: 90vh;
             display: flex;
             flex-direction: column;
@@ -560,9 +817,12 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             z-index: 1;
         }
         .modal__body {
-            display: grid;
-            grid-template-rows: minmax(260px, 1fr) minmax(220px, 0.8fr);
+            display: flex;
+            flex-direction: column;
             background: #ffffff;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
         }
         .modal__header,
         .modal__footer {
@@ -596,6 +856,19 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             height: 100%;
             border: none;
             background: #ffffff;
+            flex: 1 1 60%;
+            min-height: 180px;
+        }
+        .modal__divider {
+            height: 16px;
+            min-height: 16px;
+            flex: 0 0 16px;
+            background: #e2e8f0;
+            cursor: row-resize;
+            border-top: 1px solid #cbd5e0;
+            border-bottom: 1px solid #cbd5e0;
+            touch-action: none;
+            user-select: none;
         }
         .modal__igv {
             display: flex;
@@ -604,6 +877,8 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             padding: 0.75rem 1rem 1rem;
             border-top: 1px solid #e2e8f0;
             background: #ffffff;
+            flex: 1 1 40%;
+            min-height: 180px;
         }
         .modal__igv-title {
             font-size: 0.9rem;
@@ -616,7 +891,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
         }
         .modal__igv-view {
             width: 100%;
-            height: 260px;
+            height: 100%;
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
             overflow: hidden;
@@ -642,7 +917,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
     genome_info_json = json.dumps(genome_info)
 
     igv_lib_block = """
-    <script src="https://cdn.jsdelivr.net/npm/igv@2.13.1/dist/igv.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/igv@3.7.3/dist/igv.min.js"></script>
     """
 
     report_script_block = """
@@ -655,10 +930,15 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
         const modalLink = document.getElementById("allele-modal-link");
         const modalClose = document.getElementById("allele-modal-close");
         const modalBackdrop = modal ? modal.querySelector("[data-modal-close]") : null;
+        const modalBody = modal ? modal.querySelector(".modal__body") : null;
+        const modalDivider = document.getElementById("allele-modal-divider");
+        const igvContainer = modal ? modal.querySelector(".modal__igv") : null;
         const igvStatus = document.getElementById("allele-igv-status");
-        const igvView = document.getElementById("allele-igv-view");
+        let igvView = document.getElementById("allele-igv-view");
         const igvGenomeInfo = __GENOME_INFO__;
         let igvBrowser = null;
+        let igvRequestId = 0;
+        let splitRatio = 0.6;
 
         if (!figure || !modal) {
             return;
@@ -682,13 +962,27 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 .join("/");
         };
 
+        const formatAlleleType = (allele, type) => {
+            const alleleText = String(allele ?? "").trim();
+            const typeText = String(type ?? "").trim();
+            const typeLower = typeText.toLowerCase();
+            if (!typeLower || typeLower === "intact") {
+                return alleleText;
+            }
+            if (typeLower === "indels") {
+                return `${alleleText} with indels`.trim();
+            }
+            return `${alleleText} ${typeText}`.trim();
+        };
+
         const buildTitle = (point) => {
             const custom = Array.isArray(point.customdata) ? point.customdata : [];
             const label = custom[1];
             const allele = custom[2];
             const type = custom[3];
             const percent = formatPercent(custom[4]);
-            const parts = [point.x, label, allele, type, percent].filter(Boolean);
+            const alleleType = formatAlleleType(allele, type);
+            const parts = [point.x, label, alleleType, percent].filter(Boolean);
             return parts.join(" ");
         };
 
@@ -712,9 +1006,24 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             const header = stem.startsWith(prefix) ? stem.slice(prefix.length) : stem;
             return {
                 sample,
-                bam: encodePath([".igvjs", sample, `${header}.bam`].join("/")),
-                bai: encodePath([".igvjs", sample, `${header}.bam.bai`].join("/")),
+                bam: [".igvjs", sample, `${header}.bam`].join("/"),
+                bai: [".igvjs", sample, `${header}.bam.bai`].join("/"),
             };
+        };
+
+        const buildViewerUrl = (path, title) => {
+            const igvPaths = buildIgvPaths(path);
+            if (!igvPaths) {
+                return encodePath(path);
+            }
+            const params = new URLSearchParams({
+                html: path,
+                bam: igvPaths.bam,
+                bai: igvPaths.bai,
+                sample: igvPaths.sample,
+                title: title || "",
+            });
+            return `allele_viewer.html?${params.toString()}`;
         };
 
         const buildIgvOptions = (sample, bamUrl, baiUrl, trackName) => {
@@ -731,9 +1040,9 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 tracks: [
                     {
                         name: trackName || "Allele",
-                        url: bamUrl,
-                        indexURL: baiUrl,
-                        indexurl: baiUrl,
+                        url: encodePath(bamUrl),
+                        indexURL: encodePath(baiUrl),
+                        indexurl: encodePath(baiUrl),
                         type: "alignment",
                         format: "bam",
                         autoHeight: true,
@@ -744,6 +1053,19 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                     },
                 ],
             };
+        };
+
+        const resetIgvView = () => {
+            if (!igvContainer) {
+                return;
+            }
+            if (igvView && igvView.parentNode) {
+                igvView.parentNode.removeChild(igvView);
+            }
+            igvView = document.createElement("div");
+            igvView.id = "allele-igv-view";
+            igvView.className = "modal__igv-view";
+            igvContainer.appendChild(igvView);
         };
 
         const updateIgv = async (path, title) => {
@@ -762,16 +1084,108 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 return;
             }
             igvStatus.textContent = "Loading IGV...";
-            igvView.innerHTML = "";
-            igvBrowser = null;
             const options = buildIgvOptions(igvPaths.sample, igvPaths.bam, igvPaths.bai, title);
+            const currentRequestId = ++igvRequestId;
             try {
-                igvBrowser = await igv.createBrowser(igvView, options);
+                const addCacheBuster = (url, seed) => {
+                    if (!url) {
+                        return url;
+                    }
+                    const joiner = url.includes("?") ? "&" : "?";
+                    return `${url}${joiner}v=${seed}`;
+                };
+                const encodedTrackUrl = addCacheBuster(encodePath(igvPaths.bam), currentRequestId);
+                const encodedIndexUrl = addCacheBuster(encodePath(igvPaths.bai), currentRequestId);
+                options.tracks[0].url = encodedTrackUrl;
+                options.tracks[0].indexURL = encodedIndexUrl;
+                options.tracks[0].indexurl = encodedIndexUrl;
+                const nextSignature = [igvPaths.bam, igvPaths.bai, title || ""].join("|");
+                const previousSignature = igvView.dataset.igvSignature || "";
+                igvView.dataset.igvSignature = nextSignature;
+                if (igvBrowser && typeof igvBrowser.dispose === "function") {
+                    igvBrowser.dispose();
+                } else if (igvBrowser && window.igv && typeof igv.removeBrowser === "function") {
+                    igv.removeBrowser(igvBrowser);
+                }
+                igvBrowser = null;
+                resetIgvView();
+                const browser = await igv.createBrowser(igvView, options);
+                if (currentRequestId !== igvRequestId) {
+                    if (browser && typeof browser.dispose === "function") {
+                        browser.dispose();
+                    }
+                    return;
+                }
+                igvBrowser = browser;
+                window.__igvBrowser = browser;
+                window.__igvLastOptions = options;
                 igvStatus.textContent = "";
             } catch (error) {
                 console.error("Failed to load IGV", error);
                 igvStatus.textContent = "Failed to load IGV track.";
             }
+        };
+
+        const applySplit = (topHeight) => {
+            if (!modalBody || !modalFrame || !igvContainer || !modalDivider) {
+                return;
+            }
+            const total = modalBody.clientHeight - modalDivider.offsetHeight;
+            if (total <= 0) {
+                return;
+            }
+            const minTop = 180;
+            const minBottom = 180;
+            const clampedTop = Math.max(minTop, Math.min(total - minBottom, topHeight));
+            modalFrame.style.flex = "0 0 auto";
+            igvContainer.style.flex = "0 0 auto";
+            modalFrame.style.height = `${clampedTop}px`;
+            igvContainer.style.height = `${total - clampedTop}px`;
+            splitRatio = clampedTop / total;
+        };
+
+        const initDivider = () => {
+            if (!modalDivider || !modalBody || !modalFrame) {
+                return;
+            }
+            let startY = 0;
+            let startTop = 0;
+            let isDragging = false;
+            const onMove = (event) => {
+                if (!isDragging) {
+                    return;
+                }
+                event.preventDefault();
+                applySplit(startTop + (event.clientY - startY));
+            };
+            const stopDragging = (event) => {
+                if (!isDragging) {
+                    return;
+                }
+                isDragging = false;
+                document.body.style.cursor = "";
+                if (event && modalDivider.hasPointerCapture?.(event.pointerId)) {
+                    modalDivider.releasePointerCapture(event.pointerId);
+                }
+            };
+            modalDivider.addEventListener("pointerdown", (event) => {
+                isDragging = true;
+                startY = event.clientY;
+                startTop = modalFrame.getBoundingClientRect().height;
+                document.body.style.cursor = "row-resize";
+                event.preventDefault();
+                if (modalDivider.setPointerCapture) {
+                    modalDivider.setPointerCapture(event.pointerId);
+                }
+            });
+            modalDivider.addEventListener("pointermove", onMove);
+            modalDivider.addEventListener("pointerup", stopDragging);
+            modalDivider.addEventListener("pointercancel", stopDragging);
+            window.addEventListener("resize", () => {
+                if (modalBody.clientHeight > 0) {
+                    applySplit(modalBody.clientHeight * splitRatio);
+                }
+            });
         };
 
         const openModal = (path, title) => {
@@ -780,8 +1194,15 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             const encodedPath = encodePath(path);
             modalFrame.src = encodedPath;
             modalTitle.textContent = title || "Allele report";
-            modalLink.href = encodedPath;
+            modalLink.href = buildViewerUrl(path, title);
             updateIgv(path, title);
+            if (modalBody) {
+                requestAnimationFrame(() => {
+                    if (modalBody.clientHeight > 0) {
+                        applySplit(modalBody.clientHeight * splitRatio);
+                    }
+                });
+            }
         };
 
         const closeModal = () => {
@@ -798,6 +1219,8 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             }
             igvBrowser = null;
         };
+
+        initDivider();
 
         modalClose.addEventListener("click", closeModal);
         if (modalBackdrop) {
@@ -852,4 +1275,5 @@ def report(NAME: str) -> None:
     genome_coordinates = load_genome_coordinates(NAME)
     if genome_coordinates is None:
         ensure_reference_indexes(report_directory)
+    write_allele_viewer(report_directory, genome_coordinates)
     output_plot(results_summary, report_directory, genome_coordinates)
