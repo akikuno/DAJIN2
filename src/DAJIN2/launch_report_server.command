@@ -12,6 +12,10 @@ else
     exit 1
 fi
 
-PORT=8000
+PORT=$("${PYTHON}" - <<'PY'
+import random
+print(random.randint(8000, 9000))
+PY
+)
 open "http://127.0.0.1:${PORT}/report.html"
 "${PYTHON}" -m http.server "${PORT}"

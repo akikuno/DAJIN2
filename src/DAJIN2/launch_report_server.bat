@@ -9,7 +9,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-set PORT=8000
+for /f %%P in ('powershell -NoProfile -Command "Get-Random -Minimum 8000 -Maximum 9000"') do set PORT=%%P
 start "" "http://127.0.0.1:%PORT%/report.html"
 python -m http.server %PORT%
 
