@@ -186,8 +186,12 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
             width: 100%;
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            overflow: hidden;
+            overflow: visible;
             background: #f7fafc;
+        }}
+        .igv-popover {{
+            z-index: 2000;
+            pointer-events: auto;
         }}
     </style>
 </head>
@@ -336,6 +340,147 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
                   showDeletionText: true,
               }}
             : null;
+        const formatVcfValue = (value, context) => {
+            if (value === null || value === undefined) {
+                return "";
+            }
+            const text = Array.isArray(value)
+                ? value.join(",")
+                : typeof value === "object"
+                  ? JSON.stringify(value)
+                  : String(value);
+            return text;
+        };
+
+        const buildPopupItems = (rawItems) => {
+            const items = rawItems
+                .filter((item) => item.value !== undefined && item.value !== null && item.value !== "")
+                .map((item) => ({
+                    name: item.name,
+                    value: formatVcfValue(item.value, item.name),
+                    rawValue: item.value,
+                }));
+            return items.map(({ name, value }) => ({ name, value }));
+        };
+
+        const normalizeVariantType = (value) => {
+            if (value === null || value === undefined) {
+                return "";
+            }
+            return String(value).toUpperCase();
+        };
+
+        const resolveVariantType = (feature) => {
+            if (!feature) {
+                return "";
+            }
+            const info = feature.info || feature.INFO || {};
+            const svtype = normalizeVariantType(info.SVTYPE || feature.SVTYPE || feature.svtype);
+            const type = normalizeVariantType(info.TYPE || feature.TYPE || feature.type);
+            if (svtype) {
+                return svtype;
+            }
+            if (type) {
+                return type;
+            }
+            const alt = normalizeVariantType(feature.alt || feature.ALT || "");
+            if (alt.includes("<INV>")) {
+                return "INV";
+            }
+            if (alt.includes("<DEL>")) {
+                return "DEL";
+            }
+            if (alt.includes("<INS>")) {
+                return "INS";
+            }
+            return "";
+        };
+
+        const getVariantColor = (feature) => {
+            const colors = {
+                SUB: "#2ca02c",
+                INS: "#d62728",
+                DEL: "#1f77b4",
+                INV: "#9467bd",
+            };
+            return colors[resolveVariantType(feature)] || "#4a5568";
+        };
+
+        const extractInfoEntries = (info) => {
+            if (!info) {
+                return [];
+            }
+            if (info instanceof Map) {
+                const entries = [];
+                info.forEach((value, key) => {
+                    entries.push([key, value]);
+                });
+                return entries;
+            }
+            if (typeof info === "object") {
+                return Object.entries(info);
+            }
+            return [];
+        };
+
+        const extractAltValue = (feature) => {
+            return (
+                feature.alt ||
+                feature.ALT ||
+                feature.altBases ||
+                feature.alts ||
+                feature.alleles ||
+                feature.altBasesString ||
+                ""
+            );
+        };
+
+        const buildVcfPopupData = (feature) => {
+            if (!feature) {
+                return [{ name: "Variant", value: "No data" }];
+            }
+            const chr = feature.chr || feature.chrom || feature.CHROM || "";
+            const pos =
+                feature.pos ?? feature.POS ?? (feature.start != null ? feature.start + 1 : feature.position ?? "");
+            const ref = feature.ref || feature.REF || "";
+            const alt = extractAltValue(feature);
+            const id = feature.id || feature.ID || "";
+            const qual = feature.qual || feature.QUAL || "";
+            const filter = feature.filter || feature.FILTER || "";
+            const info = feature.info || feature.INFO || {};
+            const items = [];
+            if (chr) {
+                items.push({ name: "CHROM", value: chr });
+            }
+            if (pos !== "") {
+                items.push({ name: "POS", value: pos });
+            }
+            if (ref) {
+                items.push({ name: "REF", value: ref });
+            }
+            if (alt) {
+                items.push({ name: "ALT", value: alt });
+            }
+            if (id && id !== ".") {
+                items.push({ name: "ID", value: id });
+            }
+            if (qual !== "" && qual !== ".") {
+                items.push({ name: "QUAL", value: qual });
+            }
+            if (filter && filter !== ".") {
+                items.push({ name: "FILTER", value: filter });
+            }
+            extractInfoEntries(info)
+                .sort(([a], [b]) => String(a).localeCompare(String(b)))
+                .forEach(([key, value]) => {
+                    items.push({ name: String(key), value });
+                });
+            if (items.length === 0) {
+                return buildPopupItems([{ name: "Variant", value: "No details" }]);
+            }
+            return buildPopupItems(items);
+        };
+
         const variantTrack = hasVcf
             ? {{
                   name: `${{title}} variants`,
@@ -344,6 +489,8 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
                   format: "vcf",
                   displayMode: "EXPANDED",
                   showAllSites: true,
+                  popupData: buildVcfPopupData,
+                  color: getVariantColor,
               }}
             : null;
 
@@ -965,8 +1112,12 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             height: 100%;
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            overflow: hidden;
+            overflow: visible;
             background: #f7fafc;
+        }
+        .igv-popover {
+            z-index: 2000;
+            pointer-events: auto;
         }
         .modal__link {
             text-decoration: none;
@@ -1060,7 +1211,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 alleleType || "",
                 percentText,
             ].filter(Boolean);
-            return parts.join(" ").replace(/\s+/g, " ").trim();
+            return parts.join(" ").replace(/\\s+/g, " ").trim();
         };
 
         const buildIgvPaths = (path) => {
@@ -1131,6 +1282,142 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             showDeletionText: true,
         });
 
+        const formatVcfValue = (value, context) => {
+            if (value === null || value === undefined) {
+                return "";
+            }
+            const text = Array.isArray(value)
+                ? value.join(",")
+                : typeof value === "object"
+                  ? JSON.stringify(value)
+                  : String(value);
+            return text;
+        };
+
+        const buildPopupItems = (rawItems) => {
+            return rawItems
+                .filter((item) => item.value !== undefined && item.value !== null && item.value !== "")
+                .map((item) => ({ name: item.name, value: formatVcfValue(item.value, item.name) }));
+        };
+
+        const normalizeVariantType = (value) => {
+            if (value === null || value === undefined) {
+                return "";
+            }
+            return String(value).toUpperCase();
+        };
+
+        const resolveVariantType = (feature) => {
+            if (!feature) {
+                return "";
+            }
+            const info = feature.info || feature.INFO || {};
+            const svtype = normalizeVariantType(info.SVTYPE || feature.SVTYPE || feature.svtype);
+            const type = normalizeVariantType(info.TYPE || feature.TYPE || feature.type);
+            if (svtype) {
+                return svtype;
+            }
+            if (type) {
+                return type;
+            }
+            const alt = normalizeVariantType(feature.alt || feature.ALT || "");
+            if (alt.includes("<INV>")) {
+                return "INV";
+            }
+            if (alt.includes("<DEL>")) {
+                return "DEL";
+            }
+            if (alt.includes("<INS>")) {
+                return "INS";
+            }
+            return "";
+        };
+
+        const getVariantColor = (feature) => {
+            const colors = {
+                SUB: "#2ca02c",
+                INS: "#d62728",
+                DEL: "#1f77b4",
+                INV: "#9467bd",
+            };
+            return colors[resolveVariantType(feature)] || "#4a5568";
+        };
+
+        const extractInfoEntries = (info) => {
+            if (!info) {
+                return [];
+            }
+            if (info instanceof Map) {
+                const entries = [];
+                info.forEach((value, key) => {
+                    entries.push([key, value]);
+                });
+                return entries;
+            }
+            if (typeof info === "object") {
+                return Object.entries(info);
+            }
+            return [];
+        };
+
+        const extractAltValue = (feature) => {
+            return (
+                feature.alt ||
+                feature.ALT ||
+                feature.altBases ||
+                feature.alts ||
+                feature.alleles ||
+                feature.altBasesString ||
+                ""
+            );
+        };
+
+        const buildVcfPopupData = (feature) => {
+            if (!feature) {
+                return [{ name: "Variant", value: "No data" }];
+            }
+            const chr = feature.chr || feature.chrom || feature.CHROM || "";
+            const pos =
+                feature.pos ?? feature.POS ?? (feature.start != null ? feature.start + 1 : feature.position ?? "");
+            const ref = feature.ref || feature.REF || "";
+            const alt = extractAltValue(feature);
+            const id = feature.id || feature.ID || "";
+            const qual = feature.qual || feature.QUAL || "";
+            const filter = feature.filter || feature.FILTER || "";
+            const info = feature.info || feature.INFO || {};
+            const items = [];
+            if (chr) {
+                items.push({ name: "CHROM", value: chr });
+            }
+            if (pos !== "") {
+                items.push({ name: "POS", value: pos });
+            }
+            if (ref) {
+                items.push({ name: "REF", value: ref });
+            }
+            if (alt) {
+                items.push({ name: "ALT", value: alt });
+            }
+            if (id && id !== ".") {
+                items.push({ name: "ID", value: id });
+            }
+            if (qual !== "" && qual !== ".") {
+                items.push({ name: "QUAL", value: qual });
+            }
+            if (filter && filter !== ".") {
+                items.push({ name: "FILTER", value: filter });
+            }
+            extractInfoEntries(info)
+                .sort(([a], [b]) => String(a).localeCompare(String(b)))
+                .forEach(([key, value]) => {
+                    items.push({ name: String(key), value });
+                });
+            if (items.length === 0) {
+                return buildPopupItems([{ name: "Variant", value: "No details" }]);
+            }
+            return buildPopupItems(items);
+        };
+
         const buildVcfTrack = (vcfUrl, trackName) => ({
             name: trackName ? `${trackName} variants` : "Variants",
             url: vcfUrl,
@@ -1138,6 +1425,8 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             format: "vcf",
             displayMode: "EXPANDED",
             showAllSites: true,
+            popupData: buildVcfPopupData,
+            color: getVariantColor,
         });
 
         const resetIgvView = () => {

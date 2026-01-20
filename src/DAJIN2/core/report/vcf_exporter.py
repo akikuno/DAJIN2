@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
-from DAJIN2.utils.midsv_handler import revcomp_midsvs
+import midsv
+
+from DAJIN2.core.preprocess.alignment import mapping
+from DAJIN2.utils import fileio
+from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence, revcomp_midsvs
 
 LARGE_SV_THRESHOLD = 50
 
@@ -19,7 +24,12 @@ def _format_info(info: dict[str, str | int]) -> str:
             seen.add(key)
     for key in sorted(k for k in info.keys() if k not in seen):
         info_items.append((key, info[key]))
-    return ";".join(f"{key}={value}" for key, value in info_items)
+    formatted_items: list[str] = []
+    for key, value in info_items:
+        if isinstance(value, str):
+            value = value.replace("%", "%25")
+        formatted_items.append(f"{key}={value}")
+    return ";".join(formatted_items)
 
 
 def _reference_base(token: str) -> str:
@@ -83,7 +93,7 @@ def _midsv_to_vcf_records(
         if n_start is None:
             return
         ref_seq = "N" * n_len
-        info = {"TYPE": "DEL", "SVLEN": -n_len, "SEQ": ref_seq, "QNAME": allele_id}
+        info = {"SVTYPE": "DEL", "TYPE": "DEL", "SVLEN": -n_len, "SEQ": ref_seq, "QNAME": allele_id}
         records.append(
             {"CHROM": chrom, "POS": n_start, "ID": allele_id, "REF": ref_seq[0], "ALT": "<DEL>", "INFO": info}
         )
@@ -140,7 +150,7 @@ def _midsv_to_vcf_records(
                 deleted_seq += look_ahead[1:].upper()
                 consumed += 1
             ref_base = deleted_seq[0] if deleted_seq else "N"
-            info = {"TYPE": "DEL", "SVLEN": -len(deleted_seq), "SEQ": deleted_seq, "QNAME": allele_id}
+            info = {"SVTYPE": "DEL", "TYPE": "DEL", "SVLEN": -len(deleted_seq), "SEQ": deleted_seq, "QNAME": allele_id}
             records.append(
                 {"CHROM": chrom, "POS": start_pos, "ID": allele_id, "REF": ref_base, "ALT": "<DEL>", "INFO": info}
             )
@@ -154,13 +164,18 @@ def _midsv_to_vcf_records(
             if inserted_seq:
                 info["SEQ"] = inserted_seq
             alt = "<INS>" if len(inserted_seq) > large_sv_threshold else anchor_ref + inserted_seq
-            records.append(
-                {"CHROM": chrom, "POS": pos, "ID": allele_id, "REF": anchor_ref, "ALT": alt, "INFO": info}
-            )
+            records.append({"CHROM": chrom, "POS": pos, "ID": allele_id, "REF": anchor_ref, "ALT": alt, "INFO": info})
             if anchor_op == "*" and anchor_alt and anchor_alt != anchor_ref:
                 sub_info = {"TYPE": "SUB", "QNAME": allele_id}
                 records.append(
-                    {"CHROM": chrom, "POS": pos, "ID": allele_id, "REF": anchor_ref, "ALT": anchor_alt, "INFO": sub_info}
+                    {
+                        "CHROM": chrom,
+                        "POS": pos,
+                        "ID": allele_id,
+                        "REF": anchor_ref,
+                        "ALT": anchor_alt,
+                        "INFO": sub_info,
+                    }
                 )
             pos += 1
             idx += 1
@@ -175,6 +190,68 @@ def _midsv_to_vcf_records(
     return records
 
 
+def _should_align_to_control(allele_name: str) -> bool:
+    return allele_name.lower() != "control"
+
+
+def _extract_allele_name(header: str) -> str:
+    parts = header.split("|")
+    if len(parts) >= 2:
+        return parts[1]
+    return header
+
+
+def _load_control_sequence(tempdir: Path, sample_name: str) -> str | None:
+    path_control = Path(tempdir, sample_name, "fasta", "control.fasta")
+    if not path_control.exists():
+        return None
+    for record in fileio.read_fasta(path_control):
+        return record["sequence"]
+    return None
+
+
+def _write_temp_fasta(sequence: str, name: str) -> Path:
+    with NamedTemporaryFile("w", delete=False, suffix=".fasta") as tmp:
+        tmp.write(f">{name}\n")
+        for i in range(0, len(sequence), 80):
+            tmp.write(sequence[i : i + 80] + "\n")
+        return Path(tmp.name)
+
+
+def _align_sequence_to_control(control_sequence: str, query_sequence: str) -> list[str]:
+    path_ref = None
+    path_query = None
+    path_sam = None
+    try:
+        path_ref = _write_temp_fasta(control_sequence, "control")
+        path_query = _write_temp_fasta(query_sequence, "query")
+        sam_lines = mapping.to_sam(path_ref, path_query, preset="map-ont")
+        with NamedTemporaryFile("w", delete=False, suffix=".sam") as tmp_sam:
+            path_sam = Path(tmp_sam.name)
+            for line in sam_lines:
+                if line.startswith("@"):
+                    tmp_sam.write(line if line.endswith("\n") else f"{line}\n")
+                    continue
+                fields = line.split("\t")
+                if len(fields) > 1:
+                    try:
+                        flag = int(fields[1])
+                    except ValueError:
+                        flag = 0
+                    if flag & 2048:
+                        continue
+                tmp_sam.write(line if line.endswith("\n") else f"{line}\n")
+        alignments_midsv = midsv.transform(path_sam=path_sam, qscore=False)
+        if not alignments_midsv:
+            return []
+        midsv_tags = alignments_midsv[0]["MIDSV"].split(",")
+        return midsv_tags
+    finally:
+        for path in (path_ref, path_query, path_sam):
+            if path:
+                path.unlink(missing_ok=True)
+
+
 def export_to_vcf(
     tempdir: Path, sample_name: str, genome_coordinates: dict | None, cons_midsv_tags: dict[str, list[str]]
 ) -> None:
@@ -183,6 +260,7 @@ def export_to_vcf(
 
     chrom = str(genome_coordinates.get("chrom") or "control")
     start_offset = int(genome_coordinates.get("start", 0))
+    control_sequence = _load_control_sequence(tempdir, sample_name)
 
     def write_vcf(path_output: Path, records: list[dict[str, object]]) -> None:
         for order, record in enumerate(records):
@@ -207,14 +285,23 @@ def export_to_vcf(
                         if svlen_int is not None:
                             info["END"] = int(record["POS"]) + abs(svlen_int) - 1
                 info_str = _format_info(info)
+                record_id = record.get("ID", ".")
+                if isinstance(record_id, str):
+                    record_id = record_id.replace("%", "%25")
                 f.write(
-                    f"{record['CHROM']}\t{record['POS']}\t{record.get('ID', '.')}\t{record['REF']}\t"
+                    f"{record['CHROM']}\t{record['POS']}\t{record_id}\t{record['REF']}\t"
                     f"{record['ALT']}\t.\tPASS\t{info_str}\n"
                 )
 
     for key, cons_midsv_tag in cons_midsv_tags.items():
         header = key.replace("|", "_")
         midsv_tags = cons_midsv_tag
+        allele_name = _extract_allele_name(key)
+        if _should_align_to_control(allele_name) and control_sequence:
+            consensus_sequence = convert_midsvs_to_sequence(cons_midsv_tag).upper()
+            aligned_midsv_tags = _align_sequence_to_control(control_sequence, consensus_sequence)
+            if aligned_midsv_tags:
+                midsv_tags = aligned_midsv_tags
         if genome_coordinates.get("strand") == "-":
             midsv_tags = revcomp_midsvs(midsv_tags)
         records = _midsv_to_vcf_records(midsv_tags, chrom, start_offset, header, LARGE_SV_THRESHOLD)
