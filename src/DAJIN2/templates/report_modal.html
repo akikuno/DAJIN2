@@ -1,0 +1,21 @@
+<div class="modal" id="allele-modal" aria-hidden="true">
+        <div class="modal__backdrop" data-modal-close></div>
+        <div class="modal__content" role="dialog" aria-modal="true" aria-labelledby="allele-modal-title">
+            <div class="modal__header">
+                <div class="modal__title" id="allele-modal-title">Allele report</div>
+                <button class="modal__close" id="allele-modal-close" type="button">Close</button>
+            </div>
+            <div class="modal__body">
+                <iframe class="modal__frame" id="allele-modal-frame" title="Allele report"></iframe>
+                <div class="modal__divider" id="allele-modal-divider" role="separator" aria-orientation="horizontal"></div>
+                <div class="modal__igv">
+                    <div class="modal__igv-title">Genome browser (IGV)</div>
+                    <div class="modal__igv-status" id="allele-igv-status">Waiting for allele selection.</div>
+                    <div class="modal__igv-view" id="allele-igv-view"></div>
+                </div>
+            </div>
+            <div class="modal__footer">
+                <a class="modal__link" id="allele-modal-link" target="_blank" rel="noopener">Open in new tab</a>
+            </div>
+        </div>
+    </div>

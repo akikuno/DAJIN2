@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Allele report</title>
+    <script src="__IGV_URL__"></script>
+    <style>
+__ALLELE_VIEWER_CSS__
+    </style>
+</head>
+<body>
+    <div class="viewer" id="viewer">
+        <iframe class="viewer__frame" id="viewer-frame" title="Allele report"></iframe>
+        <div class="viewer__divider" id="viewer-divider" role="separator" aria-orientation="horizontal"></div>
+        <div class="viewer__igv" id="viewer-igv">
+            <div class="viewer__title" id="viewer-title">Genome browser (IGV)</div>
+            <div class="viewer__status" id="viewer-status">Loading...</div>
+            <div class="viewer__igv-view" id="viewer-igv-view"></div>
+        </div>
+    </div>
+    <script>
+__ALLELE_VIEWER_JS__
+    </script>
+</body>
+</html>
