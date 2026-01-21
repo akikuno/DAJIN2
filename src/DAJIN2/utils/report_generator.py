@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -102,7 +103,7 @@ def ensure_reference_indexes(report_directory: Path) -> None:
 
 def copy_report_launchers(report_directory: Path) -> None:
     source_root = Path(__file__).resolve().parent.parent
-    launcher_names = ["launch_report_server.bat", "launch_report_server.command"]
+    launcher_names = ["launch_report_windows.bat", "launch_report_mac.command"]
     for name in launcher_names:
         source_path = Path(source_root, name)
         if not source_path.exists():
@@ -116,7 +117,7 @@ def copy_report_launchers(report_directory: Path) -> None:
                 pass
 
 
-def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None) -> None:
+def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None, asset_prefix: str = "") -> None:
     genome_info = None
     if genome_coordinates:
         genome = genome_coordinates.get("genome")
@@ -221,6 +222,7 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
         const igvContainer = document.getElementById("viewer-igv");
         const viewer = document.getElementById("viewer");
         let splitRatio = 0.6;
+        const assetPrefix = __ASSET_PREFIX__;
 
         const encodePath = (path) => {
             if (!path) {
@@ -231,9 +233,19 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
                 .map((segment) => encodeURIComponent(segment))
                 .join("/");
         };
+        const resolvePath = (path) => {
+            if (!path) {
+                return "";
+            }
+            if (/^[a-zA-Z]+:\\/\\//.test(path) || path.startsWith("/")) {
+                return path;
+            }
+            const combined = assetPrefix ? [assetPrefix, path].join("/") : path;
+            return encodePath(combined);
+        };
 
         if (frame) {{
-            frame.src = encodePath(htmlPath);
+            frame.src = resolvePath(htmlPath);
         }}
         if (document.getElementById("viewer-title")) {{
             document.getElementById("viewer-title").textContent = title;
@@ -320,17 +332,17 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
             ? {{ genome: igvGenomeInfo.genome, locus: igvGenomeInfo.locus }}
             : {{
                   reference: {{
-                      fastaURL: sample ? encodePath(`FASTA/${{sample}}/control.fasta`) : "",
-                      indexURL: sample ? encodePath(`FASTA/${{sample}}/control.fasta.fai`) : "",
+                      fastaURL: sample ? resolvePath(`FASTA/${{sample}}/control.fasta`) : "",
+                      indexURL: sample ? resolvePath(`FASTA/${{sample}}/control.fasta.fai`) : "",
                   }},
               }};
         const options = {{ ...baseOptions, tracks: [] }};
         const alignmentTrack = hasBam
             ? {{
                   name: title,
-                  url: encodePath(bamPath),
-                  indexURL: encodePath(baiPath),
-                  indexurl: encodePath(baiPath),
+                  url: resolvePath(bamPath),
+                  indexURL: resolvePath(baiPath),
+                  indexurl: resolvePath(baiPath),
                   type: "alignment",
                   format: "bam",
                   autoHeight: true,
@@ -484,7 +496,7 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
         const variantTrack = hasVcf
             ? {{
                   name: `${{title}} variants`,
-                  url: encodePath(vcfPath),
+                  url: resolvePath(vcfPath),
                   type: "variant",
                   format: "vcf",
                   displayMode: "EXPANDED",
@@ -575,6 +587,7 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None)
     viewer_html = viewer_template.replace("{{", "{").replace("}}", "}")
     viewer_html = viewer_html.replace("__GENOME_INFO__", genome_info_json)
     viewer_html = viewer_html.replace("__IGV_URL__", "https://cdn.jsdelivr.net/npm/igv@3.7.3/dist/igv.min.js")
+    viewer_html = viewer_html.replace("__ASSET_PREFIX__", json.dumps(asset_prefix))
     Path(report_directory, "allele_viewer.html").write_text(viewer_html, encoding="utf-8")
 
 
@@ -653,7 +666,13 @@ def inject_plot_assets(
     html_path.write_text(html_content, encoding="utf-8")
 
 
-def output_plot(results_summary: list[dict[str, str]], report_directory: Path, genome_coordinates: dict | None = None):
+def output_plot(
+    results_summary: list[dict[str, str]],
+    report_directory: Path,
+    report_html_directory: Path,
+    genome_coordinates: dict | None = None,
+    asset_prefix: str = "",
+):
     results_plot = add_allele_type(results_summary)
     results_plot = attach_html_paths(results_plot, report_directory)
     alleletype_order = order_allele_type(results_summary)
@@ -672,7 +691,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
     fig.update_xaxes(categoryorder="category ascending")
 
     div_id = "read_plot_fig"
-    report_html_path = Path(report_directory, "report.html")
+    report_html_path = Path(report_html_directory, "report.html")
     fig.write_html(report_html_path, include_plotlyjs="cdn", full_html=True, div_id=div_id)
 
     trace_groups: dict[str, list[int]] = {}
@@ -1161,6 +1180,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
         let igvBrowser = null;
         let igvRequestId = 0;
         let splitRatio = 0.6;
+        const assetPrefix = __ASSET_PREFIX__;
 
         if (!figure || !modal) {
             return;
@@ -1181,6 +1201,16 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 .split("/")
                 .map((segment) => encodeURIComponent(segment))
                 .join("/");
+        };
+        const resolvePath = (path) => {
+            if (!path) {
+                return "";
+            }
+            if (/^[a-zA-Z]+:\\/\\//.test(path) || path.startsWith("/")) {
+                return path;
+            }
+            const combined = assetPrefix ? [assetPrefix, path].join("/") : path;
+            return encodePath(combined);
         };
 
         const formatAlleleType = (allele, type) => {
@@ -1243,7 +1273,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
         const buildViewerUrl = (path, title) => {
             const igvPaths = buildIgvPaths(path);
             if (!igvPaths) {
-                return encodePath(path);
+                return resolvePath(path);
             }
             const params = new URLSearchParams({
                 html: path,
@@ -1260,9 +1290,9 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
             const baseOptions = igvGenomeInfo
                 ? { genome: igvGenomeInfo.genome, locus: igvGenomeInfo.locus }
                 : {
-                      reference: {
-                          fastaURL: encodePath(`FASTA/${sample}/control.fasta`),
-                          indexURL: encodePath(`FASTA/${sample}/control.fasta.fai`),
+                  reference: {
+                          fastaURL: resolvePath(`FASTA/${sample}/control.fasta`),
+                          indexURL: resolvePath(`FASTA/${sample}/control.fasta.fai`),
                       },
                   };
             return { ...baseOptions, tracks: [] };
@@ -1477,15 +1507,15 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
                 };
                 const track = hasBam ? buildIgvTrack(igvPaths.bam, igvPaths.bai, title) : null;
                 if (track) {
-                    const encodedTrackUrl = addCacheBuster(encodePath(track.url), currentRequestId);
-                    const encodedIndexUrl = addCacheBuster(encodePath(track.indexURL), currentRequestId);
+                    const encodedTrackUrl = addCacheBuster(resolvePath(track.url), currentRequestId);
+                    const encodedIndexUrl = addCacheBuster(resolvePath(track.indexURL), currentRequestId);
                     track.url = encodedTrackUrl;
                     track.indexURL = encodedIndexUrl;
                     track.indexurl = encodedIndexUrl;
                 }
                 const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf, title) : null;
                 if (variantTrack) {
-                    variantTrack.url = addCacheBuster(encodePath(variantTrack.url), currentRequestId);
+                    variantTrack.url = addCacheBuster(resolvePath(variantTrack.url), currentRequestId);
                 }
                 const nextSignature = [igvPaths.bam, igvPaths.bai, igvPaths.vcf, title || ""].join("|");
                 const previousSignature = igvView.dataset.igvSignature || "";
@@ -1635,7 +1665,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
         const openModal = (path, title) => {
             modal.classList.add("is-open");
             modal.setAttribute("aria-hidden", "false");
-            const encodedPath = encodePath(path);
+            const encodedPath = resolvePath(path);
             modalFrame.src = encodedPath;
             modalTitle.textContent = title || "Allele report";
             modalLink.href = buildViewerUrl(path, title);
@@ -1689,6 +1719,7 @@ def output_plot(results_summary: list[dict[str, str]], report_directory: Path, g
     """
 
     report_script_block = report_script_block.replace("__GENOME_INFO__", genome_info_json)
+    report_script_block = report_script_block.replace("__ASSET_PREFIX__", json.dumps(asset_prefix))
 
     inject_plot_assets(
         report_html_path,
@@ -1707,6 +1738,8 @@ def report(NAME: str) -> None:
     report_directory = Path(DAJIN_RESULTS_DIR, NAME)
     report_directory.mkdir(exist_ok=True, parents=True)
     shutil.copytree(Path(TEMP_ROOT_DIR, NAME, "report"), report_directory, dirs_exist_ok=True)
+    report_html_directory = Path(report_directory, ".report")
+    report_html_directory.mkdir(exist_ok=True)
     copy_report_launchers(report_directory)
 
     results_all = extract_all_info(Path(TEMP_ROOT_DIR, NAME, "result"))
@@ -1719,5 +1752,8 @@ def report(NAME: str) -> None:
     genome_coordinates = load_genome_coordinates(NAME)
     if genome_coordinates is None:
         ensure_reference_indexes(report_directory)
-    write_allele_viewer(report_directory, genome_coordinates)
-    output_plot(results_summary, report_directory, genome_coordinates)
+    asset_prefix = Path(os.path.relpath(report_directory, report_html_directory)).as_posix()
+    if asset_prefix == ".":
+        asset_prefix = ""
+    write_allele_viewer(report_html_directory, genome_coordinates, asset_prefix)
+    output_plot(results_summary, report_directory, report_html_directory, genome_coordinates, asset_prefix)
