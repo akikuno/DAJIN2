@@ -405,10 +405,11 @@ Inside the `DAJIN_Results/{NAME}` directory, the following files can be found:
 ```
 DAJIN_Results/tyr-substitution
 ├── BAM
+│   ├── control
 │   ├── tyr_c230gt_01
 │   ├── tyr_c230gt_10
-│   ├── tyr_c230gt_50
-│   └── tyr_control
+│   └── tyr_c230gt_50
+├── DAJIN2_log_20260127_140954_076887.txt
 ├── FASTA
 │   ├── tyr_c230gt_01
 │   ├── tyr_c230gt_10
@@ -421,55 +422,67 @@ DAJIN_Results/tyr-substitution
 │   ├── tyr_c230gt_01.csv
 │   ├── tyr_c230gt_10.csv
 │   └── tyr_c230gt_50.csv
-├── read_plot.html
-├── read_plot.pdf
+├── VCF
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
+├── launch_report_mac.command
+├── launch_report_windows.bat
 └── read_summary.xlsx
 ```
 
-## 1. BAM
+## 1. launch_report_windows.bat / launch_report_mac.command
 
-The BAM directory contains the BAM files of reads classified by allele.  
+On Windows, double-click `launch_report_windows.bat`.  
+On macOS, double-click `launch_report_mac.command`.  
+Your browser will open and display the report.
 
-> [!NOTE]
-> Specifying a reference genome using the `genome` option will align the reads to that genome.  
-> Without `genome` options, the reads will align to the control allele within the input FASTA file.
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="75%" />
 
-## 2. FASTA and HTML
+In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.
 
-The FASTA directory stores the FASTA files of each allele.  
-The HTML directory contains HTML files for each allele, where mutation sites are color-highlighted.  
-For example, Tyr point mutation is highlighted in **green**.  
+**Allele type** categories:  
+- **{Allele name}**: Alleles that perfectly match a user-defined allele in the FASTA file
+- **{Allele name} with indels**: Alleles similar to a user-defined allele but with a few-base substitution, deletion, insertion, or inversion
+- **unassigned insertion/deletion/inversion**: Alleles with deletions, insertions, or inversions of 10 bases or more that are not defined by the user
+
+> [!WARNING]  
+> In PCR amplicon sequencing, **Percent of reads** may not match the true allele proportions due to amplification bias.  
+> This effect can be pronounced when large deletions are present, potentially distorting the actual allele ratios.
+
+## 2. read_summary.xlsx
+
+read_summary.xlsx lists the read counts and proportions for each allele.  
+The stacked bar chart in the report is a visualization of `read_summary.xlsx`.  
+Use it as reference when preparing figures for publications.
+
+## 3. BAM and VCF
+
+The BAM and VCF directories contain BAM and VCF files classified by allele.  
+
+> [!NOTE]  
+> If `--bed` or `--genome` is not specified, reads are aligned to the control allele in the input FASTA file.
+
+## 4. FASTA and HTML
+
+The FASTA directory stores FASTA files for each allele.  
+The HTML directory stores per-allele HTML files with color-highlighted mutations.  
+An example of a Tyr point mutation (green) is shown below:
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/tyr-substitution.png" width="75%" />
 
-Furthermore, DAJIN2 extracts representative SV alleles (Insertion, Deletion, Inversion) included in the sample and highlights SV regions with colored underlines.  
-The following is an example where a deletion (light blue) and an insertion (red) are observed at both ends of an inversion (purple underline):
+DAJIN2 also extracts representative SV alleles (Insertion, Deletion, Inversion) in the sample and underlines SV regions.  
+Below is an example where a deletion (light blue) and an insertion (red) are observed at both ends of an inversion (purple underline).
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
-## 3. MUTATION_INFO
+## 5. MUTATION_INFO
 
-The MUTATION_INFO directory saves tables depicting mutation sites for each allele.  
-An example of a *Tyr* point mutation is described by its position on the chromosome and the type of mutation.  
+The MUTATION_INFO directory stores tables describing mutation sites for each allele.  
+An example of a *Tyr* point mutation is shown below:
+- It lists the chromosomal position and the mutation type.
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
-
-## 4. read_summary.xlsx, read_plot.html and read_plot.pdf
-
-read_summary.xlsx summarizes the number and proportion of reads per allele.  
-Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
-The chart's **Allele type** indicates the type of allele, and **Percent of reads** shows the proportion of reads for each allele.  
-
-The **Allele type** includes:
-- **Intact**: Alleles that perfectly match the input FASTA allele.
-- **Indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
-- **SV**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
-
-<img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
-
-> [!WARNING]
-> In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
-> Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
 # 📣 Feedback and Support
 
@@ -497,4 +510,3 @@ By participating in this project you agree to abide by its terms.
 For more information, please refer to the following publication:
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
-

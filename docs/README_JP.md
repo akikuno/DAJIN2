@@ -54,12 +54,12 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 ### ソフトウェア
 
 - Python 3.10-3.12
-- Unix環境 (Linux, macOS, WSL2, etc.)
+- Unix環境（Linux、macOS、WSL2など）
 
 >[!IMPORTANT]
 > **Windowsユーザーの方へ**  
 > DAJIN2はLinux環境での実行を前提としています。Windowsをご利用の場合は、  
-> **WSL2（Windows Subsystem for Linux 2）** を使用してください。
+> WSL2（Windows Subsystem for Linux 2）を使用してください。
 
 ## [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
 
@@ -119,7 +119,7 @@ DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲ
 
 #### [Dorado](https://github.com/nanoporetech/dorado)によるベースコール
 
-Doradoによるベースコール（[`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)）においては、BAMファイルが出力されます：
+Doradoによるベースコール（[`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)）では、BAMファイルが出力されます：
 
 ```text
 bam_pass
@@ -147,12 +147,12 @@ dorado_correct
 ```
 
 > [!NOTE]
-> Doradoによるベースコールとでマルチプレックスの使用方法については、[DORADO_HANDLING_JP.md](./DORADO_HANDLING_JP.md)をご覧ください。
+> Doradoによるベースコールでのマルチプレックスの使用方法については、[DORADO_HANDLING_JP.md](./DORADO_HANDLING_JP.md)をご覧ください。
 
 
 #### [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)によるベースコール
 
-Guppyによるベースコール後、以下のようなファイル構成が出力されます：
+Guppyによるベースコール後は、以下のようなファイル構成で出力されます：
 
 ```text
 fastq_pass
@@ -172,7 +172,7 @@ fastq_pass
 FASTAファイルには、ゲノム編集によって想定されるアレルを記述します。
 
 > [!IMPORTANT]
->コントロールアレルの指定： `>control`というヘッダー名と、その配列は必須です。  
+> コントロールアレルの指定：`>control`というヘッダー名とその配列は必須です。  
 
 事前に想定されるアレルがある場合（例：ノックインやノックアウト）、それらのシーケンスもFASTAファイルに記載してください。これらの想定アレルの名称は任意に設定できます。
 
@@ -187,12 +187,12 @@ ACGTACGTCCCCACGTACGT
 ACGTACGT
 ```
 
-ここで、`>control` はコントロールアレルの配列を表しており、必須です。  
-`>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレル配列です。  
+ここで、`>control`はコントロールアレルの配列を表しており、必須です。  
+`>knock-in`と`>knock-out`はそれぞれノックインとノックアウトの想定アレル配列です。  
 
 > [!IMPORTANT]
 > **FASTA配列の両端は、アンプリコン配列の両端と一致させてください。**  
-> アンプリコンよりも長い、または短い場合、その差分はIndelとして判定される可能性があります  
+> アンプリコンより長い、または短い場合、その差分がIndelとして判定される可能性があります。  
 
 ## 単一サンプル解析
 
@@ -202,27 +202,27 @@ ACGTACGT
 DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
-引数:
-  -c, --control             コントロールのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
-  -s, --sample              サンプルのFASTQ/FASTA/BAMファイルが格納されたディレクトリのパス
-  -a, --allele              ゲノム編集によって想定されるアレルを記載したFASTAファイルのパス
-  -n, --name (オプション)     出力ディレクトリの名前 [デフォルト: Results]
-  -g, --genome (オプション)   参照ゲノムID (e.g hg38, mm39) [デフォルト: '']
-  -b, --bed (オプション)     ゲノム座標を含むBED6ファイルのパス [デフォルト: '']
-  -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
-  --no-filter (オプション)   マイナーアレルフィルタリングを無効化（0.5%未満のアレルも保持） [デフォルト: False]
-  -h, --help                ヘルプメッセージの出力
-  -v, --version             バージョンの出力
+Arguments:
+  -c, --control             Path to the directory containing control FASTQ/FASTA/BAM files
+  -s, --sample              Path to the directory containing sample FASTQ/FASTA/BAM files
+  -a, --allele              Path to the FASTA file containing expected alleles
+  -n, --name (optional)     Output directory name [default: Results]
+  -g, --genome (optional)   Reference genome ID (e.g., hg38, mm39) [default: '']
+  -b, --bed (optional)      Path to the BED6 file containing genome coordinates [default: '']
+  -t, --threads (optional)  Number of threads to use [default: 1]
+  --no-filter (optional)    Disable minor-allele filtering (keep alleles below 0.5%) [default: False]
+  -h, --help                Show help message
+  -v, --version             Show version
 ```
 
 ### 実行例
 
 ```bash
-# Example datasetのダウンロード
+# Download the example dataset
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
 tar -xf example_single.tar.gz
 
-# DAJIN2の実行（単一サンプル解析）
+# Run DAJIN2 (single-sample analysis)
 DAJIN2 \
     --control example_single/control \
     --sample example_single/sample \
@@ -235,10 +235,10 @@ DAJIN2 \
 
 ### BEDファイルを用いたゲノム座標の指定
 
-参照ゲノムがUCSC提供のものではない場合、あるいはDAJIN2が依存する外部サーバー（UCSC Genome BrowserおよびGGGENOME）が停止している場合には、`-b/--bed`オプションを用いてBEDファイルを指定することで、オフラインで動作させることが可能です。  
+参照ゲノムがUCSC提供のものではない場合、あるいはDAJIN2が依存する外部サーバー（UCSC Genome BrowserおよびGGGenome）が停止している場合は、`-b/--bed`オプションでBEDファイルを指定することで、オフラインで動作させられます。  
 
 >[!IMPORTANT]
-> UCSCおよびGGGenomeに依存する`--genome`よりも、常に動作が保証できる`--bed`をご利用いただくことを推奨します。
+> UCSCやGGGenomeに依存する`--genome`よりも、安定して動作する`--bed`の利用を推奨します。
 
 `-b/--bed`オプションを使用する際の注意点は以下の通りです：
 
@@ -262,8 +262,8 @@ chr1    1000000    1001000    mm39    248956422    +
 
 > [!IMPORTANT]  
 > BEDファイルの6列目（鎖：`+`または`-`）は、**参照ゲノム配列に対するFASTAアレル配列の鎖の向きに合わせてください**。  
-> - 参照配列が「ACCG」、FASTA配列が「ACCG」 → **フォワード鎖（5'→3'）** ：`+`  
-> - 参照配列が「ACCG」、FASTA配列が「CGGT」 → **リバース鎖（3'→5'）** ：`-`
+> - 参照配列が「ACCG」、FASTA配列が「ACCG」 → **フォワード鎖（5'→3'）**：`+`  
+> - 参照配列が「ACCG」、FASTA配列が「CGGT」 → **リバース鎖（3'→5'）**：`-`
 
 >[!NOTE]
 > 詳細なBEDファイルの使用方法については、[BED_COORDINATE_USAGE.md](./BED_COORDINATE_USAGE.md)をご覧ください。
@@ -274,7 +274,7 @@ DAJIN2は標準設定では、ノイズの軽減と精度向上のため、0.5%�
 しかし、希少変異や体細胞モザイクなど、非常に低頻度でマイナーアレルが存在する可能性がある場合は、`--no-filter`オプションを使用してこのフィルタリングを無効化できます。  
 
 **`--no-filter`を使用する場面：**
-- 希少体細胞変異の検出（< 0.5%の頻度）
+- 希少体細胞変異の検出（<0.5%の頻度）
 - 低レベルモザイクが疑われるサンプルの解析
 - 頻度に関係なくすべての可能なアレルの検出が必要な研究
 
@@ -320,21 +320,21 @@ sample,control,allele,name,bed
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [--no-filter] [-h]
 
-引数:
-  -f, --file                CSVまたはExcelファイルのパス
-  -t, --threads (オプション)  使用するスレッド数 [デフォルト: 1]
-  --no-filter (オプション)   マイナーアレルフィルタリングを無効化（0.5%未満のアレルも保持） [デフォルト: False]
-  -h, --help                ヘルプメッセージの出力
+Arguments:
+  -f, --file                Path to the CSV or Excel file
+  -t, --threads (optional)  Number of threads to use [default: 1]
+  --no-filter (optional)    Disable minor-allele filtering (keep alleles below 0.5%) [default: False]
+  -h, --help                Show help message
 ```
 
 ### 実行例
 
 ```bash
-# Example datasetのダウンロード
+# Download the example dataset
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
 tar -xf example_batch.tar.gz
 
-# DAJIN2の実行（バッチ処理）
+# Run DAJIN2 (batch processing)
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
@@ -346,12 +346,12 @@ DAJIN2は、1コマンドで起動できるWebインターフェースを提供�
 DAJIN2 gui
 ```
 
-実行すると、既定のWebブラウザが開き、`http://localhost:{PORT}/` に以下のようなGUIが表示されます。
+実行すると、既定のWebブラウザが開き、`http://localhost:{PORT}/`に以下のようなGUIが表示されます。
 
 <img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.jpg" width="75%">
 
 > [!NOTE]
-> ブラウザが自動的に起動しない場合は、お使いのブラウザで `http://localhost:{PORT}/` に手動でアクセスしてください。
+> ブラウザが自動的に起動しない場合は、お使いのブラウザで`http://localhost:{PORT}/`に手動でアクセスしてください。
 
 
 ### GUIによる単一サンプル解析
@@ -392,7 +392,7 @@ DAJIN2 gui
    各サンプルの解析状況が詳細なログ出力として表示されます。
 
 5. **結果の確認**  
-   結果は `DAJIN_Results/` フォルダ内に、サンプルごとのサブディレクトリとして保存されます。
+   結果は`DAJIN_Results/`フォルダ内に、サンプルごとのサブディレクトリとして保存されます。
 
 # 📈 出力結果
 
@@ -402,82 +402,80 @@ DAJIN2の処理が完了すると、`DAJIN_Results/{NAME}`というディレク�
 ```text
 DAJIN_Results/tyr-substitution
 ├── BAM
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   ├── tyr_c230gt_50%
-│   └── tyr_control
+│   ├── control
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
+├── DAJIN2_log_20260127_140954_076887.txt
 ├── FASTA
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   └── tyr_c230gt_50%
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
 ├── HTML
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   └── tyr_c230gt_50%
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
 ├── MUTATION_INFO
-│   ├── tyr_c230gt_01%.csv
-│   ├── tyr_c230gt_10%.csv
-│   └── tyr_c230gt_50%.csv
+│   ├── tyr_c230gt_01.csv
+│   ├── tyr_c230gt_10.csv
+│   └── tyr_c230gt_50.csv
 ├── VCF
-│   ├── tyr_c230gt_01%
-│   ├── tyr_c230gt_10%
-│   └── tyr_c230gt_50%
-├── launch_report_windows.bat
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
 ├── launch_report_mac.command
-├── DAJIN2_log_XXX.txt
+├── launch_report_windows.bat
 └── read_summary.xlsx
 ```
 
 ## 1. launch_report_windows.bat / launch_report_mac.command
 
-read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化したもので、各アレルの割合を図示しています。  
+Windowsの場合は`launch_report_windows.bat`、macOSの場合は`launch_report_mac.command`をダブルクリックすると、  
+ブラウザが起動し、レポートが表示されます。
+
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="75%" />
+
 図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
 
-**Allele type**の種類は以下の通りです：
+**Allele type**の種類は以下の通りです：  
+- **{アレル名}**：ユーザーがFASTAにより定義したアレルに完全一致するアレル
+- **{アレル名} with indels**：ユーザーがFASTAにより定義したアレルに類似しているが、数塩基の置換、欠失、挿入、逆位を含むアレル
+- **unassigned insertion/deletion/inversion**：ユーザーが定義していない10塩基以上の欠失、挿入、逆位を含むアレル
 
-- **Intact**：入力のFASTAアレルと完全に一致するアレル
-- **Indels**：50塩基以内の置換、欠失、挿入、逆位を含むアレル
-- **SV**：50塩基以上の置換、欠失、挿入、逆位を含むアレル
-
-
-<img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
 
 > [!WARNING]  
-> PCRアンプリコンを用いたターゲットシーケンシングでは、増幅バイアスのため **% of reads**が実際のアレルの割合と一致しないことがあります。  
-> とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
+> PCRアンプリコンを用いたターゲットシーケンシングでは、増幅バイアスのため**Percent of reads**がサンプルに存在するアレルの割合と一致しないことがあります。  
+> とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。  
 
 ## 2. read_summary.xlsx
 
-read_summary.xlsxには、各アレルのリード数と存在割合が記述されています。  
-launch_reportによって表示される積み上げ棒グラフは、resd_summary.xlsxを可視化したものです。  
-論文用の図を作成する際などの資料としてご利用ください。
+read_summary.xlsxには、各アレルのリード数と存在割合が記載されています。  
+レポートの積み上げ棒グラフは、`read_summary.xlsx`を可視化したものです。  
+論文用の図を作成する際などの資料としてご利用ください。  
 
 
-## 1. BAM
+## 3. BAMとVCF
 
-BAMディレクトリには、アレルごとに分類されたBAMファイルが格納されています。  
+BAMおよびVCFディレクトリには、アレルごとに分類されたBAMファイルおよびVCFファイルが格納されています。  
 
 > [!NOTE]  
-> `genome`オプションで参照ゲノムを指定すると、その参照ゲノムにアライメントされます。  
-> 指定がない場合、入力のFASTAファイルのcontrolアレルにアライメントされます。
+> `--bed`や`--genome`による指定がない場合、入力のFASTAファイルのcontrolアレルにアライメントされます。
 
-## 2. FASTA と HTML
+## 4. FASTAとHTML
 
 FASTAディレクトリには、各アレルのFASTAファイルが保存されます。  
 HTMLディレクトリには、変異箇所が色付けされた各アレルのHTMLファイルが保存されます。  
 Tyr点変異（緑色）の例を以下に示します：
 
-
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/tyr-substitution.png" width="75%" />
 
-
-また、DAJIN2はサンプルに含まれる代表的なSVアレル(Insertion, Deletion, Inversion)を抽出し、SV箇所を下線で色付けします。  
-以下は、Inversion（下線紫色）の両端に欠失（水色）および挿入（赤色）が認められる例です：  
+また、DAJIN2はサンプルに含まれる代表的なSVアレル（Insertion, Deletion, Inversion）を抽出し、SV箇所を下線で色付けします。  
+以下は、Inversion（下線紫色）の両端に欠失（水色）および挿入（赤色）が認められる例です。  
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
 
-## 3. MUTATION_INFO
+## 5. MUTATION_INFO
 
 MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテーブルが保存されます。  
 *Tyr*点変異の例を以下に示します：
@@ -490,10 +488,10 @@ MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテ�
 
 ご質問やバグ報告、ご意見・ご要望など、皆さまのフィードバックをお待ちしています。  
 
-ご報告は、以下のGoogleフォームからお願いいたします：  
+ご報告は以下のGoogleフォームからお願いいたします。  
 👉 [Googleフォーム](https://forms.gle/r4YRs1th7NGHfDcS9)
 
-また、GitHubアカウントをお持ちの方は、Issueからもご報告頂けます（日本語可）：  
+また、GitHubアカウントをお持ちの方は、Issueからもご報告いただけます（日本語可）。  
 👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose)  
 
 > [!NOTE]
@@ -502,7 +500,7 @@ MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテ�
 
 # 🤝 行動規範
 
-本プロジェクトは [Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
+本プロジェクトは[Contributor Code of Conduct（コントリビューター行動規範）](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md)に基づいて公開されています。  
 
 # 📄 参考文献
 
