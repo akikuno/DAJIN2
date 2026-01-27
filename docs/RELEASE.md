@@ -16,6 +16,9 @@
 
 ## 💥 Breaking
 
++ Implement a single-page HTML report for viewing all results.  
+  Issue [#119](https://github.com/akikuno/DAJIN2/issues/119)
+
 + Rename allele labels to more intuitive and descriptive names.  
   Issue [#123](https://github.com/akikuno/DAJIN2/issues/123)
 
