@@ -16,7 +16,7 @@ def create_report_directories(TEMPDIR: Path, NAME: str, is_control=False) -> Non
     if is_control:
         Path(TEMPDIR, "report", "BAM", NAME).mkdir(parents=True, exist_ok=True)
         return
-    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", "MUTATION_INFO", ".igvjs"]
+    SUBDIRS_REPORT = ["HTML", "FASTA", "BAM", "MUTATION_INFO", ".igvjs", "VCF"]
     for reportdir in SUBDIRS_REPORT:
         if reportdir == "MUTATION_INFO":
             Path(TEMPDIR, "report", reportdir).mkdir(parents=True, exist_ok=True)

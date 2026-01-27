@@ -17,7 +17,7 @@ from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
 
-from DAJIN2 import gui, view
+from DAJIN2 import gui
 from DAJIN2.core import core
 from DAJIN2.utils import config, fileio, input_validator, multiprocess, report_generator
 
@@ -283,17 +283,6 @@ def execute():
 
     parser_gui = subparser.add_parser("gui", help="DAIJN2 GUI mode")
     parser_gui.set_defaults(handler=guimode)
-
-    ###############################################################################
-    # View mode
-    ###############################################################################
-
-    def viewmode(args):
-        view.execute(args.name)
-
-    parser_view = subparser.add_parser("view", help="DAIJN2 View mode to launch igvjs")
-    parser_view.add_argument("-n", "--name", required=True, type=str, help="Output name of the report")
-    parser_view.set_defaults(handler=viewmode)
 
     ###############################################################################
     # Parse arguments

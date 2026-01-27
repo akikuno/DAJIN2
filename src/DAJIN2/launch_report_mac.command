@@ -17,5 +17,5 @@ import random
 print(random.randint(8000, 9000))
 PY
 )
-open "http://127.0.0.1:${PORT}/report.html"
+open "http://127.0.0.1:${PORT}/.report/report.html"
 "${PYTHON}" -m http.server "${PORT}"

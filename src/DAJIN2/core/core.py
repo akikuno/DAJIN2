@@ -291,8 +291,7 @@ def execute_sample(arguments: dict):
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
 
     # VCF
-    # # TODO
-    # report.vcf_exporter.export_to_vcf(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_sequences)
+    report.vcf_exporter.export_to_vcf(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
 
     # BAM
     report.bam_exporter.export_to_bam(
