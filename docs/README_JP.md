@@ -44,7 +44,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 ### ハードウェア
 
 - **一般的なノートパソコンで動作可能**
-- メモリ推奨：8GB以上
+- メモリ推奨：16GB以上
 
 >[!NOTE]
 > 前身のDAJINは深層学習を使用していたため、効率的な計算にはGPUが必要でした。  
@@ -53,7 +53,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 
 ### ソフトウェア
 
-- Python 3.9-3.12
+- Python 3.10-3.12
 - Unix環境 (Linux, macOS, WSL2, etc.)
 
 >[!IMPORTANT]
@@ -191,12 +191,12 @@ ACGTACGT
 `>knock-in` と `>knock-out` はそれぞれノックインとノックアウトの想定アレル配列です。  
 
 > [!IMPORTANT]
-> **FASTA配列の両端は、アンプリコン配列の両端と一致させてください。**   
+> **FASTA配列の両端は、アンプリコン配列の両端と一致させてください。**  
 > アンプリコンよりも長い、または短い場合、その差分はIndelとして判定される可能性があります  
 
 ## 単一サンプル解析
 
-単一サンプルの解析コマンドは以下の通りです。
+単一サンプルの解析コマンドは以下の通りです。  
 
 ```bash
 DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
@@ -228,7 +228,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --genome mm39 \
+    --bed example_single/stx2_deletion.fa \
     --threads 4
 ```
 
@@ -236,6 +236,9 @@ DAJIN2 \
 ### BEDファイルを用いたゲノム座標の指定
 
 参照ゲノムがUCSC提供のものではない場合、あるいはDAJIN2が依存する外部サーバー（UCSC Genome BrowserおよびGGGENOME）が停止している場合には、`-b/--bed`オプションを用いてBEDファイルを指定することで、オフラインで動作させることが可能です。  
+
+>[!IMPORTANT]
+> UCSCおよびGGGenomeに依存する`--genome`よりも、常に動作が保証できる`--bed`をご利用いただくことを推奨します。
 
 `-b/--bed`オプションを使用する際の注意点は以下の通りです：
 
@@ -267,7 +270,8 @@ chr1    1000000    1001000    mm39    248956422    +
 
 ### `--no-filter`による希少変異の検出
 
-DAJIN2は標準設定では、ノイズの軽減と精度向上のため、0.5%未満（100,000リードのダウンサンプリング中の5リード未満）のアレルを除外しています。しかし、希少変異や体細胞モザイクなど、非常に低頻度でマイナーアレルが存在する可能性がある場合は、`--no-filter`オプションを使用してこのフィルタリングを無効化できます。
+DAJIN2は標準設定では、ノイズの軽減と精度向上のため、0.5%未満（100,000リードのダウンサンプリング中の5リード未満）のアレルを除外しています。  
+しかし、希少変異や体細胞モザイクなど、非常に低頻度でマイナーアレルが存在する可能性がある場合は、`--no-filter`オプションを使用してこのフィルタリングを無効化できます。  
 
 **`--no-filter`を使用する場面：**
 - 希少体細胞変異の検出（< 0.5%の頻度）
@@ -281,7 +285,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --genome mm39 \
+    --bed example_single/stx2_deletion.fa \
     --threads 4 \
     --no-filter
 ```
@@ -414,10 +418,40 @@ DAJIN_Results/tyr-substitution
 │   ├── tyr_c230gt_01%.csv
 │   ├── tyr_c230gt_10%.csv
 │   └── tyr_c230gt_50%.csv
-├── read_plot.html
-├── read_plot.pdf
+├── VCF
+│   ├── tyr_c230gt_01%
+│   ├── tyr_c230gt_10%
+│   └── tyr_c230gt_50%
+├── launch_report_windows.bat
+├── launch_report_mac.command
+├── DAJIN2_log_XXX.txt
 └── read_summary.xlsx
 ```
+
+## 1. launch_report_windows.bat / launch_report_mac.command
+
+read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化したもので、各アレルの割合を図示しています。  
+図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
+
+**Allele type**の種類は以下の通りです：
+
+- **Intact**：入力のFASTAアレルと完全に一致するアレル
+- **Indels**：50塩基以内の置換、欠失、挿入、逆位を含むアレル
+- **SV**：50塩基以上の置換、欠失、挿入、逆位を含むアレル
+
+
+<img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
+
+> [!WARNING]  
+> PCRアンプリコンを用いたターゲットシーケンシングでは、増幅バイアスのため **% of reads**が実際のアレルの割合と一致しないことがあります。  
+> とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
+
+## 2. read_summary.xlsx
+
+read_summary.xlsxには、各アレルのリード数と存在割合が記述されています。  
+launch_reportによって表示される積み上げ棒グラフは、resd_summary.xlsxを可視化したものです。  
+論文用の図を作成する際などの資料としてご利用ください。
+
 
 ## 1. BAM
 
@@ -450,25 +484,6 @@ MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテ�
 - 点変異の染色体上の位置と、変異の種類が記載されています。
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
-
-## 4. read_summary.xlsx / read_plot.html / read_plot.pdf
-
-read_summary.xlsxには、各アレルのリード数と存在割合が記述されています。  
-read_plot.html および read_plot.pdf は、resd_summary.xlsxを可視化したもので、各アレルの割合を図示しています。  
-図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
-
-**Allele type**の種類は以下の通りです：
-
-- **Intact**：入力のFASTAアレルと完全に一致するアレル
-- **Indels**：50塩基以内の置換、欠失、挿入、逆位を含むアレル
-- **SV**：50塩基以上の置換、欠失、挿入、逆位を含むアレル
-
-
-<img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
-
-> [!WARNING]  
-> PCRアンプリコンを用いたターゲットシーケンシングでは、増幅バイアスのため **% of reads**が実際のアレルの割合と一致しないことがあります。  
-> とくに大型欠失が存在する場合、欠失アレルが顕著に増幅されることから、実際のアレル割合を反映しない可能性が高まります。
 
 
 # 📣 お問い合わせ

@@ -12,7 +12,7 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[日本語版 README はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
+[日本語版READMEはこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
 DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore target sequencing.
 
@@ -46,7 +46,7 @@ This reflects the tool’s design philosophy: to comprehensively detect both int
 ### Hardware
 
 - **Runs on a standard laptop**
-- Recommended memory: 8 GB or more
+- Recommended memory: 16 GB or more
 
 >[!NOTE]
 > DAJIN2 is the successor to DAJIN, which required a GPU for efficient computation due to its use of deep learning.  
@@ -55,7 +55,7 @@ This reflects the tool’s design philosophy: to comprehensively detect both int
 
 ### Software
 
-- Python 3.9-3.12
+- Python 3.10-3.12
 - Unix-based environment (Linux, macOS, WSL2, etc.)
 
 >[!IMPORTANT]
@@ -118,9 +118,9 @@ pip install DAJIN2
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
-#### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
+#### Basecalling with [Dorado](https://software-docs.nanoporetech.com/dorado/latest/)
 
-For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
+For basecalling with Dorado ([`dorado demux`](https://software-docs.nanoporetech.com/dorado/latest/barcoding/barcoding/)), the following file structure will be output:
 
 ```text
 bam_pass
@@ -137,7 +137,7 @@ bam_pass
 > Store each BAM file in a separate directory. The directory names can be set arbitrarily.
 
 
-Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://github.com/nanoporetech/dorado#read-error-correction) in separate directories.
+Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/) in separate directories.
 
 ```text
 dorado_correct
@@ -151,7 +151,7 @@ dorado_correct
 > For detailed dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
 
 
-#### Basecalling with [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
+#### Basecalling with [Guppy](https://nanoporetech.com/ja/document/Guppy-protocol)
 After basecalling with Guppy, the following file structure will be output:
 
 ```text
@@ -166,6 +166,9 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
+>[!CAUTION]
+> Although DAJIN2 can process Guppy-generated data, Guppy is no longer supported by Oxford Nanopore Technologies.  
+> Please use Dorado for basecalling and demultiplexing.  
 
 ### 2. FASTA File Including Anticipated Allele Sequences
 
@@ -190,7 +193,8 @@ ACGTACGT
 Here, `>control` represents the sequence of the control allele, while `>knock-in` and `>knock-out` represent the sequences of the anticipated knock-in and knock-out alleles, respectively.
 
 > [!IMPORTANT]
-> **Ensure that both ends of the FASTA sequence match those of the amplicon sequence.** If the FASTA sequence is longer or shorter than the amplicon, the difference may be recognized as an indel.  
+> **Ensure that both ends of the FASTA sequence match those of the amplicon sequence.**   
+> If the FASTA sequence is longer or shorter than the amplicon, the difference may be recognized as an indel.  
 
 ## Single Sample Analysis
 
@@ -226,7 +230,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --genome mm39 \
+    --bed example_single/stx2_deletion.bed \
     --threads 4
 ```
 
@@ -283,7 +287,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --genome mm39 \
+    --bed example_single/stx2_deletion.fa \
     --threads 4 \
     --no-filter
 ```
