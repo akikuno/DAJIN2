@@ -70,7 +70,7 @@ def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     2. Remove NaN records
     """
     df.columns = df.columns.str.strip()  # ← Remove spaces from column names
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)  # ← Remove spaces from string values
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
     return df.dropna()  # ← Remove NaN records
 
 
