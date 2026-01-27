@@ -135,7 +135,9 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None,
     genome_info_json = json.dumps(genome_info)
     viewer_html = read_template("allele_viewer.html")
     viewer_css = read_template("allele_viewer.css")
+    igv_helpers_js = read_template("igv_helpers.js")
     viewer_js = read_template("allele_viewer.js")
+    viewer_js = "\n".join([igv_helpers_js, viewer_js])
     viewer_html = viewer_html.replace("__ALLELE_VIEWER_CSS__", viewer_css)
     viewer_html = viewer_html.replace("__ALLELE_VIEWER_JS__", viewer_js)
     viewer_html = viewer_html.replace("__GENOME_INFO__", genome_info_json)
@@ -274,7 +276,6 @@ def output_plot(
     script_js = script_js.replace("__EXPORT_BUTTONS__", export_buttons_json)
     script_block = "<script>\n" + script_js + "\n</script>"
 
-    report_hint_block = read_template("report_hint.html")
     modal_block = read_template("report_modal.html")
 
     genome_info = None
@@ -287,8 +288,9 @@ def output_plot(
             genome_info = {"genome": genome, "locus": f"{chrom}:{start}-{end}"}
     genome_info_json = json.dumps(genome_info)
 
-    igv_lib_block = read_template("report_igv_lib.html")
+    igv_helpers_js = read_template("igv_helpers.js")
     report_script_js = read_template("report_main.js")
+    report_script_js = "\n".join([igv_helpers_js, report_script_js])
     report_script_js = report_script_js.replace("__GENOME_INFO__", genome_info_json)
     report_script_js = report_script_js.replace("__ASSET_PREFIX__", json.dumps(asset_prefix))
     report_script_block = "<script>\n" + report_script_js + "\n</script>"
@@ -297,8 +299,8 @@ def output_plot(
     inject_plot_assets(
         report_html_path,
         report_style_block,
-        [report_hint_block, controls_block, modal_block],
-        [script_block, igv_lib_block, report_script_block],
+        [controls_block, modal_block],
+        [script_block, report_script_block],
     )
 
 
