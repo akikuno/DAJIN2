@@ -433,7 +433,10 @@ DAJIN_Results/tyr-substitution
 Windowsの場合は`launch_report_windows.bat`、macOSの場合は`launch_report_mac.command`をダブルクリックすると、  
 ブラウザが起動し、レポートが表示されます。
 
-<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="75%" />
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
+
+>[!IMPORTANT]
+> **積み上げ棒グラフにて興味のあるアレルをクリックすると、配列にどのような変異が生じているのかの詳細を閲覧できます（上図右）。**
 
 図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
 
@@ -441,6 +444,7 @@ Windowsの場合は`launch_report_windows.bat`、macOSの場合は`launch_report
 - **{アレル名}**：ユーザーがFASTAにより定義したアレルに完全一致するアレル
 - **{アレル名} with indels**：ユーザーがFASTAにより定義したアレルに類似しているが、数塩基の置換、欠失、挿入、逆位を含むアレル
 - **unassigned insertion/deletion/inversion**：ユーザーが定義していない10塩基以上の欠失、挿入、逆位を含むアレル
+
 
 
 > [!WARNING]  

@@ -437,7 +437,10 @@ On Windows, double-click `launch_report_windows.bat`.
 On macOS, double-click `launch_report_mac.command`.  
 Your browser will open and display the report.
 
-<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="75%" />
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
+
+>[!IMPORTANT]
+> **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above)**.
 
 In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.
 
