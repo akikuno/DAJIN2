@@ -12,21 +12,37 @@
 
 <!-- ############################################################# # -->
 
-<!-- ############################################################# # -->
+# v0.8.0 (2026-01-29)
 
+## 💥 Breaking
 
-# v0.7.4 (2025-12-04)
++ Implement a single-page HTML report for viewing all results. Issue [#119](https://github.com/akikuno/DAJIN2/issues/119)
 
-## 🐛 Bug Fixes
++ Rename allele labels to more intuitive and descriptive names. Issue [#123](https://github.com/akikuno/DAJIN2/issues/123)
 
-+ Fixed an error that occurred during basecalling with Dorado when no reference sequence was specified, due to the absence of the SQ header. Issue [#120](https://github.com/akikuno/DAJIN2/issues/120)
+## 🌟 New Features
 
-+ Fixed a bug where index files (.fai, .bai) in the input directory were being read mistakenly. Issue [#108](https://github.com/akikuno/DAJIN2/issues/108)
-
++ Align the BAM output with the best preset. Issue [#81](https://github.com/akikuno/DAJIN2/issues/81)
 
 ## 📝 Documentation
 
-+ In the DAJIN2 issue template, the Version field is now optional instead of mandatory.
++ Add instructions for obtaining chromosome size (chrom size) to the README. Issue [#125](https://github.com/akikuno/DAJIN2/issues/125)
+
+## 🔧 Maintenance
+
++ Clarify the error message shown when GGGenome or the UCSC Genome Browser is inaccessible, and improve it to prompt users to use the offline mode with a BED file. Issue [#124](https://github.com/akikuno/DAJIN2/issues/124)
+
++ Remove unused functions across the repository. Issue [#121](https://github.com/akikuno/DAJIN2/issues/121)
+
++ Remove code related to the `splice` preset. Issue [#126](https://github.com/akikuno/DAJIN2/issues/126)
+
++ Support the major changes introduced in MIDSV > v0.12.0. Issue [#76](https://github.com/akikuno/DAJIN2/issues/76)
+
++ Rename utils.io module to utils.fileio to avoid conflict with the built-in io module. Issue [#127](https://github.com/akikuno/DAJIN2/issues/127)
+
++ Improve DAJIN2 error message when GGGenome returns "ERROR : searcher error". Issue [#131](https://github.com/akikuno/DAJIN2/issues/131)
+
+<!-- ############################################################# # -->
 
 
 -------------------------------------------------------------
@@ -38,6 +54,21 @@
 <summary> v0.X.X (2025-MM-DD) </summary>
 
 </details> -->
+
+<details>
+<summary> v0.7.4 (2025-12-04) </summary>
+
+## 🐛 Bug Fixes
+
++ Fixed an error that occurred during basecalling with Dorado when no reference sequence was specified, due to the absence of the SQ header. Issue [#120](https://github.com/akikuno/DAJIN2/issues/120)
+
++ Fixed a bug where index files (.fai, .bai) in the input directory were being read mistakenly. Issue [#108](https://github.com/akikuno/DAJIN2/issues/108)
+
+
+## 📝 Documentation
+
++ In the DAJIN2 issue template, the Version field is now optional instead of mandatory.
+</details>
 
 
 <details>
@@ -63,13 +94,13 @@
 
 ## 🐛 Bug Fixes
 
-+ Replaced UCSC BLAT with **GGGenome** to avoid access denial issues.  
-  Additionally, updated the CLI to accept BED files via `-b/--bed`, enabling users to run DAJIN2 in **fully offline mode** while still obtaining the desired BAM outputs.  
-  Special thanks to [@zpashkutz](https://github.com/zpashkutz) for reporting this bug!  
++ Replaced UCSC BLAT with **GGGenome** to avoid access denial issues.
+  Additionally, updated the CLI to accept BED files via `-b/--bed`, enabling users to run DAJIN2 in **fully offline mode** while still obtaining the desired BAM outputs.
+  Special thanks to [@zpashkutz](https://github.com/zpashkutz) for reporting this bug!
   See [PR #113](https://github.com/akikuno/DAJIN2/pull/113) for details.
 
-+ Updated processing logic to **merge duplicated alleles** so that identical entries (e.g., multiple "intact" alleles with different percentages) are now combined into a single record with aggregated frequency values.  
-  Special thanks to Dr. Gabriel Martínez and Dr. Kazuto Yoshimi for reporting this bug!  
++ Updated processing logic to **merge duplicated alleles** so that identical entries (e.g., multiple "intact" alleles with different percentages) are now combined into a single record with aggregated frequency values.
+  Special thanks to Dr. Gabriel Martínez and Dr. Kazuto Yoshimi for reporting this bug!
   See [PR #114](https://github.com/akikuno/DAJIN2/pull/114) for details.
 
 
@@ -83,28 +114,28 @@
 
 ## 🌟 New Features
 
-+ **Web-based Graphical User Interface (GUI)**:  
-  DAJIN2 now includes an intuitive web interface, launched via the command `DAJIN2 gui`.  
++ **Web-based Graphical User Interface (GUI)**:
+  DAJIN2 now includes an intuitive web interface, launched via the command `DAJIN2 gui`.
   The GUI supports both single-sample and batch analysis, offering features such as:
-  - Real-time progress monitoring  
-  - File upload via drag-and-drop  
-  - Cross-platform file management  
+  - Real-time progress monitoring
+  - File upload via drag-and-drop
+  - Cross-platform file management
   For details, see [PR #106](https://github.com/akikuno/DAJIN2/pull/106).
 
 ## 🐛 Bug Fixes
 
-+ **Fixed `KeyError` when allele names contain underscores**:  
-  Resolved a critical issue where allele names with underscores (e.g., `deletion_allele`) triggered a `KeyError` during HTML export.  
-  The parser in `sequence_exporter.py` has been updated to correctly handle complex allele name headers.  
-  Special thanks to [@zpashkutz](https://github.com/zpashkutz) for reporting this bug!  
++ **Fixed `KeyError` when allele names contain underscores**:
+  Resolved a critical issue where allele names with underscores (e.g., `deletion_allele`) triggered a `KeyError` during HTML export.
+  The parser in `sequence_exporter.py` has been updated to correctly handle complex allele name headers.
+  Special thanks to [@zpashkutz](https://github.com/zpashkutz) for reporting this bug!
   See [PR #107](https://github.com/akikuno/DAJIN2/pull/107) for details.
 
 ## 📝 Documentation
 
-+ **Added GUI Usage Instructions to README**:  
-  Comprehensive documentation for the new GUI mode is now available in both English (`README.md`) and Japanese (`README_JP.md`).  
++ **Added GUI Usage Instructions to README**:
+  Comprehensive documentation for the new GUI mode is now available in both English (`README.md`) and Japanese (`README_JP.md`).
   The update includes step-by-step guides for:
-  - Single-sample analysis  
+  - Single-sample analysis
   - Batch processing via the web interface
 
 
@@ -113,21 +144,21 @@
 
 
 <details>
-<summary> v0.7.0 (2025-07-11)</summary>
+<summary> v0.7.0 (2025-07-11) </summary>
 
 ## 🌟 New Features
 
-+ Added `--no-filter` option to detect rare mutations. See Issue: [#83](https://github.com/akikuno/DAJIN2/issues/83)
++ Added `--no-filter` option to detect rare mutations. See Issue [#83](https://github.com/akikuno/DAJIN2/issues/83)
 
-+ Added `-b/--bed` option to specify a BED file when using genomes other than UCSC reference genomes. See Issue: [#26](https://github.com/akikuno/DAJIN2/issues/26)
++ Added `-b/--bed` option to specify a BED file when using genomes other than UCSC reference genomes. See Issue [#26](https://github.com/akikuno/DAJIN2/issues/26)
 
-+ Added a feature to display an explicit error message with a UCSC genome browser link when the input FASTA sequence is not found in the reference genome. See Issue: [#26](https://github.com/akikuno/DAJIN2/issues/26)
++ Added a feature to display an explicit error message with a UCSC genome browser link when the input FASTA sequence is not found in the reference genome. See Issue [#26](https://github.com/akikuno/DAJIN2/issues/26)
 
 + Removed the `ValueError` that occurred when identical sequences were found. This is to support short-read data, where such cases are expected. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fd7518357779f2f2ebea1dd6a43c7ddfe0b4c5a3#diff-4b9f2a326855933258d70bf13c107eed755b5140240b5b30bc9ca05de397ceeb)]
 
 ## 🔧 Maintenance
 
-+ Updated Python support from 3.9 to 3.12 due to dependencies in `pysam` and `mappy`. See Issue: [#101](https://github.com/akikuno/DAJIN2/issues/101)
++ Updated Python support from 3.9 to 3.12 due to dependencies in `pysam` and `mappy`. See Issue [#101](https://github.com/akikuno/DAJIN2/issues/101)
 
 
 </details>
@@ -138,7 +169,7 @@
 
 ## 📝 Documentation
 
-+ Update README to clarify hardware requirements Issue: [#91](https://github.com/akikuno/DAJIN2/issues/91), [#92](https://github.com/akikuno/DAJIN2/issues/92) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a7995727dc35944d51c318e6ae0e79ded992c684)]
++ Update README to clarify hardware requirements Issue [#91](https://github.com/akikuno/DAJIN2/issues/91), [#92](https://github.com/akikuno/DAJIN2/issues/92) [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a7995727dc35944d51c318e6ae0e79ded992c684)]
 
 
 ## 🐛 Bug Fixes
@@ -167,7 +198,7 @@
 
 ## 🚀 Performance
 
-- Use `BisectingKMeans` instead of `AgglomerativeClustering` because `BisectingKMeans` can take a `spmatrix` as input, significantly reducing memory consumption. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/19fe3549584ee1b1c8ccb67c3d364434f5ad392c)]
++ Use `BisectingKMeans` instead of `AgglomerativeClustering` because `BisectingKMeans` can take a `spmatrix` as input, significantly reducing memory consumption. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/19fe3549584ee1b1c8ccb67c3d364434f5ad392c)]
 
 ## 📝 Documentation
 + Specify the Range of Bases to Be Recorded in the FASTA File. Issue #78 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/a8955c5dc38f28279a708b485466081c5f39aa3e)]
@@ -183,7 +214,7 @@
 + Add `sv_annotator` to reflect SV alleles in consensus midsv tags. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f8a89d50c53427ae4166e5d48f57466441c2f50)]
 
 + Refactoring `annotate_insertions_within_deletion`: Previously, a similar function existed in `cssplit_handler`, but since this function is only called once during consensus, it has been moved to a dedicated module, `consensus.sv_annotator`. At the same time, the function has been simplified. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/88988db9cfeb44fd95f377a38eb434289ac812b5)]
- 
+
 ## 🐛 Bug Fixes
 
 + Reflect Inversion Alleles When Flanked by Deletions at HTML. Issue #82 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c7bb3cfacf724dd0a4298c432bdda878f5a72de4)]
@@ -199,7 +230,7 @@
 + Inversions are underlined since they can coexist with other mutations, while others are highlighted. Issue #84 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ccdc98b97052dbbb27b8c75b3dd1b888620a4e11)]
 
 + Reflect the mutations (indel, substitution) within the inversion in HTML and MUTATION_LOCI. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/d0316c52cc129cf8d104cd1cce9c5eedff9898ce)]
-+ 
++
 </details>
 
 
@@ -240,22 +271,22 @@
 
 + Support for PacBio HiFi reads. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/69773342d3bf157f28db013d62796be43ae297e7)]
 
-+ Add `preprocess.sequence_error_handler` to exclude Nanopore sequence errors from the analysis. Issue: #60 
++ Add `preprocess.sequence_error_handler` to exclude Nanopore sequence errors from the analysis. Issue #60
   + Initial commit [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/329493dbfe6c0d03a6f8aadaab88911900f35dbb)]
   + Since most Nanopore sequencing errors occur due to read interruptions, `parse_midsv_from_csv` classifies entries as either Unknown or Other (M). [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
   + Instead of strategies like Cosine similarity or HDBSCAN, the Jaro-Winkler distance is explicitly used as a string similarity metric. Jaro-Winkler was chosen because Levenshtein would be too time-consuming. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/809c22be361b0566e46ea94b5dec37b8a4659244)]
 
-+ Add `sr` presets to all execusions in `preprocess.mapping`. Issue: #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
++ Add `sr` presets to all execusions in `preprocess.mapping`. Issue #55 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/682a20f3e71206fbd55369b5ff0dea799881aa67)]
 
 + Increase the sensitivity by lowering the mutation detection threshold from 0.5% to 0.1% to detect mutations around 0.75%. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0e19752c1a4100d5a9121d54a563698642dc35c1)]
 
 + Use `AgglomerativeClustering` instead of Constrained KMeans because AgglomerativeClustering provides a more global clustering approach, and Constrained KMeans was not very useful due to the unreliability of its `min_cluster_size`. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b81711e553edccaec4d6396cf940081163a18471)]
 
-+ Output seqence error reads as `BAM/{name}/sequence_errors.bam`. Issue: #61 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b2e717faa5ed17cdc18217d537cf49de6ca7c0b4)]
++ Output seqence error reads as `BAM/{name}/sequence_errors.bam`. Issue #61 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/b2e717faa5ed17cdc18217d537cf49de6ca7c0b4)]
 
 ## 🚀 Performance
 
-+ Downsampling the sample reads to a maximum of 10,000. Issue: #58 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/33c2120b59c80afe7f76165b2410b8ffe51410bd)]
++ Downsampling the sample reads to a maximum of 10,000. Issue #58 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/33c2120b59c80afe7f76165b2410b8ffe51410bd)]
 
 ## 🐛 Bug Fixes
 
@@ -265,11 +296,11 @@
 
 + With the end of security support for Python 3.8 in October 2024, we have updated DAJIN2 to support Python 3.9 or later. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0967c463386a48639a614849b3d3e4453079c8b1)]
 
-+ Replace typing.Generator to collections.abc.Iterator Since typing.Generator is deprecated. Issue: #53 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f85964a4b8027b547b7b3e370b9e86ff8dda36be)]
++ Replace typing.Generator to collections.abc.Iterator Since typing.Generator is deprecated. Issue #53 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/f85964a4b8027b547b7b3e370b9e86ff8dda36be)]
 
-+ Automatically retrieve version information using `importlib.metadata.version` Issue: #59 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/4cf75078b5e7f487b07650e934d63448bc3a328e)]
++ Automatically retrieve version information using `importlib.metadata.version` Issue #59 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/4cf75078b5e7f487b07650e934d63448bc3a328e)]
 
-+ Move the FASTX IO processing to `utils.io`. Issue: #66 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cca3db0b13ac53e082e2272f7ee7f593f905bd25)]
++ Move the FASTX IO processing to `utils.io`. Issue #66 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/cca3db0b13ac53e082e2272f7ee7f593f905bd25)]
 
 + Add E2E tests in Github Actions. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8fb93621ae7b9c4e867a68e9160c3295bfb0f872)]
 
@@ -320,7 +351,7 @@
 
 ## 🌟 New Features
 
-+ Support for Apple Silicon (osx-arm64) in Bioconda. Issue: #46
++ Support for Apple Silicon (osx-arm64) in Bioconda. Issue #46
 
 </details>
 
@@ -329,16 +360,16 @@
 
 ## 💥 Breaking
 
-- Update `clustering.clustering`: Use Constrained Kmeans clustering to address the issue of cluster imbalance where extremely minor clusters were preferentially separated. Set `min_cluster_size` to 0.5% of the sample read count. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c1b14e73d8a95fdb39e510a7a90e501d596b7f3a)]
++ Update `clustering.clustering`: Use Constrained Kmeans clustering to address the issue of cluster imbalance where extremely minor clusters were preferentially separated. Set `min_cluster_size` to 0.5% of the sample read count. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c1b14e73d8a95fdb39e510a7a90e501d596b7f3a)]
   - As a result, `clustering.label_merger.py` is no longer needed and has been removed.
 
-- Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
++ Update `consensus.call_consensus`: For mutations determined to be sequence errors, we previously replaced them with unknown (`N`), but this `N` had low interpretability. Therefore, mutations that DAJIN2 determines to be sequence errors will now be assigned the same base as the reference genome. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f46215ae7054c4da088c638ad82e41dd0dc7227)]
 
 ## 🐛 Bug Fixes
 
-- Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
++ Due to a bias in `classifiler.calc_match` where alleles with shorter sequences were prioritized, the operation of dividing by sequence length has been removed. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/fa6fbd5a7f9693df3b067a3041df42198a0d65b7)]
 
-- Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue: #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
++ Fix `preporcess.mapping.generate_sam` to perform alignments with `map-ont` and `splice` in addition to `sr` for sequence lengths of 500 bp or less, and select the optimal prefix from these alignments. Issue #45 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9e7fb93f3c7b74095d2afd08bf3fa0bc00e6f367)]
 </details>
 
 
@@ -351,16 +382,16 @@
 
 ## 🌟 New Features
 
-- Update `mutation_extractor` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9444ee701ee52adeb6271552eff70667fb49b854)]
++ Update `mutation_extractor` [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9444ee701ee52adeb6271552eff70667fb49b854)]
   - Simplified the logic of the `is_dissimilar_loci` if statement. Additionally, changed the threshold for determining a mutation in Consensus from 75% to 50% (to accommodate the insertion allele in Cas3 Tyr Barcode10).
   - Updated `detect_anomalies` to use MLPClassifier to detect mutations more flexibly and accurately compared to the previous threshold setting with MiniBatchKMeans.
 
 ## 🔧 Maintenance
 
-+ Make DAJIN2 compatible with Python 3.11 and 3.12. Issue: #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8da9118f5c0f584ed1ab12541d5e410d1b9f0da8)]
++ Make DAJIN2 compatible with Python 3.11 and 3.12. Issue #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/8da9118f5c0f584ed1ab12541d5e410d1b9f0da8)]
   + pysam and mappy builds with Python 3.11 and 3.12 are now available on Bioconda.
 
-+ Update GitHub Actions to test with Python 3.11 and 3.12. Issue: #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54df79e60b484da429c1cbf6f12b0c19196452cc)]
++ Update GitHub Actions to test with Python 3.11 and 3.12. Issue #43 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/54df79e60b484da429c1cbf6f12b0c19196452cc)]
 
 + Resolve the B023 Function definition does not bind loop variable `alignment_lengths` issue. [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/9c85d2f0410494a9b71d9905fad2f9e4efe30ed7)]
 
@@ -369,7 +400,7 @@
 
 ## 🐛 Bug Fixes
 
-+ Update `cssplits_handler._get_index_of_large_deletions`: Modified to split large deletions when a match of 10 or more bases is found within the identified large deletion. Issue: #42 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0c97a9b5fb8cad2ebdaf91b796eed3ce80f5eeee)]
++ Update `cssplits_handler._get_index_of_large_deletions`: Modified to split large deletions when a match of 10 or more bases is found within the identified large deletion. Issue #42 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/0c97a9b5fb8cad2ebdaf91b796eed3ce80f5eeee)]
 
 </details>
 
@@ -378,13 +409,13 @@
 
 ## 🌟 New Features
 
-+ Enable to accept additional file formats as an input. Issue: #37
++ Enable to accept additional file formats as an input. Issue #37
   + FASTA [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/ee6d392cd51649c928bd604acafbab4b9d28feb1)]
   + BAM [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/1f3a9812756f0a2607ece3551740e4c67955324c)]
 
 ## 📝 Documentation
 
-+ Add a description of the procedure for accepting files generated by Dorado basecaller as input. Issue: #37 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9ebc020fa60980ba7aaaf9295975775ec07da6d)]
++ Add a description of the procedure for accepting files generated by Dorado basecaller as input. Issue #37 [[Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9ebc020fa60980ba7aaaf9295975775ec07da6d)]
 
 
 ## 🔧 Maintenance
@@ -527,7 +558,7 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 + Fix `preprocess.knockin_handler` to correctly identify the flox knock-in sites as deletions not present in the control.  [Commit Detail](https://github.com/akikuno/DAJIN2/commit/d4d267c99f8c51d3a3f88f67882bead66685f710)
 
 + Bug fix and update `reallocate_insertion_within_deletion` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/2f356546999f645a8cb8d33a1fc2f64bc6742113)
-  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence. 
+  - In the script that considers the region between two deletions as an insertion sequence, the size of the other deletion was not taken into account. Even if there was a single base deletion, the entire sequence between the deletions was considered as an insertion sequence.
   - Therefore, the region between two deletions is now defined as (1) identifying bins where deletions are enriched within appropriate bins (500 bp) continuously, and (2) extracting the precise break points from the start and end of these bins, implementing an algorithm to extract the large deletion region.
 
 
@@ -641,39 +672,39 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 
 ## 📝 Documentation
 
-- Added documentation for a new feature in `README.md`: DAJIN2 can now detect complex mutations characteristic of genome editing, such as insertions occurring in regions where deletions have occurred.
++ Added documentation for a new feature in `README.md`: DAJIN2 can now detect complex mutations characteristic of genome editing, such as insertions occurring in regions where deletions have occurred.
 
 ## 🚀 New Features
 
-- Introduced `cssplits_handler.detect_insertion_within_deletion` to extract insertion sequences within deletions. This addresses cases where minimap2 may align bases that partially match the reference through local alignment, potentially failing to detect them as insertions. This enhancement ensures the proper detection of insertion sequences. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7651e20852b94ed4d5bb38539bb56229dcc8b763)
++ Introduced `cssplits_handler.detect_insertion_within_deletion` to extract insertion sequences within deletions. This addresses cases where minimap2 may align bases that partially match the reference through local alignment, potentially failing to detect them as insertions. This enhancement ensures the proper detection of insertion sequences. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7651e20852b94ed4d5bb38539bb56229dcc8b763)
 
-- Added `report.insertion_refractor.py` to include original insertion information in the consensus for mappings made by insertion. This addition enables the listing of both insertions and deletions within the insertion allele on a single HTML file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/e6c3b636bb2ba537d1341d1042341afd6583dd0b)
++ Added `report.insertion_refractor.py` to include original insertion information in the consensus for mappings made by insertion. This addition enables the listing of both insertions and deletions within the insertion allele on a single HTML file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/e6c3b636bb2ba537d1341d1042341afd6583dd0b)
 
 ## 🔧 Maintenance
 
-- Updated `insertions_to_fasta.py`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7927feb0bb4f3091537aaebabd60a441456a3413)
++ Updated `insertions_to_fasta.py`. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/7927feb0bb4f3091537aaebabd60a441456a3413)
   - Modified the approach to reduce randomness by replacing set or frozenset with list or tuple, and using `random.sample()` for subsetting reads.
   - Refactored `call_consensus_insertion_sequence`.
   - Fixed a bug in `extract_score_and_sequence` to ensure correct appending of scores for the insertions_merged_subset.
 
-- Changed the function name of `report` to be more explicit. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/93132c5beba17278c7d67b76817bb13dfaae57a3)
++ Changed the function name of `report` to be more explicit. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/93132c5beba17278c7d67b76817bb13dfaae57a3)
 
-- Updated `utils.report_report_generator` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/821f06f05b5ed2f4ba2d7baad6159d774d2e5db0)
++ Updated `utils.report_report_generator` [Commit Detail](https://github.com/akikuno/DAJIN2/commit/821f06f05b5ed2f4ba2d7baad6159d774d2e5db0)
   - Capitalized "Allele" (e.g., control) and "Allele type" (e.g., intact).
   - Changed the output format of read_all and read_summary from CSV to XLSX.
   - Corrected the order of the Legend to follow a logical sequence from control to sample, and then to specific insertions.
 
-- Updated `utils.io.read_xlsx` to switch from using pandas to openpyxl due to the DeprecationWarning in Pandas being cumbersome. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5d942bace8417bb973441b360a0ec31d77d81e24)
++ Updated `utils.io.read_xlsx` to switch from using pandas to openpyxl due to the DeprecationWarning in Pandas being cumbersome. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/5d942bace8417bb973441b360a0ec31d77d81e24)
 
 ## 🐛 Bug Fixes
 
-- Added `=` to the prefix for valid cstag recognition when there is an `n` in inversion. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/747ff3ece221a8c1e4f1ba1b696c4751618b4992)
++ Added `=` to the prefix for valid cstag recognition when there is an `n` in inversion. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/747ff3ece221a8c1e4f1ba1b696c4751618b4992)
 
-- Modified the io.load_from_csv function to trim spaces before and after each field, addressing an error caused by spaces in batch.csv. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f5d49230f8ebd37061a27d6767d3c1954b8f8576)
++ Modified the io.load_from_csv function to trim spaces before and after each field, addressing an error caused by spaces in batch.csv. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/f5d49230f8ebd37061a27d6767d3c1954b8f8576)
 
 ## ⛔️ Deprecated
 
-- Removed `reads_all.csv`. This CSV file, which showed the allele for each read, is no longer reported due to its limited usefulness and because the same information can be obtained from the BAM file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/76e3eaee320deb79cbf3cf97cc6aed69c5bbc3ef)
++ Removed `reads_all.csv`. This CSV file, which showed the allele for each read, is no longer reported due to its limited usefulness and because the same information can be obtained from the BAM file. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/76e3eaee320deb79cbf3cf97cc6aed69c5bbc3ef)
 
 </details>
 
@@ -730,35 +761,35 @@ Update the algorithms of `cssplits_hander.reallocate_insertion_within_deletion` 
 
 ## 📝 Documentation
 
-- Added a quick guide for installation to TROUBLESHOOTING.md. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/cefed0ff4d04282b9915486be07de85b2b77b657)
++ Added a quick guide for installation to TROUBLESHOOTING.md. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/cefed0ff4d04282b9915486be07de85b2b77b657)
 
 ## 🚀 Update
 
 ### Preprocess
 
-- Updated `input_validator.py`: The UCSC Blat server sometimes returns a 200 HTTP status code even when an error occurs. In such cases, "Very Early Error" is indicated in the title. Therefore, we have made it so that it returns False in those situations. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4ad9c9ef8bd963a6e20c1721480aed0fe7922760)
++ Updated `input_validator.py`: The UCSC Blat server sometimes returns a 200 HTTP status code even when an error occurs. In such cases, "Very Early Error" is indicated in the title. Therefore, we have made it so that it returns False in those situations. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4ad9c9ef8bd963a6e20c1721480aed0fe7922760)
 
-- Simplified `homopolymer_handler.py` for error detection using cosine similarity. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
++ Simplified `homopolymer_handler.py` for error detection using cosine similarity. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/21c2596805c36074f360285600e60ee76b948908)
 
-- Updated `mutation_extractor.py` to use cosine similarity to filter dissimilar loci. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9f5aa7b48581e58d99fe8c31275c422756aa9f1)
++ Updated `mutation_extractor.py` to use cosine similarity to filter dissimilar loci. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/c9f5aa7b48581e58d99fe8c31275c422756aa9f1)
 
-- Updated the `mutation_extractor.identify_dissimilar_loci` so that it unconditionally returns True if the 'sample' shows more than 5% variation compared to the 'control'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0cbec5217fdfba6886979eb86cf970b587e83e5f)
++ Updated the `mutation_extractor.identify_dissimilar_loci` so that it unconditionally returns True if the 'sample' shows more than 5% variation compared to the 'control'. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/0cbec5217fdfba6886979eb86cf970b587e83e5f)
 
-- Added `preprocess.midsv_caller.convert_consecutive_indels_to_match`: Due to alignment errors, instances where a true match is mistakenly replaced with "insertion following a deletion" are corrected. For example, "=C,=T" mistakenly replaced by "-C,+C|=T" is reverted back to "=C,=T". [Commit Detail](https://github.com/akikuno/DAJIN2/commit/69c56fa904ef847dc5b0e2dcdb90303409412d0f)
++ Added `preprocess.midsv_caller.convert_consecutive_indels_to_match`: Due to alignment errors, instances where a true match is mistakenly replaced with "insertion following a deletion" are corrected. For example, "=C,=T" mistakenly replaced by "-C,+C|=T" is reverted back to "=C,=T". [Commit Detail](https://github.com/akikuno/DAJIN2/commit/69c56fa904ef847dc5b0e2dcdb90303409412d0f)
 
 ### Classification
 
-- Added `allele_merger.merge_minor_alleles` to reclassify alleles with fewer than 10 reads to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b0752960def313e237ccf7d44542f9810cad0c00)
++ Added `allele_merger.merge_minor_alleles` to reclassify alleles with fewer than 10 reads to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/b0752960def313e237ccf7d44542f9810cad0c00)
 
 ### Clustering
 
-- Added the function `merge_minor_cluster` to revert labels clustered with fewer than 10 reads back to the previous labels to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4bd9f7dd806d192475d8d4f20c1e50c37281d64e)
++ Added the function `merge_minor_cluster` to revert labels clustered with fewer than 10 reads back to the previous labels to suppress excessive subdivision of alleles. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/4bd9f7dd806d192475d8d4f20c1e50c37281d64e)
 
-- Updated `generate_mutation_kmers` to consider indices not registered in mutation_loci as mutations by replacing them with "@". For example, "=G,=C,-C" and "=G,=G,=C" become "@,@,@" in both cases, making them the same and ensuring they do not affect clustering. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/9eefaaa1a9be3922b60655292c0a310e0f5fc76d)
++ Updated `generate_mutation_kmers` to consider indices not registered in mutation_loci as mutations by replacing them with "@". For example, "=G,=C,-C" and "=G,=G,=C" become "@,@,@" in both cases, making them the same and ensuring they do not affect clustering. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/9eefaaa1a9be3922b60655292c0a310e0f5fc76d)
 
 ### Consensus
 
-- Implemented `LocalOutlierFactor` to filter abnormal control reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/94c48da01fc039902c97a23ddea47dd5f2b42ab4)
++ Implemented `LocalOutlierFactor` to filter abnormal control reads. [Commit Detail](https://github.com/akikuno/DAJIN2/commit/94c48da01fc039902c97a23ddea47dd5f2b42ab4)
 
 </details>
 

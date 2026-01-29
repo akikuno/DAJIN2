@@ -12,13 +12,13 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[日本語版 README はこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
+[Read the Japanese README](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
-DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore target sequencing.
+DAJIN2 is a genotyping tool for genome-edited samples using nanopore-targeted sequencing.
 
-**DAJIN2** takes its name from the Japanese phrase 一網**打尽** (*Ichimou DAJIN*, or *Yīwǎng Dǎjìn* in Chinese),  
-which means “to capture everything in a single sweep.”  
-This reflects the tool’s design philosophy: to comprehensively detect both intended and unintended genome editing outcomes in one go.
+**DAJIN2** takes its name from the Japanese phrase 一網**打尽** (*Ichimou DAJIN* in Japanese; *Yīwǎng Dǎjìn* in Chinese),  
+meaning “to capture everything in a single sweep.”  
+This reflects the tool’s design philosophy: comprehensive detection of both intended and unintended genome editing outcomes in one analysis.
 
 # 🌟 Features
 
@@ -46,7 +46,7 @@ This reflects the tool’s design philosophy: to comprehensively detect both int
 ### Hardware
 
 - **Runs on a standard laptop**
-- Recommended memory: 8 GB or more
+- Recommended memory: 16 GB or more
 
 >[!NOTE]
 > DAJIN2 is the successor to DAJIN, which required a GPU for efficient computation due to its use of deep learning.  
@@ -55,7 +55,7 @@ This reflects the tool’s design philosophy: to comprehensively detect both int
 
 ### Software
 
-- Python 3.9-3.12
+- Python 3.10-3.12
 - Unix-based environment (Linux, macOS, WSL2, etc.)
 
 >[!IMPORTANT]
@@ -114,13 +114,13 @@ pip install DAJIN2
 ## Required Files
 
 
-### FASTQ/FASTA/BAM Files for Sample and Control
+### 1. FASTQ/FASTA/BAM Files for Sample and Control
 
 In DAJIN2, a **control that has not undergone genome editing** is necessary to detect genome-editing-specific mutations. Specify a directory containing the FASTQ/FASTA (both gzip compressed and uncompressed) or BAM files of the genome editing sample and control.
 
-#### Basecalling with [Dorado](https://github.com/nanoporetech/dorado)
+#### Basecalling with [Dorado](https://software-docs.nanoporetech.com/dorado/latest/)
 
-For basecalling with Dorado ([`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)), the following file structure will be output:
+For basecalling with Dorado ([`dorado demux`](https://software-docs.nanoporetech.com/dorado/latest/barcoding/barcoding/)), the following file structure will be output:
 
 ```text
 bam_pass
@@ -137,7 +137,7 @@ bam_pass
 > Store each BAM file in a separate directory. The directory names can be set arbitrarily.
 
 
-Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://github.com/nanoporetech/dorado#read-error-correction) in separate directories.
+Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/) in separate directories.
 
 ```text
 dorado_correct
@@ -148,10 +148,10 @@ dorado_correct
 ```
 
 > [!NOTE]
-> For detailed dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
+> For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
 
 
-#### Basecalling with [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)
+#### Basecalling with [Guppy](https://nanoporetech.com/ja/document/Guppy-protocol)
 After basecalling with Guppy, the following file structure will be output:
 
 ```text
@@ -166,13 +166,11 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
-Assuming barcode01 is the control and barcode02 is the sample, the respective directories are specified as follows:
+>[!CAUTION]
+> Although DAJIN2 can process Guppy-generated data, Guppy is no longer supported by Oxford Nanopore Technologies.  
+> Please use Dorado for basecalling and demultiplexing.  
 
-+ Control: `fastq_pass/barcode01`
-+ Sample: `fastq_pass/barcode02`
-
-
-### FASTA File Including Anticipated Allele Sequences
+### 2. FASTA File Including Anticipated Allele Sequences
 
 The FASTA file should contain descriptions of the alleles anticipated as a result of genome editing.
 
@@ -195,51 +193,78 @@ ACGTACGT
 Here, `>control` represents the sequence of the control allele, while `>knock-in` and `>knock-out` represent the sequences of the anticipated knock-in and knock-out alleles, respectively.
 
 > [!IMPORTANT]
-> **Ensure that both ends of the FASTA sequence match those of the amplicon sequence.** If the FASTA sequence is longer or shorter than the amplicon, the difference may be recognized as an indel.  
+> **Ensure that both ends of the FASTA sequence match those of the amplicon sequence.**   
+> If the FASTA sequence is longer or shorter than the amplicon, the difference may be recognized as an indel.  
 
 ## Single Sample Analysis
 
-DAJIN2 allows for the analysis of single samples (one sample vs one control).
+DAJIN2 supports single-sample analysis (one sample vs one control).
 
 ```bash
-DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
+DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
 Options:
--s, --sample            Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
--c, --control           Specify the path to the directory containing control FASTQ/FASTA/BAM files.
--a, --allele            Specify the path to the FASTA file.
--n, --name (Optional)   Set the output directory name. Default: 'Results'.
--g, --genome (Optional) Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
--b, --bed (Optional)    Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+-c, --control            Specify the path to the directory containing control FASTQ/FASTA/BAM files.
+-s, --sample             Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+-a, --allele             Specify the path to the FASTA file.
+-n, --name (Optional)    Set the output directory name. Default: 'Results'.
+-b, --bed (Optional)     Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+-g, --genome (Optional)  Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -t, --threads (Optional) Set the number of threads. Default: 1.
---no-filter (Optional)  Disable minor allele filtering (keep alleles <0.5%). Default: False.
--h, --help              Display this help message and exit.
--v, --version           Display the version number and exit.
+--no-filter (Optional)   Disable minor allele filtering (keep alleles below 0.5%). Default: False.
+-h, --help               Display this help message and exit.
+-v, --version            Display the version number and exit.
+```
+
+### Example
+
+```bash
+# Download the example dataset
+curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
+tar -xf example_single.tar.gz
+
+# Run DAJIN2
+DAJIN2 \
+    --control example_single/control \
+    --sample example_single/sample \
+    --allele example_single/stx2_deletion.fa \
+    --name stx2_deletion \
+    --bed example_single/stx2_deletion.bed \
+    --threads 4
 ```
 
 ### Using BED Files for Genomic Coordinates
 
-If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGENOME) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
+If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGenome) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
+
+> [!IMPORTANT]
+> Access to the UCSC Genome Browser or GGGenome servers may occasionally be unavailable. Therefore, we generally recommend using `-b/--bed` instead of `--genome`.
 
 When using the `-b/--bed` option with a BED file, please ensure:
 
 **Use BED6 format** (6 columns required):
-   ```
-   chr1    1000000    1001000    mm39    248956422    +
-   ```
-   
-   **Column descriptions:**
-   - Column 1: Chromosome name (e.g., chr1, chr2)
-   - Column 2: Start position (0-based, inclusive)
-   - Column 3: End position (0-based, exclusive)
-   - Column 4: Name (**genome ID**)
-   - Column 5: Score (**chromosome size for proper IGV visualization**)
-   - Column 6: Strand (+ or -, **must match FASTA allele orientation**)
+
+```
+chr1    1000000    1001000    mm39    248956422    +
+```
+
+**Column descriptions:**
+- Column 1: Chromosome name (e.g., chr1, chr2)
+- Column 2: Start position (0-indexed)
+- Column 3: End position (0-indexed)
+- Column 4: Name (**genome ID**)
+- Column 5: Score (**chromosome size for proper IGV visualization**)
+- Column 6: Strand (+ or -, **must match FASTA allele orientation**)
 
 > [!NOTE]  
 > For the score field (column 5), please enter the size of the chromosome specified in column 1.  
 > While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
+
+> [!NOTE]
+> Chromosome sizes can be found at:  
+> `https://hgdownload.soe.ucsc.edu/goldenPath/[genome]/bigZips/[genome].chrom.sizes`  
+> (e.g., https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes)
 
 > [!IMPORTANT]  
 > **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
@@ -265,7 +290,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --genome mm39 \
+    --bed example_single/stx2_deletion.bed \
     --threads 4 \
     --no-filter
 ```
@@ -273,22 +298,6 @@ DAJIN2 \
 > [!CAUTION]
 > Using `--no-filter` may increase noise and false positives in the results. It is recommended to validate rare alleles through additional experimental methods.
 
-### Example
-
-```bash
-# Download example dataset
-curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
-tar -xf example_single.tar.gz
-
-# Run DAJIN2
-DAJIN2 \
-    --control example_single/control \
-    --sample example_single/sample \
-    --allele example_single/stx2_deletion.fa \
-    --name stx2_deletion \
-    --genome mm39 \
-    --threads 4
-```
 
 ## Batch Processing
 
@@ -317,23 +326,24 @@ sample,control,allele,name,bed
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [--no-filter] [-h]
 
-options:
+Options:
   -f, --file                Specify the path to the CSV or Excel file.
   -t, --threads (Optional)  Set the number of threads. Default: 1.
-  --no-filter (Optional)    Disable minor allele filtering (keep alleles <0.5%). Default: False.
+  --no-filter (Optional)    Disable minor allele filtering (keep alleles below 0.5%). Default: False.
   -h, --help                Display this help message and exit.
 ```
 
 ### Example
 
 ```bash
-# Donwload the example dataset
+# Download the example dataset
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
 tar -xf example_batch.tar.gz
 
-# Run DAJIN2
+# Run DAJIN2 batch
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
+
 
 ## GUI (Graphical User Interface) Mode
 
@@ -398,10 +408,11 @@ Inside the `DAJIN_Results/{NAME}` directory, the following files can be found:
 ```
 DAJIN_Results/tyr-substitution
 ├── BAM
+│   ├── control
 │   ├── tyr_c230gt_01
 │   ├── tyr_c230gt_10
-│   ├── tyr_c230gt_50
-│   └── tyr_control
+│   └── tyr_c230gt_50
+├── DAJIN2_log_20260127_140954_076887.txt
 ├── FASTA
 │   ├── tyr_c230gt_01
 │   ├── tyr_c230gt_10
@@ -414,55 +425,74 @@ DAJIN_Results/tyr-substitution
 │   ├── tyr_c230gt_01.csv
 │   ├── tyr_c230gt_10.csv
 │   └── tyr_c230gt_50.csv
-├── read_plot.html
-├── read_plot.pdf
+├── VCF
+│   ├── tyr_c230gt_01
+│   ├── tyr_c230gt_10
+│   └── tyr_c230gt_50
+├── launch_report_mac.command
+├── launch_report_windows.bat
 └── read_summary.xlsx
 ```
 
-## 1. BAM
+## 1. launch_report_windows.bat / launch_report_mac.command
 
-The BAM directory contains the BAM files of reads classified by allele.  
+On Windows, double-click `launch_report_windows.bat`.  
+On macOS, double-click `launch_report_mac.command`.  
+Your browser will open and display the report.
 
-> [!NOTE]
-> Specifying a reference genome using the `genome` option will align the reads to that genome.  
-> Without `genome` options, the reads will align to the control allele within the input FASTA file.
+<img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
 
-## 2. FASTA and HTML
 
-The FASTA directory stores the FASTA files of each allele.  
-The HTML directory contains HTML files for each allele, where mutation sites are color-highlighted.  
-For example, Tyr point mutation is highlighted in **green**.  
+Demo video:  
+https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
+
+>[!TIPS]
+> **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above on figure, and video)**.
+
+In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.
+
+**Allele type** categories:  
+- **{Allele name}**: Alleles that perfectly match a user-defined allele in the FASTA file
+- **{Allele name} with indels**: Alleles similar to a user-defined allele but with a few-base substitution, deletion, insertion, or inversion
+- **unassigned insertion/deletion/inversion**: Alleles with deletions, insertions, or inversions of 10 bases or more that are not defined by the user
+
+> [!WARNING]  
+> In PCR amplicon sequencing, **Percent of reads** may not match the true allele proportions due to amplification bias.  
+> This effect can be pronounced when large deletions are present, potentially distorting the actual allele ratios.
+
+## 2. read_summary.xlsx
+
+read_summary.xlsx lists the read counts and proportions for each allele.  
+The stacked bar chart in the report is a visualization of `read_summary.xlsx`.  
+Use it as reference when preparing figures for publications.
+
+## 3. BAM and VCF
+
+The BAM and VCF directories contain BAM and VCF files classified by allele.  
+
+> [!NOTE]  
+> If `--bed` or `--genome` is not specified, reads are aligned to the control allele in the input FASTA file.
+
+## 4. FASTA and HTML
+
+The FASTA directory stores FASTA files for each allele.  
+The HTML directory stores per-allele HTML files with color-highlighted mutations.  
+An example of a Tyr point mutation (green) is shown below:
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/tyr-substitution.png" width="75%" />
 
-Furthermore, DAJIN2 extracts representative SV alleles (Insertion, Deletion, Inversion) included in the sample and highlights SV regions with colored underlines.  
-The following is an example where a deletion (light blue) and an insertion (red) are observed at both ends of an inversion (purple underline):
+DAJIN2 also extracts representative SV alleles (Insertion, Deletion, Inversion) in the sample and underlines SV regions.  
+Below is an example where a deletion (light blue) and an insertion (red) are observed at both ends of an inversion (purple underline).
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
-## 3. MUTATION_INFO
+## 5. MUTATION_INFO
 
-The MUTATION_INFO directory saves tables depicting mutation sites for each allele.  
-An example of a *Tyr* point mutation is described by its position on the chromosome and the type of mutation.  
+The MUTATION_INFO directory stores tables describing mutation sites for each allele.  
+An example of a *Tyr* point mutation is shown below:
+- It lists the chromosomal position and the mutation type.
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
-
-## 4. read_summary.xlsx, read_plot.html and read_plot.pdf
-
-read_summary.xlsx summarizes the number and proportion of reads per allele.  
-Both read_plot.html and read_plot.pdf illustrate the proportions of each allele.  
-The chart's **Allele type** indicates the type of allele, and **Percent of reads** shows the proportion of reads for each allele.  
-
-The **Allele type** includes:
-- **Intact**: Alleles that perfectly match the input FASTA allele.
-- **Indels**: Substitutions, deletions, insertions, or inversions within 50 bases.
-- **SV**: Substitutions, deletions, insertions, or inversions beyond 50 bases.
-
-<img src="https://user-images.githubusercontent.com/15861316/274521067-4d217251-4c62-4dc9-9c05-7f5377dd3025.png" width="75%">
-
-> [!WARNING]
-> In PCR amplicon sequencing, the % of reads might not match the actual allele proportions due to amplification bias.  
-> Especially when large deletions are present, the deletion alleles might be significantly amplified, potentially not reflecting the actual allele proportions.
 
 # 📣 Feedback and Support
 
@@ -490,4 +520,3 @@ By participating in this project you agree to abide by its terms.
 For more information, please refer to the following publication:
 
 [Kuno A, et al. (2022) DAJIN enables multiplex genotyping to simultaneously validate intended and unintended target genome editing outcomes. *PLoS Biology* 20(1): e3001507.](https://doi.org/10.1371/journal.pbio.3001507)
-

@@ -1,0 +1,7 @@
+name,sample,control,allele,bed
+cables2-flox-ki,example_flox/flox,example_flox/control,example_flox/cables2_flox.fa,example_flox/cables2_flox.bed
+cables2-flox-ki,example_flox/flox-1nt-deletion,example_flox/control,example_flox/cables2_flox.fa,example_flox/cables2_flox.bed
+cables2-flox-ki,example_flox/flox-1nt-substitution,example_flox/control,example_flox/cables2_flox.fa,example_flox/cables2_flox.bed
+cables2-flox-ki,example_flox/flox-1nt-insertion,example_flox/control,example_flox/cables2_flox.fa,example_flox/cables2_flox.bed
+,,,,
+,,,,

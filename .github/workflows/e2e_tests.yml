@@ -43,24 +43,30 @@ jobs:
                   PYTHONPATH: src
                   EXAMPLES_DIR: ${{ github.workspace }}/examples
               run: |
+                  #####################################################
                   case="${{ matrix.test-case }}"
 
                   if [ "$case" = "cables2_flox" ]; then
                     (
                       cd "$EXAMPLES_DIR" || exit 1
-                      DAJIN2 batch --file "example_flox/batch.xlsx" --threads 4 --debug
+                      DAJIN2 batch --file "example_flox/batch.csv" --threads 4 --debug
                     ) || exit 1
 
-                  elif [ "$case" = "stx2_deletion" ]; then
-                    DAJIN2 \
-                      --control "$EXAMPLES_DIR/example_single/control" \
-                      --sample  "$EXAMPLES_DIR/example_single/sample" \
-                      --allele  "$EXAMPLES_DIR/example_single/stx2_deletion.fa" \
-                      --name stx2_deletion \
-                      --genome mm39 \
-                      --threads 4 \
-                      --debug || exit 1
+                  # --------------------------------------------------
+                  # "allele"を含むbamファイルが,以下の4つあるか確認
+                  # flox-1nt-deletion_allele01_flox_indels_56.943%.bam
+                  # flox-1nt-deletion_allele02_control_intact_31.54%.bam
+                  # flox-1nt-deletion_allele03_unassigned_insertion_6.673%.bam
+                  # flox-1nt-deletion_allele04_unassigned_insertion_4.844%.bam
+                  # --------------------------------------------------
 
+                  if [ "$(find "$EXAMPLES_DIR/DAJIN_Results/cables2-flox-ki/BAM/flox-1nt-deletion/" -type f -name "*.bam" | grep -c "allele")" -ne 4 ]; then
+                      exit 1
+                  fi
+
+                  #####################################################
+                  elif [ "$case" = "stx2_deletion" ]; then
+                  
                     # Without Genome Specification
                     DAJIN2 \
                       --control "$EXAMPLES_DIR/example_single/control" \
@@ -81,11 +87,35 @@ jobs:
                       --threads 4 \
                       --debug || exit 1
 
+                    # --------------------------------------------------
+                    # "allele"を含むbamファイルが以下の4つであるか確認
+                    # sample_allele01_deletion_indels_33.931%.bam
+                    # sample_allele02_deletion_indels_33.448%.bam
+                    # sample_allele03_deletion_indels_31.793%.bam
+                    # sample_allele04_deletion_indels_0.828%.bam
+                    # --------------------------------------------------
+
+                    if [ "$(find DAJIN_Results/stx2_deletion/BAM/sample -type f -name "*.bam" | grep -c "allele")" -ne 4 ]; then
+                        exit 1
+                    fi
+
+                  #####################################################
                   elif [ "$case" = "tyr_substitution" ]; then
                     (
                       cd "$EXAMPLES_DIR" || exit 1
-                      DAJIN2 batch --file "example_batch/batch.csv" --threads 4 --debug
                       printf "chr7\t87140312\t87143157\tmm39\t144995196\t-\n" > "example_batch/tyr.bed"
                       DAJIN2 batch --file "example_batch/batch_bed.csv" --threads 4 --debug
                     ) || exit 1
+
+                    # --------------------------------------------------
+                    # "allele"を含むbamファイルが以下の2つであるか確認
+                    # tyr_c230gt_01_allele01_control_intact_99.263%.bam
+                    # tyr_c230gt_01_allele02_control_indels_0.737%.bam
+                    # --------------------------------------------------
+
+                      if [ "$(find "$EXAMPLES_DIR"/DAJIN_Results/tyr_c230gt/BAM/tyr_c230gt_01/ -type f -name "*.bam" | grep -c "allele")" -ne 2 ]; then
+                        exit 1
+                    fi
+                  #####################################################
+
                   fi
