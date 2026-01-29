@@ -12,7 +12,7 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[Read the Japanese README](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
+[日本語READMEはこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
 DAJIN2 is a genotyping tool for genome-edited samples using nanopore-targeted sequencing.
 
@@ -444,9 +444,10 @@ Your browser will open and display the report.
 
 
 Demo video:  
+
 https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
 
->[!TIPS]
+>[!TIP]
 > **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above on figure, and video)**.
 
 In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.

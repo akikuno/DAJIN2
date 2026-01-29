@@ -12,8 +12,6 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[English READMEはこちら](https://github.com/akikuno/DAJIN2/blob/main/README.md)
-
 DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲノム編集サンプルの遺伝型解析ツールです。
 
 **DAJIN2**の名称は日本語の「一網**打尽**」に由来します。  
@@ -451,9 +449,10 @@ Windowsの場合は`launch_report_windows.bat`、macOSの場合は`launch_report
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
 
 デモ動画：  
+
 https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
 
->[!TIPS]
+>[!TIP]
 > **積み上げ棒グラフにて興味のあるアレルをクリックすると、配列にどのような変異が生じているのかの詳細を閲覧できます（上図右・動画）。**
 
 図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
