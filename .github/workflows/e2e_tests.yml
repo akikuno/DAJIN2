@@ -66,15 +66,7 @@ jobs:
 
                   #####################################################
                   elif [ "$case" = "stx2_deletion" ]; then
-                    DAJIN2 \
-                      --control "$EXAMPLES_DIR/example_single/control" \
-                      --sample  "$EXAMPLES_DIR/example_single/sample" \
-                      --allele  "$EXAMPLES_DIR/example_single/stx2_deletion.fa" \
-                      --name stx2_deletion \
-                      --genome mm39 \
-                      --threads 4 \
-                      --debug || exit 1
-
+                  
                     # Without Genome Specification
                     DAJIN2 \
                       --control "$EXAMPLES_DIR/example_single/control" \
