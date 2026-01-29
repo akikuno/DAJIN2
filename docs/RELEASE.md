@@ -50,6 +50,9 @@
 + Rename utils.io module to utils.fileio to avoid conflict with the built-in io module  
   Issue [#127](https://github.com/akikuno/DAJIN2/issues/127)
 
++ Improve DAJIN2 error message when GGGenome returns "ERROR : searcher error"  
+  Issue [#131](https://github.com/akikuno/DAJIN2/issues/131)
+
 <!-- ############################################################# # -->
 
 
