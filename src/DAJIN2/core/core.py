@@ -6,8 +6,7 @@ from pathlib import Path
 
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.infrastructure.input_formatter import FormattedInputs
-from DAJIN2.core.preprocess.structural_variants import sv_handler
-from DAJIN2.utils import fastx_handler, io
+from DAJIN2.utils import fastx_handler, fileio
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ def execute_control(arguments: dict):
     ARGS: FormattedInputs = preprocess.format_inputs(arguments)
     preprocess.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
     preprocess.create_report_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
-    io.cache_file_hash(ARGS.path_allele, Path(ARGS.tempdir, "cache", "hash_allele.txt"))
+    fileio.cache_file_hash(ARGS.path_allele, Path(ARGS.tempdir, "cache", "hash_allele.txt"))
 
     ###########################################################
     # Check caches
@@ -166,34 +165,25 @@ def execute_sample(arguments: dict):
     }
 
     preprocess.detect_sv_alleles(
-        ARGS.tempdir,
-        ARGS.sample_name,
-        ARGS.control_name,
-        ARGS.fasta_alleles,
-        sv_type="insertion",
-        sv_internal_suffix=ARGS.uuid,
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="insertion"
     )
     preprocess.detect_sv_alleles(
-        ARGS.tempdir,
-        ARGS.sample_name,
-        ARGS.control_name,
-        ARGS.fasta_alleles,
-        sv_type="deletion",
-        sv_internal_suffix=ARGS.uuid,
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="deletion"
     )
     preprocess.detect_sv_alleles(
-        ARGS.tempdir,
-        ARGS.sample_name,
-        ARGS.control_name,
-        ARGS.fasta_alleles,
-        sv_type="inversion",
-        sv_internal_suffix=ARGS.uuid,
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
     )
 
     paths_sv_fasta = set()
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*.fasta")}
-    paths_sv_fasta |= {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*.fasta")}
+    paths_sv_fasta |= {
+        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*_DAJIN2predicted.fasta")
+    }
+    paths_sv_fasta |= {
+        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*_DAJIN2predicted.fasta")
+    }
+    paths_sv_fasta |= {
+        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*_DAJIN2predicted.fasta")
+    }
 
     paths_sv_fasta -= paths_predefined_fasta
 
@@ -214,7 +204,7 @@ def execute_sample(arguments: dict):
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
         preprocess.cache_mutation_loci(ARGS, is_control=False)
 
-    io.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
+    fileio.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
 
     ########################################################################
     # Classify alleles
@@ -226,7 +216,7 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.no_filter
     )
 
-    io.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
+    fileio.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
 
     ########################################################################
     # Clustering
@@ -240,7 +230,7 @@ def execute_sample(arguments: dict):
     clust_sample = clustering.add_percent(clust_sample)
     clust_sample = clustering.update_labels(clust_sample)
 
-    io.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clustering", "clust_sample.pickle"))
+    fileio.save_pickle(clust_sample, Path(ARGS.tempdir, ARGS.sample_name, "clustering", "clust_sample.pickle"))
 
     ########################################################################
     # Consensus call
@@ -263,22 +253,16 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, clust_downsampled
     )
 
-    sv_name_map = sv_handler.load_sv_name_map(ARGS.tempdir, ARGS.sample_name)
+    map_label_name, map_name_allele = consensus.call_allele_name(cons_sequences, ARGS.fasta_alleles)
+    cons_percentages = consensus.update_key_by_allele_name(cons_percentages, map_label_name)
+    cons_sequences = consensus.update_key_by_allele_name(cons_sequences, map_label_name)
+    cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, map_label_name)
 
-    allele_names, final_sv_name_map = consensus.call_allele_name(
-        cons_sequences, cons_percentages, ARGS.fasta_alleles, sv_threshold=50, sv_name_map=sv_name_map
-    )
-    # Update SV name map with final display names for downstream reporting
-    if final_sv_name_map:
-        sv_handler.save_sv_name_map(ARGS.tempdir, ARGS.sample_name, final_sv_name_map)
-        sv_name_map = final_sv_name_map
-    cons_percentages = consensus.update_key_by_allele_name(cons_percentages, allele_names)
-    cons_sequences = consensus.update_key_by_allele_name(cons_sequences, allele_names)
-    cons_midsv_tags = consensus.update_key_by_allele_name(cons_midsv_tags, allele_names)
-
-    io.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
-    io.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
-    io.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
+    fileio.save_pickle(cons_percentages, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_percentages.pickle"))
+    fileio.save_pickle(cons_sequences, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_sequences.pickle"))
+    fileio.save_pickle(cons_midsv_tags, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "cons_midsv_tags.pickle"))
+    fileio.save_pickle(map_label_name, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_label_name.pickle"))
+    fileio.save_pickle(map_name_allele, Path(ARGS.tempdir, ARGS.sample_name, "consensus", "map_name_allele.pickle"))
 
     ########################################################################
     # Output Report：RESULT/FASTA/HTML/BAM
@@ -288,23 +272,26 @@ def execute_sample(arguments: dict):
 
     # RESULT
     RESULT_SAMPLE = consensus.update_label_percent_readnum_name(
-        clust_sample_removed, allele_names, label_before_to_after
+        clust_sample_removed, map_label_name, label_before_to_after
     )
     RESULT_SAMPLE.sort(key=lambda x: x["LABEL"])
 
-    io.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
+    fileio.write_jsonl(RESULT_SAMPLE, Path(ARGS.tempdir, "result", f"{ARGS.sample_name}.jsonl"))
 
     # FASTA
     report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)
-    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name, sv_name_map)
+    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
 
     # HTML
     report.sequence_exporter.export_to_html(
-        ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags, sv_name_map
+        ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags, map_name_allele
     )
 
     # CSV (Allele Info)
     report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
+
+    # VCF
+    report.vcf_exporter.export_to_vcf(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
 
     # BAM
     report.bam_exporter.export_to_bam(
@@ -312,9 +299,6 @@ def execute_sample(arguments: dict):
     )
     for path_bam_igvjs in Path(ARGS.tempdir, "cache", ".igvjs").glob(f"{ARGS.control_name}_control.bam*"):
         shutil.copy(path_bam_igvjs, Path(ARGS.tempdir, "report", ".igvjs", ARGS.sample_name))
-
-    # VCF
-    # TODO: working in progress
 
     ###########################################################
     # Finish call

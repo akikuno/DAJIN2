@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 import numpy as np
-from scipy.spatial.distance import cosine
+from numpy.linalg import norm
 
 
 def get_repeat_regions(sequence: str, loci: set[int]) -> list[tuple[int, int]]:
@@ -18,6 +18,18 @@ def get_repeat_regions(sequence: str, loci: set[int]) -> list[tuple[int, int]]:
         if not (start - 1 in loci and end + 1 in loci):
             repeat_regions.append((start, end))
     return repeat_regions
+
+
+def cosine_similarity_safe(x: np.ndarray, y: np.ndarray) -> float:
+    """Compute cosine similarity while avoiding divide-by-zero warnings."""
+    if x.size == 0 or y.size == 0:
+        return 0.0
+
+    denominator = norm(x) * norm(y)
+    if denominator == 0 or np.isnan(denominator):
+        return 0.0
+
+    return float(np.dot(x, y) / denominator)
 
 
 ###########################################################
@@ -42,17 +54,12 @@ def extract_sequence_errors_in_homopolymer_loci(
             x = np.array(indels_normalized_sample[mut][start:end], dtype=float)
             y = np.array(indels_normalized_control[mut][start:end], dtype=float)
 
-            # コントロールで3%以上みられる変異はホモポリマーのシークエンスエラーとみなして、sampleの値に置換
-            # sampleの値に置換する理由は、cosine similarityの値を上げるため
+            # Treat variants >= 3% in the control as homopolymer sequence errors and replace with sample values.
+            # Replacing with sample values increases the cosine similarity.
             mask = y >= 3
             y[mask] = x[mask]
 
-            if x.size == 0 or y.size == 0:
-                cos_sim = 0.0
-            else:
-                norm_x = np.linalg.norm(x)
-                norm_y = np.linalg.norm(y)
-                cos_sim = 0.0 if norm_x == 0 or norm_y == 0 else 1 - cosine(x, y)
+            cos_sim = cosine_similarity_safe(x, y)
             # spearman_corr, _ = spearmanr(x, y)
             if cos_sim > 0.8:
                 sequence_errors.update(range(start, end + 1))

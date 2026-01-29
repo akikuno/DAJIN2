@@ -15,7 +15,7 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     merge_index_of_consecutive_indel,
     transpose_mutation_loci,
 )
-from DAJIN2.utils import config, io
+from DAJIN2.utils import config, fileio
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:
@@ -40,11 +40,11 @@ def extract_mutation_loci(
     """
     if thresholds is None:
         thresholds = {"*": 0.1, "-": 0.1, "+": 0.1}
-    indels_normalized_sample: dict[str, list[float]] = io.load_pickle(path_indels_normalized_sample)
+    indels_normalized_sample: dict[str, list[float]] = fileio.load_pickle(path_indels_normalized_sample)
 
     # Extract candidate mutation loci
     indels_normalized_control: dict[str, list[float]] = minimize_mutation_counts(
-        io.load_pickle(path_indels_normalized_control), indels_normalized_sample
+        fileio.load_pickle(path_indels_normalized_control), indels_normalized_sample
     )
     anomal_loci: dict[str, set[int]] = extract_anomal_loci(
         indels_normalized_sample, indels_normalized_control, thresholds, is_consensus
@@ -52,7 +52,7 @@ def extract_mutation_loci(
 
     # Merge all mutations and knockin loci
     if path_knockin.exists():
-        knockin_loci = io.load_pickle(path_knockin)
+        knockin_loci = fileio.load_pickle(path_knockin)
         anomal_loci = add_knockin_loci(anomal_loci, knockin_loci)
 
     # Extract error loci in homopolymer regions
@@ -96,7 +96,7 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
         if not is_control:
             prefix = ARGS.sample_name
         else:
-            path_insertion = Path(ARGS.tempdir, ARGS.control_name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
+            path_insertion = Path(ARGS.tempdir, ARGS.control_name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
             if path_insertion.exists():
                 prefix = ARGS.sample_name
             else:
@@ -105,10 +105,14 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
         if Path(path_mutation_loci, f"{prefix}_count.pickle").exists():
             continue
 
-        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele, f"{prefix}.jsonl")
+        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele, f"{prefix}_midsv.jsonl")
+        # skip if midsv file does not exist or is empty
+        if not path_midsv.exists() or path_midsv.stat().st_size == 0:
+            continue
+
         indels_count, indels_normalized = summarize_indels(path_midsv, sequence)
-        io.save_pickle(indels_count, Path(path_mutation_loci, f"{prefix}_count.pickle"))
-        io.save_pickle(indels_normalized, Path(path_mutation_loci, f"{prefix}_normalized.pickle"))
+        fileio.save_pickle(indels_count, Path(path_mutation_loci, f"{prefix}_count.pickle"))
+        fileio.save_pickle(indels_normalized, Path(path_mutation_loci, f"{prefix}_normalized.pickle"))
 
 
 def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
@@ -119,7 +123,11 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         return None
 
     for allele, sequence in ARGS.fasta_alleles.items():
-        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
+        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
+        # skip if midsv file does not exist or is empty
+        if not path_midsv_sample.exists() or path_midsv_sample.stat().st_size == 0:
+            continue
+
         path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele)
         path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci", allele)
 
@@ -139,4 +147,4 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
             path_midsv_sample, sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin
         )
 
-        io.save_pickle(mutation_loci, path_output_mutation_loci)
+        fileio.save_pickle(mutation_loci, path_output_mutation_loci)

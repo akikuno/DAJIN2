@@ -10,12 +10,12 @@ from src.DAJIN2.core.report import html_builder
     [
         (["=A", "=c", "=g", "=A"], [(1, 2)]),
         (["=A", "=c", "=g", "=A", "=c", "=A"], [(1, 2), (4, 4)]),
-        (["=A", "=T", "=G", "=C"], []),  # 小文字がない場合
-        (["=c", "=g", "=a", "=T"], [(0, 2)]),  # すべて小文字の後に大文字
-        (["=A", "=c", "=G", "=T", "=c", "=g"], [(1, 1), (4, 5)]),  # 複数の区間
-        ([], []),  # 空リスト
-        (["=c"], [(0, 0)]),  # 小文字1つだけ
-        (["=A"], []),  # 大文字1つだけ
+        (["=A", "=T", "=G", "=C"], []),  # No lowercase
+        (["=c", "=g", "=a", "=T"], [(0, 2)]),  # Uppercase after all lowercase
+        (["=A", "=c", "=G", "=T", "=c", "=g"], [(1, 1), (4, 5)]),  # Multiple ranges
+        ([], []),  # Empty list
+        (["=c"], [(0, 0)]),  # Single lowercase
+        (["=A"], []),  # Single uppercase
     ],
 )
 def test_get_inversion_range(midsv_sv_allele, expected):
@@ -27,12 +27,12 @@ def test_get_inversion_range(midsv_sv_allele, expected):
     [
         (["=A", "+C|+C|=A", "=A"], [(1, 2)]),
         (["=A", "+C|+C|=A", "=A", "+C|+C|+C|=A", "=A"], [(1, 2), (5, 7)]),
-        (["=A", "=T", "=G", "=C"], []),  # 挿入がない場合
-        (["+A|+T|+G|=A", "=C"], [(0, 2)]),  # 先頭に挿入がある場合
-        (["=A", "+C|+C|=A", "+T|+G|=C"], [(1, 2), (4, 5)]),  # 複数の挿入
-        ([], []),  # 空リスト
-        (["+A|=A"], [(0, 0)]),  # 挿入1つだけ
-        (["=A"], []),  # 挿入なし
+        (["=A", "=T", "=G", "=C"], []),  # No insertion
+        (["+A|+T|+G|=A", "=C"], [(0, 2)]),  # Insertion at the start
+        (["=A", "+C|+C|=A", "+T|+G|=C"], [(1, 2), (4, 5)]),  # Multiple insertions
+        ([], []),  # Empty list
+        (["+A|=A"], [(0, 0)]),  # Single insertion
+        (["=A"], []),  # No insertion
     ],
 )
 def test_get_insertion_range(midsv_sv_allele, expected):
@@ -48,11 +48,11 @@ def test_get_insertion_range(midsv_sv_allele, expected):
         ),
         (["=A", "<b>B</b>", "C"], ["=A", "<b>", "B", "</b>", "C"]),
         (["<div><span>A</span></div>"], ["<div>", "<span>", "A", "</span>", "</div>"]),
-        (["=A", "=T"], ["=A", "=T"]),  # タグなしの場合はそのまま
+        (["=A", "=T"], ["=A", "=T"]),  # Keep as-is when no tags
         (["<p>Hello <b>World</b>!</p>"], ["<p>", "Hello ", "<b>", "World", "</b>", "!", "</p>"]),
-        ([], []),  # 空リスト
-        (["<span>"], ["<span>"]),  # 開始タグのみ
-        (["</span>"], ["</span>"]),  # 終了タグのみ
+        ([], []),  # Empty list
+        (["<span>"], ["<span>"]),  # Start tag only
+        (["</span>"], ["</span>"]),  # End tag only
     ],
 )
 def test_split_html_tags(highlight_sv_allele, expected):

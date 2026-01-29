@@ -25,7 +25,20 @@ def fetch_bed_without_verification(url: str, timeout: int = 10, retries: int = 3
 
 def fetch_seq_coordinates(genome: str, gggenome_url: str, seq_subset: str) -> dict:
     url = f"{gggenome_url}/{genome}/{seq_subset}"
-    beds = fetch_bed_without_verification(url + ".bed")[1:]
+    gggenome_results = fetch_bed_without_verification(url + ".bed")
+    messages, beds = gggenome_results[0], gggenome_results[1:]
+
+    if "ERROR" in messages[0]:
+        error_message = (
+            f"GGGenome returned a searcher error fetching sequence from gggenome:\n"
+            f"{gggenome_url}/{genome}/{seq_subset}\n\n"
+            f"To resolve this, please specify the exact genomic coordinates by providing "
+            f"a BED6 format file with the -b/--bed option.\n"
+            f"See the documentation for details:\n"
+            f"https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates"
+        )
+        raise ValueError(error_message)
+
     if len(beds) > 1:
         error_message = (
             f"The sequence matched multiple regions in the reference genome:\n"

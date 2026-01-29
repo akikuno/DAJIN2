@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 """
 Sequence errors (such as large deletions) present in the control significantly impair the accuracy of mutation_loci. Therefore, only reads similar to alleles after clustering are desired for analysis.
@@ -17,9 +17,9 @@ Additionally, the mutation regions in the alleles after clustering should be ide
 def onehot_by_mutations(midsv_sample: list[dict]) -> dict[str, np.ndarray]:
     mut_onehot = defaultdict(list)
     for c in midsv_sample:
-        cssplits = c["MIDSV"].split(",")
+        midsv_tags = c["MIDSV"].split(",")
         for mut in {"+", "-", "*"}:
-            onehot = [1 if cs.startswith(mut) else 0 for cs in cssplits]
+            onehot = [1 if cs.startswith(mut) else 0 for cs in midsv_tags]
             mut_onehot[mut].append(onehot)
     return {mut: np.array(value) for mut, value in mut_onehot.items()}
 
@@ -86,18 +86,18 @@ def filter_control(
     """
     find similar control reads compared to sample reads
     """
-    cssplits = (m["MIDSV"].split(",") for m in io.read_jsonl(path_consensus_sample))
-    coverage_match = np.array([sum(1 for cs in cssplit if cs.startswith("=")) for cssplit in zip(*cssplits)])
-    mut_onehot_sample = onehot_by_mutations(io.read_jsonl(path_consensus_sample))
+    midsv_tags = (m["MIDSV"].split(",") for m in fileio.read_jsonl(path_consensus_sample))
+    coverage_match = np.array([sum(1 for cs in midsv if cs.startswith("=")) for midsv in zip(*midsv_tags)])
+    mut_onehot_sample = onehot_by_mutations(fileio.read_jsonl(path_consensus_sample))
 
     path_mut_onehot_control = Path(
         ARGS.tempdir, ARGS.control_name, "consensus", allele, f"{ARGS.sample_name}_onehot.pickle"
     )
     if path_mut_onehot_control.exists():
-        mut_onehot_control = io.load_pickle(path_mut_onehot_control)
+        mut_onehot_control = fileio.load_pickle(path_mut_onehot_control)
     else:
-        mut_onehot_control = onehot_by_mutations(io.read_jsonl(path_consensus_control))
-        io.save_pickle(mut_onehot_control, path_mut_onehot_control)
+        mut_onehot_control = onehot_by_mutations(fileio.read_jsonl(path_consensus_control))
+        fileio.save_pickle(mut_onehot_control, path_mut_onehot_control)
 
     mut_percentage_sample = calculate_percentage(mut_onehot_sample, coverage_match)
     values_mask = get_values_to_mask(mut_percentage_sample)
@@ -112,7 +112,7 @@ def cache_selected_control_by_similarity(
     ARGS, path_consensus_control: Path, path_consensus_sample: Path, allele: str, no_filter: bool = False
 ) -> None:
     normal_reads_flags = filter_control(ARGS, path_consensus_control, path_consensus_sample, allele, no_filter)
-    midsv_control = io.read_jsonl(path_consensus_control)
+    midsv_control = fileio.read_jsonl(path_consensus_control)
     midsv_filtered = (m for m, flag in zip(midsv_control, normal_reads_flags) if flag is True)
 
-    io.write_jsonl(midsv_filtered, Path(path_consensus_sample.parent, "control.jsonl"))
+    fileio.write_jsonl(midsv_filtered, Path(path_consensus_sample.parent, "control.jsonl"))

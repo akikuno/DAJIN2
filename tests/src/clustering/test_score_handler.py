@@ -2,8 +2,8 @@ from DAJIN2.core.clustering import score_handler
 
 
 def test_call_count():
-    cssplits_sample = [["=A", "*ag", "-gg", "=T"], ["=A", "-a", "-gg", "*ag"]]
-    result = score_handler.call_count(iter(cssplits_sample))
+    midsv_tags_sample = [["=A", "*ag", "-gg", "=T"], ["=A", "-a", "-gg", "*ag"]]
+    result = score_handler.call_count(iter(midsv_tags_sample))
     expected_result = [
         {"=A": 2},
         {"*ag": 1, "-a": 1},

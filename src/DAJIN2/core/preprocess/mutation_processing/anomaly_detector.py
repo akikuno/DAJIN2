@@ -4,31 +4,25 @@ Anomaly detection utilities for mutation extraction.
 
 from __future__ import annotations
 
-from warnings import catch_warnings, filterwarnings
-
 import numpy as np
-from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPClassifier
 
 
 def cosine_distance(x: list[float], y: list[float]) -> float:
     """Calculate cosine distance between two vectors."""
-    x_arr = np.array(x, dtype=float)
-    y_arr = np.array(y, dtype=float)
+    x_arr = np.asarray(x, dtype=float)
+    y_arr = np.asarray(y, dtype=float)
 
-    # Early return when vectors are empty to avoid invalid divisions.
     if x_arr.size == 0 or y_arr.size == 0:
         return 0.0
 
-    # Add 1e-6 to avoid division by zero when calculating cosine similarity.
-    x_arr = x_arr + 1e-6
-    y_arr = y_arr + 1e-6
-
     denominator = np.linalg.norm(x_arr) * np.linalg.norm(y_arr)
-    if denominator == 0:
-        return 0.0
+    if denominator == 0 or np.isnan(denominator):
+        return 1.0
 
-    return 1 - float(np.dot(x_arr, y_arr) / denominator)
+    cosine_similarity = float(np.dot(x_arr, y_arr) / (denominator + np.finfo(float).eps))
+    cosine_similarity = np.clip(cosine_similarity, -1.0, 1.0)
+    return 1 - cosine_similarity
 
 
 def is_dissimilar_loci(values_sample, values_control, index: int, is_consensus: bool = False) -> bool:
@@ -54,7 +48,14 @@ def is_dissimilar_loci(values_sample, values_control, index: int, is_consensus: 
     distance = cosine_distance(x, y)
     distance_slice = cosine_distance(x_slice, y_slice)
 
-    return distance > 0.05 and distance / (distance + distance_slice) > 0.9
+    if distance <= 0.05:
+        return False
+
+    ratio_denominator = distance + distance_slice
+    if ratio_denominator == 0:
+        return False
+
+    return distance / ratio_denominator > 0.9
 
 
 def detect_anomalies(values_sample, values_control, threshold: float, is_consensus: bool = False) -> set[int]:
@@ -85,16 +86,8 @@ def detect_anomalies(values_sample, values_control, threshold: float, is_consens
     X = np.concatenate([matrix_error, matrix_mutation], axis=0)
     y = [0] * (total_size) + [1] * (total_size)
 
-    clf = MLPClassifier(
-        solver="lbfgs",
-        alpha=1e-5,
-        hidden_layer_sizes=(5, 2),
-        random_state=1,
-        max_iter=1000,
-    )
-    with catch_warnings():
-        filterwarnings("ignore", category=ConvergenceWarning)
-        clf.fit(X, y)
+    clf = MLPClassifier(solver="lbfgs", alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=1000)
+    clf.fit(X, y)
 
     results = clf.predict(np.array([values_control, values_sample]).T)
 

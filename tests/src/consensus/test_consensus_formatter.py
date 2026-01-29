@@ -1,39 +1,13 @@
-from typing import NamedTuple
-
 import pytest
 
 from DAJIN2.core.consensus.consensus_formatter import (
-    ConsensusKey as ConsensusKeyData,
     call_allele_name,
-    detect_sv,
-    determine_suffix,
-    format_allele_label,
-    generate_allele_mapping,
     merge_duplicated_cons_others,
     merge_duplicated_cons_sequences,
     update_key_by_allele_name,
     update_label_percent_readnum_name,
 )
-
-###########################################################
-# detect_sv
-###########################################################
-
-
-@pytest.mark.parametrize(
-    "cons_per, threshold, expected",
-    [
-        ([{"=N": 90, "=C": 10}], 1, True),  # one "=N"
-        ([{"+G|+G|=A": 80, "=C": 20}], 1, True),  # two insertions
-        ([{"-A": 100}, {"-A": 100}, {"-A": 100}], 3, True),  # three deletions
-        ([{"*AT": 100}, {"*AT": 100}, {"*AT": 100}, {"*AT": 100}], 4, True),  # four substitutions
-        ([{"=a": 100}], 5, True),  # inversion
-        ([{"=N": 90, "=C": 10}], 2, False),  # fails threshold
-    ],
-)
-def test_detect_sv(cons_per, threshold, expected):
-    assert detect_sv(cons_per, threshold) == expected
-
+from DAJIN2.utils.config import ConsensusKey
 
 ###########################################################
 # call_allele_name
@@ -41,104 +15,55 @@ def test_detect_sv(cons_per, threshold, expected):
 
 
 @pytest.mark.parametrize(
-    "label, total_labels, expected_output",
+    "cons_sequences, fasta_alleles, expected_label_name, expected_name_allele",
     [
-        (1, 10, "01"),
-        (5, 100, "005"),
-        (10, 10, "10"),
-        (99, 99, "99"),
-        (1, 1000, "0001"),
-    ],
-)
-def test_format_allele_label(label, total_labels, expected_output):
-    result = format_allele_label(label, total_labels)
-    assert result == expected_output
-
-
-# Test for determine_suffix function
-@pytest.mark.parametrize(
-    "cons_seq, fasta_allele, is_sv, expected_output",
-    [
-        ("ATCG", "ATCG", False, "intact"),
-        ("ATCG", "ATCC", True, "SV"),
-        ("ATCG", "ATCC", False, "indels"),
-    ],
-)
-def test_determine_suffix(cons_seq, fasta_allele, is_sv, expected_output):
-    result = determine_suffix(cons_seq, fasta_allele, is_sv)
-    assert result == expected_output
-
-
-def test_call_allele_name_uses_sv_display_map():
-    key_sv = ConsensusKeyData(allele="deletion001__uuid", label=1, percent=60.0)
-    cons_sequences = {key_sv: "A"}
-    cons_percentages = {key_sv: [{"-A": 100.0}]}
-    fasta_alleles = {"deletion001__uuid": "A"}
-    sv_name_map = {"deletion001__uuid": "DAJIN_deletion01"}
-
-    allele_names, final_sv_map = call_allele_name(
-        cons_sequences, cons_percentages, fasta_alleles, sv_threshold=1, sv_name_map=sv_name_map
-    )
-
-    assert allele_names[1].startswith("allele01_unintended_deletion_1_60")
-    assert final_sv_map == {"deletion001__uuid": "unintended_deletion_1"}
-
-
-def test_call_allele_name_non_sv_readable_labels():
-    key_control = ConsensusKeyData(allele="control", label=1, percent=70.0)
-    key_sample = ConsensusKeyData(allele="flox", label=2, percent=30.0)
-    cons_sequences = {key_control: "AC", key_sample: "AT"}
-    cons_percentages = {key_control: [{"=A": 100.0}], key_sample: [{"*AC": 100.0}]}
-    fasta_alleles = {"control": "AC", "flox": "AC"}
-
-    allele_names, _ = call_allele_name(cons_sequences, cons_percentages, fasta_alleles, sv_threshold=1)
-
-    assert allele_names[1].startswith("allele01_control_70")
-    assert allele_names[2].startswith("allele02_flox_with_indels_30")
-
-
-@pytest.mark.parametrize(
-    "alleles, expected",
-    [
-        # Case 1: Standard mapping
         (
-            ["deletion02", "control", "deletion04", "inversion05", "insertion11"],
             {
-                "deletion02": "deletion01",
-                "deletion04": "deletion02",
-                "inversion05": "inversion01",
-                "insertion11": "insertion01",
+                ConsensusKey("control", 1, 75): "ATCG",
+                ConsensusKey("mutant", 2, 25): "ATCC",
+            },
+            {"control": "ATCG", "mutant": "ATCG"},
+            {
+                1: "allele01|control|intact|75%",
+                2: "allele02|mutant|indels|25%",
+            },
+            {
+                "allele01|control|intact|75%": "control",
+                "allele02|mutant|indels|25%": "mutant",
             },
         ),
-        # Case 2: Only one allele in each group
         (
-            ["deletion01", "inversion01", "insertion01"],
-            {"deletion01": "deletion01", "inversion01": "inversion01", "insertion01": "insertion01"},
+            {
+                ConsensusKey("control", 1, 90): "ATCG",
+                ConsensusKey("deletion3_DAJIN2predicted", 3, 10): "ATCG",
+            },
+            {"control": "ATCG", "deletion3_DAJIN2predicted": "ATCG"},
+            {
+                1: "allele01|control|intact|90%",
+                3: "allele03|unassigned|deletion|10%",
+            },
+            {
+                "allele01|control|intact|90%": "control",
+                "allele03|unassigned|deletion|10%": "deletion3_DAJIN2predicted",
+            },
         ),
-        # Case 3: No valid alleles
-        (["control", "unknown"], {}),
-        # Case 4: Multiple alleles in a single group
-        (
-            ["deletion01", "deletion02", "deletion03"],
-            {"deletion01": "deletion01", "deletion02": "deletion02", "deletion03": "deletion03"},
-        ),
-        # Case 5: Mixed valid and invalid alleles
-        (
-            ["deletion02", "control", "inversion05", "insertion11", "unknown"],
-            {"deletion02": "deletion01", "inversion05": "inversion01", "insertion11": "insertion01"},
-        ),
-        # Case 6: Consecutive alleles
-        (["deletion01", "deletion01", "deletion04"], {"deletion01": "deletion01", "deletion04": "deletion02"}),
     ],
 )
-def test_generate_allele_mapping(alleles, expected):
-    assert generate_allele_mapping(alleles) == expected
+def test_call_allele_name(cons_sequences, fasta_alleles, expected_label_name, expected_name_allele):
+    got_label_name, got_name_allele = call_allele_name(cons_sequences, fasta_alleles)
+    assert got_label_name == expected_label_name
+    assert got_name_allele == expected_name_allele
 
 
-class ConsensusKey(NamedTuple):
-    allele: str
-    label: int
-    percent: float
+def test_call_allele_name_digit_width():
+    cons_sequences = {ConsensusKey("control", i, 1): "ATCG" for i in range(1, 101)}
+    fasta_alleles = {"control": "ATCG"}
+
+    got_label_name, got_name_allele = call_allele_name(cons_sequences, fasta_alleles)
+
+    assert got_label_name[1] == "allele001|control|intact|1%"
+    assert got_label_name[100] == "allele100|control|intact|1%"
+    assert got_name_allele["allele001|control|intact|1%"] == "control"
 
 
 ###########################################################
@@ -175,7 +100,7 @@ def test_update_key_by_allele_name(cons, allele_names, expected_output):
                 {"LABEL": 2, "PERCENT": 10, "READNUM": 20},
                 {"LABEL": 3, "PERCENT": 10, "READNUM": 10},
             ],
-            {1: "name1_30%", 3: "name3_10%"},
+            {1: "name1|30%", 3: "name3|10%"},
             {2: 1},
             [
                 {"LABEL": 1, "NAME": "name1_30%", "PERCENT": 30.0, "READNUM": 50},

@@ -66,10 +66,12 @@ def write_jsonl(data: list[dict] | Iterator[dict], file_path: str | Path) -> Non
 
 def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Strip whitespace from column names and string values in all cells.
+    1. Strip whitespace from column names and string values in all cells.
+    2. Remove NaN records
     """
-    df.columns = df.columns.str.strip()
-    return df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    df.columns = df.columns.str.strip()  # ← Remove spaces from column names
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
+    return df.dropna()  # ← Remove NaN records
 
 
 def read_xlsx(file_path: str | Path) -> list[dict[str, str]]:
@@ -84,6 +86,7 @@ def read_csv(file_path: str | Path) -> list[dict[str, str]]:
     """
     Load data from a CSV file with BOM handling, stripping whitespace.
     """
+    # Remove BOM if present (utf-8-sig handles BOM automatically)
     df = pd.read_csv(file_path, encoding="utf-8-sig")
     return _clean_dataframe(df).to_dict(orient="records")
 
@@ -141,15 +144,21 @@ def read_fastq(path_fastx: str | Path) -> Iterator[dict]:
 
 
 def read_fasta(path_fasta: str | Path) -> Iterator[dict]:
-    """Read a FASTA file and yield each record as a dictionary."""
-    iterator = read_lines(path_fasta)
-    try:
-        while True:
-            identifier = next(iterator).strip()
-            sequence = next(iterator).strip()
-            yield {"identifier": identifier, "sequence": sequence}
-    except StopIteration:
-        return
+    """Read a FASTA file (multi-line supported) and yield each record as a dictionary."""
+    header = None
+    seq_lines: list[str] = []
+
+    for line in read_lines(path_fasta):
+        if line.startswith(">"):
+            if header:
+                yield {"identifier": header, "sequence": "".join(seq_lines)}
+            header = line[1:].strip()  # Remove leading ">"
+            seq_lines = []
+        else:
+            seq_lines.append(line)
+
+    if header:
+        yield {"identifier": header, "sequence": "".join(seq_lines)}
 
 
 def write_fastq(data: list[dict] | Iterator[dict], file_path: str | Path, is_gzip: bool = True) -> None:
@@ -238,15 +247,6 @@ def sanitize_name(file_name: Path | str) -> str:
         'leading-space-txt'
         >>> sanitize_name("file name with spaces")
         'file-name-with-spaces'
-
-    Args:
-        file_name (Path | str): The original file name.
-
-    Returns:
-        str: The sanitized file name with invalid characters replaced by '-'.
-
-    Raises:
-        ValueError: If the provided file name is empty or contains only whitespace.
     """
     file_name = str(file_name).strip()
     if not file_name:

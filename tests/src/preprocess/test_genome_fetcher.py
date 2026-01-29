@@ -3,11 +3,11 @@ import pytest
 from DAJIN2.core.preprocess.genome_coordinate import genome_fetcher
 from DAJIN2.utils.input_validator import get_available_servers
 
-genome_urls = get_available_servers()
-
 
 @pytest.mark.slow
 def test_fetch_seq_coodinates_strand_plus():
+    genome_urls = get_available_servers()
+
     genome = "mm39"
     gggenome_url = genome_urls["gggenome"]
     seq = "GTTAGGATTTTCAGGGTGACGACCTCCCAAGTACTCATCTGTGCAAATGT"
@@ -18,6 +18,8 @@ def test_fetch_seq_coodinates_strand_plus():
 
 @pytest.mark.slow
 def test_fetch_seq_coodinates_strand_minus():
+    genome_urls = get_available_servers()
+
     genome = "mm39"
     gggenome_url = genome_urls["gggenome"]
     seq = "ACATTTGCACAGATGAGTACTTGGGAGGTCGTCACCCTGAAAATCCTAAC"
@@ -31,7 +33,7 @@ def test_fetch_seq_coordinates_multiple_regions(monkeypatch):
     gggenome_url = "https://gggenome.example"
     seq_subset = "GACCCTCTCTTGT"
 
-    # fetch_bed_without_verification が複数領域を返すケース
+    # Case where fetch_bed_without_verification returns multiple regions
     def fake_fetch_bed(url):
         return [
             "track header",
@@ -55,7 +57,7 @@ def test_fetch_seq_coordinates_no_items(monkeypatch):
     gggenome_url = "https://gggenome.example"
     seq_subset = "GACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGTGACCCTCTCTTGT"
 
-    # fetch_bed_without_verification が "### No items found. ###" を返すケース
+    # Case where fetch_bed_without_verification returns "### No items found. ###"
     def fake_fetch_bed(url):
         return [
             "track header",
@@ -75,6 +77,7 @@ def test_fetch_seq_coordinates_no_items(monkeypatch):
 
 @pytest.mark.slow
 def test_fetch_chromosome_size():
+    genome_urls = get_available_servers()
     genome = "mm39"
     chrom = "chr7"
     test = genome_fetcher.fetch_chromosome_size(genome, chrom, genome_urls["goldenpath"])

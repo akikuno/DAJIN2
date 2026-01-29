@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 import sys
 import traceback
 from collections.abc import Callable, Iterator
 from itertools import islice
 from multiprocessing import Queue, get_context
+from pathlib import Path
+
+from DAJIN2.utils import config
 
 
 def get_error_message_prefix(arg: dict) -> str:
@@ -38,6 +42,17 @@ def suppress_stderr(function: Callable, *args, **kwargs) -> None:
         sys.stderr = original_stderr
 
 
+def setup_child_logging() -> None:
+    if logging.getLogger().handlers:
+        return
+    path_logfile = os.environ.get("DAJIN2_LOGFILE")
+    if not path_logfile:
+        return
+    level_name = os.environ.get("DAJIN2_LOGLEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    config.set_logging(Path(path_logfile), level=level)
+
+
 def handle_exception_and_enqueue(queue: Queue[str], arg: dict) -> None:
     """
     Handle the exception by placing an error message in the queue.
@@ -48,6 +63,7 @@ def handle_exception_and_enqueue(queue: Queue[str], arg: dict) -> None:
 
 def target(function: Callable, arg: dict, queue: Queue[str]) -> None:
     """Run a function with a single argument and handle any exceptions."""
+    setup_child_logging()
     try:
         suppress_stderr(function, arg)
     except Exception:

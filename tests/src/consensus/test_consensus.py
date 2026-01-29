@@ -9,8 +9,8 @@ from src.DAJIN2.core.consensus.consensus import (
 
 
 def test_adjust_to_100_percent():
-    test = [{"A": 25, "C": 25}, {"N": 100}]
-    expected = [{"A": 50, "C": 50}, {"N": 100}]
+    test = [{"=A": 25, "=C": 25}, {"=N": 100}]
+    expected = [{"=A": 50, "=C": 50}, {"=N": 100}]
     assert adjust_to_100_percent(test) == expected
 
 
@@ -26,7 +26,7 @@ def test_adjust_to_100_percent_float():
 
 
 def test_call_percentage():
-    cssplits = [["+A|=C", "-T", "=C", "=A", "=T"], ["-C", "=T", "=C", "*AT", "*TA"]]
+    midsv_tags = [["+A|=C", "-T", "=C", "=A", "=T"], ["-C", "=T", "=C", "*AT", "*TA"]]
     mutation_loci = [{"+", "-"}, {"-"}, {}, {}, {"*"}]
     sequence = "CTCAT"
     expected_output = [
@@ -36,4 +36,4 @@ def test_call_percentage():
         {"=A": 100.0},
         {"=T": 50.0, "*TA": 50.0},
     ]
-    assert call_percentage(cssplits, mutation_loci, sequence) == expected_output
+    assert call_percentage(midsv_tags, mutation_loci, sequence) == expected_output

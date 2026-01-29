@@ -1,25 +1,13 @@
 from __future__ import annotations
 
+import shutil
 from collections import defaultdict
 from collections.abc import Iterator
 from pathlib import Path
 
 import midsv
 
-from DAJIN2.utils import cssplits_handler, io, sam_handler
-
-
-def has_inversion_in_splice(CIGAR: str) -> bool:
-    previous_insertion = False
-    for cigar in sam_handler.split_cigar(CIGAR):
-        if cigar.endswith("I"):
-            previous_insertion = True
-            continue
-        if previous_insertion and cigar.endswith("N"):
-            return True
-        else:
-            previous_insertion = False
-    return False
+from DAJIN2.utils import fileio, midsv_handler, sam_handler
 
 
 def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[str, str]]:
@@ -27,7 +15,7 @@ def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[s
     # Extract preset and CIGAR
     for path in path_sam_files:
         preset = path.stem
-        sam: list[list[str]] = io.read_sam(path)
+        sam: list[list[str]] = fileio.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
                 continue
@@ -44,10 +32,6 @@ def extract_best_preset(preset_cigar_by_qname: dict[str, dict[str, str]]) -> dic
     best_preset = defaultdict(str)
     for qname in preset_cigar_by_qname:
         preset_cigar = preset_cigar_by_qname[qname]
-        # If there is an inversion in the splice preset, remove it
-        if "splice" in preset_cigar and has_inversion_in_splice(preset_cigar["splice"]):
-            preset_cigar.pop("splice")
-
         if preset_cigar == {}:
             continue
 
@@ -75,7 +59,7 @@ def extract_best_alignment_length_from_sam(path_sam_files: list[Path], best_pres
     flag_header = False
     for path in path_sam_files:
         preset = path.stem
-        sam = io.read_sam(path)
+        sam = fileio.read_sam(path)
         for record in sam:
             if record[0].startswith("@"):
                 if not flag_header:
@@ -111,10 +95,10 @@ def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -
     for samp in midsv_sample:
         midsv_tags = samp["MIDSV"].split(",")
 
-        left_idx_n, right_idx_n = cssplits_handler.find_n_boundaries(midsv_tags)
+        left_idx_n, right_idx_n = midsv_handler.find_n_boundaries(midsv_tags)
 
         for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence)):
-            if left_idx_n < j < right_idx_n and cssplits_handler.is_n_tag(cs):
+            if left_idx_n < j < right_idx_n and midsv_handler.is_n_tag(cs):
                 midsv_tags[j] = f"-{seq_char}"
 
         samp["MIDSV"] = ",".join(midsv_tags)
@@ -144,7 +128,7 @@ def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int 
         total = len(midsv_tags)
         if total == 0:
             continue
-        n_count = sum(1 for tag in midsv_tags if cssplits_handler.is_n_tag(tag))
+        n_count = sum(1 for tag in midsv_tags if midsv_handler.is_n_tag(tag))
         n_percentage = n_count / total * 100
         if n_percentage < threshold:
             yield samp
@@ -155,11 +139,11 @@ def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int 
 ###########################################################
 
 
-def convert_consecutive_indels_to_match(cssplit: str) -> str:
+def convert_consecutive_indels_to_match(midsv: str) -> str:
     i = 0
-    cssplit_reversed = cssplit.split(",")[::-1]
-    while i < len(cssplit_reversed):
-        current_cs = cssplit_reversed[i]
+    midsv_reversed = midsv.split(",")[::-1]
+    while i < len(midsv_reversed):
+        current_cs = midsv_reversed[i]
 
         if not current_cs.startswith("+"):
             i += 1
@@ -171,10 +155,10 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
         deletions = []
 
         for j in range(1, len(insertions) + 1):
-            if i + j >= len(cssplit_reversed):
+            if i + j >= len(midsv_reversed):
                 break
 
-            next_cs = cssplit_reversed[i + j]
+            next_cs = midsv_reversed[i + j]
 
             if not next_cs.startswith("-"):
                 break
@@ -186,15 +170,15 @@ def convert_consecutive_indels_to_match(cssplit: str) -> str:
             continue
 
         # Format insertions
-        cssplit_reversed[i] = current_cs.split("|")[-1]
+        midsv_reversed[i] = current_cs.split("|")[-1]
 
         # Format deletions
         for k, _ in enumerate(insertions, 1):
-            cssplit_reversed[i + k] = cssplit_reversed[i + k].replace("-", "=")
+            midsv_reversed[i + k] = midsv_reversed[i + k].replace("-", "=")
 
         i += len(insertions) + 1
 
-    return ",".join(cssplit_reversed[::-1])
+    return ",".join(midsv_reversed[::-1])
 
 
 def convert_consecutive_indels(midsv_sample: Iterator) -> Iterator[list[dict]]:
@@ -230,29 +214,31 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
 
         path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele)
         path_midsv_directory.mkdir(parents=True, exist_ok=True)
-        path_output_jsonl = Path(path_midsv_directory, f"{name}.jsonl")
+        path_output_jsonl = Path(path_midsv_directory, f"{name}_midsv.jsonl")
         # Skip if midsv jsonl already exists and is not empty
         if path_output_jsonl.exists() and path_output_jsonl.stat().st_size > 0:
             continue
 
         if is_control and is_sv:
-            """
-            Set the destination for midsv as `barcode01/midsv/insertion1_barcode02.jsonl` when control is barcode01, sample is barcode02, and the allele is insertion1.
-            """
+            # Set the destination for midsv as `barcode01/midsv/insertion1/barcode02_midsv.jsonl`
+            # when control is barcode01, sample is barcode02, and the allele is insertion1.
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"{ARGS.sample_name}_*.sam"))
-            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}.jsonl")
+            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
         else:
-            """
-            Set the destination for midsv as `barcode02/midsv/insertion1.jsonl` when the sample is barcode02 and the allele is insertion1.
-            """
+            # Set the destination for midsv as `barcode02/midsv/insertion1/barcode02_midsv.jsonl`
+            # when the sample is barcode02 and the allele is insertion1.
             path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob("*.sam"))
-            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}.jsonl")
+            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}_midsv.jsonl")
 
         preset_cigar_by_qname = extract_preset_and_cigar_by_qname(path_sam_files)
         best_preset = extract_best_preset(preset_cigar_by_qname)
         sam_best_alignments = extract_best_alignment_length_from_sam(path_sam_files, best_preset)
-        if not any(record and not record[0].startswith("@") for record in sam_best_alignments):
+
+        # Remove path_midsv_directory if there are no alignments
+        if sum(1 for record in sam_best_alignments if not record[0].startswith("@")) == 0:
+            shutil.rmtree(path_midsv_directory, ignore_errors=True)
             continue
+
         best_sam_name = f"{ARGS.sample_name}_best.sam" if is_control and is_sv else f"{name}_best.sam"
         path_best_sam = write_sam(sam_best_alignments, Path(path_midsv_directory, best_sam_name))
         midsv_chaind = transform_to_midsv_format(path_best_sam)
@@ -261,4 +247,4 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         midsv_sample = filter_samples_by_n_proportion(midsv_sample)
         midsv_sample = convert_consecutive_indels(midsv_sample)
         midsv_sample = append_best_preset(midsv_sample, best_preset)
-        io.write_jsonl(midsv_sample, path_midsv_output)
+        fileio.write_jsonl(midsv_sample, path_midsv_output)

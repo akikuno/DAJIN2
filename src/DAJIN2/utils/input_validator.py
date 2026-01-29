@@ -11,6 +11,7 @@ import mappy
 import pysam
 
 from DAJIN2.utils.bed_handler import BEDError
+from DAJIN2.utils.fileio import read_fasta
 
 ########################################################################
 # To accommodate cases where a user might input negative values or
@@ -66,8 +67,9 @@ def validate_fastq_content(path_fastq: str) -> None:
 
 def validate_fasta_content(path_fasta: str, allele_file: bool = False) -> None:
     try:
-        headers, seqs = zip(*[(n, s) for n, s, _ in mappy.fastx_read(path_fasta)])
-        # Remove empty elements
+        headers, seqs = zip(
+            *[(record["identifier"], record["sequence"]) for record in read_fasta(path_fasta)]
+        )  # Remove empty elements
         headers = [header for header in headers if header]
         seqs = [seq for seq in seqs if seq]
 
@@ -116,13 +118,13 @@ def validate_files(SAMPLE: str, CONTROL: str, ALLELE: str) -> None:
 
 ########################################################################
 # Check genome and UCSC server
-# BAMファイルのゲノム座標の入手に必要であり、以下に、各Serverの役割を述べる：
-## Blat: BAMファイル出力の際のゲノム座標の入手
-## Goldenpath: chrom.sizeに必要
+# Required to fetch genome coordinates for BAM files; roles of each server:
+# - Blat: genome coordinates for BAM output
+# - Goldenpath: required for chrom.sizes
 ########################################################################
 
 
-def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 3) -> str:
+def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 5) -> str:
     """
     Fetch HTML with optional retries and clearer error messages.
     """
@@ -132,14 +134,12 @@ def fetch_html_without_verification(url: str, timeout: int = 10, retries: int = 
         try:
             with urlopen(url, context=context, timeout=timeout) as response:
                 return response.read().decode("utf-8", "ignore")
-        except (HTTPError, URLError, TimeoutError) as e:
+        except (HTTPError, URLError, TimeoutError):
             if attempt < retries:
                 time.sleep(1)
                 continue
             else:
-                raise TimeoutError(
-                    f"Failed to fetch {url} after {retries} attempts (timeout={timeout}s). Last error: {e}"
-                )
+                return ""
 
 
 def format_url(key: str, url: str) -> str:
@@ -167,8 +167,16 @@ def get_available_servers() -> dict[str, str]:
     available_servers = {key: get_first_available_url(key, urls) for key, urls in server_lists.items()}
 
     error_messages = {
-        "gggenome": "GGGenome servers are currently down. To avoid accessing the site, please consider specifying the -b/--bed option. Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'",
-        "goldenpath": "All UCSC GoldenPath servers are currently down. Please wait for a while and try again.",
+        "gggenome": """
+        GGGenome servers are currently down.
+        To avoid accessing the site, please consider specifying the -b/--bed option. 
+        Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'
+        """,
+        "goldenpath": """
+        All UCSC GoldenPath servers are currently down.
+        To avoid accessing the site, please consider specifying the -b/--bed option. 
+        Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'
+        """,
     }
 
     for key, message in error_messages.items():

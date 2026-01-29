@@ -11,19 +11,19 @@ from DAJIN2.core.clustering.strand_bias_handler import (
 @pytest.mark.parametrize(
     "samples, labels, expected",
     [
-        # ケース1: 基本ケース
+        # Case 1: Basic case
         (
             [{"STRAND": "+"}, {"STRAND": "-"}, {"STRAND": "+"}, {"STRAND": "+"}],
             [1, 2, 1, 3],
             {1: {"+": 2, "-": 0}, 2: {"+": 0, "-": 1}, 3: {"+": 1, "-": 0}},
         ),
-        # ケース2: すべて+のストランド
+        # Case 2: All plus strand
         ([{"STRAND": "+"}, {"STRAND": "+"}], [0, 0], {0: {"+": 2, "-": 0}}),
-        # ケース3: すべて-のストランド
+        # Case 3: All minus strand
         ([{"STRAND": "-"}, {"STRAND": "-"}], [1, 1], {1: {"+": 0, "-": 2}}),
-        # ケース4: ラベルが1つずつ異なる
+        # Case 4: Each label is different
         ([{"STRAND": "+"}, {"STRAND": "-"}], [10, 20], {10: {"+": 1, "-": 0}, 20: {"+": 0, "-": 1}}),
-        # ケース5: 空の入力
+        # Case 5: Empty input
         ([], [], {}),
     ],
 )
@@ -34,11 +34,11 @@ def test_count_strand_by_label(samples, labels, expected):
 @pytest.mark.parametrize(
     "strand_counts_by_labels, strand_sample, expected",
     [
-        # no bias: 比率 0.5、p-value = 1.0
+        # No bias: ratio 0.5, p-value = 1.0
         ({1: {"+": 100, "-": 100}}, {"+": 100, "-": 100}, {1: False}),
-        # bias: 比率 = 0.99（偏りあり）かつ p-value 有意
+        # Bias: ratio = 0.99 (skewed) and p-value is significant
         ({1: {"+": 100, "-": 1}}, {"+": 100, "-": 100}, {1: True}),
-        # no bias: 統計的には有意差ありでも、比率は 0.25（偏りなしとみなす）
+        # No bias: statistically significant, but ratio 0.25 is treated as not skewed
         ({1: {"+": 50, "-": 150}}, {"+": 150, "-": 50}, {1: False}),
     ],
 )

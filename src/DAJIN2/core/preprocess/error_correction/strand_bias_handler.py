@@ -5,7 +5,7 @@ from pathlib import Path
 
 from scipy.stats import fisher_exact
 
-from DAJIN2.utils import io
+from DAJIN2.utils import fileio
 
 
 def convert_nested_defaultdict_to_dict(d: dict | defaultdict) -> dict:
@@ -20,7 +20,7 @@ def count_strandless_of_indels(
 ) -> dict[int, dict[str, dict[str, int]]]:
     count_strandness = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
 
-    for samp in io.read_jsonl(path_midsv_sample):
+    for samp in fileio.read_jsonl(path_midsv_sample):
         for i, cs in enumerate(samp["MIDSV"].split(",")):
             if anomal_loci_transposed[i] == set():
                 continue
@@ -36,8 +36,8 @@ def count_strandless_of_indels(
 def extract_sequence_errors_in_strand_biased_loci(
     path_midsv_sample: Path, anomal_loci_transposed: list[set[str]]
 ) -> dict[str, set[int]]:
-    coverage = io.count_newlines(path_midsv_sample)
-    num_strand_plus = sum(True for m in io.read_jsonl(path_midsv_sample) if m["STRAND"] == "+")
+    coverage = fileio.count_newlines(path_midsv_sample)
+    num_strand_plus = sum(True for m in fileio.read_jsonl(path_midsv_sample) if m["STRAND"] == "+")
     num_strand_minus = coverage - num_strand_plus
 
     count_strandness = count_strandless_of_indels(path_midsv_sample, anomal_loci_transposed)

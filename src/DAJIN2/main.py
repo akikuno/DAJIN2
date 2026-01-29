@@ -17,9 +17,9 @@ from copy import deepcopy
 from itertools import groupby
 from pathlib import Path
 
-from DAJIN2 import gui, view
+from DAJIN2 import gui
 from DAJIN2.core import core
-from DAJIN2.utils import config, input_validator, io, multiprocess, report_generator
+from DAJIN2.utils import config, fileio, input_validator, multiprocess, report_generator
 
 try:
     DAJIN_VERSION = importlib.metadata.version("DAJIN2")
@@ -40,7 +40,9 @@ def generate_report(name: str, logger: logging.Logger) -> None:
 def execute_single_mode(arguments: dict[str]):
     # Set logging to export log to stderr and file
     path_logfile = config.get_logfile()
-    logger = config.set_logging(path_logfile)
+    log_level = logging.DEBUG if arguments["debug"] else logging.INFO
+    logger = config.set_logging(path_logfile, level=log_level)
+    os.environ["DAJIN2_LOGLEVEL"] = logging.getLevelName(log_level)
     logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
     logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
 
@@ -147,12 +149,12 @@ def run_DAJIN2(
 
 
 def execute_batch_mode(arguments: dict[str]):
-    path_batchfile = io.convert_to_posix(arguments["file"])
+    path_batchfile = fileio.convert_to_posix(arguments["file"])
 
     if not Path(path_batchfile).exists():
         raise FileNotFoundError(f"'{path_batchfile}' does not exist.")
 
-    records = io.load_batchfile(path_batchfile)
+    records = fileio.load_batchfile(path_batchfile)
 
     # Validate Column of the batch file
     headers = set(records[0].keys())
@@ -181,7 +183,10 @@ def execute_batch_mode(arguments: dict[str]):
         # Set logging to export log to stderr and file
         config.reset_logging()
         path_logfile = config.get_logfile()
-        logger = config.set_logging(path_logfile)
+        log_level = logging.DEBUG if arguments["debug"] else logging.INFO
+        logger = config.set_logging(path_logfile, level=log_level)
+        os.environ["DAJIN2_LOGFILE"] = str(path_logfile)
+        os.environ["DAJIN2_LOGLEVEL"] = logging.getLevelName(log_level)
 
         logger.info(f"\N{RUNNER} Start running DAJIN2 version {DAJIN_VERSION}")
         logger.info(f"\N{PERSONAL COMPUTER} {' '.join(sys.argv)}")
@@ -214,6 +219,8 @@ def execute_batch_mode(arguments: dict[str]):
         shutil.move(path_logfile, Path("DAJIN_Results", name))
         if not arguments["debug"]:
             shutil.rmtree(Path("DAJIN_Results", ".tempdir", name))
+        os.environ.pop("DAJIN2_LOGFILE", None)
+        os.environ.pop("DAJIN2_LOGLEVEL", None)
 
 
 def execute():
@@ -276,17 +283,6 @@ def execute():
 
     parser_gui = subparser.add_parser("gui", help="DAIJN2 GUI mode")
     parser_gui.set_defaults(handler=guimode)
-
-    ###############################################################################
-    # View mode
-    ###############################################################################
-
-    def viewmode(args):
-        view.execute(args.name)
-
-    parser_view = subparser.add_parser("view", help="DAIJN2 View mode to launch igvjs")
-    parser_view.add_argument("-n", "--name", required=True, type=str, help="Output name of the report")
-    parser_view.set_defaults(handler=viewmode)
 
     ###############################################################################
     # Parse arguments

@@ -1,0 +1,60 @@
+html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+        }
+        .viewer {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .viewer__frame {
+            flex: 1 1 60%;
+            width: 100%;
+            border: none;
+            background: #ffffff;
+            min-height: 180px;
+        }
+        .viewer__divider {
+            height: 16px;
+            min-height: 16px;
+            flex: 0 0 16px;
+            background: #e2e8f0;
+            cursor: row-resize;
+            border-top: 1px solid #cbd5e0;
+            border-bottom: 1px solid #cbd5e0;
+            touch-action: none;
+            user-select: none;
+        }
+        .viewer__igv {
+            flex: 1 1 40%;
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 1rem 1rem;
+            gap: 0.5rem;
+            background: #ffffff;
+            min-height: 180px;
+        }
+        .viewer__title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .viewer__status {
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+        .viewer__igv-view {
+            flex: 1 1 auto;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: visible;
+            background: #f7fafc;
+        }
+        .igv-popover {
+            z-index: 2000;
+            pointer-events: auto;
+        }
