@@ -209,8 +209,8 @@ Options:
 -c, --control           Specify the path to the directory containing control FASTQ/FASTA/BAM files.
 -a, --allele            Specify the path to the FASTA file.
 -n, --name (Optional)   Set the output directory name. Default: 'Results'.
--g, --genome (Optional) Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -b, --bed (Optional)    Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+-g, --genome (Optional) Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -t, --threads (Optional) Set the number of threads. Default: 1.
 --no-filter (Optional)  Disable minor allele filtering (keep alleles <0.5%). Default: False.
 -h, --help              Display this help message and exit.
@@ -237,6 +237,9 @@ DAJIN2 \
 ### Using BED Files for Genomic Coordinates
 
 If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGENOME) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
+
+> [!IMPORTANT]
+> Access to the UCSC Genome Browser or GGGenome servers may occasionally be unavailable. Therefore, we generally recommend using `-b/--bed` instead of `--genome`.
 
 When using the `-b/--bed` option with a BED file, please ensure:
 
@@ -439,8 +442,11 @@ Your browser will open and display the report.
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
 
+
+https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
+
 >[!IMPORTANT]
-> **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above)**.
+> **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above on figure, and video)**.
 
 In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.
 

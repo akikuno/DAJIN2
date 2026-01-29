@@ -237,8 +237,10 @@ DAJIN2 \
 
 参照ゲノムがUCSC提供のものではない場合、あるいはDAJIN2が依存する外部サーバー（UCSC Genome BrowserおよびGGGenome）が停止している場合は、`-b/--bed`オプションでBEDファイルを指定することで、オフラインで動作させられます。  
 
->[!IMPORTANT]
-> UCSCやGGGenomeに依存する`--genome`よりも、安定して動作する`--bed`の利用を推奨します。
+> [!IMPORTANT]  
+> UCSC Genome BrowserやGGGENOMEは、サーバーにアクセスできない場合があります。  
+> そのため、原則として`--genome`ではなく`-b/--bed`の使用を推奨します。  
+
 
 `-b/--bed`オプションを使用する際の注意点は以下の通りです：
 
@@ -435,8 +437,10 @@ Windowsの場合は`launch_report_windows.bat`、macOSの場合は`launch_report
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
 
+https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
+
 >[!IMPORTANT]
-> **積み上げ棒グラフにて興味のあるアレルをクリックすると、配列にどのような変異が生じているのかの詳細を閲覧できます（上図右）。**
+> **積み上げ棒グラフにて興味のあるアレルをクリックすると、配列にどのような変異が生じているのかの詳細を閲覧できます（上図右・動画）。**
 
 図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
 
