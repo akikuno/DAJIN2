@@ -10,8 +10,10 @@ from DAJIN2.core.clustering.clustering import optimize_labels
 from DAJIN2.core.preprocess.structural_variants.sv_handler import (
     add_unique_allele_keys,
     extract_unique_sv,
+    load_sv_name_map,
     save_fasta,
     save_midsv,
+    save_sv_name_map,
 )
 from DAJIN2.utils import fileio
 from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence
@@ -255,7 +257,9 @@ def get_midsv_consensus_by_label(
 ###############################################################################
 
 
-def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict, sv_type: str) -> None:
+def detect_sv_alleles(
+    TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_ALLELES: dict, sv_type: str, sv_internal_suffix: str = ""
+) -> None:
     """Detect structural variant alleles and reflect consensus on control alleles."""
 
     mutation_loci, path_midsv_sample, path_midsv_control, coverage_sample, coverage_control = load_data(
@@ -329,8 +333,16 @@ def detect_sv_alleles(TEMPDIR: Path, SAMPLE_NAME: str, CONTROL_NAME: str, FASTA_
     #######################################################
     # Output cstag and fasta
     #######################################################
-    midsv_by_label = add_unique_allele_keys(midsv_by_label, FASTA_ALLELES, key=sv_type)
-    fasta_by_label = add_unique_allele_keys(fasta_by_label, FASTA_ALLELES, key=sv_type)
+    label_order = list(midsv_by_label.keys())
+    midsv_by_label, sv_name_map = add_unique_allele_keys(
+        midsv_by_label, FASTA_ALLELES, key=sv_type, internal_suffix=sv_internal_suffix
+    )
+    fasta_by_label_ordered = [fasta_by_label[label] for label in label_order]
+    fasta_by_label = dict(zip(midsv_by_label.keys(), fasta_by_label_ordered))
+
+    existing_name_map = load_sv_name_map(TEMPDIR, SAMPLE_NAME)
+    existing_name_map.update(sv_name_map)
+    save_sv_name_map(TEMPDIR, SAMPLE_NAME, existing_name_map)
 
     save_midsv(TEMPDIR, SAMPLE_NAME, midsv_by_label)
     save_fasta(TEMPDIR, SAMPLE_NAME, fasta_by_label)

@@ -24,7 +24,16 @@ def convert_to_html(
         is_sv_allele = True
         midsv_sv_allele = list(fileio.read_jsonl(path_midsv_sv))
     else:
-        midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
+        allele_key = allele_internal if allele_internal in FASTA_ALLELES else allele
+        if allele_key not in FASTA_ALLELES and allele.endswith("_with_indels"):
+            base_allele = allele.rsplit("_with_indels", 1)[0]
+            if base_allele in FASTA_ALLELES:
+                allele_key = base_allele
+        if allele_key not in FASTA_ALLELES and allele.startswith("control"):
+            allele_key = "control" if "control" in FASTA_ALLELES else allele_key
+        if allele_key not in FASTA_ALLELES:
+            raise KeyError(f"Allele '{allele}' is not found in FASTA_ALLELES.")
+        midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele_key])]
 
     return to_html(
         midsv_sv_allele, cons_midsv_tag, allele, is_sv_allele, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}"
@@ -55,12 +64,15 @@ def parse_fasta(file_path: Path) -> tuple[str, str]:
     return header, sequence
 
 
-def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
+def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str, sv_name_map: dict[str, str] | None = None) -> None:
+    sv_name_map = sv_name_map or {}
     for fasta in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("*.fasta"):
         header, sequence = parse_fasta(fasta)
-        path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{header}.fasta")
+        display_header = sv_name_map.get(header, header)
+        path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{display_header}.fasta")
+        path_output.parent.mkdir(parents=True, exist_ok=True)
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
-            f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
+            f.write(convert_to_fasta(f"{SAMPLE_NAME}_{display_header}", sequence))
 
 
 def export_to_html(

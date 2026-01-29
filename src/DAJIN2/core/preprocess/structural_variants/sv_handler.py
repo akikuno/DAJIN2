@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from rapidfuzz import process
@@ -52,8 +53,12 @@ def _check_duplicates_of_sets(set1: set[str], set2: set[str]) -> bool:
 
 
 def add_unique_allele_keys(
-    fasta_sv_alleles: dict[str, str], FASTA_ALLELES: dict[str, set], key: str
-) -> dict[str, str]:
+    fasta_sv_alleles: dict[str, str],
+    FASTA_ALLELES: dict[str, set],
+    key: str,
+    internal_suffix: str = "",
+    display_prefix: str = "DAJIN_",
+) -> tuple[dict[str, str], dict[str, str]]:
     """
     Update keys to avoid duplicating user-specified alleles.
     If the allele 'insertion01' exists in FASTA_ALLELES, increment the digits.
@@ -74,7 +79,7 @@ def add_unique_allele_keys(
         }
         num_digits += 1
 
-    return dict(zip(key_candidate_alleles, fasta_sv_alleles.values()))
+    return dict(zip(internal_names, fasta_sv_alleles.values())), dict(zip(internal_names, display_names))
 
 
 ###########################################################

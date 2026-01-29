@@ -165,13 +165,28 @@ def execute_sample(arguments: dict):
     }
 
     preprocess.detect_sv_alleles(
-        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="insertion"
+        ARGS.tempdir,
+        ARGS.sample_name,
+        ARGS.control_name,
+        ARGS.fasta_alleles,
+        sv_type="insertion",
+        sv_internal_suffix=ARGS.uuid,
     )
     preprocess.detect_sv_alleles(
-        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="deletion"
+        ARGS.tempdir,
+        ARGS.sample_name,
+        ARGS.control_name,
+        ARGS.fasta_alleles,
+        sv_type="deletion",
+        sv_internal_suffix=ARGS.uuid,
     )
     preprocess.detect_sv_alleles(
-        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
+        ARGS.tempdir,
+        ARGS.sample_name,
+        ARGS.control_name,
+        ARGS.fasta_alleles,
+        sv_type="inversion",
+        sv_internal_suffix=ARGS.uuid,
     )
 
     paths_sv_fasta = set()
@@ -280,7 +295,7 @@ def execute_sample(arguments: dict):
 
     # FASTA
     report.sequence_exporter.export_to_fasta(ARGS.tempdir, ARGS.sample_name, cons_sequences)
-    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name)
+    report.sequence_exporter.export_reference_to_fasta(ARGS.tempdir, ARGS.sample_name, sv_name_map)
 
     # HTML
     report.sequence_exporter.export_to_html(

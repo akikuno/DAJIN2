@@ -4,7 +4,10 @@ Anomaly detection utilities for mutation extraction.
 
 from __future__ import annotations
 
+from warnings import catch_warnings, filterwarnings
+
 import numpy as np
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.neural_network import MLPClassifier
 
 

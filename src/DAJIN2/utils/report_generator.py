@@ -189,9 +189,11 @@ def attach_html_paths(results_summary: list[dict[str, str]], report_directory: P
 
 def order_allele_type(results_summary: list[dict[str, str]]) -> list[str]:
     alleles = {a["Allele"] for a in results_summary}
-    alleles_insertion = {a for a in alleles if a.startswith("Insertion")}
-    alleles_order = ["Control"] + sorted(alleles - alleles_insertion - {"Control"}) + sorted(alleles_insertion)
+    alleles_insertion = {a for a in alleles if a.startswith("insertion") or a.startswith("unintended insertion")}
+    alleles_order = ["control"] + sorted(alleles - alleles_insertion - {"control"}) + sorted(alleles_insertion)
 
+    type_priority = ["intact", "indels", "insertion", "deletion", "inversion", "sv"]
+    types_present = [t for t in type_priority if t in {a["Type"] for a in results_summary}]
     allele_type_order = []
     for allele in alleles_order:
         for type_ in ["Intact", "Indels", "SV"]:
