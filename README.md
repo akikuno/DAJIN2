@@ -12,13 +12,13 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
-[日本語版READMEはこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
+[Read the Japanese README](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
-DAJIN2 is a genotyping tool for genome-edited samples, utilizing nanopore target sequencing.
+DAJIN2 is a genotyping tool for genome-edited samples using nanopore-targeted sequencing.
 
-**DAJIN2** takes its name from the Japanese phrase 一網**打尽** (*Ichimou DAJIN*, or *Yīwǎng Dǎjìn* in Chinese),  
-which means “to capture everything in a single sweep.”  
-This reflects the tool’s design philosophy: to comprehensively detect both intended and unintended genome editing outcomes in one go.
+**DAJIN2** takes its name from the Japanese phrase 一網**打尽** (*Ichimou DAJIN* in Japanese; *Yīwǎng Dǎjìn* in Chinese),  
+meaning “to capture everything in a single sweep.”  
+This reflects the tool’s design philosophy: comprehensive detection of both intended and unintended genome editing outcomes in one analysis.
 
 # 🌟 Features
 
@@ -148,7 +148,7 @@ dorado_correct
 ```
 
 > [!NOTE]
-> For detailed dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
+> For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
 
 
 #### Basecalling with [Guppy](https://nanoporetech.com/ja/document/Guppy-protocol)
@@ -198,29 +198,29 @@ Here, `>control` represents the sequence of the control allele, while `>knock-in
 
 ## Single Sample Analysis
 
-DAJIN2 allows for the analysis of single samples (one sample vs one control).
+DAJIN2 supports single-sample analysis (one sample vs one control).
 
 ```bash
-DAJIN2 <-s|--sample> <-c|--control> <-a|--allele> <-n|--name> \
+DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
 Options:
--s, --sample            Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
--c, --control           Specify the path to the directory containing control FASTQ/FASTA/BAM files.
--a, --allele            Specify the path to the FASTA file.
--n, --name (Optional)   Set the output directory name. Default: 'Results'.
--b, --bed (Optional)    Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
--g, --genome (Optional) Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
+-c, --control            Specify the path to the directory containing control FASTQ/FASTA/BAM files.
+-s, --sample             Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+-a, --allele             Specify the path to the FASTA file.
+-n, --name (Optional)    Set the output directory name. Default: 'Results'.
+-b, --bed (Optional)     Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+-g, --genome (Optional)  Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -t, --threads (Optional) Set the number of threads. Default: 1.
---no-filter (Optional)  Disable minor allele filtering (keep alleles <0.5%). Default: False.
--h, --help              Display this help message and exit.
--v, --version           Display the version number and exit.
+--no-filter (Optional)   Disable minor allele filtering (keep alleles below 0.5%). Default: False.
+-h, --help               Display this help message and exit.
+-v, --version            Display the version number and exit.
 ```
 
 ### Example
 
 ```bash
-# Download example dataset
+# Download the example dataset
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
 tar -xf example_single.tar.gz
 
@@ -236,7 +236,7 @@ DAJIN2 \
 
 ### Using BED Files for Genomic Coordinates
 
-If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGENOME) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
+If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGenome) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
 
 > [!IMPORTANT]
 > Access to the UCSC Genome Browser or GGGenome servers may occasionally be unavailable. Therefore, we generally recommend using `-b/--bed` instead of `--genome`.
@@ -262,9 +262,9 @@ chr1    1000000    1001000    mm39    248956422    +
 > While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
 
 > [!NOTE]
-> chromosome sizes can be found at the following URL:  
+> Chromosome sizes can be found at:  
 > `https://hgdownload.soe.ucsc.edu/goldenPath/[genome]/bigZips/[genome].chrom.sizes`  
-> (e.g.: https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes)
+> (e.g., https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes)
 
 > [!IMPORTANT]  
 > **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
@@ -290,7 +290,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --bed example_single/stx2_deletion.fa \
+    --bed example_single/stx2_deletion.bed \
     --threads 4 \
     --no-filter
 ```
@@ -326,21 +326,21 @@ sample,control,allele,name,bed
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [--no-filter] [-h]
 
-options:
+Options:
   -f, --file                Specify the path to the CSV or Excel file.
   -t, --threads (Optional)  Set the number of threads. Default: 1.
-  --no-filter (Optional)    Disable minor allele filtering (keep alleles <0.5%). Default: False.
+  --no-filter (Optional)    Disable minor allele filtering (keep alleles below 0.5%). Default: False.
   -h, --help                Display this help message and exit.
 ```
 
 ### Example
 
 ```bash
-# Donwload the example dataset
+# Download the example dataset
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
 tar -xf example_batch.tar.gz
 
-# Run DAJIN2
+# Run DAJIN2 batch
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
@@ -443,9 +443,10 @@ Your browser will open and display the report.
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
 
 
+Demo video:  
 https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
 
->[!IMPORTANT]
+>[!TIPS]
 > **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above on figure, and video)**.
 
 In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.

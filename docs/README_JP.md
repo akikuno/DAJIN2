@@ -12,9 +12,13 @@
 <img src="https://user-images.githubusercontent.com/15861316/261833016-7f356960-88cf-4574-87e2-36162b174340.png" width="90%">
 </p>
 
+[English READMEはこちら](https://github.com/akikuno/DAJIN2/blob/main/README.md)
+
 DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲノム編集サンプルの遺伝型解析ツールです。
 
-**DAJIN**の名称は「一網**打尽**」に由来しており、意図された変異だけでなく、意図しない変異も含めて、**ゲノム編集の結果を一括かつ網羅的に検出する**という本ツールの設計思想が込められています。
+**DAJIN2**の名称は日本語の「一網**打尽**」に由来します。  
+「一度の網で余すところなく捕らえる」という意味で、  
+意図した変異だけでなく意図しない変異も一度に網羅的に検出するという設計思想を表しています。
 
 
 # 🌟 特徴
@@ -39,7 +43,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 
 # 🛠 インストール
 
-## 環境
+## システム要件
 
 ### ハードウェア
 
@@ -61,7 +65,7 @@ DAJIN2は、ナノポアターゲットシーケンシングを用いた、ゲ�
 > DAJIN2はLinux環境での実行を前提としています。Windowsをご利用の場合は、  
 > WSL2（Windows Subsystem for Linux 2）を使用してください。
 
-## [Bioconda](https://anaconda.org/bioconda/DAJIN2) （推奨）
+## [Bioconda](https://anaconda.org/bioconda/DAJIN2)（推奨）
 
 ```bash
 # Setting up Bioconda
@@ -133,7 +137,7 @@ bam_pass
 ```
 
 > [!IMPORTANT]
-> 各bamファイルを別々のディレクトリに格納してください。ディレクトリ名は任意です。
+> 各BAMファイルを別々のディレクトリに格納してください。ディレクトリ名は任意です。
 
 
 [`dorado correct`](https://github.com/nanoporetech/dorado#read-error-correction)によるシークエンスエラー補正後に出力されるFASTAファイルも同様に、別々のディレクトリに格納してください。
@@ -166,6 +170,9 @@ fastq_pass
     └── fastq_runid_b347657c88dced2d15bf90ee6a1112a3ae91c1af_11_0.fastq.gz
 ```
 
+>[!CAUTION]
+> DAJIN2はGuppyによる配列をサポートしていますが、Guppyは公式ではすでに開発が修了しています。  
+> そのため、今後のベースコールにはDoradoのご利用をお願いします。  
 
 ### 2. 想定アレル配列のFASTAファイル
 
@@ -196,23 +203,24 @@ ACGTACGT
 
 ## 単一サンプル解析
 
-単一サンプルの解析コマンドは以下の通りです。  
+DAJIN2では、単一サンプル（1サンプル対1コントロール）の解析が可能です。  
+解析コマンドは以下の通りです。
 
 ```bash
 DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
-Arguments:
-  -c, --control             Path to the directory containing control FASTQ/FASTA/BAM files
-  -s, --sample              Path to the directory containing sample FASTQ/FASTA/BAM files
-  -a, --allele              Path to the FASTA file containing expected alleles
-  -n, --name (optional)     Output directory name [default: Results]
-  -g, --genome (optional)   Reference genome ID (e.g., hg38, mm39) [default: '']
-  -b, --bed (optional)      Path to the BED6 file containing genome coordinates [default: '']
-  -t, --threads (optional)  Number of threads to use [default: 1]
-  --no-filter (optional)    Disable minor-allele filtering (keep alleles below 0.5%) [default: False]
-  -h, --help                Show help message
-  -v, --version             Show version
+Options:
+  -c, --control            Specify the path to the directory containing control FASTQ/FASTA/BAM files.
+  -s, --sample             Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+  -a, --allele             Specify the path to the FASTA file.
+  -n, --name (Optional)    Set the output directory name. Default: 'Results'.
+  -b, --bed (Optional)     Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+  -g, --genome (Optional)  Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
+  -t, --threads (Optional) Set the number of threads. Default: 1.
+  --no-filter (Optional)   Disable minor allele filtering (keep alleles below 0.5%). Default: False.
+  -h, --help               Display this help message and exit.
+  -v, --version            Display the version number and exit.
 ```
 
 ### 実行例
@@ -222,13 +230,13 @@ Arguments:
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_single.tar.gz
 tar -xf example_single.tar.gz
 
-# Run DAJIN2 (single-sample analysis)
+# Run DAJIN2
 DAJIN2 \
     --control example_single/control \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --bed example_single/stx2_deletion.fa \
+    --bed example_single/stx2_deletion.bed \
     --threads 4
 ```
 
@@ -238,7 +246,7 @@ DAJIN2 \
 参照ゲノムがUCSC提供のものではない場合、あるいはDAJIN2が依存する外部サーバー（UCSC Genome BrowserおよびGGGenome）が停止している場合は、`-b/--bed`オプションでBEDファイルを指定することで、オフラインで動作させられます。  
 
 > [!IMPORTANT]  
-> UCSC Genome BrowserやGGGENOMEは、サーバーにアクセスできない場合があります。  
+> UCSC Genome BrowserやGGGenomeは、サーバーにアクセスできない場合があります。  
 > そのため、原則として`--genome`ではなく`-b/--bed`の使用を推奨します。  
 
 
@@ -261,6 +269,11 @@ chr1    1000000    1001000    mm39    248956422    +
 > [!NOTE]  
 > 5列目のスコアには、1列目で指定した染色体のサイズを入力してください。  
 > BED形式本来のスコアの上限は1000ですが、本ツールでは**染色体サイズを記載して問題ありません**。  
+
+> [!NOTE]
+> 染色体サイズは以下のURLから取得できます：  
+> `https://hgdownload.soe.ucsc.edu/goldenPath/[genome]/bigZips/[genome].chrom.sizes`  
+> （例：https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes）
 
 > [!IMPORTANT]  
 > BEDファイルの6列目（鎖：`+`または`-`）は、**参照ゲノム配列に対するFASTAアレル配列の鎖の向きに合わせてください**。  
@@ -287,7 +300,7 @@ DAJIN2 \
     --sample example_single/sample \
     --allele example_single/stx2_deletion.fa \
     --name stx2_deletion \
-    --bed example_single/stx2_deletion.fa \
+    --bed example_single/stx2_deletion.bed \
     --threads 4 \
     --no-filter
 ```
@@ -322,11 +335,11 @@ sample,control,allele,name,bed
 ```bash
 DAJIN2 batch <-f|--file> [-t|--threads] [--no-filter] [-h]
 
-Arguments:
-  -f, --file                Path to the CSV or Excel file
-  -t, --threads (optional)  Number of threads to use [default: 1]
-  --no-filter (optional)    Disable minor-allele filtering (keep alleles below 0.5%) [default: False]
-  -h, --help                Show help message
+Options:
+  -f, --file                Specify the path to the CSV or Excel file.
+  -t, --threads (Optional)  Set the number of threads. Default: 1.
+  --no-filter (Optional)    Disable minor allele filtering (keep alleles below 0.5%). Default: False.
+  -h, --help                Display this help message and exit.
 ```
 
 ### 実行例
@@ -336,7 +349,7 @@ Arguments:
 curl -LJO https://github.com/akikuno/DAJIN2/raw/main/examples/example_batch.tar.gz
 tar -xf example_batch.tar.gz
 
-# Run DAJIN2 (batch processing)
+# Run DAJIN2 batch
 DAJIN2 batch --file example_batch/batch.csv --threads 4
 ```
 
@@ -437,9 +450,10 @@ Windowsの場合は`launch_report_windows.bat`、macOSの場合は`launch_report
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/DAJIN2-report.jpg" width="100%" />
 
+デモ動画：  
 https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
 
->[!IMPORTANT]
+>[!TIPS]
 > **積み上げ棒グラフにて興味のあるアレルをクリックすると、配列にどのような変異が生じているのかの詳細を閲覧できます（上図右・動画）。**
 
 図中の**Allele type**はアレルの種類を、**Percent of reads**は該当するリードのアレル割合を示しています。  
