@@ -237,7 +237,9 @@ def submit_batch():
                 dajin_logger.setLevel(logging.INFO)
 
                 # Send initial status
-                progress_queue.put({"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()})
+                progress_queue.put(
+                    {"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()}
+                )
 
                 # Run the actual batch analysis
                 main.execute_batch_mode(arguments)
@@ -268,7 +270,7 @@ def submit_batch():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 # Enhanced error message for file/directory not found
@@ -301,7 +303,7 @@ def submit_batch():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 error_msg = f"Batch analysis error occurred: {str(e)}"
@@ -485,7 +487,7 @@ def submit():
                     "timestamp": time.time(),
                 }
 
-                completion_message = f"🎊 Analysis completed! Your results are saved in {abs_result_path}"
+                completion_message = "Your results are saved in the following directory"
                 progress_queue.put(
                     {"status": "completed", "message": completion_message, "result_path": abs_result_path}
                 )
@@ -499,7 +501,7 @@ def submit():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 # Enhanced error message for file/directory not found
@@ -532,7 +534,7 @@ def submit():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 error_msg = f"Analysis error occurred: {str(e)}"
