@@ -166,12 +166,18 @@ def submit_batch():
 
         no_filter = request.form.get("batch-no-filter") == "on"
 
-        # Prepare arguments
-        arguments = {"file": str(batch_file_path), "threads": threads, "debug": False, "no_filter": no_filter}
-
         # Create progress queue for this analysis
         progress_queue = queue.Queue()
         progress_queues[batch_id] = progress_queue
+
+        # Prepare arguments
+        arguments = {
+            "file": str(batch_file_path),
+            "threads": threads,
+            "debug": False,
+            "no_filter": no_filter,
+            "progress_queue": progress_queue,
+        }
 
         # Start analysis in background thread
         def run_batch_analysis():
@@ -396,12 +402,18 @@ def submit():
             writer.writeheader()
             writer.writerows(data)
 
-        # Prepare arguments
-        arguments = {"file": str(batch_file_path), "threads": threads, "debug": False, "no_filter": no_filter}
-
         # Create progress queue for this analysis
         progress_queue = queue.Queue()
         progress_queues[name] = progress_queue
+
+        # Prepare arguments
+        arguments = {
+            "file": str(batch_file_path),
+            "threads": threads,
+            "debug": False,
+            "no_filter": no_filter,
+            "progress_queue": progress_queue,
+        }
 
         # Start analysis in background thread
         def run_analysis():

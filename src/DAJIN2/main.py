@@ -129,6 +129,7 @@ def run_DAJIN2(
     is_control: bool = True,
     num_workers: int = 1,
     no_filter: bool = False,
+    progress_queue=None,
 ) -> None:
     contents = []
     for args in groups:
@@ -143,13 +144,14 @@ def run_DAJIN2(
     contents_unique.sort(key=lambda x: x["sample"])
 
     if is_control:
-        multiprocess.run(core.execute_control, contents_unique, num_workers)
+        multiprocess.run(core.execute_control, contents_unique, num_workers, progress_queue=progress_queue)
     else:
-        multiprocess.run(core.execute_sample, contents_unique, num_workers)
+        multiprocess.run(core.execute_sample, contents_unique, num_workers, progress_queue=progress_queue)
 
 
 def execute_batch_mode(arguments: dict[str]):
     path_batchfile = fileio.convert_to_posix(arguments["file"])
+    progress_queue = arguments.get("progress_queue")
 
     if not Path(path_batchfile).exists():
         raise FileNotFoundError(f"'{path_batchfile}' does not exist.")
@@ -205,6 +207,7 @@ def execute_batch_mode(arguments: dict[str]):
             is_control=True,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
+            progress_queue=progress_queue,
         )
         run_DAJIN2(
             groups,
@@ -212,6 +215,7 @@ def execute_batch_mode(arguments: dict[str]):
             is_control=False,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
+            progress_queue=progress_queue,
         )
 
         # Finish call

@@ -12,7 +12,29 @@
 
 <!-- ############################################################# # -->
 
-# v0.8.0 (2026-01-29)
+# v0.9.0 (2026-MM-DD)
+
+## 🐛 Bug Fixes
+
+-   Relay child process logs to GUI Analysis Log in batch mode.  
+  Issue [#138](https://github.com/akikuno/DAJIN2/issues/138) 
+
+<!-- ############################################################# # -->
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.8.0 (2026-01-29) </summary>
 
 ## 💥 Breaking
 
@@ -42,18 +64,8 @@
 
 + Improve DAJIN2 error message when GGGenome returns "ERROR : searcher error". Issue [#131](https://github.com/akikuno/DAJIN2/issues/131)
 
-<!-- ############################################################# # -->
+</details>
 
-
--------------------------------------------------------------
-
-# Past Releases
-
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
 
 <details>
 <summary> v0.7.4 (2025-12-04) </summary>

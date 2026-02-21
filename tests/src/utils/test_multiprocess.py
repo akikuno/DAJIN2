@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import queue
 import tempfile
 from multiprocessing import Queue
 
@@ -109,6 +111,11 @@ def write_value_to_file(args: dict) -> None:
         f.write(str(value) + "\n")
 
 
+def write_log_message(args: dict) -> None:
+    logger = logging.getLogger(__name__)
+    logger.info(f"{args['sample']} is now processing...")
+
+
 @pytest.mark.slow
 def test_multiprocessing_execution():
     """
@@ -129,3 +136,19 @@ def test_multiprocessing_execution():
             written_values = set(map(int, map(str.strip, f.readlines())))
 
         assert written_values == set(range(1, 11))
+
+
+def test_run_forwards_child_logs_to_progress_queue():
+    progress_queue = queue.Queue()
+    arguments = [{"sample": "normal1"}]
+
+    multiprocess.run(write_log_message, arguments, num_workers=1, progress_queue=progress_queue)
+
+    updates = []
+    while not progress_queue.empty():
+        updates.append(progress_queue.get_nowait())
+
+    assert any(
+        update.get("status") == "log" and "normal1 is now processing..." in update.get("message", "")
+        for update in updates
+    )
