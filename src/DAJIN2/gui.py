@@ -7,6 +7,7 @@ import os
 import queue
 import shutil
 import socket
+import subprocess
 import threading
 import time
 import webbrowser
@@ -125,6 +126,42 @@ def get_path_of_uploaded_files(UPLOAD_FOLDER, files):
 
 
 app = Flask(__name__)
+
+
+def is_wsl_environment() -> bool:
+    if os.name != "posix":
+        return False
+
+    if os.environ.get("WSL_DISTRO_NAME") or os.environ.get("WSL_INTEROP"):
+        return True
+
+    try:
+        with open("/proc/sys/kernel/osrelease") as kernel_info:
+            return "microsoft" in kernel_info.read().lower()
+    except OSError:
+        return False
+
+
+def open_url_in_windows_default_browser(url: str) -> bool:
+    commands = [
+        ["cmd.exe", "/c", "start", "", url],
+        ["powershell.exe", "-NoProfile", "-Command", f'Start-Process "{url}"'],
+    ]
+
+    for command in commands:
+        try:
+            subprocess.run(
+                command,
+                check=True,
+                timeout=5,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            continue
+
+    return False
 
 
 @app.route("/")
@@ -653,7 +690,14 @@ def open_result_folder(analysis_id):
 
 
 def open_browser(PORT):
-    webbrowser.open_new(f"http://localhost:{PORT}/")
+    url = f"http://localhost:{PORT}/"
+
+    if is_wsl_environment():
+        if not open_url_in_windows_default_browser(url):
+            print(f"Could not open the host browser automatically. Access '{url}' manually.")
+        return
+
+    webbrowser.open_new(url)
 
 
 def execute():

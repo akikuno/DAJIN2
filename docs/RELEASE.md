@@ -14,6 +14,12 @@
 
 # v0.9.0 (2026-MM-DD)
 
+
+## 🌟 New Features
+
+- Use Windows default browser for DAJIN2 GUI when running in WSL2  
+  Issue [#139](https://github.com/akikuno/DAJIN2/issues/139) 
+
 ## 🐛 Bug Fixes
 
 -   Relay child process logs to GUI Analysis Log in batch mode.  
