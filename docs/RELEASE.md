@@ -19,6 +19,10 @@
 -   Relay child process logs to GUI Analysis Log in batch mode.  
   Issue [#138](https://github.com/akikuno/DAJIN2/issues/138) 
 
+- Fix GUI Single Sample Analysis failure caused by missing BED file..  
+  Issue [#140](https://github.com/akikuno/DAJIN2/issues/140) 
+
+
 ## 🔧 Maintenance
 
 - Update GUI log/result labels and adjust result action layout spacing.

@@ -24,6 +24,7 @@ from DAJIN2.utils import config
 # Global variable to store progress information
 progress_queues = {}
 analysis_results = {}
+GUI_UPLOAD_ROOT_DIR = Path(config.DAJIN_RESULTS_DIR, ".gui_upload")
 
 
 def build_completion_message() -> str:
@@ -303,11 +304,12 @@ def submit():
         if "allele" not in request.files or not request.files.getlist("allele"):
             return jsonify({"error": "Please select allele files"}), 400
 
-        # Setup directories
-        TEMPDIR = Path(config.TEMP_ROOT_DIR, name)
-        if TEMPDIR.exists():
-            shutil.rmtree(TEMPDIR)
-        UPLOAD_FOLDER = Path(TEMPDIR, "upload")
+        # Setup directories.
+        # Keep GUI uploads outside DAJIN2 runtime tempdir to avoid cleanup collisions.
+        GUI_TEMPDIR = Path(GUI_UPLOAD_ROOT_DIR, name)
+        if GUI_TEMPDIR.exists():
+            shutil.rmtree(GUI_TEMPDIR)
+        UPLOAD_FOLDER = Path(GUI_TEMPDIR, "upload")
         UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
         app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -394,7 +396,7 @@ def submit():
         data.append(row)
 
         # Create batch file
-        batch_file_path = Path(TEMPDIR, "upload", "batch.csv")
+        batch_file_path = Path(GUI_TEMPDIR, "upload", "batch.csv")
         batch_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(batch_file_path, mode="w", newline="") as file:
