@@ -26,6 +26,10 @@ progress_queues = {}
 analysis_results = {}
 
 
+def build_completion_message() -> str:
+    return "Your results are saved in the following directory:"
+
+
 class ProgressLogHandler(logging.Handler):
     """Custom logging handler to capture DAJIN2 log messages and send them to progress queue."""
 
@@ -124,7 +128,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def root_page():
-    return render_template("index.html")
+    return render_template("gui.html")
 
 
 @app.route("/submit-batch", methods=["POST"])
@@ -195,9 +199,7 @@ def submit_batch():
                 dajin_logger.setLevel(logging.INFO)
 
                 # Send initial status
-                progress_queue.put(
-                    {"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()}
-                )
+                progress_queue.put({"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()})
 
                 # Run the actual batch analysis
                 main.execute_batch_mode(arguments)
@@ -210,9 +212,7 @@ def submit_batch():
                     "timestamp": time.time(),
                 }
 
-                completion_message = (
-                    f"🎊 Batch analysis completed! Your results are saved in {str(Path('DAJIN_Results').resolve())}"
-                )
+                completion_message = build_completion_message()
                 progress_queue.put(
                     {
                         "status": "completed",
@@ -543,7 +543,8 @@ def get_progress(analysis_id):
                     result = analysis_results[analysis_id]
                     if result["status"] == "completed":
                         abs_path = result.get("abs_result_path", result["result_path"])
-                        completion_message = f"🎊 Analysis completed! Your results are saved in {abs_path}"
+                        is_batch = analysis_id.startswith("batch_")
+                        completion_message = build_completion_message(abs_path, is_batch=is_batch)
                         yield f"data: {json.dumps({'status': 'completed', 'message': completion_message, 'result_path': abs_path})}\n\n"
                         break
                     elif result["status"] == "error":
