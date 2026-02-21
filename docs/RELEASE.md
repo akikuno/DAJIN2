@@ -31,12 +31,16 @@
 
 ## 🔧 Maintenance
 
+- Improve and Refine the DAJIN2 gui Command UI.  
+  Issue [#136](https://github.com/akikuno/DAJIN2/issues/136) 
+
 - Update GUI log/result labels and adjust result action layout spacing.
   Issue [#136](https://github.com/akikuno/DAJIN2/issues/136) 
   
 - Replace bare except with explicit cleanup exceptions in GUI.
   Issue [#141](https://github.com/akikuno/DAJIN2/issues/141) 
-  
+
+
 <!-- ############################################################# # -->
 
 

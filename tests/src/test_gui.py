@@ -2,7 +2,38 @@ from __future__ import annotations
 
 import subprocess
 
+import pytest
+
 from src.DAJIN2 import gui
+
+
+def test_build_completion_message_with_result_path():
+    message = gui.build_completion_message("/tmp/DAJIN_Results")
+
+    assert "analysis results are saved" in message
+    assert "/tmp/DAJIN_Results" in message
+
+
+def test_build_completion_message_for_batch():
+    message = gui.build_completion_message("/tmp/DAJIN_Results", is_batch=True)
+
+    assert "batch analysis results are saved" in message
+    assert "/tmp/DAJIN_Results" in message
+
+
+def test_parse_threads_returns_clamped_value():
+    assert gui.parse_threads("0") == 1
+    assert gui.parse_threads("64") == 32
+    assert gui.parse_threads("4") == 4
+
+
+def test_normalize_project_name_removes_unsafe_characters():
+    assert gui.normalize_project_name("project name!!") == "project_name"
+
+
+def test_normalize_project_name_raises_error_for_empty_name():
+    with pytest.raises(ValueError, match="Project name must include"):
+        gui.normalize_project_name("%%%")
 
 
 def test_open_browser_uses_webbrowser_outside_wsl(monkeypatch):
