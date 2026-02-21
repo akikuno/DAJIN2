@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import gzip
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 from sklearn.cluster import KMeans

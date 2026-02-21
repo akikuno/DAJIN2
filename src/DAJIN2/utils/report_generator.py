@@ -295,7 +295,6 @@ def output_plot(
     report_script_js = report_script_js.replace("__ASSET_PREFIX__", json.dumps(asset_prefix))
     report_script_block = "<script>\n" + report_script_js + "\n</script>"
 
-
     inject_plot_assets(
         report_html_path,
         report_style_block,
