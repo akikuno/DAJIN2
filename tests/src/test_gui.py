@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import queue
 import subprocess
 
 import pytest
@@ -103,3 +105,26 @@ def test_open_url_in_windows_default_browser_falls_back_to_powershell(monkeypatc
         ["cmd.exe", "/c", "start", "", "http://localhost:56789/"],
         ["powershell.exe", "-NoProfile", "-Command", 'Start-Process "http://localhost:56789/"'],
     ]
+
+
+def test_progress_log_handler_echoes_parent_logs_to_stdout(capsys):
+    progress_queue = queue.Queue()
+    handler = gui.ProgressLogHandler(progress_queue, echo_to_stdout=True)
+
+    logger = logging.getLogger("DAJIN2.tests.gui")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    logger.addHandler(handler)
+
+    try:
+        logger.info("\N{PARTY POPPER} Finished! Open DAJIN_Results/test to see the report.")
+    finally:
+        logger.removeHandler(handler)
+        logger.propagate = True
+
+    update = progress_queue.get_nowait()
+    assert update["status"] == "log"
+    assert "Finished! Open DAJIN_Results/test to see the report." in update["message"]
+
+    captured = capsys.readouterr()
+    assert "Finished! Open DAJIN_Results/test to see the report." in captured.out

@@ -40,6 +40,8 @@
 - Replace bare except with explicit cleanup exceptions in GUI.
   Issue [#141](https://github.com/akikuno/DAJIN2/issues/141) 
 
+- Fix DAJIN2 GUI to echo parent progress logs to stdout so final Finished message appears in CLI.
+  Issue [#142](https://github.com/akikuno/DAJIN2/issues/142) 
 
 <!-- ############################################################# # -->
 

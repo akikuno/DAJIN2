@@ -31,9 +31,9 @@ MAX_THREADS = 32
 SINGLE_MODE_INPUT_TYPES = {"fastq", "fasta", "bam"}
 
 
-def build_completion_message(is_batch: bool = False) -> str:
+def build_completion_message(result_path: str, is_batch: bool = False) -> str:
     scope = "batch analysis" if is_batch else "analysis"
-    return f"Your {scope} results are saved in the following directory:"
+    return f"Your {scope} results are saved in the following directory: {result_path}"
 
 
 def normalize_project_name(project_name: str) -> str:
@@ -55,9 +55,10 @@ def parse_threads(raw_value: str | None, default: int = 1) -> int:
 class ProgressLogHandler(logging.Handler):
     """Custom logging handler to capture DAJIN2 log messages and send them to progress queue."""
 
-    def __init__(self, progress_queue):
+    def __init__(self, progress_queue, echo_to_stdout: bool = False):
         super().__init__()
         self.progress_queue = progress_queue
+        self.echo_to_stdout = echo_to_stdout
         self.setLevel(logging.INFO)
         # Format to match the log file format: timestamp, level, message
         formatter = logging.Formatter("%(asctime)s, %(levelname)s, %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -71,6 +72,8 @@ class ProgressLogHandler(logging.Handler):
                 log_message = self.format(record)
                 # Send to progress queue
                 self.progress_queue.put({"status": "log", "message": log_message, "timestamp": time.time()})
+                if self.echo_to_stdout:
+                    print(log_message, flush=True)
         except Exception:
             # Don't let logging errors break the analysis
             pass
@@ -267,7 +270,7 @@ def submit_batch():
         def run_batch_analysis():
             try:
                 # Set up log handler to capture DAJIN2 log messages
-                log_handler = ProgressLogHandler(progress_queue)
+                log_handler = ProgressLogHandler(progress_queue, echo_to_stdout=True)
 
                 # Add handler to root logger to capture ALL logs (filtered in handler)
                 root_logger = logging.getLogger()
@@ -293,7 +296,7 @@ def submit_batch():
                 }
 
                 result_directory = str(Path("DAJIN_Results").resolve())
-                completion_message = build_completion_message(is_batch=True)
+                completion_message = build_completion_message(result_directory, is_batch=True)
                 progress_queue.put(
                     {
                         "status": "completed",
@@ -478,7 +481,7 @@ def submit():
         def run_analysis():
             try:
                 # Set up log handler to capture DAJIN2 log messages
-                log_handler = ProgressLogHandler(progress_queue)
+                log_handler = ProgressLogHandler(progress_queue, echo_to_stdout=True)
 
                 # Add handler to root logger to capture ALL logs (filtered in handler)
                 root_logger = logging.getLogger()
