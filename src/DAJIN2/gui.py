@@ -15,7 +15,7 @@ from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
 
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, send_file
 from waitress import serve
 from werkzeug.utils import secure_filename
 
@@ -177,6 +177,7 @@ def save_uploaded_files_to_directory(files, output_dir: Path) -> list[str]:
 
 
 app = Flask(__name__)
+LOGO_PATH = Path(__file__).resolve().parent / "image" / "dajin2-logo.png"
 
 
 def is_wsl_environment() -> bool:
@@ -218,6 +219,11 @@ def open_url_in_windows_default_browser(url: str) -> bool:
 @app.route("/")
 def root_page():
     return render_template("gui.html")
+
+
+@app.route("/image/dajin2-logo.png")
+def dajin_logo():
+    return send_file(LOGO_PATH, mimetype="image/png")
 
 
 @app.route("/submit-batch", methods=["POST"])

@@ -29,10 +29,7 @@ body {
     min-height: 100vh;
     font-family: 'Manrope', 'Segoe UI', sans-serif;
     color: var(--text);
-    background:
-        radial-gradient(circle at 8% 12%, #d8eef2 0%, rgba(216, 238, 242, 0) 40%),
-        radial-gradient(circle at 92% 2%, #fcefd9 0%, rgba(252, 239, 217, 0) 38%),
-        linear-gradient(165deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    background: var(--bg-1);
 }
 
 .app-shell {
@@ -40,11 +37,16 @@ body {
 }
 
 .hero-panel {
-    background: linear-gradient(135deg, #102a43 0%, #164b63 60%, #106275 100%);
-    color: #f4f9fd;
-    border-radius: var(--radius-lg);
-    padding: 1.4rem 1.5rem;
-    box-shadow: var(--shadow-soft);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+}
+
+.hero-logo {
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 .hero-tag {

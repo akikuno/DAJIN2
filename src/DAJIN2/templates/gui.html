@@ -20,8 +20,7 @@
         <div class="row justify-content-center">
             <div class="col-xl-9 col-lg-10">
                 <section class="hero-panel mb-4">
-                    <div class="hero-tag">DAJIN2 GUI</div>
-                    <h1 class="hero-title mb-2">Comprehensive Genotyping Analysis for Genome Editing samples</h1>
+                    <img src="{{ url_for('dajin_logo') }}" alt="DAJIN2 logo" class="hero-logo">
                 </section>
 
                 <div id="main-form" class="card shadow-soft">
@@ -98,6 +97,19 @@
                                     <h3 class="section-title">Optional Parameters</h3>
 
                                     <div class="mb-3">
+                                        <label for="bed" class="form-label">BED File</label>
+                                        <input class="form-control" type="file" id="bed" name="bed" accept=".bed" />
+                                        <div id="bed-summary" class="file-summary">No file selected.</div>
+                                        <div class="form-text">
+                                            BED6 format. When both genome and BED are set, BED takes precedence.<br><br>
+                                            Please refer to the details below:<br>
+                                            <a href="https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates"
+                                                target="_blank"
+                                                rel="noopener">https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
                                         <label for="genome" class="form-label">Reference Genome</label>
                                         <input class="form-control" type="text" id="genome" name="genome"
                                             placeholder="e.g. hg38, mm39" autocomplete="off" />
@@ -105,13 +117,6 @@
                                         </div>
                                     </div>
 
-                                    <div class="mb-3">
-                                        <label for="bed" class="form-label">BED File</label>
-                                        <input class="form-control" type="file" id="bed" name="bed" accept=".bed" />
-                                        <div id="bed-summary" class="file-summary">No file selected.</div>
-                                        <div class="form-text">BED6 format. When both genome and BED are set, BED takes
-                                            precedence.</div>
-                                    </div>
 
                                     <div class="mb-3">
                                         <label for="threads" class="form-label">Threads</label>
@@ -143,8 +148,11 @@
                                         <div class="form-text">
                                             Required columns: <code>sample</code>, <code>control</code>,
                                             <code>allele</code>, <code>name</code>.<br>
-                                            Optional columns: <code>genome</code>, <code>genome_coordinate</code>,
-                                            <code>bed</code>.
+                                            Optional columns: <code>bed</code>, <code>genome</code><br><br>
+                                            Please refer to the details below:<br>
+                                            <a href="https://github.com/akikuno/DAJIN2#batch-processing"
+                                                target="_blank"
+                                                rel="noopener">https://github.com/akikuno/DAJIN2#batch-processing</a>
                                         </div>
                                     </div>
 
