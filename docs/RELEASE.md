@@ -12,7 +12,53 @@
 
 <!-- ############################################################# # -->
 
-# v0.8.0 (2026-01-29)
+# v0.9.0 (2026-MM-DD)
+
+
+## 🌟 New Features
+
+- Use Windows default browser for DAJIN2 GUI when running in WSL2  
+  Issue [#139](https://github.com/akikuno/DAJIN2/issues/139) 
+
+## 🐛 Bug Fixes
+
+-   Relay child process logs to GUI Analysis Log in batch mode.  
+  Issue [#138](https://github.com/akikuno/DAJIN2/issues/138) 
+
+- Fix GUI Single Sample Analysis failure caused by missing BED file..  
+  Issue [#140](https://github.com/akikuno/DAJIN2/issues/140) 
+
+
+## 🔧 Maintenance
+
+- Improve and Refine the DAJIN2 gui Command UI.  
+  Issue [#136](https://github.com/akikuno/DAJIN2/issues/136) 
+
+- Update GUI log/result labels and adjust result action layout spacing.
+  Issue [#136](https://github.com/akikuno/DAJIN2/issues/136) 
+  
+- Replace bare except with explicit cleanup exceptions in GUI.
+  Issue [#141](https://github.com/akikuno/DAJIN2/issues/141) 
+
+- Fix DAJIN2 GUI to echo parent progress logs to stdout so final Finished message appears in CLI.
+  Issue [#142](https://github.com/akikuno/DAJIN2/issues/142) 
+
+<!-- ############################################################# # -->
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.8.0 (2026-01-29) </summary>
 
 ## 💥 Breaking
 
@@ -42,18 +88,8 @@
 
 + Improve DAJIN2 error message when GGGenome returns "ERROR : searcher error". Issue [#131](https://github.com/akikuno/DAJIN2/issues/131)
 
-<!-- ############################################################# # -->
+</details>
 
-
--------------------------------------------------------------
-
-# Past Releases
-
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
 
 <details>
 <summary> v0.7.4 (2025-12-04) </summary>

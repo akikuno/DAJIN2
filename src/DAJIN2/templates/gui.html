@@ -1,0 +1,881 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DAJIN2 GUI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <link href="/static/css/gui_style.css" rel="stylesheet" type="text/css" media="all">
+</head>
+
+<body>
+    <div class="app-shell container py-4 py-lg-5">
+        <div class="row justify-content-center">
+            <div class="col-xl-9 col-lg-10">
+                <section class="hero-panel mb-4">
+                    <img src="{{ url_for('dajin_logo') }}" alt="DAJIN2 logo" class="hero-logo">
+                </section>
+
+                <div id="main-form" class="card shadow-soft">
+                    <div class="card-header border-0 pb-0">
+                        <h2 class="panel-title">Run Analysis</h2>
+                        <p class="panel-subtitle mb-0">Configure parameters for single sample analysis or batch
+                            processing.</p>
+                    </div>
+                    <div class="card-body pt-3">
+                        <div id="form-alert" class="alert d-none" role="alert" aria-live="polite"></div>
+
+                        <div class="mode-switch mb-4">
+                            <label class="form-label mb-2">Analysis Mode</label>
+                            <div class="btn-group w-100" role="group" aria-label="Analysis mode selection">
+                                <input type="radio" class="btn-check" name="mode" id="single-mode" value="single"
+                                    checked>
+                                <label class="btn btn-outline-primary" for="single-mode">Single Sample</label>
+
+                                <input type="radio" class="btn-check" name="mode" id="batch-mode" value="batch">
+                                <label class="btn btn-outline-primary" for="batch-mode">Batch Processing</label>
+                            </div>
+                        </div>
+
+                        <form id="dajin-form" enctype="multipart/form-data" novalidate>
+                            <div id="single-sample-fields">
+                                <section class="form-section">
+                                    <h3 class="section-title">Project</h3>
+
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Project Name <span
+                                                class="text-danger">*</span></label>
+                                        <input class="form-control" type="text" id="name" name="name" required
+                                            placeholder="e.g. experiment_001" autocomplete="off" />
+                                        <div class="form-text">Allowed: letters, numbers, underscore, hyphen, dot.</div>
+                                    </div>
+                                </section>
+
+                                <section class="form-section">
+                                    <h3 class="section-title">Input Files</h3>
+
+                                    <div class="mb-3">
+                                        <label for="sample" class="form-label">Sample Directory <span
+                                                class="text-danger">*</span></label>
+                                        <input class="form-control" type="file" id="sample" name="sample"
+                                            accept=".fastq,.fq,.fastq.gz,.fq.gz,.fasta,.fa,.fasta.gz,.fa.gz,.bam"
+                                            multiple required webkitdirectory />
+                                        <div id="sample-summary" class="file-summary">No directory selected.</div>
+                                        <div class="form-text">Select a folder containing FASTQ/FASTA/BAM files.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="control" class="form-label">Control Directory <span
+                                                class="text-danger">*</span></label>
+                                        <input class="form-control" type="file" id="control" name="control"
+                                            accept=".fastq,.fq,.fastq.gz,.fq.gz,.fasta,.fa,.fasta.gz,.fa.gz,.bam"
+                                            multiple required webkitdirectory />
+                                        <div id="control-summary" class="file-summary">No directory selected.</div>
+                                        <div class="form-text">Use the same file format type as the sample directory.
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-0">
+                                        <label for="allele" class="form-label">Allele FASTA <span
+                                                class="text-danger">*</span></label>
+                                        <input class="form-control" type="file" id="allele" name="allele"
+                                            accept=".fasta,.fa,.fasta.gz,.fa.gz" required />
+                                        <div id="allele-summary" class="file-summary">No file selected.</div>
+                                        <div class="form-text">Select one FASTA file that includes your allele
+                                            references.</div>
+                                    </div>
+                                </section>
+
+                                <section class="form-section">
+                                    <h3 class="section-title">Optional Parameters</h3>
+
+                                    <div class="mb-3">
+                                        <label for="bed" class="form-label">BED File</label>
+                                        <input class="form-control" type="file" id="bed" name="bed" accept=".bed" />
+                                        <div id="bed-summary" class="file-summary">No file selected.</div>
+                                        <div class="form-text">
+                                            BED6 format. When both genome and BED are set, BED takes precedence.<br><br>
+                                            Please refer to the details below:<br>
+                                            <a href="https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates"
+                                                target="_blank"
+                                                rel="noopener">https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="genome" class="form-label">Reference Genome</label>
+                                        <input class="form-control" type="text" id="genome" name="genome"
+                                            placeholder="e.g. hg38, mm39" autocomplete="off" />
+                                        <div class="form-text">Used for coordinate lookup when BED is not provided.
+                                        </div>
+                                    </div>
+
+
+                                    <div class="mb-3">
+                                        <label for="threads" class="form-label">Threads</label>
+                                        <input class="form-control" type="number" id="threads" name="threads" min="1"
+                                            max="32" value="1" />
+                                        <div class="form-text">Valid range: 1 to 32.</div>
+                                    </div>
+
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="no-filter" name="no-filter">
+                                        <label class="form-check-label" for="no-filter">Disable minor allele filtering
+                                            (keep alleles &lt;0.5%)</label>
+                                        <div class="form-text">Enable this when you need to inspect low-frequency
+                                            alleles.</div>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div id="batch-fields" class="d-none">
+                                <section class="form-section">
+                                    <h3 class="section-title">Batch Settings</h3>
+
+                                    <div class="mb-3">
+                                        <label for="batch-file" class="form-label">Batch File <span
+                                                class="text-danger">*</span></label>
+                                        <input class="form-control" type="file" id="batch-file" name="batch-file"
+                                            accept=".csv,.xlsx,.xls" />
+                                        <div id="batch-file-summary" class="file-summary">No file selected.</div>
+                                        <div class="form-text">
+                                            Required columns: <code>sample</code>, <code>control</code>,
+                                            <code>allele</code>, <code>name</code>.<br>
+                                            Optional columns: <code>bed</code>, <code>genome</code><br><br>
+                                            Please refer to the details below:<br>
+                                            <a href="https://github.com/akikuno/DAJIN2#batch-processing"
+                                                target="_blank"
+                                                rel="noopener">https://github.com/akikuno/DAJIN2#batch-processing</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="batch-threads" class="form-label">Threads</label>
+                                        <input class="form-control" type="number" id="batch-threads"
+                                            name="batch-threads" min="1" max="32" value="1" />
+                                        <div class="form-text">Valid range: 1 to 32.</div>
+                                    </div>
+
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" id="batch-no-filter"
+                                            name="batch-no-filter">
+                                        <label class="form-check-label" for="batch-no-filter">Disable minor allele
+                                            filtering (keep alleles &lt;0.5%)</label>
+                                    </div>
+                                </section>
+                            </div>
+
+                            <div class="d-grid mt-4">
+                                <button id="submit-button" type="submit" class="btn btn-primary btn-lg">
+                                    <span id="submit-text">Start Analysis</span>
+                                    <span id="submit-spinner"
+                                        class="spinner-border spinner-border-sm ms-2 d-none"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="progress-panel" class="card mt-4 d-none shadow-soft">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="panel-title mb-1">Analysis Progress</h2>
+                            <p class="panel-subtitle mb-0">Detailed log and stage tracking</p>
+                        </div>
+                        <div id="analysis-clock" class="clock-badge">00:00:00</div>
+                    </div>
+                    <div class="card-body">
+                        <div id="stage-tracker" class="stage-tracker mb-3" aria-live="polite">
+                            <span id="stage-upload" class="stage-chip is-active">Upload</span>
+                            <span id="stage-analysis" class="stage-chip">Processing</span>
+                            <span id="stage-report" class="stage-chip">Report</span>
+                        </div>
+
+                        <div id="log-container" class="log-container" role="log" aria-live="polite">
+                            <div id="log-messages">
+                                <div class="log-entry log-info">Waiting for analysis logs...</div>
+                            </div>
+                        </div>
+
+                        <div class="log-footer mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <small id="log-status" class="text-muted">Analysis in progress...</small>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="clearLog()">Clear Log</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                    onclick="scrollToBottom()">Scroll to Bottom</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="result-panel" class="card mt-4 d-none shadow-soft">
+                    <div class="card-header">
+                        <h2 class="panel-title mb-1">Analysis Completed</h2>
+                        <p class="panel-subtitle mb-0">Your output location is ready.</p>
+                    </div>
+                    <div class="card-body">
+                        <div id="result-message" class="result-message mb-3"></div>
+                        <div id="result-path-display" class="result-path-display mb-3">
+                            <div class="mb-3">
+                                <small class="text-muted">Unix Path</small>
+                                <code id="result-path-unix" class="d-block mt-1"></code>
+                            </div>
+                            <div id="windows-path-container" class="d-none">
+                                <small class="text-muted">Windows Path</small>
+                                <code id="result-path-windows" class="d-block mt-1"></code>
+                            </div>
+                        </div>
+                        <div id="result-actions" class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-info" onclick="copyResultPath('unix', this)">Copy Unix
+                                Path</button>
+                            <button type="button" class="btn btn-info d-none" onclick="copyResultPath('windows', this)"
+                                id="copy-windows-btn">Copy Windows Path</button>
+                            <button type="button" class="btn btn-secondary" onclick="startNewAnalysis()">Start New
+                                Analysis</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="error-panel" class="alert alert-danger mt-4 d-none" role="alert">
+                    <h6 class="alert-heading">Analysis Failed</h6>
+                    <p id="error-message" class="mb-2"></p>
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                        onclick="startNewAnalysis()">Retry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-3">
+        <div class="container text-center text-muted small">
+            <a href="https://github.com/akikuno/DAJIN2" target="_blank" rel="noopener"
+                class="text-decoration-none text-reset d-inline-flex align-items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"
+                    aria-hidden="true" focusable="false">
+                    <path
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+                </svg>
+                <span>DAJIN2 on GitHub</span>
+            </a>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+        crossorigin="anonymous"></script>
+
+    <script>
+        let currentAnalysisId = null;
+        let eventSource = null;
+        let analysisStartTime = null;
+        let clockInterval = null;
+
+        const allowedInputExtensions = ['.fastq', '.fq', '.fastq.gz', '.fq.gz', '.fasta', '.fa', '.fasta.gz', '.fa.gz', '.bam'];
+        const allowedAlleleExtensions = ['.fasta', '.fa', '.fasta.gz', '.fa.gz'];
+        const allowedBedExtensions = ['.bed'];
+        const allowedBatchExtensions = ['.csv', '.xlsx', '.xls'];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setupModeSwitching();
+            setupInputFeedback();
+            updateModeUI('single');
+            initializeSummaries();
+        });
+
+        function setupModeSwitching() {
+            const singleMode = document.getElementById('single-mode');
+            const batchMode = document.getElementById('batch-mode');
+
+            singleMode.addEventListener('change', function () {
+                if (this.checked) {
+                    updateModeUI('single');
+                }
+            });
+
+            batchMode.addEventListener('change', function () {
+                if (this.checked) {
+                    updateModeUI('batch');
+                }
+            });
+        }
+
+        function setupInputFeedback() {
+            document.getElementById('sample').addEventListener('change', function () {
+                updateDirectorySummary(this, 'sample-summary');
+            });
+
+            document.getElementById('control').addEventListener('change', function () {
+                updateDirectorySummary(this, 'control-summary');
+            });
+
+            document.getElementById('allele').addEventListener('change', function () {
+                updateFileSummary(this, 'allele-summary');
+            });
+
+            document.getElementById('bed').addEventListener('change', function () {
+                updateFileSummary(this, 'bed-summary');
+            });
+
+            document.getElementById('batch-file').addEventListener('change', function () {
+                updateFileSummary(this, 'batch-file-summary');
+            });
+        }
+
+        function initializeSummaries() {
+            updateDirectorySummary(document.getElementById('sample'), 'sample-summary');
+            updateDirectorySummary(document.getElementById('control'), 'control-summary');
+            updateFileSummary(document.getElementById('allele'), 'allele-summary');
+            updateFileSummary(document.getElementById('bed'), 'bed-summary');
+            updateFileSummary(document.getElementById('batch-file'), 'batch-file-summary');
+        }
+
+        function updateModeUI(mode) {
+            const singleFields = document.getElementById('single-sample-fields');
+            const batchFields = document.getElementById('batch-fields');
+
+            const isSingle = mode === 'single';
+
+            singleFields.classList.toggle('d-none', !isSingle);
+            batchFields.classList.toggle('d-none', isSingle);
+
+            document.getElementById('name').required = isSingle;
+            document.getElementById('sample').required = isSingle;
+            document.getElementById('control').required = isSingle;
+            document.getElementById('allele').required = isSingle;
+            document.getElementById('batch-file').required = !isSingle;
+
+            clearFormAlert();
+        }
+
+        function updateDirectorySummary(input, summaryId) {
+            const summary = document.getElementById(summaryId);
+            const files = Array.from(input.files || []);
+
+            if (!files.length) {
+                summary.textContent = 'No directory selected.';
+                summary.className = 'file-summary';
+                return;
+            }
+
+            const firstPath = files[0].webkitRelativePath || files[0].name;
+            const dirName = firstPath.split('/')[0] || 'Selected files';
+            const extensionInfo = summarizeExtensions(files);
+
+            summary.textContent = `${dirName} (${files.length} files) ${extensionInfo}`;
+            summary.className = 'file-summary is-valid';
+        }
+
+        function updateFileSummary(input, summaryId) {
+            const summary = document.getElementById(summaryId);
+            const files = Array.from(input.files || []);
+
+            if (!files.length) {
+                summary.textContent = 'No file selected.';
+                summary.className = 'file-summary';
+                return;
+            }
+
+            const names = files.slice(0, 2).map(file => file.name).join(', ');
+            const suffix = files.length > 2 ? `, +${files.length - 2} more` : '';
+            summary.textContent = `${names}${suffix}`;
+            summary.className = 'file-summary is-valid';
+        }
+
+        function summarizeExtensions(files) {
+            const counters = {};
+            files.forEach(file => {
+                const ext = getMatchedExtension(file.name, [...allowedInputExtensions, ...allowedAlleleExtensions, ...allowedBatchExtensions, ...allowedBedExtensions]) || 'other';
+                counters[ext] = (counters[ext] || 0) + 1;
+            });
+
+            const labels = Object.entries(counters)
+                .slice(0, 3)
+                .map(([ext, count]) => `${ext}: ${count}`);
+
+            return labels.length ? `[${labels.join(', ')}]` : '';
+        }
+
+        function getMatchedExtension(filename, allowedExtensions) {
+            const lowerName = (filename || '').toLowerCase();
+            const sorted = [...allowedExtensions].sort((a, b) => b.length - a.length);
+
+            for (const ext of sorted) {
+                if (lowerName.endsWith(ext)) {
+                    return ext;
+                }
+            }
+
+            return '';
+        }
+
+        function containsOnlyAllowedExtensions(files, allowedExtensions) {
+            const invalidNames = [];
+
+            files.forEach(file => {
+                if (!getMatchedExtension(file.name, allowedExtensions)) {
+                    invalidNames.push(file.name);
+                }
+            });
+
+            return {
+                isValid: invalidNames.length === 0,
+                invalidNames,
+            };
+        }
+
+        function validateThreadValue(rawValue, fieldLabel) {
+            const value = Number(rawValue);
+            if (!Number.isInteger(value) || value < 1 || value > 32) {
+                return `${fieldLabel} must be an integer between 1 and 32.`;
+            }
+            return '';
+        }
+
+        function validateForm(mode) {
+            const errors = [];
+            const warnings = [];
+
+            if (mode === 'single') {
+                const projectName = document.getElementById('name').value.trim();
+                const sampleFiles = Array.from(document.getElementById('sample').files || []);
+                const controlFiles = Array.from(document.getElementById('control').files || []);
+                const alleleFiles = Array.from(document.getElementById('allele').files || []);
+                const bedFiles = Array.from(document.getElementById('bed').files || []);
+                const genome = document.getElementById('genome').value.trim();
+
+                if (!projectName) {
+                    errors.push('Project Name is required.');
+                } else if (!/^[A-Za-z0-9._-]+$/.test(projectName)) {
+                    errors.push('Project Name can contain only letters, numbers, underscores, hyphens, and dots.');
+                }
+
+                if (!sampleFiles.length) {
+                    errors.push('Sample Directory is required.');
+                }
+
+                if (!controlFiles.length) {
+                    errors.push('Control Directory is required.');
+                }
+
+                if (!alleleFiles.length) {
+                    errors.push('Allele FASTA is required.');
+                }
+
+                if (alleleFiles.length > 1) {
+                    errors.push('Select exactly one Allele FASTA file.');
+                }
+
+                if (sampleFiles.length) {
+                    const sampleValidation = containsOnlyAllowedExtensions(sampleFiles, allowedInputExtensions);
+                    if (!sampleValidation.isValid) {
+                        errors.push(`Sample Directory contains unsupported files: ${sampleValidation.invalidNames.slice(0, 3).join(', ')}.`);
+                    }
+                }
+
+                if (controlFiles.length) {
+                    const controlValidation = containsOnlyAllowedExtensions(controlFiles, allowedInputExtensions);
+                    if (!controlValidation.isValid) {
+                        errors.push(`Control Directory contains unsupported files: ${controlValidation.invalidNames.slice(0, 3).join(', ')}.`);
+                    }
+                }
+
+                if (alleleFiles.length) {
+                    const alleleValidation = containsOnlyAllowedExtensions(alleleFiles, allowedAlleleExtensions);
+                    if (!alleleValidation.isValid) {
+                        errors.push('Allele FASTA must be .fa, .fasta, .fa.gz, or .fasta.gz.');
+                    }
+                }
+
+                if (bedFiles.length > 1) {
+                    errors.push('Select at most one BED file.');
+                } else if (bedFiles.length) {
+                    const bedValidation = containsOnlyAllowedExtensions(bedFiles, allowedBedExtensions);
+                    if (!bedValidation.isValid) {
+                        errors.push('BED file must have a .bed extension.');
+                    }
+                }
+
+                const threadError = validateThreadValue(document.getElementById('threads').value, 'Threads');
+                if (threadError) {
+                    errors.push(threadError);
+                }
+
+                if (genome && bedFiles.length) {
+                    warnings.push('Both Reference Genome and BED are set. BED coordinates will be used.');
+                }
+            } else {
+                const batchFiles = Array.from(document.getElementById('batch-file').files || []);
+
+                if (!batchFiles.length) {
+                    errors.push('Batch File is required.');
+                } else {
+                    const batchValidation = containsOnlyAllowedExtensions(batchFiles, allowedBatchExtensions);
+                    if (!batchValidation.isValid) {
+                        errors.push('Batch file must be .csv, .xlsx, or .xls.');
+                    }
+                }
+
+                const threadError = validateThreadValue(document.getElementById('batch-threads').value, 'Batch Threads');
+                if (threadError) {
+                    errors.push(threadError);
+                }
+            }
+
+            return { errors, warnings };
+        }
+
+        function showFormAlert(messages, type = 'danger') {
+            const alertElement = document.getElementById('form-alert');
+            alertElement.className = `alert alert-${type}`;
+            alertElement.innerHTML = messages.map(message => `<div>${escapeHtml(message)}</div>`).join('');
+            alertElement.classList.remove('d-none');
+        }
+
+        function clearFormAlert() {
+            const alertElement = document.getElementById('form-alert');
+            alertElement.classList.add('d-none');
+            alertElement.textContent = '';
+        }
+
+        function setSubmitState(isSubmitting) {
+            const submitButton = document.getElementById('submit-button');
+            const submitText = document.getElementById('submit-text');
+            const submitSpinner = document.getElementById('submit-spinner');
+
+            submitButton.disabled = isSubmitting;
+            submitText.textContent = isSubmitting ? 'Starting analysis...' : 'Start Analysis';
+            submitSpinner.classList.toggle('d-none', !isSubmitting);
+        }
+
+        document.getElementById('dajin-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            clearFormAlert();
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            const validation = validateForm(mode);
+
+            if (validation.errors.length) {
+                showFormAlert(validation.errors, 'danger');
+                return;
+            }
+
+            if (validation.warnings.length) {
+                showFormAlert(validation.warnings, 'warning');
+            }
+
+            const formData = new FormData(this);
+            formData.append('mode', mode);
+
+            setSubmitState(true);
+
+            try {
+                const endpoint = mode === 'batch' ? '/submit-batch' : '/submit';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    showError(result.error || 'Unknown error occurred while starting analysis.');
+                    return;
+                }
+
+                currentAnalysisId = result.analysis_id;
+                showProgressPanel();
+                startProgressMonitoring(currentAnalysisId);
+            } catch (error) {
+                showError(`Communication with server failed: ${error.message}`);
+            } finally {
+                setSubmitState(false);
+            }
+        });
+
+        function startProgressMonitoring(analysisId) {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource(`/progress/${analysisId}`);
+
+            eventSource.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                if (data.status === 'heartbeat') {
+                    return;
+                }
+
+                if (data.status === 'log') {
+                    addLogMessage(data.message, 'info');
+                    updateStageByLogMessage(data.message);
+                } else if (data.status === 'completed') {
+                    addLogMessage(data.message, 'success');
+                    setStageStatus('report', 'done');
+                    stopAnalysisClock();
+                    showResult(data.message, data.result_path);
+                    eventSource.close();
+                } else if (data.status === 'error') {
+                    addLogMessage(data.message, 'error');
+                    setStageStatus('analysis', 'error');
+                    stopAnalysisClock();
+                    showError(data.message);
+                    eventSource.close();
+                }
+            };
+
+            eventSource.onerror = function () {
+                if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+                    return;
+                }
+
+                stopAnalysisClock();
+                showError('Error occurred during progress monitoring.');
+                if (eventSource) {
+                    eventSource.close();
+                }
+            };
+        }
+
+        function resetStageTracker() {
+            setStageStatus('upload', 'active');
+            setStageStatus('analysis', 'pending');
+            setStageStatus('report', 'pending');
+        }
+
+        function setStageStatus(stage, status) {
+            const element = document.getElementById(`stage-${stage}`);
+            if (!element) {
+                return;
+            }
+
+            element.classList.remove('is-active', 'is-done', 'is-error');
+
+            if (status === 'active') {
+                element.classList.add('is-active');
+            } else if (status === 'done') {
+                element.classList.add('is-done');
+            } else if (status === 'error') {
+                element.classList.add('is-error');
+            }
+        }
+
+        function updateStageByLogMessage(message) {
+            const lower = String(message).toLowerCase();
+
+            if (lower.includes('starting analysis') || lower.includes('starting batch analysis')) {
+                setStageStatus('upload', 'done');
+                setStageStatus('analysis', 'active');
+            }
+
+            if (lower.includes('finished') || lower.includes('report')) {
+                setStageStatus('analysis', 'done');
+                setStageStatus('report', 'active');
+            }
+        }
+
+        function showProgressPanel() {
+            document.getElementById('main-form').classList.add('d-none');
+            document.getElementById('progress-panel').classList.remove('d-none');
+            document.getElementById('result-panel').classList.add('d-none');
+            document.getElementById('error-panel').classList.add('d-none');
+
+            document.getElementById('log-messages').innerHTML = '<div class="log-entry log-info">Waiting for analysis logs...</div>';
+            document.getElementById('log-status').textContent = 'Analysis in progress...';
+            document.getElementById('log-status').className = 'text-muted';
+
+            resetStageTracker();
+            startAnalysisClock();
+        }
+
+        function addLogMessage(message, type = 'info') {
+            const logMessages = document.getElementById('log-messages');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+
+            const text = String(message || '');
+            const logFormatMatch = text.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\s*(\w+),\s*(.+)$/);
+
+            if (logFormatMatch) {
+                const timestamp = escapeHtml(logFormatMatch[1]);
+                const level = escapeHtml(logFormatMatch[2]);
+                const content = escapeHtml(logFormatMatch[3]);
+                logEntry.innerHTML = `<span class="log-timestamp">${timestamp}</span> <span class="log-level">[${level}]</span> <span>${content}</span>`;
+            } else {
+                logEntry.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+            }
+
+            logMessages.appendChild(logEntry);
+            scrollToBottom();
+            updateLogStatus(type);
+        }
+
+        function updateLogStatus(type) {
+            const statusElement = document.getElementById('log-status');
+            if (type === 'success') {
+                statusElement.textContent = 'Analysis completed successfully.';
+                statusElement.className = 'text-success';
+            } else if (type === 'error') {
+                statusElement.textContent = 'Analysis failed. Review the log details.';
+                statusElement.className = 'text-danger';
+            } else {
+                statusElement.textContent = 'Analysis in progress...';
+                statusElement.className = 'text-muted';
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log-messages').innerHTML = '<div class="log-entry log-info">Log cleared.</div>';
+        }
+
+        function scrollToBottom() {
+            const logContainer = document.getElementById('log-container');
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function showResult(message, resultPath) {
+            document.getElementById('progress-panel').classList.add('d-none');
+            document.getElementById('result-panel').classList.remove('d-none');
+            document.getElementById('error-panel').classList.add('d-none');
+
+            const normalizedMessage = String(message || '').replace(/\s+$/g, '');
+            document.getElementById('result-message').textContent = normalizedMessage;
+
+            window.resultPath = resultPath;
+            document.getElementById('result-path-unix').textContent = resultPath || '';
+
+            const windowsPath = convertToWindowsPath(resultPath || '');
+            const windowsPathContainer = document.getElementById('windows-path-container');
+            const copyWindowsButton = document.getElementById('copy-windows-btn');
+
+            if (windowsPath && windowsPath !== resultPath) {
+                windowsPathContainer.classList.remove('d-none');
+                document.getElementById('result-path-windows').textContent = windowsPath;
+                copyWindowsButton.classList.remove('d-none');
+                window.windowsPath = windowsPath;
+            } else {
+                windowsPathContainer.classList.add('d-none');
+                copyWindowsButton.classList.add('d-none');
+                window.windowsPath = '';
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('main-form').classList.add('d-none');
+            document.getElementById('progress-panel').classList.add('d-none');
+            document.getElementById('result-panel').classList.add('d-none');
+            document.getElementById('error-panel').classList.remove('d-none');
+            document.getElementById('error-message').textContent = String(message || 'Unknown error.');
+        }
+
+        function convertToWindowsPath(unixPath) {
+            const wslPattern = /^\/mnt\/([a-z])(\/.*)?$/i;
+            const match = String(unixPath).match(wslPattern);
+
+            if (match) {
+                const driveLetter = match[1].toUpperCase();
+                const restOfPath = match[2] || '';
+                return `${driveLetter}:${restOfPath}`.replace(/\//g, '\\');
+            }
+
+            return String(unixPath).replace(/\//g, '\\');
+        }
+
+        function copyResultPath(type = 'unix', triggerButton = null) {
+            const pathToCopy = type === 'windows' ? window.windowsPath : window.resultPath;
+            if (!pathToCopy) {
+                return;
+            }
+
+            navigator.clipboard.writeText(pathToCopy).then(function () {
+                if (!triggerButton) {
+                    return;
+                }
+
+                const originalText = triggerButton.textContent;
+                triggerButton.textContent = 'Copied';
+                triggerButton.disabled = true;
+
+                setTimeout(function () {
+                    triggerButton.textContent = originalText;
+                    triggerButton.disabled = false;
+                }, 1400);
+            }).catch(function () {
+                prompt('Copy this path:', pathToCopy);
+            });
+        }
+
+        function startAnalysisClock() {
+            analysisStartTime = new Date();
+            updateAnalysisClock();
+            clockInterval = setInterval(updateAnalysisClock, 1000);
+        }
+
+        function updateAnalysisClock() {
+            if (!analysisStartTime) {
+                return;
+            }
+
+            const now = new Date();
+            const elapsed = Math.floor((now - analysisStartTime) / 1000);
+
+            const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+
+            document.getElementById('analysis-clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        function stopAnalysisClock() {
+            if (clockInterval) {
+                clearInterval(clockInterval);
+                clockInterval = null;
+            }
+        }
+
+        function startNewAnalysis() {
+            document.getElementById('main-form').classList.remove('d-none');
+            document.getElementById('progress-panel').classList.add('d-none');
+            document.getElementById('result-panel').classList.add('d-none');
+            document.getElementById('error-panel').classList.add('d-none');
+
+            document.getElementById('dajin-form').reset();
+            document.getElementById('single-mode').checked = true;
+            updateModeUI('single');
+            initializeSummaries();
+            clearFormAlert();
+
+            const logMessages = document.getElementById('log-messages');
+            logMessages.innerHTML = '<div class="log-entry log-info">Ready for a new analysis.</div>';
+
+            stopAnalysisClock();
+            analysisStartTime = null;
+            document.getElementById('analysis-clock').textContent = '00:00:00';
+
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            currentAnalysisId = null;
+            window.resultPath = '';
+            window.windowsPath = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = String(text || '');
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

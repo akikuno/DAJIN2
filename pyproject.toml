@@ -20,10 +20,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 include = [
-    "src/DAJIN2/template_igvjs.html",
     "src/DAJIN2/templates/**",
     "src/DAJIN2/static/**",
     "src/DAJIN2/utils/**",
+    "src/DAJIN2/image/**",
 ]
 
 [tool.poetry.dependencies]
