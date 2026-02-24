@@ -288,7 +288,9 @@ def submit_batch():
                 dajin_logger.setLevel(logging.INFO)
 
                 # Send initial status
-                progress_queue.put({"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()})
+                progress_queue.put(
+                    {"status": "log", "message": "Starting batch analysis...", "timestamp": time.time()}
+                )
 
                 # Run the actual batch analysis
                 main.execute_batch_mode(arguments)
