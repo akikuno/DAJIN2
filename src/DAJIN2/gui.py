@@ -7,6 +7,7 @@ import os
 import queue
 import shutil
 import socket
+import subprocess
 import threading
 import time
 import webbrowser
@@ -14,7 +15,7 @@ from contextlib import closing, redirect_stderr
 from pathlib import Path
 from threading import Timer
 
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, send_file
 from waitress import serve
 from werkzeug.utils import secure_filename
 
@@ -24,14 +25,40 @@ from DAJIN2.utils import config
 # Global variable to store progress information
 progress_queues = {}
 analysis_results = {}
+GUI_UPLOAD_ROOT_DIR = Path(config.DAJIN_RESULTS_DIR, ".gui_upload")
+MIN_THREADS = 1
+MAX_THREADS = 32
+SINGLE_MODE_INPUT_TYPES = {"fastq", "fasta", "bam"}
+
+
+def build_completion_message(result_path: str, is_batch: bool = False) -> str:
+    scope = "batch analysis" if is_batch else "analysis"
+    return f"Your {scope} results are saved in the following directory: {result_path}"
+
+
+def normalize_project_name(project_name: str) -> str:
+    sanitized_name = secure_filename(project_name.strip())
+    if not sanitized_name:
+        raise ValueError("Project name must include letters, numbers, underscores, hyphens, or dots.")
+    return sanitized_name
+
+
+def parse_threads(raw_value: str | None, default: int = 1) -> int:
+    try:
+        threads = int(raw_value) if raw_value else default
+    except (TypeError, ValueError):
+        return default
+
+    return max(MIN_THREADS, min(MAX_THREADS, threads))
 
 
 class ProgressLogHandler(logging.Handler):
     """Custom logging handler to capture DAJIN2 log messages and send them to progress queue."""
 
-    def __init__(self, progress_queue):
+    def __init__(self, progress_queue, echo_to_stdout: bool = False):
         super().__init__()
         self.progress_queue = progress_queue
+        self.echo_to_stdout = echo_to_stdout
         self.setLevel(logging.INFO)
         # Format to match the log file format: timestamp, level, message
         formatter = logging.Formatter("%(asctime)s, %(levelname)s, %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
@@ -45,6 +72,8 @@ class ProgressLogHandler(logging.Handler):
                 log_message = self.format(record)
                 # Send to progress queue
                 self.progress_queue.put({"status": "log", "message": log_message, "timestamp": time.time()})
+                if self.echo_to_stdout:
+                    print(log_message, flush=True)
         except Exception:
             # Don't let logging errors break the analysis
             pass
@@ -99,32 +128,102 @@ def validate_file(file):
     raise ValueError(f"Unsupported file format: {file.filename}")
 
 
-def upload_files(files, expected_type=None):
-    """Upload files with validation"""
+def collect_valid_uploaded_files(files, expected_types: set[str], field_name: str):
+    """Collect uploaded files and validate their formats."""
+    valid_files = []
+    invalid_files = []
+
     for file in files:
-        # Validate file
-        file_type = validate_file(file)
-        if expected_type and file_type not in expected_type:
-            raise ValueError(f"Unexpected file format. Expected {expected_type} but got {file_type}")
+        if not file or not file.filename:
+            continue
 
-        path = Path(app.config["UPLOAD_FOLDER"], secure_filename(file.filename))
-        file.save(path)
+        try:
+            file_type = validate_file(file)
+        except ValueError:
+            invalid_files.append(Path(file.filename).name)
+            continue
+
+        if file_type not in expected_types:
+            invalid_files.append(Path(file.filename).name)
+            continue
+
+        valid_files.append(file)
+
+    if invalid_files:
+        invalid_file_names = ", ".join(invalid_files[:5])
+        if len(invalid_files) > 5:
+            invalid_file_names += ", ..."
+        raise ValueError(f"{field_name} contains unsupported files: {invalid_file_names}")
+
+    if not valid_files:
+        raise ValueError(f"{field_name} does not contain supported files.")
+
+    return valid_files
 
 
-def get_path_of_uploaded_files(UPLOAD_FOLDER, files):
-    paths = []
+def save_uploaded_files_to_directory(files, output_dir: Path) -> list[str]:
+    """Save uploaded files as flat files to match DAJIN2 directory expectations."""
+    saved_paths = []
     for file in files:
-        path = str(UPLOAD_FOLDER) + "/" + secure_filename(file.filename)
-        paths.append(path)
-    return paths
+        safe_filename = secure_filename(file.filename)
+        if not safe_filename:
+            continue
+
+        output_path = output_dir / safe_filename
+        file.save(output_path)
+        saved_paths.append(str(output_path))
+
+    return saved_paths
 
 
 app = Flask(__name__)
+LOGO_PATH = Path(__file__).resolve().parent / "image" / "dajin2-logo.png"
+
+
+def is_wsl_environment() -> bool:
+    if os.name != "posix":
+        return False
+
+    if os.environ.get("WSL_DISTRO_NAME") or os.environ.get("WSL_INTEROP"):
+        return True
+
+    try:
+        with open("/proc/sys/kernel/osrelease") as kernel_info:
+            return "microsoft" in kernel_info.read().lower()
+    except OSError:
+        return False
+
+
+def open_url_in_windows_default_browser(url: str) -> bool:
+    commands = [
+        ["cmd.exe", "/c", "start", "", url],
+        ["powershell.exe", "-NoProfile", "-Command", f'Start-Process "{url}"'],
+    ]
+
+    for command in commands:
+        try:
+            subprocess.run(
+                command,
+                check=True,
+                timeout=5,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            continue
+
+    return False
 
 
 @app.route("/")
 def root_page():
-    return render_template("index.html")
+    return render_template("gui.html")
+
+
+@app.route("/image/dajin2-logo.png")
+def dajin_logo():
+    return send_file(LOGO_PATH, mimetype="image/png")
 
 
 @app.route("/submit-batch", methods=["POST"])
@@ -156,28 +255,28 @@ def submit_batch():
         batch_file.save(batch_file_path)
 
         # Get threads and no-filter options
-        threads = request.form.get("batch-threads")
-        try:
-            threads = int(threads) if threads else 1
-            if threads < 1:
-                threads = 1
-        except ValueError:
-            threads = 1
+        threads = parse_threads(request.form.get("batch-threads"))
 
         no_filter = request.form.get("batch-no-filter") == "on"
-
-        # Prepare arguments
-        arguments = {"file": str(batch_file_path), "threads": threads, "debug": False, "no_filter": no_filter}
 
         # Create progress queue for this analysis
         progress_queue = queue.Queue()
         progress_queues[batch_id] = progress_queue
 
+        # Prepare arguments
+        arguments = {
+            "file": str(batch_file_path),
+            "threads": threads,
+            "debug": False,
+            "no_filter": no_filter,
+            "progress_queue": progress_queue,
+        }
+
         # Start analysis in background thread
         def run_batch_analysis():
             try:
                 # Set up log handler to capture DAJIN2 log messages
-                log_handler = ProgressLogHandler(progress_queue)
+                log_handler = ProgressLogHandler(progress_queue, echo_to_stdout=True)
 
                 # Add handler to root logger to capture ALL logs (filtered in handler)
                 root_logger = logging.getLogger()
@@ -204,14 +303,13 @@ def submit_batch():
                     "timestamp": time.time(),
                 }
 
-                completion_message = (
-                    f"🎊 Batch analysis completed! Your results are saved in {str(Path('DAJIN_Results').resolve())}"
-                )
+                result_directory = str(Path("DAJIN_Results").resolve())
+                completion_message = build_completion_message(result_directory, is_batch=True)
                 progress_queue.put(
                     {
                         "status": "completed",
                         "message": completion_message,
-                        "result_path": str(Path("DAJIN_Results").resolve()),
+                        "result_path": result_directory,
                     }
                 )
 
@@ -224,7 +322,7 @@ def submit_batch():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 # Enhanced error message for file/directory not found
@@ -257,7 +355,7 @@ def submit_batch():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 error_msg = f"Batch analysis error occurred: {str(e)}"
@@ -281,27 +379,38 @@ def submit_batch():
 def submit():
     try:
         # Get form data
-        name = request.form.get("name")
-        if not name or not name.strip():
+        name = request.form.get("name", "")
+        if not name.strip():
             return jsonify({"error": "Please enter a project name"}), 400
 
-        name = name.strip()
+        name = normalize_project_name(name)
 
         # Validate required files
-        if "sample" not in request.files or not request.files.getlist("sample"):
+        sample_files = request.files.getlist("sample")
+        if not sample_files:
             return jsonify({"error": "Please select sample files"}), 400
 
-        if "control" not in request.files or not request.files.get("control").filename:
+        control_files = request.files.getlist("control")
+        if not control_files:
             return jsonify({"error": "Please select a control file"}), 400
 
-        if "allele" not in request.files or not request.files.getlist("allele"):
+        allele_files = request.files.getlist("allele")
+        if not allele_files:
             return jsonify({"error": "Please select allele files"}), 400
 
-        # Setup directories
-        TEMPDIR = Path(config.TEMP_ROOT_DIR, name)
-        if TEMPDIR.exists():
-            shutil.rmtree(TEMPDIR)
-        UPLOAD_FOLDER = Path(TEMPDIR, "upload")
+        sample_files = collect_valid_uploaded_files(sample_files, SINGLE_MODE_INPUT_TYPES, "Sample directory")
+        control_files = collect_valid_uploaded_files(control_files, SINGLE_MODE_INPUT_TYPES, "Control directory")
+        allele_files = collect_valid_uploaded_files(allele_files, {"fasta"}, "Allele file")
+
+        if len(allele_files) != 1:
+            return jsonify({"error": "Please select exactly one allele FASTA file (.fa or .fasta)"}), 400
+
+        # Setup directories.
+        # Keep GUI uploads outside DAJIN2 runtime tempdir to avoid cleanup collisions.
+        GUI_TEMPDIR = Path(GUI_UPLOAD_ROOT_DIR, name)
+        if GUI_TEMPDIR.exists():
+            shutil.rmtree(GUI_TEMPDIR)
+        UPLOAD_FOLDER = Path(GUI_TEMPDIR, "upload")
         UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
         app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -309,78 +418,45 @@ def submit():
         # DAJIN2 expects directories for sample/control, files for allele
 
         # Process sample directory upload
-        sample_files = request.files.getlist("sample")
-        if not sample_files:
-            return jsonify({"error": "Please select sample directory"}), 400
-
         sample_dir = UPLOAD_FOLDER / "sample"
-        sample_dir.mkdir(exist_ok=True)
-
-        # Preserve directory structure from webkitdirectory upload
-        for file in sample_files:
-            if file.filename:
-                # Validate file type
-                validate_file(file)
-                # Get relative path from the uploaded file
-                relative_path = file.filename
-                # Create directory structure
-                file_path = sample_dir / Path(relative_path).name  # Just use filename, ignore subdirs for now
-                file.save(file_path)
+        sample_dir.mkdir(parents=True, exist_ok=True)
+        save_uploaded_files_to_directory(sample_files, sample_dir)
 
         PATH_SAMPLE = str(sample_dir)
 
         # Process control directory upload
-        control_files = request.files.getlist("control")
-        if not control_files:
-            return jsonify({"error": "Please select control directory"}), 400
-
         control_dir = UPLOAD_FOLDER / "control"
-        control_dir.mkdir(exist_ok=True)
-
-        for file in control_files:
-            if file.filename:
-                # Validate file type
-                validate_file(file)
-                relative_path = file.filename
-                file_path = control_dir / Path(relative_path).name
-                file.save(file_path)
+        control_dir.mkdir(parents=True, exist_ok=True)
+        save_uploaded_files_to_directory(control_files, control_dir)
 
         PATH_CONTROL = str(control_dir)
 
-        # Upload allele files directly (DAJIN2 expects file path for alleles)
-        allele_files = request.files.getlist("allele")
-        if not allele_files:
-            return jsonify({"error": "Please select allele files"}), 400
-
-        upload_files(allele_files, expected_type=["fasta"])
-        PATH_ALLELE = get_path_of_uploaded_files(UPLOAD_FOLDER, allele_files)
+        # Upload a single allele file directly (DAJIN2 expects one path in the batch CSV).
+        allele_file = allele_files[0]
+        allele_name = secure_filename(Path(allele_file.filename).name)
+        allele_path = UPLOAD_FOLDER / allele_name
+        allele_file.save(allele_path)
+        PATH_ALLELE = str(allele_path)
 
         # Handle BED file upload (optional)
         PATH_BED = None
         if "bed" in request.files and request.files.get("bed").filename:
             bed_file = request.files["bed"]
-            file_type = validate_file(bed_file)
-            if file_type != "bed":
-                return jsonify({"error": "BED file must have .bed extension"}), 400
-            bed_path = Path(UPLOAD_FOLDER, secure_filename(bed_file.filename))
+            bed_file = collect_valid_uploaded_files([bed_file], {"bed"}, "BED file")[0]
+            bed_name = secure_filename(Path(bed_file.filename).name)
+            bed_path = Path(UPLOAD_FOLDER, bed_name)
             bed_file.save(bed_path)
             PATH_BED = str(bed_path)
 
         genome = request.form.get("genome", "").strip()
-        threads = request.form.get("threads")
-        try:
-            threads = int(threads) if threads else 1
-            if threads < 1:
-                threads = 1
-        except ValueError:
-            threads = 1
+        threads = parse_threads(request.form.get("threads"))
 
         # Get no-filter option
         no_filter = request.form.get("no-filter") == "on"
 
         # Prepare batch data
         data = []
-        row = {"sample": PATH_SAMPLE, "name": name, "control": PATH_CONTROL, "allele": PATH_ALLELE[0]}
+        row = {"sample": PATH_SAMPLE, "name": name, "control": PATH_CONTROL, "allele": PATH_ALLELE}
         if genome:
             row["genome"] = genome
         if PATH_BED:
@@ -388,7 +464,7 @@ def submit():
         data.append(row)
 
         # Create batch file
-        batch_file_path = Path(TEMPDIR, "upload", "batch.csv")
+        batch_file_path = Path(GUI_TEMPDIR, "upload", "batch.csv")
         batch_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(batch_file_path, mode="w", newline="") as file:
@@ -396,18 +472,24 @@ def submit():
             writer.writeheader()
             writer.writerows(data)
 
-        # Prepare arguments
-        arguments = {"file": str(batch_file_path), "threads": threads, "debug": False, "no_filter": no_filter}
-
         # Create progress queue for this analysis
         progress_queue = queue.Queue()
         progress_queues[name] = progress_queue
+
+        # Prepare arguments
+        arguments = {
+            "file": str(batch_file_path),
+            "threads": threads,
+            "debug": False,
+            "no_filter": no_filter,
+            "progress_queue": progress_queue,
+        }
 
         # Start analysis in background thread
         def run_analysis():
             try:
                 # Set up log handler to capture DAJIN2 log messages
-                log_handler = ProgressLogHandler(progress_queue)
+                log_handler = ProgressLogHandler(progress_queue, echo_to_stdout=True)
 
                 # Add handler to root logger to capture ALL logs (filtered in handler)
                 root_logger = logging.getLogger()
@@ -434,7 +516,7 @@ def submit():
                     "timestamp": time.time(),
                 }
 
-                completion_message = f"🎊 Analysis completed! Your results are saved in {abs_result_path}"
+                completion_message = build_completion_message(abs_result_path)
                 progress_queue.put(
                     {"status": "completed", "message": completion_message, "result_path": abs_result_path}
                 )
@@ -448,7 +530,7 @@ def submit():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 # Enhanced error message for file/directory not found
@@ -481,7 +563,7 @@ def submit():
                 try:
                     root_logger.removeHandler(log_handler)
                     dajin_logger.removeHandler(log_handler)
-                except:
+                except (UnboundLocalError, AttributeError):
                     pass
 
                 error_msg = f"Analysis error occurred: {str(e)}"
@@ -531,7 +613,8 @@ def get_progress(analysis_id):
                     result = analysis_results[analysis_id]
                     if result["status"] == "completed":
                         abs_path = result.get("abs_result_path", result["result_path"])
-                        completion_message = f"🎊 Analysis completed! Your results are saved in {abs_path}"
+                        is_batch = analysis_id.startswith("batch_")
+                        completion_message = build_completion_message(abs_path, is_batch=is_batch)
                         yield f"data: {json.dumps({'status': 'completed', 'message': completion_message, 'result_path': abs_path})}\n\n"
                         break
                     elif result["status"] == "error":
@@ -638,12 +721,19 @@ def open_result_folder(analysis_id):
 
 
 def open_browser(PORT):
-    webbrowser.open_new(f"http://localhost:{PORT}/")
+    url = f"http://localhost:{PORT}/"
+
+    if is_wsl_environment():
+        if not open_url_in_windows_default_browser(url):
+            print(f"Could not open the host browser automatically. Access '{url}' manually.")
+        return
+
+    webbrowser.open_new(url)
 
 
 def execute():
     PORT = find_free_port()
     print(f"Assess 'http://localhost:{PORT}/' if a browser does not automatically open.")
     Timer(1, open_browser, [PORT]).start()
-    with redirect_stderr(open(os.devnull, "w")):
+    with open(os.devnull, "w") as devnull, redirect_stderr(devnull):
         serve(app, host="0.0.0.0", port=PORT)

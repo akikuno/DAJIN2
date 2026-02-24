@@ -169,12 +169,12 @@ def get_available_servers() -> dict[str, str]:
     error_messages = {
         "gggenome": """
         GGGenome servers are currently down.
-        To avoid accessing the site, please consider specifying the -b/--bed option. 
+        To avoid accessing the site, please consider specifying the -b/--bed option.
         Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'
         """,
         "goldenpath": """
         All UCSC GoldenPath servers are currently down.
-        To avoid accessing the site, please consider specifying the -b/--bed option. 
+        To avoid accessing the site, please consider specifying the -b/--bed option.
         Ref: 'https://github.com/akikuno/DAJIN2#using-bed-files-for-genomic-coordinates'
         """,
     }

@@ -20,6 +20,8 @@ DAJIN2 is a genotyping tool for genome-edited samples using nanopore-targeted se
 meaning “to capture everything in a single sweep.”  
 This reflects the tool’s design philosophy: comprehensive detection of both intended and unintended genome editing outcomes in one analysis.
 
+---
+
 # 🌟 Features
 
 + **Comprehensive Mutation Detection**  
@@ -38,6 +40,8 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 + **Simple Installation and Operation**  
   Requires no specialized computing environment and runs smoothly on a standard laptop.  
   Easily installable via Bioconda or PyPI, and usable via the command line.  
+
+---
 
 # 🛠 Installation
 
@@ -108,6 +112,7 @@ pip install DAJIN2
 > [!CAUTION]
 > If you encounter any issues during the installation, please refer to the [Troubleshooting Guide](https://github.com/akikuno/DAJIN2/blob/main/docs/TROUBLESHOOTING.md)
 
+---
 
 # 💻 Usage
 
@@ -196,6 +201,50 @@ Here, `>control` represents the sequence of the control allele, while `>knock-in
 > **Ensure that both ends of the FASTA sequence match those of the amplicon sequence.**   
 > If the FASTA sequence is longer or shorter than the amplicon, the difference may be recognized as an indel.  
 
+### Using BED Files for Genomic Coordinates
+
+> [!NOTE]
+> BED file is an optional.
+
+If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGenome) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
+
+> [!TIP]
+> Access to the UCSC Genome Browser or GGGenome servers may occasionally be unavailable. Therefore, we generally recommend using `-b/--bed` instead of `--genome`.
+
+When using the `-b/--bed` option with a BED file, please ensure:
+
+**Use BED6 format** (6 columns required):
+
+```
+chr1    1000000    1001000    mm39    248956422    +
+```
+
+**Column descriptions:**
+- Column 1: Chromosome name (e.g., chr1, chr2)
+- Column 2: Start position (0-indexed)
+- Column 3: End position (0-indexed)
+- Column 4: Name (**genome ID**)
+- Column 5: Score (**chromosome size for proper IGV visualization**)
+- Column 6: Strand (+ or -, **must match FASTA allele orientation**)
+
+> [!NOTE]  
+> For the score field (column 5), please enter the size of the chromosome specified in column 1.  
+> While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
+
+> [!NOTE]
+> Chromosome sizes can be found at:  
+> `https://hgdownload.soe.ucsc.edu/goldenPath/[genome]/bigZips/[genome].chrom.sizes`  
+> (e.g., https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes)
+
+> [!IMPORTANT]  
+> **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
+> - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  
+> - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
+
+> [!NOTE]
+> For detailed BED file usage, see [BED_COORDINATE_USAGE.md](docs/BED_COORDINATE_USAGE.md).
+
+
 ## Single Sample Analysis
 
 DAJIN2 supports single-sample analysis (one sample vs one control).
@@ -234,45 +283,7 @@ DAJIN2 \
     --threads 4
 ```
 
-### Using BED Files for Genomic Coordinates
 
-If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGenome) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
-
-> [!IMPORTANT]
-> Access to the UCSC Genome Browser or GGGenome servers may occasionally be unavailable. Therefore, we generally recommend using `-b/--bed` instead of `--genome`.
-
-When using the `-b/--bed` option with a BED file, please ensure:
-
-**Use BED6 format** (6 columns required):
-
-```
-chr1    1000000    1001000    mm39    248956422    +
-```
-
-**Column descriptions:**
-- Column 1: Chromosome name (e.g., chr1, chr2)
-- Column 2: Start position (0-indexed)
-- Column 3: End position (0-indexed)
-- Column 4: Name (**genome ID**)
-- Column 5: Score (**chromosome size for proper IGV visualization**)
-- Column 6: Strand (+ or -, **must match FASTA allele orientation**)
-
-> [!NOTE]  
-> For the score field (column 5), please enter the size of the chromosome specified in column 1.  
-> While the original BED format limits scores to 1000, DAJIN2 accepts **chromosome sizes without any issue**.
-
-> [!NOTE]
-> Chromosome sizes can be found at:  
-> `https://hgdownload.soe.ucsc.edu/goldenPath/[genome]/bigZips/[genome].chrom.sizes`  
-> (e.g., https://hgdownload.soe.ucsc.edu/goldenPath/mm39/bigZips/mm39.chrom.sizes)
-
-> [!IMPORTANT]  
-> **Strand orientation must match**. The strand field (column 6: `+` or `-`) in your BED file **must match the strand orientation of your FASTA allele sequences**.  
-> - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  
-> - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
-
-> [!NOTE]
-> For detailed BED file usage, see [BED_COORDINATE_USAGE.md](docs/BED_COORDINATE_USAGE.md).
 
 ### Rare Mutation Detection with `--no-filter`
 
@@ -347,7 +358,7 @@ DAJIN2 batch --file example_batch/batch.csv --threads 4
 
 ## GUI (Graphical User Interface) Mode
 
-DAJIN2 provides a web interface that can be launched with a single command:
+DAJIN2 can launch a web app with the following command:
 
 ```bash
 DAJIN2 gui
@@ -355,32 +366,29 @@ DAJIN2 gui
 
 When executed, your default web browser will open and display the following GUI at `http://localhost:{PORT}/`.
 
-<img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.jpg" width="75%">
+<img src="https://raw.githubusercontent.com/akikuno/DAJIN2/refs/heads/main/image/dajin2-gui.png" width="75%">
 
 > [!NOTE]
 > If the browser does not launch automatically, please open your browser manually and navigate to `http://localhost:{PORT}/`.
 
 ### Single Sample Analysis via GUI
 
-1. **Launch GUI**  
-   Run `DAJIN2 gui` to open the web interface.
-
-2. **Project Setup**  
+1. **Project Setup**  
    - **Project Name**: Enter any analysis name  
    - **Directory Upload**: Select directories containing sample or control FASTQ/FASTA/BAM files  
    - **Allele FASTA**: Upload FASTA file containing expected allele sequences  
-   - **BED File (optional)**: Upload BED6 format file to specify genomic coordinates
-
-3. **Parameter Configuration**  
+   - **BED File (optional)**: Upload BED6 format file to specify genomic coordinates  
    - **Reference Genome (optional)**: Specify UCSC genome ID (e.g., `hg38`, `mm39`)  
+
+2. **Parameter Configuration**  
    - **Threads**: Set the number of CPU threads to use  
    - **No Filter**: Enable to detect rare mutations below 0.5% frequency
 
-4. **Run Analysis**  
-   Click "Start Analysis" and the progress will be displayed in real-time.
+3. **Run Analysis**  
+   Click "Start Analysis" and progress will be displayed in real time.
 
-5. **View Results**  
-   After completion, the output folder path will be displayed for accessing result files.
+4. **View Results**  
+   After completion, the output folder path will be displayed and result files will be accessible.
 
 ### Batch Processing via GUI
 
@@ -390,15 +398,17 @@ When executed, your default web browser will open and display the following GUI 
 2. **Upload Batch File**  
    Use the "Batch Processing" tab to upload your configuration file.
 
-3. **Configure Global Settings**  
-   Set threads and filtering options for all samples at once.
+3. **Parameter Configuration**  
+   - **Threads**: Set the number of CPU threads to use  
+   - **No Filter**: Enable to detect rare mutations below 0.5% frequency
 
-4. **Monitor Progress**  
-   The analysis status for each sample is displayed with detailed log output.
+4. **Run Analysis**  
+   Click "Start Analysis" and progress will be displayed in real time.
 
 5. **View Results**  
-   Results are saved in the `DAJIN_Results/` folder with subdirectories for each sample.
+   After completion, the output folder path will be displayed and result files will be accessible.
 
+---
 
 # 📈 Reports
 
@@ -495,6 +505,8 @@ An example of a *Tyr* point mutation is shown below:
 
 <img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
+---
+
 # 📣 Feedback and Support
 
 We welcome your questions, bug reports, and feedback.  
@@ -509,12 +521,14 @@ Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/
 > [!NOTE]
 > For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
 
+---
 
 # 🤝 Code of Conduct
 
 Please note that this project is released with a [Contributor Code of Conduct](https://github.com/akikuno/DAJIN2/blob/main/docs/CODE_OF_CONDUCT.md).  
 By participating in this project you agree to abide by its terms.  
 
+---
 
 # 📄 References
 

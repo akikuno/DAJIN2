@@ -4,9 +4,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "DAJIN2"
-version = "0.8.0"
+version = "0.9.0"
 description = "Comprehensive genotyping tool for targeted long-read sequencing analysis"
-authors = ["Akihiro Kuno <akuno@md.tsukuba.ac.jp>"]
+authors = ["Akihiro Kuno <akuno@gwe.md.tsukuba.ac.jp>"]
 readme = "README.md"
 homepage = "https://github.com/akikuno/DAJIN2"
 license = "MIT"
@@ -20,10 +20,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 include = [
-    "src/DAJIN2/template_igvjs.html",
     "src/DAJIN2/templates/**",
     "src/DAJIN2/static/**",
     "src/DAJIN2/utils/**",
+    "src/DAJIN2/image/**",
 ]
 
 [tool.poetry.dependencies]
