@@ -122,7 +122,7 @@ DAJIN2では、ゲノム編集特異的な変異を検出するために、**ゲ
 
 #### [Dorado](https://github.com/nanoporetech/dorado)によるベースコール
 
-Doradoによるベースコール（[`dorado demux`](https://github.com/nanoporetech/dorado?tab=readme-ov-file#barcode-classification)）では、BAMファイルが出力されます：
+* Doradoによるベースコール（[`dorado basecaller`および`dorado demux`](https://software-docs.nanoporetech.com/dorado/latest/barcoding/barcoding/)）では、BAMファイルが出力されます：
 
 ```text
 bam_pass
@@ -136,10 +136,11 @@ bam_pass
 ```
 
 > [!IMPORTANT]
-> 各BAMファイルを別々のディレクトリに格納してください。ディレクトリ名は任意です。
+> 各BAMファイルを別々のディレクトリに格納してください。  
+> ディレクトリ名は任意です。  
 
 
-[`dorado correct`](https://github.com/nanoporetech/dorado#read-error-correction)によるシークエンスエラー補正後に出力されるFASTAファイルも同様に、別々のディレクトリに格納してください。
+* [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/)によるシークエンスエラー補正後に出力されるFASTAファイルも同様に、別々のディレクトリに格納してください。
 
 ```text
 dorado_correct
@@ -150,6 +151,10 @@ dorado_correct
 ```
 
 > [!NOTE]
+> `dorado correct`による補正では、ゲノム編集で生じうるマイナーな編集結果がマスクされる可能性があります。  
+> そのため、`dorado correct`が必須の場合を除き、`dorado basecaller`および`dorado demux`で出力されたBAMファイルの使用を推奨します。  
+
+> [!TIP]
 > Doradoによるベースコールでのマルチプレックスの使用方法については、[DORADO_HANDLING_JP.md](./DORADO_HANDLING_JP.md)をご覧ください。
 
 
@@ -170,7 +175,7 @@ fastq_pass
 ```
 
 >[!CAUTION]
-> DAJIN2はGuppyによる配列をサポートしていますが、Guppyは公式ではすでに開発が修了しています。  
+> DAJIN2はGuppyによる配列をサポートしていますが、Guppyはすでに開発が終了しています。  
 > そのため、今後のベースコールにはDoradoのご利用をお願いします。  
 
 ### 2. 想定アレル配列のFASTAファイル
@@ -219,7 +224,7 @@ ACGTACGT
 **必ずBED6形式**を使用してください：
 
 ```
-chr1    1000000    1001000    mm39    248956422    +
+chr1    1000000    1001000    mm39    195154279    +
 ```
 
 **各列の説明：**
@@ -244,8 +249,8 @@ chr1    1000000    1001000    mm39    248956422    +
 > - 参照配列が「ACCG」、FASTA配列が「ACCG」 → **フォワード鎖（5'→3'）**：`+`  
 > - 参照配列が「ACCG」、FASTA配列が「CGGT」 → **リバース鎖（3'→5'）**：`-`
 
->[!NOTE]
-> 詳細なBEDファイルの使用方法については、[BED_COORDINATE_USAGE.md](./BED_COORDINATE_USAGE.md)をご覧ください。
+>[!TIP]
+> 詳細なBEDファイルの使用方法については、[BED_COORDINATE_USAGE.md](./BED_COORDINATE_USAGE_JP.md)をご覧ください。
 
 ## 単一サンプル解析
 
@@ -257,8 +262,8 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
 Options:
-  -c, --control            Specify the path to the directory containing control FASTQ/FASTA/BAM files.
-  -s, --sample             Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+  -c, --control            Specify the path to the directory containing a control FASTQ/FASTA/BAM file.
+  -s, --sample             Specify the path to the directory containing a sample FASTQ/FASTA/BAM file.
   -a, --allele             Specify the path to the FASTA file.
   -n, --name (Optional)    Set the output directory name. Default: 'Results'.
   -b, --bed (Optional)     Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
@@ -319,11 +324,10 @@ DAJIN2 \
 `batch`サブコマンドを利用することで、複数サンプルの同時処理が可能です。  
 サンプル情報をまとめたCSVファイルまたはExcelファイルが必要です。  
 
-> [!NOTE]
-> サンプル情報のまとめ方は、[こちら](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000)をご参照ください。  
 
 **必須列：** `sample`, `control`, `allele`, `name`  
 **オプション列：** `genome`, `bed`（または`genome_coordinate`）、その他のカスタム列
+
 
 **BEDファイルを使用したCSVの例：**
 ```csv
@@ -332,9 +336,15 @@ sample,control,allele,name,bed
 /path/to/sample2,/path/to/control2,/path/to/allele2.fa,experiment2,/path/to/coords2.bed
 ```
 
+> [!NOTE]
+> 列順は任意です。  
+
+> [!NOTE]
+> サンプル情報のまとめ方は、[こちら](https://docs.google.com/presentation/d/e/2PACX-1vQMpqzwI9gtGnmMvqh9UFNxmpKDxcnUg74_TgLmd0FbBrrGQTa7CAQZvFlGDC2vxw/embed?start=false&loop=false&delayms=3000)をご参照ください。  
+
 > [!TIP]
-> **同じ実験に属するサンプルには、`name`列に同じ値を使用することを推奨します。**  
-> 同一の名前を使用することで、処理が並列化され、効率が向上します。  
+> **比較したいサンプル群には、`name`列に同じ名前を使用することを推奨します。**  
+> `name`列が同じの名前のサンプル群はひとつのグループとして扱われ、出力をひとつにまとめられます。  
 > こちらが一例です 👉 [batch.csv](https://github.com/akikuno/DAJIN2/blob/main/examples/example_batch/batch.csv)
 
 ```bash

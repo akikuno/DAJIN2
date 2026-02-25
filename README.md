@@ -125,7 +125,7 @@ In DAJIN2, a **control that has not undergone genome editing** is necessary to d
 
 #### Basecalling with [Dorado](https://software-docs.nanoporetech.com/dorado/latest/)
 
-For basecalling with Dorado ([`dorado demux`](https://software-docs.nanoporetech.com/dorado/latest/barcoding/barcoding/)), the following file structure will be output:
+- For basecalling with Dorado ([`dorado basecaller` and `dorado demux`](https://software-docs.nanoporetech.com/dorado/latest/barcoding/barcoding/)), the following file structure will be output:
 
 ```text
 bam_pass
@@ -139,10 +139,11 @@ bam_pass
 ```
 
 > [!IMPORTANT]
-> Store each BAM file in a separate directory. The directory names can be set arbitrarily.
+> Store each BAM file in a separate directory.  
+> The directory names can be set arbitrarily.  
 
 
-Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/) in separate directories.
+- Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/) in separate directories.
 
 ```text
 dorado_correct
@@ -153,6 +154,10 @@ dorado_correct
 ```
 
 > [!NOTE]
+> Correction with `dorado correct` may mask minor editing outcomes that can arise from genome editing.  
+> Therefore, unless `dorado correct` is required, we recommend using the BAM files output by `dorado basecaller` and `dorado demux`.  
+
+> [!TIP]
 > For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
 
 
@@ -216,7 +221,7 @@ When using the `-b/--bed` option with a BED file, please ensure:
 **Use BED6 format** (6 columns required):
 
 ```
-chr1    1000000    1001000    mm39    248956422    +
+chr1    1000000    1001000    mm39    195154279    +
 ```
 
 **Column descriptions:**
@@ -241,7 +246,7 @@ chr1    1000000    1001000    mm39    248956422    +
 > - If your FASTA allele sequence is on the **forward strand** (5' to 3'), use `+` in the BED file  
 > - If your FASTA allele sequence is on the **reverse strand** (3' to 5'), use `-` in the BED file
 
-> [!NOTE]
+> [!TIP]
 > For detailed BED file usage, see [BED_COORDINATE_USAGE.md](docs/BED_COORDINATE_USAGE.md).
 
 
