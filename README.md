@@ -259,8 +259,8 @@ DAJIN2 <-c|--control> <-s|--sample> <-a|--allele> <-n|--name> \
   [-g|--genome] [-b|--bed] [-t|--threads] [--no-filter] [-h|--help] [-v|--version]
 
 Options:
--c, --control            Specify the path to the directory containing control FASTQ/FASTA/BAM files.
--s, --sample             Specify the path to the directory containing sample FASTQ/FASTA/BAM files.
+-c, --control            Specify the path to the directory containing a control FASTQ/FASTA/BAM file.
+-s, --sample             Specify the path to the directory containing a sample FASTQ/FASTA/BAM file.
 -a, --allele             Specify the path to the FASTA file.
 -n, --name (Optional)    Set the output directory name. Default: 'Results'.
 -b, --bed (Optional)     Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
@@ -334,9 +334,9 @@ sample,control,allele,name,bed
 ```
 
 > [!TIP]
-> It is **recommended to use the same value in the `name` column for samples that belong to the same experiment.**  
-> Using identical names enables parallel processing, thereby improving efficiency.  
-> Here's an example 👉 [batch.csv](https://github.com/akikuno/DAJIN2/blob/main/examples/example_batch/batch.csv)
+> **We recommend using the same name in the `name` column for sample sets you want to compare.**  
+> Sample sets with the same value in the `name` column are treated as a single group, and their outputs can be consolidated into one.  
+> Here is an example 👉 [batch.csv](https://github.com/akikuno/DAJIN2/blob/main/examples/example_batch/batch.csv)
 
 
 ```bash
