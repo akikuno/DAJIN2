@@ -168,8 +168,7 @@ def execute_batch_mode(arguments: dict[str]):
     for name, groups in groupby(records, key=lambda x: x["name"]):
         groups = list(groups)
 
-        # Check for duplicate control and sample paths for the same name
-        # This is to prevent the issue of multiple controls or samples being assigned to the same name, which can cause confusion and errors in the analysis. (https://github.com/akikuno/DAJIN2/issues/146)
+        # Check for duplicate alleles for the same name to prevent confusion and errors. (https://github.com/akikuno/DAJIN2/issues/146)
         if len({g["allele"] for g in groups}) != 1:
             raise ValueError(
                 f"Duplicate allele found for the same name: {name}. Please use unique name for each allele."
