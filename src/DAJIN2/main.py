@@ -165,7 +165,16 @@ def execute_batch_mode(arguments: dict[str]):
     # Validate contents and fetch genome urls
     genome_with_server_urls = {}
     records.sort(key=lambda x: x["name"])
-    for _, groups in groupby(records, key=lambda x: x["name"]):
+    for name, groups in groupby(records, key=lambda x: x["name"]):
+        groups = list(groups)
+
+        # Check for duplicate control and sample paths for the same name
+        # This is to prevent the issue of multiple controls or samples being assigned to the same name, which can cause confusion and errors in the analysis. (https://github.com/akikuno/DAJIN2/issues/146)
+        if len({g["control"] for g in groups}) != len(groups):
+            raise ValueError(f"Duplicate control found for the same name: {name}. A unique control path is required for each name.")
+        if len({g["sample"] for g in groups}) != len(groups):
+            raise ValueError(f"Duplicate sample found for the same name: {name}. A unique sample path is required for each name.")
+
         for args in groups:
             # Validate contents in the batch file
             input_validator.validate_files(args["sample"], args["control"], args["allele"])

@@ -12,7 +12,30 @@
 
 <!-- ############################################################# # -->
 
-# v0.9.0 (2026-02-25)
+# v0.9.1 (2026-02-25)
+
+## 🐛 Bug Fixes
+
+- Report a clear error when rows share the same control and name in batch processing (FileNotFoundError)  
+  Issue [#146](https://github.com/akikuno/DAJIN2/issues/146) 
+
+
+<!-- ############################################################# # -->
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.9.0 (2026-02-25) </summary>
 
 
 ## 🌟 New Features
@@ -43,19 +66,7 @@
 - Fix DAJIN2 GUI to echo parent progress logs to stdout so final Finished message appears in CLI.
   Issue [#142](https://github.com/akikuno/DAJIN2/issues/142) 
 
-<!-- ############################################################# # -->
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
-
+</details>
 
 <details>
 <summary> v0.8.0 (2026-01-29) </summary>
