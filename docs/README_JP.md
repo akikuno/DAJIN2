@@ -140,7 +140,11 @@ bam_pass
 > ディレクトリ名は任意です。  
 
 
-* [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/)によるシークエンスエラー補正後に出力されるFASTAファイルも同様に、別々のディレクトリに格納してください。
+> [!TIP]
+> Doradoによるベースコールでのマルチプレックスの使用方法については、[DORADO_HANDLING_JP.md](./DORADO_HANDLING_JP.md)をご覧ください。
+
+
+* [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/)によるシークエンスエラー補正後に出力されるFASTAファイルも上記と同じく、別々のディレクトリに格納してください。
 
 ```text
 dorado_correct
@@ -153,9 +157,6 @@ dorado_correct
 > [!NOTE]
 > `dorado correct`による補正では、ゲノム編集で生じうるマイナーな編集結果がマスクされる可能性があります。  
 > そのため、`dorado correct`が必須の場合を除き、`dorado basecaller`および`dorado demux`で出力されたBAMファイルの使用を推奨します。  
-
-> [!TIP]
-> Doradoによるベースコールでのマルチプレックスの使用方法については、[DORADO_HANDLING_JP.md](./DORADO_HANDLING_JP.md)をご覧ください。
 
 
 #### [Guppy](https://community.nanoporetech.com/docs/prepare/library_prep_protocols/Guppy-protocol/v/gpb_2003_v1_revax_14dec2018/guppy-software-overview)によるベースコール

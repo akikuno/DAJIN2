@@ -142,6 +142,9 @@ bam_pass
 > Store each BAM file in a separate directory.  
 > The directory names can be set arbitrarily.  
 
+> [!TIP]
+> For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
+
 
 - Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/) in separate directories.
 
@@ -156,9 +159,6 @@ dorado_correct
 > [!NOTE]
 > Correction with `dorado correct` may mask minor editing outcomes that can arise from genome editing.  
 > Therefore, unless `dorado correct` is required, we recommend using the BAM files output by `dorado basecaller` and `dorado demux`.  
-
-> [!TIP]
-> For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
 
 
 #### Basecalling with [Guppy](https://nanoporetech.com/ja/document/Guppy-protocol)
