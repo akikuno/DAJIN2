@@ -19,6 +19,8 @@
 - Report a clear error when rows share the same control and name in batch processing (FileNotFoundError)  
   Issue [#146](https://github.com/akikuno/DAJIN2/issues/146) 
 
+-  Keep control FASTA header unprefixed in report export for IGV compatibility.
+  Issue [#147](https://github.com/akikuno/DAJIN2/issues/147) 
 
 <!-- ############################################################# # -->
 

@@ -59,8 +59,9 @@ def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
     for fasta in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("*.fasta"):
         header, sequence = parse_fasta(fasta)
         path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{header}.fasta")
+        output_header = header if header == "control" else f"{SAMPLE_NAME}_{header}"
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
-            f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
+            f.write(convert_to_fasta(output_header, sequence))
 
 
 def export_to_html(
