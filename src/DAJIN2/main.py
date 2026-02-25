@@ -170,13 +170,9 @@ def execute_batch_mode(arguments: dict[str]):
 
         # Check for duplicate control and sample paths for the same name
         # This is to prevent the issue of multiple controls or samples being assigned to the same name, which can cause confusion and errors in the analysis. (https://github.com/akikuno/DAJIN2/issues/146)
-        if len({g["control"] for g in groups}) != len(groups):
+        if len({g["allele"] for g in groups}) != 1:
             raise ValueError(
-                f"Duplicate control found for the same name: {name}. A unique control path is required for each name."
-            )
-        if len({g["sample"] for g in groups}) != len(groups):
-            raise ValueError(
-                f"Duplicate sample found for the same name: {name}. A unique sample path is required for each name."
+                f"Duplicate allele found for the same name: {name}. Please use unique name for each allele."
             )
 
         for args in groups:
@@ -263,9 +259,7 @@ def execute():
         help="Path to BED6 file containing genomic coordinates [default: '']",
     )
     parser.add_argument("-t", "--threads", type=int, default=1, help="Number of threads [default: 1]")
-    parser.add_argument(
-        "--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)"
-    )
+    parser.add_argument("--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)")
     parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
