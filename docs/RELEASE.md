@@ -16,9 +16,11 @@
 
 ## 🐛 Bug Fixes
 
-- Report a clear error when rows share the same control and name in batch processing (FileNotFoundError)  
+- Output a clear error message when rows share the different allele within the same name in batch processing.  
   Issue [#146](https://github.com/akikuno/DAJIN2/issues/146) 
 
+-  Keep control FASTA header unprefixed in report export for IGV compatibility.
+  Issue [#147](https://github.com/akikuno/DAJIN2/issues/147) 
 
 <!-- ############################################################# # -->
 
