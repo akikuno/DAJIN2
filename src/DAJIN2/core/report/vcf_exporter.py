@@ -6,6 +6,8 @@ from tempfile import NamedTemporaryFile
 import midsv
 
 from DAJIN2.core.preprocess.alignment import mapping
+from DAJIN2.utils.allele_handler import to_allele_key
+from DAJIN2.utils.report_name_handler import build_report_filename
 from DAJIN2.utils import fileio
 from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence, revcomp_midsvs
 
@@ -202,7 +204,7 @@ def _extract_allele_name(header: str) -> str:
 
 
 def _load_control_sequence(tempdir: Path, sample_name: str) -> str | None:
-    path_control = Path(tempdir, sample_name, "fasta", "control.fasta")
+    path_control = Path(tempdir, sample_name, "fasta", f"{to_allele_key('control')}.fasta")
     if not path_control.exists():
         return None
     for record in fileio.read_fasta(path_control):
@@ -305,5 +307,6 @@ def export_to_vcf(
         if genome_coordinates.get("strand") == "-":
             midsv_tags = revcomp_midsvs(midsv_tags)
         records = _midsv_to_vcf_records(midsv_tags, chrom, start_offset, header, LARGE_SV_THRESHOLD)
-        path_output = Path(tempdir, "report", "VCF", sample_name, f"{sample_name}_{header}.vcf")
+        file_name = build_report_filename(key, ".vcf", sample_name=sample_name)
+        path_output = Path(tempdir, "report", "VCF", sample_name, file_name)
         write_vcf(path_output, records)

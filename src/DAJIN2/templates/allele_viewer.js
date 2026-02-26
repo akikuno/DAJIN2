@@ -120,11 +120,30 @@
             ? igvHelpers.buildAlignmentTrack(resolvePath(bamPath), resolvePath(baiPath), title)
             : null;
         const variantTrack = hasVcf ? igvHelpers.buildVcfTrack(resolvePath(vcfPath), title) : null;
+        console.log("[DAJIN2][IGV][viewer] Resolved paths", {
+            htmlPath,
+            bamPath,
+            baiPath,
+            vcfPath,
+            sample,
+            title,
+            hasBam,
+            hasVcf,
+            alignmentTrackUrl: alignmentTrack?.url || "",
+            alignmentTrackIndexUrl: alignmentTrack?.indexURL || "",
+            variantTrackUrl: variantTrack?.url || "",
+            options,
+        });
 
         igv.createBrowser(igvView, options)
             .then((browser) => {
                 if (browser && typeof browser.loadTrack === "function") {
-                    return igvHelpers.loadTracksVcfThenAlignment(browser, variantTrack, alignmentTrack).then(() => browser);
+                    return igvHelpers
+                        .loadTracksVcfThenAlignment(browser, variantTrack, alignmentTrack)
+                        .then((result) => {
+                            console.log("[DAJIN2][IGV][viewer] Track loading result", result || {});
+                            return browser;
+                        });
                 }
                 return browser;
             })
@@ -134,7 +153,15 @@
                 }
             })
             .catch((error) => {
-                console.error("Failed to load IGV", error);
+                console.log("[DAJIN2][IGV][viewer] Failed to load IGV", {
+                    error,
+                    htmlPath,
+                    bamPath,
+                    baiPath,
+                    vcfPath,
+                    sample,
+                    title,
+                });
                 if (status) {
                     status.textContent = "Failed to load IGV track.";
                 }

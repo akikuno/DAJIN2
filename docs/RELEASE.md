@@ -22,6 +22,9 @@
 -  Keep control FASTA header unprefixed in report export for IGV compatibility.
   Issue [#147](https://github.com/akikuno/DAJIN2/issues/147) 
 
+- Use MD5-based allele keys for internal cache paths and persist allele-name mapping in temp cache.
+  Issue [#148](https://github.com/akikuno/DAJIN2/issues/148) 
+
 <!-- ############################################################# # -->
 
 

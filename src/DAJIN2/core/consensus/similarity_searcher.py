@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
 
 """
@@ -90,8 +91,9 @@ def filter_control(
     coverage_match = np.array([sum(1 for cs in midsv if cs.startswith("=")) for midsv in zip(*midsv_tags)])
     mut_onehot_sample = onehot_by_mutations(fileio.read_jsonl(path_consensus_sample))
 
+    allele_key = to_allele_key(allele)
     path_mut_onehot_control = Path(
-        ARGS.tempdir, ARGS.control_name, "consensus", allele, f"{ARGS.sample_name}_onehot.pickle"
+        ARGS.tempdir, ARGS.control_name, "consensus", allele_key, f"{ARGS.sample_name}_onehot.pickle"
     )
     if path_mut_onehot_control.exists():
         mut_onehot_control = fileio.load_pickle(path_mut_onehot_control)

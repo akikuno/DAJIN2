@@ -8,6 +8,7 @@ from pathlib import Path
 import midsv
 
 from DAJIN2.utils import fileio, midsv_handler, sam_handler
+from DAJIN2.utils.allele_handler import to_allele_key
 
 
 def extract_preset_and_cigar_by_qname(path_sam_files: list[Path]) -> dict[dict[str, str]]:
@@ -208,11 +209,12 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
+        allele_key = to_allele_key(allele)
         # Skip if sam file does not exist
-        if not Path(ARGS.tempdir, name, "sam", allele).exists():
+        if not Path(ARGS.tempdir, name, "sam", allele_key).exists():
             continue
 
-        path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele)
+        path_midsv_directory = Path(ARGS.tempdir, name, "midsv", allele_key)
         path_midsv_directory.mkdir(parents=True, exist_ok=True)
         path_output_jsonl = Path(path_midsv_directory, f"{name}_midsv.jsonl")
         # Skip if midsv jsonl already exists and is not empty
@@ -222,13 +224,13 @@ def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
         if is_control and is_sv:
             # Set the destination for midsv as `barcode01/midsv/insertion1/barcode02_midsv.jsonl`
             # when control is barcode01, sample is barcode02, and the allele is insertion1.
-            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob(f"{ARGS.sample_name}_*.sam"))
-            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
+            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele_key).glob(f"{ARGS.sample_name}_*.sam"))
+            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele_key, f"{ARGS.sample_name}_midsv.jsonl")
         else:
             # Set the destination for midsv as `barcode02/midsv/insertion1/barcode02_midsv.jsonl`
             # when the sample is barcode02 and the allele is insertion1.
-            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele).glob("*.sam"))
-            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele, f"{name}_midsv.jsonl")
+            path_sam_files = list(Path(ARGS.tempdir, name, "sam", allele_key).glob("*.sam"))
+            path_midsv_output = Path(ARGS.tempdir, name, "midsv", allele_key, f"{name}_midsv.jsonl")
 
         preset_cigar_by_qname = extract_preset_and_cigar_by_qname(path_sam_files)
         best_preset = extract_best_preset(preset_cigar_by_qname)
