@@ -10,6 +10,11 @@ __ALLELE_VIEWER_CSS__
 </head>
 <body>
     <div class="viewer" id="viewer">
+        <div class="viewer__toolbar" id="viewer-toolbar" hidden>
+            <label class="viewer__selector-label" for="viewer-allele-select">Allele</label>
+            <select class="viewer__selector" id="viewer-allele-select"></select>
+            <div class="viewer__selector-note" id="viewer-selector-note"></div>
+        </div>
         <iframe class="viewer__frame" id="viewer-frame" title="Allele report"></iframe>
         <div class="viewer__divider" id="viewer-divider" role="separator" aria-orientation="horizontal"></div>
         <div class="viewer__igv" id="viewer-igv">

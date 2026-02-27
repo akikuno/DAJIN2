@@ -152,7 +152,9 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None,
     Path(report_directory, "allele_viewer.html").write_text(viewer_html, encoding="utf-8")
 
 
-def build_html_lookup(report_directory: Path) -> tuple[dict[tuple[str, str, str, str], str], dict[tuple[str, str, str], str]]:
+def build_html_lookup(
+    report_directory: Path,
+) -> tuple[dict[tuple[str, str, str, str], str], dict[tuple[str, str, str], str]]:
     html_root = Path(report_directory, "HTML")
     if not html_root.exists():
         return {}, {}
