@@ -13,8 +13,8 @@ from DAJIN2.core.preprocess.structural_variants.sv_handler import (
     save_fasta,
     save_midsv,
 )
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence
 
 ###############################################################################
@@ -114,7 +114,9 @@ def extract_features(index_and_sv_size: list[dict[int, int]], all_sv_index: set[
 # Data Loading
 def load_data(tempdir, sample_name, control_name):
     control_key = to_allele_key("control")
-    mutation_loci = fileio.load_pickle(Path(tempdir, sample_name, "mutation_loci", control_key, "mutation_loci.pickle"))
+    mutation_loci = fileio.load_pickle(
+        Path(tempdir, sample_name, "mutation_loci", control_key, "mutation_loci.pickle")
+    )
     path_midsv_sample = Path(tempdir, sample_name, "midsv", control_key, f"{sample_name}_midsv.jsonl")
     path_midsv_control = Path(tempdir, control_name, "midsv", control_key, f"{control_name}_midsv.jsonl")
     coverage_sample = fileio.count_newlines(path_midsv_sample)

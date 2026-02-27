@@ -8,8 +8,8 @@ from DAJIN2.core.clustering.clustering import return_labels
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 from DAJIN2.core.clustering.score_handler import annotate_score, make_score
 from DAJIN2.core.clustering.strand_bias_handler import count_strand_distribution
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 
 
 def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:

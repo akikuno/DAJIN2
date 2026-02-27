@@ -5,8 +5,8 @@ from pathlib import Path
 from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 
 
 def extract_unique_sv(

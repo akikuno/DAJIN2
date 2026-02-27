@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 from sklearn.neighbors import LocalOutlierFactor
 
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 
 """
 Sequence errors (such as large deletions) present in the control significantly impair the accuracy of mutation_loci. Therefore, only reads similar to alleles after clustering are desired for analysis.

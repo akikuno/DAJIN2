@@ -4,9 +4,9 @@ import textwrap
 from pathlib import Path
 
 from DAJIN2.core.report.html_builder import to_html
+from DAJIN2.utils import fileio
 from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.report_name_handler import build_report_filename
-from DAJIN2.utils import fileio
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:

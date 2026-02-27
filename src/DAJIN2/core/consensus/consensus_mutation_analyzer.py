@@ -27,8 +27,8 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     merge_index_of_consecutive_indel,
     transpose_mutation_loci,
 )
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import config, fileio, midsv_handler
+from DAJIN2.utils.allele_handler import to_allele_key
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:
