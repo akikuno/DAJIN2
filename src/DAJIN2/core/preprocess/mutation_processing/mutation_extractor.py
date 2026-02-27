@@ -15,6 +15,7 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     merge_index_of_consecutive_indel,
     transpose_mutation_loci,
 )
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import config, fileio
 
 """
@@ -90,13 +91,20 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
     """Cache indel counts for samples or controls."""
     dirname = ARGS.control_name if is_control else ARGS.sample_name
     for allele, sequence in ARGS.fasta_alleles.items():
-        path_mutation_loci = Path(ARGS.tempdir, dirname, "mutation_loci", allele)
+        allele_key = to_allele_key(allele)
+        path_mutation_loci = Path(ARGS.tempdir, dirname, "mutation_loci", allele_key)
         path_mutation_loci.mkdir(parents=True, exist_ok=True)
 
         if not is_control:
             prefix = ARGS.sample_name
         else:
-            path_insertion = Path(ARGS.tempdir, ARGS.control_name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
+            path_insertion = Path(
+                ARGS.tempdir,
+                ARGS.control_name,
+                "midsv",
+                allele_key,
+                f"{ARGS.sample_name}_midsv.jsonl",
+            )
             if path_insertion.exists():
                 prefix = ARGS.sample_name
             else:
@@ -105,7 +113,7 @@ def cache_indels_count(ARGS, is_control: bool = False) -> None:
         if Path(path_mutation_loci, f"{prefix}_count.pickle").exists():
             continue
 
-        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele, f"{prefix}_midsv.jsonl")
+        path_midsv = Path(ARGS.tempdir, dirname, "midsv", allele_key, f"{prefix}_midsv.jsonl")
         # skip if midsv file does not exist or is empty
         if not path_midsv.exists() or path_midsv.stat().st_size == 0:
             continue
@@ -123,13 +131,14 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
         return None
 
     for allele, sequence in ARGS.fasta_alleles.items():
-        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele, f"{ARGS.sample_name}_midsv.jsonl")
+        allele_key = to_allele_key(allele)
+        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele_key, f"{ARGS.sample_name}_midsv.jsonl")
         # skip if midsv file does not exist or is empty
         if not path_midsv_sample.exists() or path_midsv_sample.stat().st_size == 0:
             continue
 
-        path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele)
-        path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci", allele)
+        path_mutation_sample = Path(ARGS.tempdir, ARGS.sample_name, "mutation_loci", allele_key)
+        path_mutation_control = Path(ARGS.tempdir, ARGS.control_name, "mutation_loci", allele_key)
 
         path_output_mutation_loci = Path(path_mutation_sample, "mutation_loci.pickle")
         if path_output_mutation_loci.exists():
@@ -141,7 +150,7 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
 
         path_indels_normalized_control = Path(path_mutation_control, file_name)
         path_indels_normalized_sample = Path(path_mutation_sample, f"{ARGS.sample_name}_normalized.pickle")
-        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele, "knockin.pickle")
+        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele_key, "knockin.pickle")
 
         mutation_loci: list[set[str]] = extract_mutation_loci(
             path_midsv_sample, sequence, path_indels_normalized_sample, path_indels_normalized_control, path_knockin

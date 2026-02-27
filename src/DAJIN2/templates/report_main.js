@@ -107,11 +107,11 @@
             const sample = parts[baseIndex + 1];
             const filenameRaw = parts[parts.length - 1];
             const filename = filenameRaw.split("?")[0].split("#")[0].trim();
-            const stem = filename.replace(/\\.html?$/i, "");
+            const stem = filename.replace(/\.html?$/i, "");
             const prefix = `${sample}_`;
             const headerFromFile = stem.startsWith(prefix) ? stem.slice(prefix.length) : stem;
             const headerFromCustom = buildHeaderFromCustom(custom);
-            const header = headerFromCustom || headerFromFile;
+            const header = headerFromFile || headerFromCustom;
             return {
                 sample,
                 bam: [".igvjs", sample, `${header}.bam`].join("/"),
@@ -148,16 +148,16 @@
             return { ...baseOptions, tracks: [] };
         };
 
-        const buildAlignmentTrack = (bamUrl, baiUrl, trackName) => {
+        const buildAlignmentTrack = (bamUrl, baiUrl) => {
             if (igvHelpers && typeof igvHelpers.buildAlignmentTrack === "function") {
-                return igvHelpers.buildAlignmentTrack(bamUrl, baiUrl, trackName);
+                return igvHelpers.buildAlignmentTrack(bamUrl, baiUrl);
             }
             return null;
         };
 
-        const buildVcfTrack = (vcfUrl, trackName) => {
+        const buildVcfTrack = (vcfUrl) => {
             if (igvHelpers && typeof igvHelpers.buildVcfTrack === "function") {
-                return igvHelpers.buildVcfTrack(vcfUrl, trackName);
+                return igvHelpers.buildVcfTrack(vcfUrl);
             }
             return null;
         };
@@ -212,7 +212,7 @@
             const options = buildIgvBaseOptions(igvPaths.sample);
             const currentRequestId = ++igvRequestId;
             try {
-                const alignmentTrack = hasBam ? buildAlignmentTrack(igvPaths.bam, igvPaths.bai, title) : null;
+                const alignmentTrack = hasBam ? buildAlignmentTrack(igvPaths.bam, igvPaths.bai) : null;
                 if (alignmentTrack) {
                     const encodedTrackUrl = addCacheBuster(resolvePath(alignmentTrack.url), currentRequestId);
                     const encodedIndexUrl = addCacheBuster(resolvePath(alignmentTrack.indexURL), currentRequestId);
@@ -220,10 +220,19 @@
                     alignmentTrack.indexURL = encodedIndexUrl;
                     alignmentTrack.indexurl = encodedIndexUrl;
                 }
-                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf, title) : null;
+                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf) : null;
                 if (variantTrack) {
                     variantTrack.url = addCacheBuster(resolvePath(variantTrack.url), currentRequestId);
                 }
+                console.log("[DAJIN2][IGV][modal] Resolved paths", {
+                    igvPaths,
+                    hasBam,
+                    hasVcf,
+                    alignmentTrackUrl: alignmentTrack?.url || "",
+                    alignmentTrackIndexUrl: alignmentTrack?.indexURL || "",
+                    variantTrackUrl: variantTrack?.url || "",
+                    options,
+                });
                 const nextSignature = [igvPaths.bam, igvPaths.bai, igvPaths.vcf, title || ""].join("|");
                 const previousSignature = igvView.dataset.igvSignature || "";
                 igvView.dataset.igvSignature = nextSignature;
@@ -243,7 +252,8 @@
                 }
                 if (browser && typeof browser.loadTrack === "function") {
                     if (igvHelpers && typeof igvHelpers.loadTracksVcfThenAlignment === "function") {
-                        await igvHelpers.loadTracksVcfThenAlignment(browser, variantTrack, alignmentTrack);
+                        const loadResult = await igvHelpers.loadTracksVcfThenAlignment(browser, variantTrack, alignmentTrack);
+                        console.log("[DAJIN2][IGV][modal] Track loading result", loadResult || {});
                     }
                 }
                 igvBrowser = browser;
@@ -251,6 +261,14 @@
                 window.__igvLastOptions = options;
                 igvStatus.textContent = "";
             } catch (error) {
+                console.log("[DAJIN2][IGV][modal] Failed to load IGV track", {
+                    error,
+                    path,
+                    title,
+                    custom,
+                    igvPaths,
+                    options,
+                });
                 igvStatus.textContent = "Failed to load IGV track.";
             }
         };

@@ -8,6 +8,8 @@ from pathlib import Path
 import pysam
 
 from DAJIN2.core.preprocess.alignment.mapping import to_sam
+from DAJIN2.utils.allele_handler import to_allele_key
+from DAJIN2.utils.report_name_handler import build_report_filename
 from DAJIN2.utils import fileio, sam_handler
 
 
@@ -133,15 +135,16 @@ def update_genome_coordinates(sam: list, genome_coordinates: dict | None) -> lis
 
 
 def resolve_best_sam_path(tempdir: str | Path, name: str, allele: str = "control") -> Path:
-    path_best_sam = Path(tempdir, name, "midsv", allele, f"{name}_best.sam")
+    allele_key = to_allele_key(allele)
+    path_best_sam = Path(tempdir, name, "midsv", allele_key, f"{name}_best.sam")
     if path_best_sam.exists():
         return path_best_sam
-    return Path(tempdir, name, "sam", allele, "map-ont.sam")
+    return Path(tempdir, name, "sam", allele_key, "map-ont.sam")
 
 
 def export_sequence_error_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS) -> None:
     path_fastq = Path(TEMPDIR, NAME, "fastq", f"{NAME}_sequence_error.fastq.gz")
-    path_fasta = Path(TEMPDIR, NAME, "fasta", "control.fasta")
+    path_fasta = Path(TEMPDIR, NAME, "fasta", f"{to_allele_key('control')}.fasta")
     preset = "map-ont"
 
     sam_records = [record.split("\t") for record in to_sam(path_fasta, path_fastq, preset=preset, threads=THREADS)]
@@ -178,11 +181,13 @@ def export_to_bam(TEMPDIR, NAME, genome_coordinates, THREADS, RESULT_SAMPLE=None
         # Output SAM and BAM
         for name, sam_content in sam_groups.items():
             # BAM
-            path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, f"{NAME}_{name}.bam")
+            file_name = build_report_filename(name, ".bam", sample_name=NAME)
+            path_bam_output = Path(TEMPDIR, "report", "BAM", NAME, file_name)
             write_sam_to_bam(sam_headers + sam_content, path_bam_output, THREADS)
             # igvjs
             sam_subset = sample_sam_by_qname(sam_content, max_reads_igvjs, rng)
-            path_bam_output = Path(TEMPDIR, "report", ".igvjs", NAME, f"{name}.bam")
+            file_name = build_report_filename(name, ".bam")
+            path_bam_output = Path(TEMPDIR, "report", ".igvjs", NAME, file_name)
             write_sam_to_bam(sam_headers + sam_subset, path_bam_output, THREADS)
 
     # Export sequence error to BAM

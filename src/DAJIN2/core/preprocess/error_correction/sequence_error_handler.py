@@ -10,6 +10,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio, midsv_handler
 from DAJIN2.utils.fastx_handler import read_fastq
 
@@ -36,8 +37,9 @@ def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:
 
 def detect_sequence_error_reads_in_control(ARGS) -> None:
     # Convert CSV strings to MIDSV tags
+    control_key = to_allele_key("control")
     midsv_control = fileio.read_jsonl(
-        Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}_midsv.jsonl")
+        Path(ARGS.tempdir, ARGS.control_name, "midsv", control_key, f"{ARGS.control_name}_midsv.jsonl")
     )
     nm_tags, qnames = zip(*[(convert_nm_tag(m["MIDSV"].split(",")), m["QNAME"]) for m in midsv_control])
 
@@ -76,10 +78,11 @@ def load_midsv_to_nm_tags(file_path: Path, filter_condition: Callable) -> list[s
 
 
 def detect_sequence_error_reads_in_sample(ARGS) -> None:
+    control_key = to_allele_key("control")
     path_qnames_without_error = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_without_error.txt")
     qnames_without_error = set(path_qnames_without_error.read_text().splitlines())
 
-    path_midsv_control = Path(ARGS.tempdir, ARGS.control_name, "midsv", "control", f"{ARGS.control_name}_midsv.jsonl")
+    path_midsv_control = Path(ARGS.tempdir, ARGS.control_name, "midsv", control_key, f"{ARGS.control_name}_midsv.jsonl")
     nm_tags_without_error = load_midsv_to_nm_tags(path_midsv_control, lambda m: m["QNAME"] in qnames_without_error)
     nm_tags_with_error: list[str] = load_midsv_to_nm_tags(
         path_midsv_control,
@@ -93,7 +96,7 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     y = np.array([0] * len(n_features_without_error) + [1] * len(n_features_with_error))
     clf = LogisticRegression(random_state=0).fit(X, y)
 
-    path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", "control", f"{ARGS.sample_name}_midsv.jsonl")
+    path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", control_key, f"{ARGS.sample_name}_midsv.jsonl")
     midsv_sample = fileio.read_jsonl(path_midsv_sample)
     nm_tags_sample = [convert_nm_tag(m["MIDSV"].split(",")) for m in midsv_sample]
 

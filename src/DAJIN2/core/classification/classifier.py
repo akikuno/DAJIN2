@@ -4,6 +4,7 @@ from itertools import groupby
 from pathlib import Path
 
 from DAJIN2.core.classification.allele_merger import merge_minor_alleles
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
 
 
@@ -53,7 +54,7 @@ def extract_alleles_with_max_score(score_of_each_alleles: list[dict]) -> list[di
 def classify_alleles(TEMPDIR: Path, FASTA_ALLELES: dict, SAMPLE_NAME: str, no_filter: bool = False) -> list[dict]:
     score_of_each_alleles = []
     for allele in FASTA_ALLELES:
-        path_midsv = Path(TEMPDIR, SAMPLE_NAME, "midsv", allele, f"{SAMPLE_NAME}_midsv.jsonl")
+        path_midsv = Path(TEMPDIR, SAMPLE_NAME, "midsv", to_allele_key(allele), f"{SAMPLE_NAME}_midsv.jsonl")
         score_of_each_alleles.extend(score_allele(path_midsv, allele))
 
     if no_filter:

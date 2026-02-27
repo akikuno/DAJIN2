@@ -30,7 +30,13 @@ def format_result_info(path_result: Path) -> list[dict[str, str]]:
         # Filter keys
         reads = {k: reads[k] for k in key_filter}
         # Add Label, Allele, Type from NAME
-        label, allele, type_, *_ = reads["NAME"].split("_")
+        name_parts = str(reads["NAME"]).split("_")
+        if len(name_parts) >= 4:
+            label = name_parts[0]
+            type_ = name_parts[-2]
+            allele = "_".join(name_parts[1:-2])
+        else:
+            label, allele, type_, *_ = name_parts + ["", "", ""]
         reads.update({"Label": label.capitalize(), "Allele": allele, "Type": type_})
         del reads["NAME"]
         # Add Sample
@@ -146,12 +152,13 @@ def write_allele_viewer(report_directory: Path, genome_coordinates: dict | None,
     Path(report_directory, "allele_viewer.html").write_text(viewer_html, encoding="utf-8")
 
 
-def build_html_lookup(report_directory: Path) -> dict[tuple[str, str, str, str], str]:
+def build_html_lookup(report_directory: Path) -> tuple[dict[tuple[str, str, str, str], str], dict[tuple[str, str, str], str]]:
     html_root = Path(report_directory, "HTML")
     if not html_root.exists():
-        return {}
+        return {}, {}
 
-    lookup: dict[tuple[str, str, str, str], str] = {}
+    lookup_exact: dict[tuple[str, str, str, str], str] = {}
+    lookup_by_label_percent: dict[tuple[str, str, str], str] = {}
     for sample_dir in sorted(html_root.iterdir()):
         if not sample_dir.is_dir():
             continue
@@ -163,19 +170,31 @@ def build_html_lookup(report_directory: Path) -> dict[tuple[str, str, str, str],
                 continue
             header = stem[len(sample_prefix) :]
             parts = header.split("_")
-            if len(parts) < 3:
+            if len(parts) < 2:
                 continue
             label = parts[0]
-            allele = parts[1]
-            type_ = parts[2]
-            key = (sample_name.lower(), label.lower(), allele.lower(), type_.lower())
-            lookup.setdefault(key, html_file.relative_to(report_directory).as_posix())
+            percent = parts[-1] if parts[-1].endswith("%") else ""
+            if len(parts) >= 4:
+                type_ = parts[-2]
+                allele = "_".join(parts[1:-2])
+                key = (sample_name.lower(), label.lower(), allele.lower(), type_.lower())
+                lookup_exact.setdefault(key, html_file.relative_to(report_directory).as_posix())
+            if percent:
+                key_fallback = (sample_name.lower(), label.lower(), percent.lower())
+                lookup_by_label_percent.setdefault(key_fallback, html_file.relative_to(report_directory).as_posix())
 
-    return lookup
+    return lookup_exact, lookup_by_label_percent
+
+
+def normalize_percent_label(value: str | float | int) -> str:
+    text = str(value).strip()
+    if not text:
+        return ""
+    return text if text.endswith("%") else f"{text}%"
 
 
 def attach_html_paths(results_summary: list[dict[str, str]], report_directory: Path) -> list[dict[str, str]]:
-    html_lookup = build_html_lookup(report_directory)
+    html_lookup_exact, html_lookup_by_label_percent = build_html_lookup(report_directory)
     for row in results_summary:
         key = (
             str(row.get("Sample", "")).lower(),
@@ -183,7 +202,15 @@ def attach_html_paths(results_summary: list[dict[str, str]], report_directory: P
             str(row.get("Allele", "")).lower(),
             str(row.get("Type", "")).lower(),
         )
-        row["HTML path"] = html_lookup.get(key, "")
+        html_path = html_lookup_exact.get(key, "")
+        if not html_path:
+            key_fallback = (
+                str(row.get("Sample", "")).lower(),
+                str(row.get("Label", "")).lower(),
+                normalize_percent_label(row.get("Percent of reads", "")).lower(),
+            )
+            html_path = html_lookup_by_label_percent.get(key_fallback, "")
+        row["HTML path"] = html_path
     return results_summary
 
 

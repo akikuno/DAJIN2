@@ -8,35 +8,38 @@ from DAJIN2.core.clustering.clustering import return_labels
 from DAJIN2.core.clustering.label_updator import relabel_with_consective_order
 from DAJIN2.core.clustering.score_handler import annotate_score, make_score
 from DAJIN2.core.clustering.strand_bias_handler import count_strand_distribution
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
 
 
 def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[dict[str]]:
     labels_result = []
     max_label = 1
+    control_key = to_allele_key("control")
 
     strand_sample = count_strand_distribution(
-        Path(TEMPDIR, SAMPLE_NAME, "midsv", "control", f"{SAMPLE_NAME}_midsv.jsonl")
+        Path(TEMPDIR, SAMPLE_NAME, "midsv", control_key, f"{SAMPLE_NAME}_midsv.jsonl")
     )
     classif_sample.sort(key=lambda x: x["ALLELE"])
     min_cluster_size = max(5, int(len(classif_sample) * 0.5 // 100))  # 0.5% of the samples
 
     for allele, group in groupby(classif_sample, key=lambda x: x["ALLELE"]):
+        allele_key = to_allele_key(allele)
         # Cache data to temporary files
 
         # For insertion/inversion allele # TODO: insertion/inversion allele names may have changed
-        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{SAMPLE_NAME}_midsv.jsonl")
+        path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele_key, f"{SAMPLE_NAME}_midsv.jsonl")
         if not path_control.exists():
-            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele, f"{CONTROL_NAME}_midsv.jsonl")
+            path_control = Path(TEMPDIR, CONTROL_NAME, "midsv", allele_key, f"{CONTROL_NAME}_midsv.jsonl")
 
         # Write the group to a temporary JSONL file
         unique_id = str(uuid.uuid4())
-        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_{unique_id}.jsonl")
+        path_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele_key}_{unique_id}.jsonl")
         fileio.write_jsonl(data=group, file_path=path_sample)
 
         # Load mutation_loci and knockin_loci
-        path_mutation_loci = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", allele, "mutation_loci.pickle")
-        path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele, "knockin.pickle")
+        path_mutation_loci = Path(TEMPDIR, SAMPLE_NAME, "mutation_loci", allele_key, "mutation_loci.pickle")
+        path_knockin_loci = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele_key, "knockin.pickle")
 
         mutation_loci: list[set[str]] = fileio.load_pickle(path_mutation_loci)
         knockin_loci: set[int] = fileio.load_pickle(path_knockin_loci) if path_knockin_loci.exists() else set()
@@ -55,8 +58,18 @@ def extract_labels(classif_sample, TEMPDIR, SAMPLE_NAME, CONTROL_NAME) -> list[d
         scores_sample = annotate_score(path_sample, mutation_score, mutation_loci)
         scores_control = annotate_score(path_control, mutation_score, mutation_loci, is_control=True)
 
-        path_score_sample = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_score_sample_{unique_id}.jsonl")
-        path_score_control = Path(TEMPDIR, SAMPLE_NAME, "clustering", f"tmp_{allele}_score_control_{unique_id}.jsonl")
+        path_score_sample = Path(
+            TEMPDIR,
+            SAMPLE_NAME,
+            "clustering",
+            f"tmp_{allele_key}_score_sample_{unique_id}.jsonl",
+        )
+        path_score_control = Path(
+            TEMPDIR,
+            SAMPLE_NAME,
+            "clustering",
+            f"tmp_{allele_key}_score_control_{unique_id}.jsonl",
+        )
         fileio.write_jsonl(data=scores_sample, file_path=path_score_sample)
         fileio.write_jsonl(data=scores_control, file_path=path_score_control)
 

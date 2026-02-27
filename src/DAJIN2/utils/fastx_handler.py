@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pysam
 
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.fileio import detect_fastx_format, is_gzip_file, read_fasta, read_fastq, sanitize_name, write_fastq
 
 #################################################
@@ -47,8 +48,9 @@ def export_fasta_files(ARGS, is_control: bool = False) -> None:
 
     for identifier, sequence in ARGS.fasta_alleles.items():
         identifier = sanitize_name(identifier)
+        allele_key = to_allele_key(identifier)
         contents = "\n".join([">" + identifier, sequence]) + "\n"
-        path_output_fasta = Path(tempdir, sample_name, "fasta", f"{identifier}.fasta")
+        path_output_fasta = Path(tempdir, sample_name, "fasta", f"{allele_key}.fasta")
         path_output_fasta.write_text(contents)
 
 
