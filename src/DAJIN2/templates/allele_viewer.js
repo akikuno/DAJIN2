@@ -117,9 +117,9 @@
               };
         const options = { ...baseOptions, tracks: [] };
         const alignmentTrack = hasBam
-            ? igvHelpers.buildAlignmentTrack(resolvePath(bamPath), resolvePath(baiPath), title)
+            ? igvHelpers.buildAlignmentTrack(resolvePath(bamPath), resolvePath(baiPath))
             : null;
-        const variantTrack = hasVcf ? igvHelpers.buildVcfTrack(resolvePath(vcfPath), title) : null;
+        const variantTrack = hasVcf ? igvHelpers.buildVcfTrack(resolvePath(vcfPath)) : null;
         console.log("[DAJIN2][IGV][viewer] Resolved paths", {
             htmlPath,
             bamPath,

@@ -33,8 +33,8 @@
             return `${url}${joiner}v=${seed}`;
         };
 
-        const buildAlignmentTrack = (bamUrl, baiUrl, trackName) => ({
-            name: trackName || "Allele",
+        const buildAlignmentTrack = (bamUrl, baiUrl) => ({
+            name: "Alignments",
             url: bamUrl,
             indexURL: baiUrl,
             indexurl: baiUrl,
@@ -183,8 +183,8 @@
             return buildPopupItems(items);
         };
 
-        const buildVcfTrack = (vcfUrl, trackName) => ({
-            name: trackName ? `${trackName} variants` : "Variants",
+        const buildVcfTrack = (vcfUrl) => ({
+            name: "Variants",
             url: vcfUrl,
             type: "variant",
             format: "vcf",

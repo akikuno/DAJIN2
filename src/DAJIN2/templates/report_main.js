@@ -148,16 +148,16 @@
             return { ...baseOptions, tracks: [] };
         };
 
-        const buildAlignmentTrack = (bamUrl, baiUrl, trackName) => {
+        const buildAlignmentTrack = (bamUrl, baiUrl) => {
             if (igvHelpers && typeof igvHelpers.buildAlignmentTrack === "function") {
-                return igvHelpers.buildAlignmentTrack(bamUrl, baiUrl, trackName);
+                return igvHelpers.buildAlignmentTrack(bamUrl, baiUrl);
             }
             return null;
         };
 
-        const buildVcfTrack = (vcfUrl, trackName) => {
+        const buildVcfTrack = (vcfUrl) => {
             if (igvHelpers && typeof igvHelpers.buildVcfTrack === "function") {
-                return igvHelpers.buildVcfTrack(vcfUrl, trackName);
+                return igvHelpers.buildVcfTrack(vcfUrl);
             }
             return null;
         };
@@ -212,7 +212,7 @@
             const options = buildIgvBaseOptions(igvPaths.sample);
             const currentRequestId = ++igvRequestId;
             try {
-                const alignmentTrack = hasBam ? buildAlignmentTrack(igvPaths.bam, igvPaths.bai, title) : null;
+                const alignmentTrack = hasBam ? buildAlignmentTrack(igvPaths.bam, igvPaths.bai) : null;
                 if (alignmentTrack) {
                     const encodedTrackUrl = addCacheBuster(resolvePath(alignmentTrack.url), currentRequestId);
                     const encodedIndexUrl = addCacheBuster(resolvePath(alignmentTrack.indexURL), currentRequestId);
@@ -220,7 +220,7 @@
                     alignmentTrack.indexURL = encodedIndexUrl;
                     alignmentTrack.indexurl = encodedIndexUrl;
                 }
-                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf, title) : null;
+                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf) : null;
                 if (variantTrack) {
                     variantTrack.url = addCacheBuster(resolvePath(variantTrack.url), currentRequestId);
                 }
