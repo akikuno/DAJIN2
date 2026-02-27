@@ -6,10 +6,10 @@ from tempfile import NamedTemporaryFile
 import midsv
 
 from DAJIN2.core.preprocess.alignment import mapping
-from DAJIN2.utils.allele_handler import to_allele_key
-from DAJIN2.utils.report_name_handler import build_report_filename
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence, revcomp_midsvs
+from DAJIN2.utils.report_name_handler import build_report_filename
 
 LARGE_SV_THRESHOLD = 50
 

@@ -1,5 +1,19 @@
 <div class="report-hint">
-        Click an allele segment to open the detailed report and genome browser.
+        Click an allele segment to open the detailed report and genome browser. Tooltip content updates after rename edits.
+    </div>
+    <div class="allele-editor">
+        <div class="allele-editor__title">Allele editor</div>
+        <div class="allele-editor__hint">Select one or more alleles to rename them in batch.</div>
+        <div class="allele-editor__list" id="allele-group-list"></div>
+        <div class="allele-editor__actions">
+            <label>
+                Rename selected alleles
+                <input id="allele-rename-input" type="text" placeholder="e.g. Others">
+            </label>
+            <button id="allele-rename-apply" type="button">Rename</button>
+            <button id="allele-editor-reset" type="button">Reset allele edits</button>
+        </div>
+        <div class="allele-editor__status" id="allele-editor-status"></div>
     </div>
     <div class="controls">
         <label>

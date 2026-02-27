@@ -6,8 +6,8 @@ from pathlib import Path
 
 from DAJIN2.core.consensus.consensus_formatter import merge_duplicated_cons_others, merge_duplicated_cons_sequences
 from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.config import ConsensusKey
 from DAJIN2.utils.midsv_handler import call_sequence
 

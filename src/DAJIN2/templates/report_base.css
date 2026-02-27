@@ -18,6 +18,101 @@ body {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 1rem;
         }
+        .allele-editor {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .allele-editor__title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        .allele-editor__hint {
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+        .allele-editor__list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.5rem;
+        }
+        .allele-editor__item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.4rem;
+            background: #f8fafc;
+            padding: 0.45rem 0.6rem;
+            min-height: 2.3rem;
+        }
+        .allele-editor__item input[type="checkbox"] {
+            margin: 0;
+        }
+        .allele-editor__swatch {
+            width: 0.8rem;
+            height: 0.8rem;
+            border-radius: 999px;
+            border: 1px solid #cbd5e0;
+            flex: 0 0 auto;
+        }
+        .allele-editor__name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1f2937;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1 1 auto;
+        }
+        .allele-editor__meta {
+            font-size: 0.75rem;
+            color: #6b7280;
+            flex: 0 0 auto;
+        }
+        .allele-editor__actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 0.6rem;
+        }
+        .allele-editor__actions label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .allele-editor__actions input[type="text"] {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 0.35rem;
+            min-width: 12rem;
+        }
+        .allele-editor__actions button {
+            padding: 0.48rem 0.8rem;
+            border: none;
+            border-radius: 0.35rem;
+            background: #2d3748;
+            color: #ffffff;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .allele-editor__status {
+            min-height: 1.2rem;
+            font-size: 0.82rem;
+            color: #2d3748;
+        }
+        .allele-editor__status[data-kind="error"] {
+            color: #c53030;
+        }
         .controls label {
             display: flex;
             flex-direction: column;
@@ -113,6 +208,14 @@ body {
         @media (max-width: 600px) {
             body {
                 padding: 1rem;
+            }
+            .allele-editor__actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .allele-editor__actions input[type="text"] {
+                min-width: 0;
+                width: 100%;
             }
             .controls {
                 flex-direction: column;

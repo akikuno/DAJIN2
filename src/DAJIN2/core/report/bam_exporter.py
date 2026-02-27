@@ -8,9 +8,9 @@ from pathlib import Path
 import pysam
 
 from DAJIN2.core.preprocess.alignment.mapping import to_sam
+from DAJIN2.utils import fileio, sam_handler
 from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.report_name_handler import build_report_filename
-from DAJIN2.utils import fileio, sam_handler
 
 
 def recalculate_sam_coordinates_to_reference(sam: list[list[str]], genome_coordinates: dict) -> list[str]:

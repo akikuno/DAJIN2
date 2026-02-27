@@ -4,8 +4,8 @@ from itertools import groupby
 from pathlib import Path
 
 from DAJIN2.core.classification.allele_merger import merge_minor_alleles
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 
 
 def calc_match(midsv_tags: str) -> int:

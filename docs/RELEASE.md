@@ -14,6 +14,11 @@
 
 # v0.9.1 (2026-02-25)
 
+## 🌟 New Features
+-  Add interactive allele rename controls and auto-sync colors for identical allele names in the report viewer.
+  Issue [#137](https://github.com/akikuno/DAJIN2/issues/137) 
+
+
 ## 🐛 Bug Fixes
 
 - Output a clear error message when rows share the different allele within the same name in batch processing.  
@@ -26,7 +31,7 @@
   Issue [#148](https://github.com/akikuno/DAJIN2/issues/148) 
 
 ## 🔧 Maintenance
--  Fix IGV track labels to fixed names (Variants and Alignments) in viewer and report
+-  Fix IGV track labels to fixed names (Variants and Alignments) in viewer and report.
   Issue [#150](https://github.com/akikuno/DAJIN2/issues/150) 
 
 <!-- ############################################################# # -->

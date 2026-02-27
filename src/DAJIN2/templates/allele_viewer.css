@@ -10,6 +10,34 @@ html, body {
             flex-direction: column;
             height: 100%;
         }
+        .viewer__toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #ffffff;
+        }
+        .viewer__selector-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .viewer__selector {
+            min-width: 16rem;
+            max-width: min(48vw, 32rem);
+            border: 1px solid #cbd5e0;
+            border-radius: 0.35rem;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
+            color: #1a202c;
+            background: #ffffff;
+        }
+        .viewer__selector-note {
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
         .viewer__frame {
             flex: 1 1 60%;
             width: 100%;
@@ -57,4 +85,14 @@ html, body {
         .igv-popover {
             z-index: 2000;
             pointer-events: auto;
+        }
+        @media (max-width: 600px) {
+            .viewer__toolbar {
+                align-items: flex-start;
+            }
+            .viewer__selector {
+                min-width: 0;
+                width: 100%;
+                max-width: none;
+            }
         }

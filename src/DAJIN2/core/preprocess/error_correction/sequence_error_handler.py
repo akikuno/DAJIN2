@@ -10,8 +10,8 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fileio, midsv_handler
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.fastx_handler import read_fastq
 
 ###############################################################################
@@ -82,7 +82,9 @@ def detect_sequence_error_reads_in_sample(ARGS) -> None:
     path_qnames_without_error = Path(ARGS.tempdir, ARGS.control_name, "sequence_error", "qnames_without_error.txt")
     qnames_without_error = set(path_qnames_without_error.read_text().splitlines())
 
-    path_midsv_control = Path(ARGS.tempdir, ARGS.control_name, "midsv", control_key, f"{ARGS.control_name}_midsv.jsonl")
+    path_midsv_control = Path(
+        ARGS.tempdir, ARGS.control_name, "midsv", control_key, f"{ARGS.control_name}_midsv.jsonl"
+    )
     nm_tags_without_error = load_midsv_to_nm_tags(path_midsv_control, lambda m: m["QNAME"] in qnames_without_error)
     nm_tags_with_error: list[str] = load_midsv_to_nm_tags(
         path_midsv_control,

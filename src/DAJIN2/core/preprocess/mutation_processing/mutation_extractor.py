@@ -15,8 +15,8 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     merge_index_of_consecutive_indel,
     transpose_mutation_loci,
 )
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import config, fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:
@@ -132,7 +132,9 @@ def cache_mutation_loci(ARGS, is_control: bool = False) -> None:
 
     for allele, sequence in ARGS.fasta_alleles.items():
         allele_key = to_allele_key(allele)
-        path_midsv_sample = Path(ARGS.tempdir, ARGS.sample_name, "midsv", allele_key, f"{ARGS.sample_name}_midsv.jsonl")
+        path_midsv_sample = Path(
+            ARGS.tempdir, ARGS.sample_name, "midsv", allele_key, f"{ARGS.sample_name}_midsv.jsonl"
+        )
         # skip if midsv file does not exist or is empty
         if not path_midsv_sample.exists() or path_midsv_sample.stat().st_size == 0:
             continue

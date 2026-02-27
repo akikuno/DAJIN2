@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils import fastx_handler
+from DAJIN2.utils.allele_handler import to_allele_key
 
 ########################################################################
 # Extract basename
