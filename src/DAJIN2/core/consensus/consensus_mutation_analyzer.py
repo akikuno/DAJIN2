@@ -28,6 +28,7 @@ from DAJIN2.core.preprocess.mutation_processing.indel_merger import (
     transpose_mutation_loci,
 )
 from DAJIN2.utils import config, fileio, midsv_handler
+from DAJIN2.utils.allele_handler import to_allele_key
 
 """
 To suppress the following warnings from `scipy.wilcoxon`:
@@ -63,10 +64,11 @@ def get_thresholds(path_indels_normalized_sample, path_indels_normalized_control
 
 def extract_path_control(tempdir: Path, control_name: str, sample_name: str, allele: str) -> Path:
     """Extract the appropriate control path."""
+    allele_key = to_allele_key(allele)
     # Define potential file paths
     paths = [
-        Path(tempdir, control_name, "midsv", allele, f"{control_name}_midsv.jsonl"),
-        Path(tempdir, control_name, "midsv", allele, f"{sample_name}_midsv.jsonl"),
+        Path(tempdir, control_name, "midsv", allele_key, f"{control_name}_midsv.jsonl"),
+        Path(tempdir, control_name, "midsv", allele_key, f"{sample_name}_midsv.jsonl"),
     ]
     # Return the first path that exists
     for path in paths:
@@ -80,7 +82,8 @@ def extract_path_n_filtered_control(
     """
     Filter out reads with N enriched in the control.
     """
-    path_output = Path(tempdir, control_name, "consensus", allele, f"{sample_name}_n_filtered.jsonl")
+    allele_key = to_allele_key(allele)
+    path_output = Path(tempdir, control_name, "consensus", allele_key, f"{sample_name}_n_filtered.jsonl")
     if path_output.exists():
         return path_output
 
@@ -125,7 +128,8 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False)
     # Separate clusters by label and cache them
     clust_sample.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
     for (allele, label), group in groupby(clust_sample, key=lambda x: [x["ALLELE"], x["LABEL"]]):
-        path_consensus = Path(ARGS.tempdir, ARGS.sample_name, "consensus", allele, str(label))
+        allele_key = to_allele_key(allele)
+        path_consensus = Path(ARGS.tempdir, ARGS.sample_name, "consensus", allele_key, str(label))
         path_consensus.mkdir(parents=True, exist_ok=True)
 
         path_consensus_sample = Path(path_consensus, f"{ARGS.sample_name}_sample.jsonl")
@@ -137,7 +141,7 @@ def cache_mutation_loci(ARGS, clust_sample: list[dict], no_filter: bool = False)
         path_indels_normalized_sample = Path(path_consensus, "normalized_sample.pickle")
         path_indels_normalized_control = Path(path_consensus, "normalized_control.pickle")
         sequence = ARGS.fasta_alleles[allele]
-        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele, "knockin.pickle")
+        path_knockin = Path(ARGS.tempdir, ARGS.sample_name, "knockin_loci", allele_key, "knockin.pickle")
 
         thresholds = get_thresholds(path_indels_normalized_sample, path_indels_normalized_control)
 

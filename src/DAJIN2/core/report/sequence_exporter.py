@@ -5,6 +5,8 @@ from pathlib import Path
 
 from DAJIN2.core.report.html_builder import to_html
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
+from DAJIN2.utils.report_name_handler import build_report_filename
 
 
 def convert_to_fasta(header: str, sequence: str) -> str:
@@ -18,16 +20,20 @@ def convert_to_fasta(header: str, sequence: str) -> str:
 def convert_to_html(
     TEMPDIR: Path, SAMPLE_NAME: str, FASTA_ALLELES: dict, allele: str, header: str, cons_midsv_tag: str
 ) -> str:
-    path_midsv_sv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele}_midsv.jsonl")
-    is_sv_allele = False
-    if path_midsv_sv.exists():
-        is_sv_allele = True
-        midsv_sv_allele = list(fileio.read_jsonl(path_midsv_sv))
+    path_midsv = Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{to_allele_key(allele)}_midsv.jsonl")
+    is_unassigned_allele = False
+    if path_midsv.exists():
+        is_unassigned_allele = True
+        midsv_sv_allele = list(fileio.read_jsonl(path_midsv))
     else:
         midsv_sv_allele = ["=" + base for base in list(FASTA_ALLELES[allele])]
 
     return to_html(
-        midsv_sv_allele, cons_midsv_tag, allele, is_sv_allele, description=f"{SAMPLE_NAME} {header.replace('_', ' ')}"
+        midsv_sv_allele,
+        cons_midsv_tag,
+        allele,
+        is_unassigned_allele,
+        description=f"{SAMPLE_NAME} {header.replace('_', ' ')}",
     )
 
 
@@ -39,7 +45,8 @@ def convert_to_html(
 def export_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str, cons_sequence: dict) -> None:
     for key, sequence in cons_sequence.items():
         header = key.replace("|", "_")
-        path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.fasta")
+        file_name = build_report_filename(key, ".fasta", sample_name=SAMPLE_NAME)
+        path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, file_name)
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
             f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
 
@@ -58,9 +65,11 @@ def parse_fasta(file_path: Path) -> tuple[str, str]:
 def export_reference_to_fasta(TEMPDIR: Path, SAMPLE_NAME: str) -> None:
     for fasta in Path(TEMPDIR, SAMPLE_NAME, "fasta").glob("*.fasta"):
         header, sequence = parse_fasta(fasta)
-        path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, f"{header}.fasta")
+        file_name = build_report_filename(header, ".fasta")
+        path_output = Path(TEMPDIR, "report", "FASTA", SAMPLE_NAME, file_name)
+        output_header = header if header == "control" else f"{SAMPLE_NAME}_{header}"
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
-            f.write(convert_to_fasta(f"{SAMPLE_NAME}_{header}", sequence))
+            f.write(convert_to_fasta(output_header, sequence))
 
 
 def export_to_html(
@@ -73,6 +82,7 @@ def export_to_html(
     for key, cons_midsv_tag in cons_midsv_tags.items():
         allele = map_name_allele[key]
         header = key.replace("|", "_")
-        path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, f"{SAMPLE_NAME}_{header}.html")
+        file_name = build_report_filename(key, ".html", sample_name=SAMPLE_NAME)
+        path_output = Path(TEMPDIR, "report", "HTML", SAMPLE_NAME, file_name)
         with open(path_output, "w", newline="\n", encoding="utf-8") as f:
             f.write(convert_to_html(TEMPDIR, SAMPLE_NAME, FASTA_ALLELES, allele, header, cons_midsv_tag))

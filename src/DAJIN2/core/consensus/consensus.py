@@ -7,6 +7,7 @@ from pathlib import Path
 from DAJIN2.core.consensus.consensus_formatter import merge_duplicated_cons_others, merge_duplicated_cons_sequences
 from DAJIN2.core.consensus.sv_annotator import annotate_insertions_within_deletion, annotate_sv_allele
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.config import ConsensusKey
 from DAJIN2.utils.midsv_handler import call_sequence
 
@@ -86,9 +87,10 @@ def call_consensus(
     clust_downsampled.sort(key=lambda x: [x["ALLELE"], x["LABEL"]])
     for (allele, label), group in groupby(clust_downsampled, key=lambda x: [x["ALLELE"], x["LABEL"]]):
         clust = list(group)
+        allele_key = to_allele_key(allele)
         sequence = fasta_alleles[allele]
 
-        path_consensus = Path(tempdir, sample_name, "consensus", allele, str(label))
+        path_consensus = Path(tempdir, sample_name, "consensus", allele_key, str(label))
         cons_mutation_loci = fileio.load_pickle(Path(path_consensus, "mutation_loci.pickle"))
 
         midsv_tags = [cs["MIDSV"].split(",") for cs in clust]
@@ -96,7 +98,7 @@ def call_consensus(
 
         cons_midsv_tag = [max(cons, key=cons.get) for cons in cons_percentage]
 
-        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele}_midsv.jsonl")
+        path_sv_midsv_tag = Path(tempdir, sample_name, "midsv", f"consensus_{allele_key}_midsv.jsonl")
         if path_sv_midsv_tag.exists():
             sv_midsv_tag = list(fileio.read_jsonl(path_sv_midsv_tag))
             cons_midsv_tag = annotate_sv_allele(cons_midsv_tag, sv_midsv_tag)

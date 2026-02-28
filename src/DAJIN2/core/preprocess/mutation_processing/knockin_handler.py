@@ -7,6 +7,7 @@ from pathlib import Path
 import midsv
 
 from DAJIN2.core.preprocess.alignment import mapping
+from DAJIN2.utils.allele_handler import to_allele_key
 
 ###########################################################
 # Consider all mutations are possible in the knockin region
@@ -37,13 +38,13 @@ def get_index_of_knockin_loci(control_fasta: Path, knockin_fasta: Path) -> set[i
 
 
 def extract_knockin_loci(TEMPDIR: str | Path, SAMPLE_NAME: str) -> None:
-    control_fasta = Path(TEMPDIR, SAMPLE_NAME, "fasta", "control.fasta")
+    control_fasta = Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{to_allele_key('control')}.fasta")
     for knockin_fasta in Path(TEMPDIR, SAMPLE_NAME, "fasta").iterdir():
         if not is_valid_file(control_fasta, knockin_fasta):
             continue
 
-        allele = knockin_fasta.stem
-        path_output = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele, "knockin.pickle")
+        allele_key = knockin_fasta.stem
+        path_output = Path(TEMPDIR, SAMPLE_NAME, "knockin_loci", allele_key, "knockin.pickle")
         path_output.parent.mkdir(parents=True, exist_ok=True)
         if path_output.exists():
             continue

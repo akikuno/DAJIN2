@@ -12,7 +12,56 @@
 
 <!-- ############################################################# # -->
 
-# v0.9.0 (2026-02-25)
+# v0.9.1 (2026-02-25)
+
+## 🌟 New Features
+-  Add interactive allele rename controls and auto-sync colors for identical allele names in the report viewer.
+  Issue [#137](https://github.com/akikuno/DAJIN2/issues/137) 
+
+
+## 🐛 Bug Fixes
+
+- Output a clear error message when rows share the different allele within the same name in batch processing.  
+  Issue [#146](https://github.com/akikuno/DAJIN2/issues/146) 
+
+-  Keep control FASTA header unprefixed in report export for IGV compatibility.
+  Issue [#147](https://github.com/akikuno/DAJIN2/issues/147) 
+
+- Use MD5-based allele keys for internal cache paths and persist allele-name mapping in temp cache.
+  Issue [#148](https://github.com/akikuno/DAJIN2/issues/148) 
+
+
+- Fix off-by-one VCF POS for insertions and deletions by left-anchoring indel coordinates
+  Issue [#153](https://github.com/akikuno/DAJIN2/issues/153) 
+
+
+## 🔧 Maintenance
+
+-  Fix IGV track labels to fixed names (Variants and Alignments) in viewer and report.
+  Issue [#150](https://github.com/akikuno/DAJIN2/issues/150) 
+
+
+## ⛔️ Deprecated
+- Remove Mutation Info CSV output.
+  Issue [#155](https://github.com/akikuno/DAJIN2/issues/155) 
+
+
+<!-- ############################################################# # -->
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+
+<details>
+<summary> v0.9.0 (2026-02-25) </summary>
 
 
 ## 🌟 New Features
@@ -43,19 +92,7 @@
 - Fix DAJIN2 GUI to echo parent progress logs to stdout so final Finished message appears in CLI.
   Issue [#142](https://github.com/akikuno/DAJIN2/issues/142) 
 
-<!-- ############################################################# # -->
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
-
+</details>
 
 <details>
 <summary> v0.8.0 (2026-01-29) </summary>

@@ -53,7 +53,7 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 - Recommended memory: 16 GB or more
 
 >[!NOTE]
-> DAJIN2 is the successor to DAJIN, which required a GPU for efficient computation due to its use of deep learning.  
+> DAJIN2 is the successor to [DAJIN](https://github.com/akikuno/DAJIN), which required a GPU for efficient computation due to its use of deep learning.  
 > In contrast, **DAJIN2 does not use deep learning and does not require a GPU**.  
 > Therefore, it runs smoothly on typical laptops.
 
@@ -71,14 +71,7 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 ## From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
-# Setting up Bioconda
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-conda config --set channel_priority flexible
-
-# Install DAJIN2
-conda create -n env-dajin2 python=3.12 DAJIN2 -y
+conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
 conda activate env-dajin2
 ```
 
@@ -92,17 +85,20 @@ pip install DAJIN2
 > **DAJIN2 is actively being developed and improved.**  
 > Please make sure you are using the latest version to take advantage of the newest features.  
 >
-> 🔍 **To check your current version:**
+> **1. To check your current version**
 > ```bash
 > DAJIN2 --version
 > ```
 >
-> ➡️ **Check the latest version:**  
+> **2. Check the latest version**  
 > https://github.com/akikuno/DAJIN2/releases
 >
-> 🔄 **To update to the latest version:**
+> **3. Reinstall DAJIN2 if the installed version is not the latest**
 > ```bash
-> conda update DAJIN2 -y
+> conda deactivate
+> conda remove -y -n env-dajin2 --all
+> conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
+> conda activate env-dajin2
 > ```
 > or
 > ```bash
@@ -142,6 +138,9 @@ bam_pass
 > Store each BAM file in a separate directory.  
 > The directory names can be set arbitrarily.  
 
+> [!TIP]
+> For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
+
 
 - Similarly, store the FASTA files outputted after sequence error correction with [`dorado correct`](https://software-docs.nanoporetech.com/dorado/latest/assembly/correct/) in separate directories.
 
@@ -156,9 +155,6 @@ dorado_correct
 > [!NOTE]
 > Correction with `dorado correct` may mask minor editing outcomes that can arise from genome editing.  
 > Therefore, unless `dorado correct` is required, we recommend using the BAM files output by `dorado basecaller` and `dorado demux`.  
-
-> [!TIP]
-> For detailed Dorado usage, see [DORADO_HANDLING.md](./docs/DORADO_HANDLING.md).
 
 
 #### Basecalling with [Guppy](https://nanoporetech.com/ja/document/Guppy-protocol)
@@ -502,13 +498,6 @@ Below is an example where a deletion (light blue) and an insertion (red) are obs
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
-## 5. MUTATION_INFO
-
-The MUTATION_INFO directory stores tables describing mutation sites for each allele.  
-An example of a *Tyr* point mutation is shown below:
-- It lists the chromosomal position and the mutation type.
-
-<img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
 ---
 

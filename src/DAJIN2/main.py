@@ -165,7 +165,15 @@ def execute_batch_mode(arguments: dict[str]):
     # Validate contents and fetch genome urls
     genome_with_server_urls = {}
     records.sort(key=lambda x: x["name"])
-    for _, groups in groupby(records, key=lambda x: x["name"]):
+    for name, groups in groupby(records, key=lambda x: x["name"]):
+        groups = list(groups)
+
+        # Check for duplicate alleles for the same name to prevent confusion and errors. (https://github.com/akikuno/DAJIN2/issues/146)
+        if len({g["allele"] for g in groups}) != 1:
+            raise ValueError(
+                f"Duplicate allele found for the same name: {name}. Please use unique name for each allele."
+            )
+
         for args in groups:
             # Validate contents in the batch file
             input_validator.validate_files(args["sample"], args["control"], args["allele"])

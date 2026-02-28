@@ -3,10 +3,12 @@ from __future__ import annotations
 import gzip
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 import pytest
 
 from DAJIN2.utils import fastx_handler
+from DAJIN2.utils.allele_handler import to_allele_key
 
 ########################################################################
 # Extract basename
@@ -106,3 +108,21 @@ def test_get_path_input_files(filenames, suffixes, expected):
         result = fastx_handler._get_path_input_files(dir_path, suffixes)
         result_names = sorted([p.name for p in result])
         assert result_names == sorted(expected)
+
+
+def test_export_fasta_files_uses_md5_filename(tmp_path):
+    long_allele_name = "deletion_" + "A" * 400
+    args = SimpleNamespace(
+        tempdir=tmp_path,
+        sample_name="sample",
+        control_name="control",
+        fasta_alleles={"control": "ACGT", long_allele_name: "TGCA"},
+    )
+    (tmp_path / "sample" / "fasta").mkdir(parents=True, exist_ok=True)
+
+    fastx_handler.export_fasta_files(args, is_control=False)
+
+    expected_names = {f"{to_allele_key(name)}.fasta" for name in args.fasta_alleles}
+    got_names = {path.name for path in (tmp_path / "sample" / "fasta").glob("*.fasta")}
+
+    assert got_names == expected_names

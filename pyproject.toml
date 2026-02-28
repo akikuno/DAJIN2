@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "DAJIN2"
-version = "0.9.0"
+version = "0.9.1"
 description = "Comprehensive genotyping tool for targeted long-read sequencing analysis"
 authors = ["Akihiro Kuno <akuno@gwe.md.tsukuba.ac.jp>"]
 readme = "README.md"

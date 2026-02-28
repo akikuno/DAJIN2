@@ -30,34 +30,57 @@
             if (value === null || value === undefined || value === "") {
                 return "";
             }
-            return `${value}%`;
+            const text = String(value).trim();
+            if (!text) {
+                return "";
+            }
+            return text.endsWith("%") ? text : `${text}%`;
+        };
+
+        const safeJsonParse = (text, fallback = null) => {
+            try {
+                return JSON.parse(text);
+            } catch (_error) {
+                return fallback;
+            }
         };
 
         const formatAlleleType = (allele, type) => {
-            const alleleText = String(allele ?? "").trim();
-            const typeText = String(type ?? "").trim();
-            const typeLower = typeText.toLowerCase();
+            const alleleTextRaw = String(allele ?? "").trim();
+            const typeTextRaw = String(type ?? "").trim();
+            if (alleleTextRaw.includes("|")) {
+                const parts = alleleTextRaw.split("|").map((part) => part.trim()).filter(Boolean);
+                if (parts.length >= 2) {
+                    return parts[1].toLowerCase();
+                }
+                if (parts.length === 1) {
+                    return parts[0].toLowerCase();
+                }
+                return "";
+            }
+            const alleleText = alleleTextRaw;
+            const typeText = typeTextRaw;
+            const alleleLower = String(alleleText ?? "").trim().toLowerCase();
+            const typeLower = String(typeText ?? "").trim().toLowerCase();
             if (!typeLower || typeLower === "intact") {
-                return alleleText;
+                return alleleLower;
             }
             if (typeLower === "indels") {
-                return `${alleleText} with indels`.trim();
+                return `${alleleLower} with indels`.trim();
             }
-            return `${alleleText} ${typeText}`.trim();
+            return `${alleleLower} ${typeLower}`.trim();
         };
 
         const buildTitle = (point) => {
             const custom = Array.isArray(point.customdata) ? point.customdata : [];
-            const label = custom[1];
             const allele = custom[2];
             const type = custom[3];
             const percent = formatPercent(custom[4]);
-            const alleleType = formatAlleleType(allele, type);
-            const labelText = label ? label.toLowerCase() : "";
+            const groupName = custom[6] ? String(custom[6]).trim() : "";
+            const alleleType = groupName || formatAlleleType(allele, type);
             const percentText = percent ? `(${percent})` : "";
             const parts = [
                 point.x,
-                labelText ? `${labelText}` : "",
                 alleleType || "",
                 percentText,
             ].filter(Boolean);
@@ -91,6 +114,44 @@
             return header.replace(/\s+/g, "");
         };
 
+        const parseMembersFromCustom = (custom) => {
+            if (!Array.isArray(custom) || custom.length < 6) {
+                return [];
+            }
+            const payload = custom[5];
+            if (typeof payload !== "string" || !payload.trim()) {
+                return [];
+            }
+            const parsed = safeJsonParse(payload, []);
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+            return parsed
+                .map((member) => ({
+                    path: member?.path ? String(member.path) : "",
+                    label: member?.label ? String(member.label) : "",
+                    allele: member?.allele ? String(member.allele) : "",
+                    type: member?.type ? String(member.type) : "",
+                    percent: member?.percent ? String(member.percent) : "",
+                    title: member?.title ? String(member.title) : "",
+                    sample: member?.sample ? String(member.sample) : "",
+                    trace: member?.trace ? String(member.trace) : "",
+                }))
+                .filter((member) => member.path || member.title || member.allele);
+        };
+
+        const pickPrimaryMember = (members) => {
+            if (!Array.isArray(members) || members.length === 0) {
+                return null;
+            }
+            const parsePercent = (member) => {
+                const text = String(member?.percent ?? "").replace(/%$/, "");
+                const value = Number(text);
+                return Number.isFinite(value) ? value : 0;
+            };
+            return members.slice().sort((a, b) => parsePercent(b) - parsePercent(a))[0] || members[0];
+        };
+
         const buildIgvPaths = (path, custom = null) => {
             if (!path) {
                 return null;
@@ -107,11 +168,11 @@
             const sample = parts[baseIndex + 1];
             const filenameRaw = parts[parts.length - 1];
             const filename = filenameRaw.split("?")[0].split("#")[0].trim();
-            const stem = filename.replace(/\\.html?$/i, "");
+            const stem = filename.replace(/\.html?$/i, "");
             const prefix = `${sample}_`;
             const headerFromFile = stem.startsWith(prefix) ? stem.slice(prefix.length) : stem;
             const headerFromCustom = buildHeaderFromCustom(custom);
-            const header = headerFromCustom || headerFromFile;
+            const header = headerFromFile || headerFromCustom;
             return {
                 sample,
                 bam: [".igvjs", sample, `${header}.bam`].join("/"),
@@ -120,7 +181,7 @@
             };
         };
 
-        const buildViewerUrl = (path, title, custom = null) => {
+        const buildViewerUrl = (path, title, custom = null, members = []) => {
             const igvPaths = buildIgvPaths(path, custom);
             if (!igvPaths) {
                 return resolvePath(path);
@@ -133,6 +194,23 @@
                 sample: igvPaths.sample,
                 title: title || "",
             });
+            if (Array.isArray(custom) && custom[6]) {
+                params.set("group", String(custom[6]));
+            }
+            if (Array.isArray(members) && members.length > 0) {
+                try {
+                    const stateKey = `djn2_view_state_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+                    const statePayload = {
+                        title: title || "",
+                        group: Array.isArray(custom) ? String(custom[6] || "") : "",
+                        members,
+                    };
+                    window.localStorage.setItem(stateKey, JSON.stringify(statePayload));
+                    params.set("state_key", stateKey);
+                } catch (_error) {
+                    params.set("members", JSON.stringify(members));
+                }
+            }
             return `allele_viewer.html?${params.toString()}`;
         };
 
@@ -148,16 +226,16 @@
             return { ...baseOptions, tracks: [] };
         };
 
-        const buildAlignmentTrack = (bamUrl, baiUrl, trackName) => {
+        const buildAlignmentTrack = (bamUrl, baiUrl) => {
             if (igvHelpers && typeof igvHelpers.buildAlignmentTrack === "function") {
-                return igvHelpers.buildAlignmentTrack(bamUrl, baiUrl, trackName);
+                return igvHelpers.buildAlignmentTrack(bamUrl, baiUrl);
             }
             return null;
         };
 
-        const buildVcfTrack = (vcfUrl, trackName) => {
+        const buildVcfTrack = (vcfUrl) => {
             if (igvHelpers && typeof igvHelpers.buildVcfTrack === "function") {
-                return igvHelpers.buildVcfTrack(vcfUrl, trackName);
+                return igvHelpers.buildVcfTrack(vcfUrl);
             }
             return null;
         };
@@ -212,7 +290,7 @@
             const options = buildIgvBaseOptions(igvPaths.sample);
             const currentRequestId = ++igvRequestId;
             try {
-                const alignmentTrack = hasBam ? buildAlignmentTrack(igvPaths.bam, igvPaths.bai, title) : null;
+                const alignmentTrack = hasBam ? buildAlignmentTrack(igvPaths.bam, igvPaths.bai) : null;
                 if (alignmentTrack) {
                     const encodedTrackUrl = addCacheBuster(resolvePath(alignmentTrack.url), currentRequestId);
                     const encodedIndexUrl = addCacheBuster(resolvePath(alignmentTrack.indexURL), currentRequestId);
@@ -220,12 +298,20 @@
                     alignmentTrack.indexURL = encodedIndexUrl;
                     alignmentTrack.indexurl = encodedIndexUrl;
                 }
-                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf, title) : null;
+                const variantTrack = hasVcf ? buildVcfTrack(igvPaths.vcf) : null;
                 if (variantTrack) {
                     variantTrack.url = addCacheBuster(resolvePath(variantTrack.url), currentRequestId);
                 }
+                console.log("[DAJIN2][IGV][modal] Resolved paths", {
+                    igvPaths,
+                    hasBam,
+                    hasVcf,
+                    alignmentTrackUrl: alignmentTrack?.url || "",
+                    alignmentTrackIndexUrl: alignmentTrack?.indexURL || "",
+                    variantTrackUrl: variantTrack?.url || "",
+                    options,
+                });
                 const nextSignature = [igvPaths.bam, igvPaths.bai, igvPaths.vcf, title || ""].join("|");
-                const previousSignature = igvView.dataset.igvSignature || "";
                 igvView.dataset.igvSignature = nextSignature;
                 if (igvBrowser && typeof igvBrowser.dispose === "function") {
                     igvBrowser.dispose();
@@ -243,7 +329,8 @@
                 }
                 if (browser && typeof browser.loadTrack === "function") {
                     if (igvHelpers && typeof igvHelpers.loadTracksVcfThenAlignment === "function") {
-                        await igvHelpers.loadTracksVcfThenAlignment(browser, variantTrack, alignmentTrack);
+                        const loadResult = await igvHelpers.loadTracksVcfThenAlignment(browser, variantTrack, alignmentTrack);
+                        console.log("[DAJIN2][IGV][modal] Track loading result", loadResult || {});
                     }
                 }
                 igvBrowser = browser;
@@ -251,6 +338,14 @@
                 window.__igvLastOptions = options;
                 igvStatus.textContent = "";
             } catch (error) {
+                console.log("[DAJIN2][IGV][modal] Failed to load IGV track", {
+                    error,
+                    path,
+                    title,
+                    custom,
+                    igvPaths,
+                    options,
+                });
                 igvStatus.textContent = "Failed to load IGV track.";
             }
         };
@@ -317,13 +412,13 @@
             });
         };
 
-        const openModal = (path, title, custom = null) => {
+        const openModal = (path, title, custom = null, members = []) => {
             modal.classList.add("is-open");
             modal.setAttribute("aria-hidden", "false");
             const encodedPath = resolvePath(path);
             modalFrame.src = encodedPath;
             modalTitle.textContent = title || "Allele report";
-            modalLink.href = buildViewerUrl(path, title, custom);
+            modalLink.href = buildViewerUrl(path, title, custom, members);
             updateIgv(path, title, custom);
             if (modalBody) {
                 requestAnimationFrame(() => {
@@ -362,12 +457,26 @@
             }
             const point = event.points[0];
             const custom = Array.isArray(point.customdata) ? point.customdata : [];
-            const detailPath = custom[0];
+            const members = parseMembersFromCustom(custom);
+            const primaryMember = pickPrimaryMember(members);
+            const detailPath = (custom[0] || primaryMember?.path || "").trim();
             if (!detailPath) {
                 alert("No detailed report found for this allele.");
                 return;
             }
-            openModal(detailPath, buildTitle(point), custom);
+            const primaryCustom = primaryMember
+                ? [
+                      primaryMember.path || "",
+                      primaryMember.label || custom[1] || "",
+                      primaryMember.allele || custom[2] || "",
+                      primaryMember.type || custom[3] || "",
+                      primaryMember.percent || custom[4] || "",
+                      custom[5] || "",
+                      custom[6] || "",
+                      custom[7] || "",
+                  ]
+                : custom;
+            openModal(detailPath, buildTitle(point), primaryCustom, members);
         };
 
         const attachPlotlyHandler = () => {

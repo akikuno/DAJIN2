@@ -33,8 +33,8 @@
             return `${url}${joiner}v=${seed}`;
         };
 
-        const buildAlignmentTrack = (bamUrl, baiUrl, trackName) => ({
-            name: trackName || "Allele",
+        const buildAlignmentTrack = (bamUrl, baiUrl) => ({
+            name: "Alignments",
             url: bamUrl,
             indexURL: baiUrl,
             indexurl: baiUrl,
@@ -183,8 +183,8 @@
             return buildPopupItems(items);
         };
 
-        const buildVcfTrack = (vcfUrl, trackName) => ({
-            name: trackName ? `${trackName} variants` : "Variants",
+        const buildVcfTrack = (vcfUrl) => ({
+            name: "Variants",
             url: vcfUrl,
             type: "variant",
             format: "vcf",
@@ -244,13 +244,38 @@
                 return;
             }
             await waitForRefseq(browser, 2000);
+            console.log("[DAJIN2][IGV] Track loading start", {
+                hasVariantTrack: Boolean(variantTrack),
+                hasAlignmentTrack: Boolean(alignmentTrack),
+                variantUrl: variantTrack?.url || "",
+                alignmentUrl: alignmentTrack?.url || "",
+                alignmentIndexUrl: alignmentTrack?.indexURL || "",
+            });
+            let loadedVariant = false;
+            let loadedAlignment = false;
             if (variantTrack) {
-                await browser.loadTrack(variantTrack);
+                try {
+                    await browser.loadTrack(variantTrack);
+                    loadedVariant = true;
+                    console.log("[DAJIN2][IGV] Variant track loaded");
+                } catch (error) {
+                    console.log("[DAJIN2][IGV] Variant track failed", { error, track: variantTrack });
+                }
             }
             if (alignmentTrack) {
-                await browser.loadTrack(alignmentTrack);
-                await enforceAlignmentAfterRefseq(browser, alignmentTrack);
+                try {
+                    await browser.loadTrack(alignmentTrack);
+                    await enforceAlignmentAfterRefseq(browser, alignmentTrack);
+                    loadedAlignment = true;
+                    console.log("[DAJIN2][IGV] Alignment track loaded");
+                } catch (error) {
+                    console.log("[DAJIN2][IGV] Alignment track failed", { error, track: alignmentTrack });
+                }
             }
+            if ((variantTrack || alignmentTrack) && !loadedVariant && !loadedAlignment) {
+                throw new Error("All requested IGV tracks failed to load");
+            }
+            return { loadedVariant, loadedAlignment };
         };
 
         global.DAJIN2IgvHelpers = {

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from DAJIN2.core import classification, clustering, consensus, preprocess, report
 from DAJIN2.core.preprocess.infrastructure.input_formatter import FormattedInputs
-from DAJIN2.utils import fastx_handler, fileio
+from DAJIN2.utils import allele_handler, fastx_handler, fileio
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ def execute_control(arguments: dict):
     ARGS: FormattedInputs = preprocess.format_inputs(arguments)
     preprocess.create_temporal_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
     preprocess.create_report_directories(ARGS.tempdir, ARGS.control_name, is_control=True)
+    allele_handler.save_allele_name_map(ARGS.tempdir, ARGS.fasta_alleles.keys())
     fileio.cache_file_hash(ARGS.path_allele, Path(ARGS.tempdir, "cache", "hash_allele.txt"))
 
     ###########################################################
@@ -53,7 +54,8 @@ def execute_control(arguments: dict):
     ###########################################################
     # Separate fastq files by sequence error
     ###########################################################
-    paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("control.fasta")
+    control_allele_key = allele_handler.to_allele_key("control")
+    paths_fasta = [Path(ARGS.tempdir, ARGS.control_name, "fasta", f"{control_allele_key}.fasta")]
     preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_sv=False)
     preprocess.generate_midsv(ARGS, is_control=True, is_sv=False)
     # ============================================================
@@ -115,6 +117,7 @@ def execute_sample(arguments: dict):
     ARGS: FormattedInputs = preprocess.format_inputs(arguments)
     preprocess.create_temporal_directories(ARGS.tempdir, ARGS.sample_name, is_control=False)
     preprocess.create_report_directories(ARGS.tempdir, ARGS.sample_name, is_control=False)
+    allele_handler.save_allele_name_map(ARGS.tempdir, ARGS.fasta_alleles.keys())
 
     logger.info(f"Preprocess {arguments['sample']}...")
 
@@ -161,7 +164,15 @@ def execute_sample(arguments: dict):
     # Detect and mapping SV alleles
     # ============================================================
     paths_predefined_fasta: set[str] = {
-        str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele}.fasta")) for allele in ARGS.fasta_alleles.keys()
+        str(
+            Path(
+                ARGS.tempdir,
+                ARGS.sample_name,
+                "fasta",
+                f"{allele_handler.to_allele_key(allele)}.fasta",
+            )
+        )
+        for allele in ARGS.fasta_alleles.keys()
     }
 
     preprocess.detect_sv_alleles(
@@ -174,18 +185,8 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
     )
 
-    paths_sv_fasta = set()
-    paths_sv_fasta |= {
-        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("insertion*_DAJIN2predicted.fasta")
-    }
-    paths_sv_fasta |= {
-        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("deletion*_DAJIN2predicted.fasta")
-    }
-    paths_sv_fasta |= {
-        str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("inversion*_DAJIN2predicted.fasta")
-    }
-
-    paths_sv_fasta -= paths_predefined_fasta
+    paths_all_fasta = {str(p) for p in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")}
+    paths_sv_fasta = paths_all_fasta - paths_predefined_fasta
 
     if paths_sv_fasta:
         # mapping to SV alleles
@@ -204,6 +205,7 @@ def execute_sample(arguments: dict):
         preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
         preprocess.cache_mutation_loci(ARGS, is_control=False)
 
+    allele_handler.save_allele_name_map(ARGS.tempdir, ARGS.fasta_alleles.keys())
     fileio.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
 
     ########################################################################
@@ -286,9 +288,6 @@ def execute_sample(arguments: dict):
     report.sequence_exporter.export_to_html(
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags, map_name_allele
     )
-
-    # CSV (Allele Info)
-    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
 
     # VCF
     report.vcf_exporter.export_to_vcf(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)

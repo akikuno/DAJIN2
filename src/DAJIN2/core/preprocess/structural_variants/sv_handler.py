@@ -6,6 +6,7 @@ from rapidfuzz import process
 from rapidfuzz.distance import DamerauLevenshtein
 
 from DAJIN2.utils import fileio
+from DAJIN2.utils.allele_handler import to_allele_key
 
 
 def extract_unique_sv(
@@ -85,10 +86,12 @@ def add_unique_allele_keys(
 def save_fasta(TEMPDIR: Path | str, SAMPLE_NAME: str, fasta_sv_alleles: dict[str, str]) -> None:
     Path(TEMPDIR, SAMPLE_NAME, "fasta").mkdir(parents=True, exist_ok=True)
     for header, seq in fasta_sv_alleles.items():
-        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{header}.fasta").write_text(f">{header}\n{seq}\n")
+        allele_key = to_allele_key(header)
+        Path(TEMPDIR, SAMPLE_NAME, "fasta", f"{allele_key}.fasta").write_text(f">{header}\n{seq}\n")
 
 
 def save_midsv(TEMPDIR: Path | str, SAMPLE_NAME: str, midsv_sv_alleles: dict[str, list[str]]) -> None:
     Path(TEMPDIR, SAMPLE_NAME, "midsv").mkdir(parents=True, exist_ok=True)
     for header, midsv_tag in midsv_sv_alleles.items():
-        fileio.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{header}_midsv.jsonl"))
+        allele_key = to_allele_key(header)
+        fileio.write_jsonl(midsv_tag, Path(TEMPDIR, SAMPLE_NAME, "midsv", f"consensus_{allele_key}_midsv.jsonl"))
