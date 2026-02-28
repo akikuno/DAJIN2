@@ -208,19 +208,65 @@
     const sampleOrder = buildSampleOrder(initialData, sourceModel);
     const sourceNames = Object.keys(sourceModel);
 
+    const normalizeGroupNameKey = (name) => String(name ?? "").trim().toLowerCase();
+    const createGroupId = (index) => `group_${index + 1}`;
+
+    const mergeGroupsByName = (inputGroups = []) => {
+        const mergedGroups = [];
+        const groupIndexByName = new Map();
+
+        inputGroups.forEach((group, index) => {
+            const members = Array.isArray(group?.members)
+                ? group.members.map((member) => String(member ?? "").trim()).filter(Boolean)
+                : [];
+            if (!members.length) {
+                return;
+            }
+
+            const fallbackName = sourceModel[members[0]]?.name || members[0];
+            const name = String(group?.name ?? fallbackName).trim() || fallbackName;
+            const color = String(group?.color ?? sourceModel[members[0]]?.color ?? "#1f77b4");
+            const key = normalizeGroupNameKey(name) || createGroupId(index);
+
+            if (!groupIndexByName.has(key)) {
+                mergedGroups.push({
+                    id: String(group?.id ?? createGroupId(mergedGroups.length)).trim() || createGroupId(mergedGroups.length),
+                    name,
+                    members: [...members],
+                    color,
+                });
+                groupIndexByName.set(key, mergedGroups.length - 1);
+                return;
+            }
+
+            const target = mergedGroups[groupIndexByName.get(key)];
+            const memberSet = new Set(target.members);
+            members.forEach((member) => {
+                if (!memberSet.has(member)) {
+                    memberSet.add(member);
+                    target.members.push(member);
+                }
+            });
+        });
+
+        return mergedGroups;
+    };
+
     const buildInitialGroups = () =>
-        sourceNames.map((sourceKey, index) => ({
-            id: `group_${index + 1}`,
-            name: sourceModel[sourceKey]?.name || sourceKey,
-            members: [sourceKey],
-            color: sourceModel[sourceKey]?.color || "#1f77b4",
-        }));
+        mergeGroupsByName(
+            sourceNames.map((sourceKey, index) => ({
+                id: createGroupId(index),
+                name: sourceModel[sourceKey]?.name || sourceKey,
+                members: [sourceKey],
+                color: sourceModel[sourceKey]?.color || "#1f77b4",
+            })),
+        );
 
     const initialGroups = buildInitialGroups();
     let groups = clone(initialGroups);
-    const normalizeGroupNameKey = (name) => String(name ?? "").trim().toLowerCase();
 
     const syncGroupColorsByName = () => {
+        groups = mergeGroupsByName(groups);
         const colorMap = {};
         groups.forEach((group) => {
             const key = normalizeGroupNameKey(group.name);
@@ -274,6 +320,8 @@
 
             const meta = document.createElement("span");
             meta.className = "allele-editor__meta";
+            const memberCount = Array.isArray(group.members) ? group.members.length : 0;
+            meta.textContent = memberCount > 1 ? `${memberCount} alleles` : "";
 
             item.appendChild(checkbox);
             item.appendChild(swatch);
@@ -309,17 +357,18 @@
         return `Contains ${points.length} allele entries: ${preview}${extra}`;
     };
 
-    const buildGroupedTraces = () => {
+    const buildDisplayTraces = () => {
         const orderedSamples = sampleOrder.length > 0 ? sampleOrder : [];
+        const traces = [];
 
-        return groups.map((group) => {
-            const buckets = new Map(orderedSamples.map((sample) => [sample, { total: 0, points: [] }]));
-
-            group.members.forEach((memberName) => {
+        groups.forEach((group) => {
+            group.members.forEach((memberName, memberIndex) => {
                 const source = sourceModel[memberName];
                 if (!source) {
                     return;
                 }
+
+                const buckets = new Map(orderedSamples.map((sample) => [sample, { total: 0, points: [] }]));
                 source.points.forEach((point) => {
                     if (!point.sample) {
                         return;
@@ -333,54 +382,58 @@
                         bucket.points.push(point);
                     }
                 });
+
+                const x = [];
+                const y = [];
+                const text = [];
+                const customdata = [];
+
+                Array.from(buckets.keys()).forEach((sample) => {
+                    const bucket = buckets.get(sample) || { total: 0, points: [] };
+                    const sortedPoints = bucket.points.slice().sort((a, b) => b.value - a.value);
+                    const primary = sortedPoints.find((point) => point.path) || sortedPoints[0] || null;
+                    const membersPayload = buildMembersPayload(sortedPoints);
+                    const total = Math.round(bucket.total * 1000000) / 1000000;
+
+                    x.push(sample);
+                    y.push(total);
+                    text.push(total > 0 ? formatPercentLabel(total) : "");
+                    customdata.push([
+                        primary?.path || "",
+                        primary?.label || "",
+                        primary?.allele || group.name,
+                        primary?.type || "",
+                        total,
+                        JSON.stringify(membersPayload),
+                        group.name,
+                        buildTooltipSummary(sortedPoints),
+                    ]);
+                });
+
+                traces.push({
+                    type: "bar",
+                    name: group.name,
+                    legendgroup: group.id,
+                    showlegend: memberIndex === 0,
+                    marker: { color: group.color },
+                    x,
+                    y,
+                    text,
+                    textposition: "inside",
+                    cliponaxis: false,
+                    customdata,
+                    hovertemplate: "Sample: %{x}<br>Allele: %{customdata[6]}<br>Percent: %{y:.2f}%<br>%{customdata[7]}<extra></extra>",
+                });
             });
-
-            const x = [];
-            const y = [];
-            const text = [];
-            const customdata = [];
-
-            Array.from(buckets.keys()).forEach((sample) => {
-                const bucket = buckets.get(sample) || { total: 0, points: [] };
-                const sortedPoints = bucket.points.slice().sort((a, b) => b.value - a.value);
-                const primary = sortedPoints.find((point) => point.path) || sortedPoints[0] || null;
-                const membersPayload = buildMembersPayload(sortedPoints);
-                const total = Math.round(bucket.total * 1000000) / 1000000;
-
-                x.push(sample);
-                y.push(total);
-                text.push(total > 0 ? formatPercentLabel(total) : "");
-                customdata.push([
-                    primary?.path || "",
-                    primary?.label || "",
-                    primary?.allele || group.name,
-                    primary?.type || "",
-                    total,
-                    JSON.stringify(membersPayload),
-                    group.name,
-                    buildTooltipSummary(sortedPoints),
-                ]);
-            });
-
-            return {
-                type: "bar",
-                name: group.name,
-                marker: { color: group.color },
-                x,
-                y,
-                text,
-                textposition: "inside",
-                cliponaxis: false,
-                customdata,
-                hovertemplate: "Sample: %{x}<br>Allele: %{customdata[6]}<br>Percent: %{y:.2f}%<br>%{customdata[7]}<extra></extra>",
-            };
         });
+
+        return traces;
     };
 
     const renderGroupedPlot = () => {
         syncGroupColorsByName();
         const layout = Object.keys(figure.layout || {}).length > 0 ? clone(figure.layout) : clone(initialLayout);
-        Plotly.react(figure, buildGroupedTraces(), layout);
+        Plotly.react(figure, buildDisplayTraces(), layout);
         buildColorPickers();
     };
 
@@ -484,7 +537,7 @@
             group.name = nextName;
         });
         renderGroupedPlot();
-        buildGroupList(selectedIds);
+        buildGroupList();
         setEditorStatus(`Renamed ${targets.length} alleles to \"${nextName}\".`);
     };
 
