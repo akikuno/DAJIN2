@@ -502,13 +502,6 @@ Below is an example where a deletion (light blue) and an insertion (red) are obs
 
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
-## 5. MUTATION_INFO
-
-The MUTATION_INFO directory stores tables describing mutation sites for each allele.  
-An example of a *Tyr* point mutation is shown below:
-- It lists the chromosomal position and the mutation type.
-
-<img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
 
 ---
 

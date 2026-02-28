@@ -514,14 +514,6 @@ Tyr点変異（緑色）の例を以下に示します：
 <img src="https://raw.githubusercontent.com/akikuno/logos/refs/heads/main/DAJIN2/cables2-inversion.png" width="75%" />
 
 
-## 5. MUTATION_INFO
-
-MUTATION_INFOディレクトリには、各アレルの変異箇所を示すテーブルが保存されます。  
-*Tyr*点変異の例を以下に示します：
-- 点変異の染色体上の位置と、変異の種類が記載されています。
-
-<img src="https://user-images.githubusercontent.com/15861316/274519342-a613490d-5dbb-4a27-a2cf-bca0686b30f0.png" width="75%">
-
 ---
 
 # 📣 お問い合わせ
