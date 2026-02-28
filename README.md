@@ -71,14 +71,9 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 ## From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
-# Setting up Bioconda
-conda config --add channels defaults
-conda config --add channels bioconda
-conda config --add channels conda-forge
-conda config --set channel_priority flexible
-
-# Install DAJIN2
-conda create -n env-dajin2 python=3.12 DAJIN2 -y
+conda create -y -n env-dajin2 \
+  -c conda-forge -c bioconda \
+  python=3.12 DAJIN2
 conda activate env-dajin2
 ```
 
@@ -92,17 +87,21 @@ pip install DAJIN2
 > **DAJIN2 is actively being developed and improved.**  
 > Please make sure you are using the latest version to take advantage of the newest features.  
 >
-> 🔍 **To check your current version:**
+> **1. To check your current version:**
 > ```bash
 > DAJIN2 --version
 > ```
 >
-> ➡️ **Check the latest version:**  
+> **2. Check the latest version:**  
 > https://github.com/akikuno/DAJIN2/releases
 >
-> 🔄 **To update to the latest version:**
+> **3. Reinstall the latest version:**
 > ```bash
-> conda update DAJIN2 -y
+> conda deactivate
+> conda remove -y -n env-dajin2 --all
+> conda create -y -n env-dajin2 \ 
+> -c conda-forge -c bioconda \
+> python=3.12 DAJIN2
 > ```
 > or
 > ```bash
