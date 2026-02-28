@@ -289,9 +289,6 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.sample_name, ARGS.fasta_alleles, cons_midsv_tags, map_name_allele
     )
 
-    # CSV (Allele Info)
-    report.mutation_exporter.export_to_csv(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
-
     # VCF
     report.vcf_exporter.export_to_vcf(ARGS.tempdir, ARGS.sample_name, ARGS.genome_coordinates, cons_midsv_tags)
 
