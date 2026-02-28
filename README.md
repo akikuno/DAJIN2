@@ -53,7 +53,7 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 - Recommended memory: 16 GB or more
 
 >[!NOTE]
-> DAJIN2 is the successor to DAJIN, which required a GPU for efficient computation due to its use of deep learning.  
+> DAJIN2 is the successor to [DAJIN](https://github.com/akikuno/DAJIN), which required a GPU for efficient computation due to its use of deep learning.  
 > In contrast, **DAJIN2 does not use deep learning and does not require a GPU**.  
 > Therefore, it runs smoothly on typical laptops.
 
@@ -85,19 +85,20 @@ pip install DAJIN2
 > **DAJIN2 is actively being developed and improved.**  
 > Please make sure you are using the latest version to take advantage of the newest features.  
 >
-> **1. To check your current version:**
+> **1. To check your current version**
 > ```bash
 > DAJIN2 --version
 > ```
 >
-> **2. Check the latest version:**  
+> **2. Check the latest version**  
 > https://github.com/akikuno/DAJIN2/releases
 >
-> **3. Reinstall the latest version:**
+> **3. Reinstall DAJIN2 if the installed version is not the latest**
 > ```bash
 > conda deactivate
 > conda remove -y -n env-dajin2 --all
 > conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
+> conda activate env-dajin2
 > ```
 > or
 > ```bash
