@@ -12,7 +12,7 @@
 
 <!-- ############################################################# # -->
 
-# v0.9.1 (2026-02-25)
+# v0.9.1 (2026-02-28)
 
 ## 🌟 New Features
 -  Add interactive allele rename controls and auto-sync colors for identical allele names in the report viewer.
