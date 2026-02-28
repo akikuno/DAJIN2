@@ -71,9 +71,7 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 ## From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
 
 ```bash
-conda create -y -n env-dajin2 \
-  -c conda-forge -c bioconda \
-  python=3.12 DAJIN2
+conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
 conda activate env-dajin2
 ```
 
@@ -99,9 +97,7 @@ pip install DAJIN2
 > ```bash
 > conda deactivate
 > conda remove -y -n env-dajin2 --all
-> conda create -y -n env-dajin2 \ 
-> -c conda-forge -c bioconda \
-> python=3.12 DAJIN2
+> conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
 > ```
 > or
 > ```bash

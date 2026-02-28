@@ -95,9 +95,7 @@ pip install DAJIN2
 > ```bash
 > conda deactivate
 > conda remove -y -n env-dajin2 --all
-> conda create -y -n env-dajin2 \ 
-> -c conda-forge -c bioconda \
-> python=3.12 DAJIN2
+> conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
 > ```
 > または
 > ```bash
