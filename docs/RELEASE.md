@@ -31,6 +31,10 @@
   Issue [#148](https://github.com/akikuno/DAJIN2/issues/148) 
 
 
+- Fix off-by-one VCF POS for insertions and deletions by left-anchoring indel coordinates
+  Issue [#153](https://github.com/akikuno/DAJIN2/issues/153) 
+
+
 ## 🔧 Maintenance
 -  Fix IGV track labels to fixed names (Variants and Alignments) in viewer and report.
   Issue [#150](https://github.com/akikuno/DAJIN2/issues/150) 
