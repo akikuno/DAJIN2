@@ -10,66 +10,26 @@ jobs:
         runs-on: ubuntu-latest
         outputs:
             versions: ${{ steps.get-versions.outputs.versions }}
+
+        defaults:
+            run:
+                shell: bash -l {0}
+
         steps:
-            - uses: actions/checkout@v4
-            - name: Extract Python versions from pyproject.toml
+            - uses: actions/checkout@v6
+
+            - name: Set up Miniconda
+              uses: conda-incubator/setup-miniconda@v3
+              with:
+                  auto-activate-base: true
+                  miniconda-version: "latest"
+
+            - name: Get supported Python versions
               id: get-versions
               run: |
-                  # Parse Python version constraint from pyproject.toml and generate version list
-                  PYTHON_VERSIONS=$(python3 << 'EOF'
-                  import re
-                  import json
-                  import sys
+                  set -euo pipefail
+                  python .github/scripts/get_python_versions.py
 
-                  def parse_python_constraint(constraint):
-                      """Parse Python version constraint and return available version list"""
-                      
-                      # Parse >=X.Y,<X.Z format
-                      match = re.match(r'>=(\d+)\.(\d+),<(\d+)\.(\d+)', constraint)
-                      if not match:
-                          # Return default values
-                          return ["3.10", "3.11", "3.12", "3.13"]
-                      
-                      min_major, min_minor, max_major, max_minor = map(int, match.groups())
-                      versions = []
-                      
-                      # Known Python versions (should be updated periodically)
-                      known_python_versions = [
-                          (3, 9), (3, 10), (3, 11), (3, 12), (3, 13), (3, 14), (3, 15)
-                      ]
-                      
-                      for major, minor in known_python_versions:
-                          # Check if version is within constraints
-                          if (major > min_major or (major == min_major and minor >= min_minor)) and \
-                             (major < max_major or (major == max_major and minor < max_minor)):
-                              versions.append(f"{major}.{minor}")
-                      
-                      return versions
-
-                  # Read pyproject.toml
-                  try:
-                      with open('pyproject.toml', 'r') as f:
-                          content = f.read()
-                      
-                      # Extract python = "..." line
-                      match = re.search(r'python\s*=\s*"([^"]+)"', content)
-                      if match:
-                          constraint = match.group(1)
-                          print(f"Python constraint: {constraint}", file=sys.stderr)
-                          
-                          versions = parse_python_constraint(constraint)
-                          print(json.dumps(versions))
-                      else:
-                          print('["3.10", "3.11", "3.12", "3.13"]')  # Default
-                          
-                  except Exception as e:
-                      print(f"Error: {e}", file=sys.stderr)
-                      print('["3.10", "3.11", "3.12", "3.13"]')  # Default on error
-                  EOF
-                  )
-
-                  echo "Generated versions: $PYTHON_VERSIONS"
-                  echo "versions=$PYTHON_VERSIONS" >> "$GITHUB_OUTPUT"
     build:
         needs: get-python-versions
         runs-on: ${{ matrix.os }}
@@ -85,7 +45,8 @@ jobs:
                 shell: bash -l {0}
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
+
             - uses: conda-incubator/setup-miniconda@v3
               with:
                   python-version: ${{ matrix.python-version }}
@@ -96,6 +57,7 @@ jobs:
             - name: Setup conda environment
               run: |
                   conda create -y -n env-dajin2 python=${{ matrix.python-version }} pip pytest
+
             - name: Execute tests
               env:
                   PYTHONPATH: src
