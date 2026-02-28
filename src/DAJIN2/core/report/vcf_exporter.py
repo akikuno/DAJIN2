@@ -12,10 +12,6 @@ from DAJIN2.utils.dna_handler import revcomp
 from DAJIN2.utils.midsv_handler import convert_midsvs_to_sequence
 from DAJIN2.utils.report_name_handler import build_report_filename
 
-type VcfInfoValue = str | int
-type VcfInfo = dict[str, VcfInfoValue]
-type VcfRecord = dict[str, object]
-
 LARGE_SV_THRESHOLD = 50
 VALID_DNA_BASES = frozenset("ACGTN")
 INFO_FIELD_PRIORITY = ("SVTYPE", "TYPE", "SVLEN", "SEQ", "QNAME")
@@ -28,8 +24,8 @@ def _build_vcf_record(
     record_id: str,
     reference_bases: str,
     alternate_bases: str,
-    info_fields: VcfInfo,
-) -> VcfRecord:
+    info_fields: dict[str, str | int],
+) -> dict[str, object]:
     """Create one internal VCF record object."""
     return {
         "CHROM": chromosome_name,
@@ -41,12 +37,12 @@ def _build_vcf_record(
     }
 
 
-def _format_info(info_fields: VcfInfo) -> str:
+def _format_info(info_fields: dict[str, str | int]) -> str:
     """Serialize INFO fields in a stable order for VCF output."""
     if not info_fields:
         return "."
 
-    ordered_pairs: list[tuple[str, VcfInfoValue]] = []
+    ordered_pairs: list[tuple[str, str | int]] = []
     emitted_keys: set[str] = set()
 
     for key in INFO_FIELD_PRIORITY:
@@ -126,13 +122,13 @@ def _build_inversion_record(
     start_position: int,
     inversion_bases: list[str],
     allele_record_id: str,
-) -> VcfRecord | None:
+) -> dict[str, object] | None:
     """Build a symbolic inversion record from buffered inversion bases."""
     if start_position is None:
         return None
 
     reference_sequence = "".join(inversion_bases).upper() or "N"
-    info_fields: VcfInfo = {
+    info_fields: dict[str, str | int] = {
         "SVTYPE": "INV",
         "SVLEN": len(inversion_bases),
         "SEQ": reference_sequence,
@@ -153,13 +149,13 @@ def _build_unknown_run_record(
     start_position: int,
     run_length: int,
     allele_record_id: str,
-) -> VcfRecord | None:
+) -> dict[str, object] | None:
     """Represent an unknown-base run as a symbolic deletion-like record."""
     if start_position is None:
         return None
 
     reference_sequence = "N" * run_length
-    info_fields: VcfInfo = {
+    info_fields: dict[str, str | int] = {
         "SVTYPE": "DEL",
         "TYPE": "DEL",
         "SVLEN": -run_length,
@@ -203,9 +199,9 @@ def _midsv_to_vcf_records(
     start_offset: int,
     allele_id: str,
     large_sv_threshold: int,
-) -> list[VcfRecord]:
+) -> list[dict[str, object]]:
     """Convert MIDSV tokens into local-coordinate VCF records."""
-    records: list[VcfRecord] = []
+    records: list[dict[str, object]] = []
     local_position = start_offset + 1
     left_anchor_base: str | None = None
     inversion_start_position: int | None = None
@@ -280,7 +276,7 @@ def _midsv_to_vcf_records(
         if current_token.startswith("*"):
             reference_base = _reference_base(current_token)
             alternate_base = current_token[2:].upper() if len(current_token) >= 3 else reference_base
-            substitution_info: VcfInfo = {"TYPE": "SUB", "QNAME": allele_id}
+            substitution_info: dict[str, str | int] = {"TYPE": "SUB", "QNAME": allele_id}
             records.append(
                 _build_vcf_record(
                     chrom,
@@ -302,7 +298,7 @@ def _midsv_to_vcf_records(
             deleted_sequence, consumed_token_count = _collect_deleted_sequence(midsv_tags, token_index)
             deletion_length = len(deleted_sequence)
             deletion_end_position = local_position + deletion_length - 1
-            deletion_info: VcfInfo = {
+            deletion_info: dict[str, str | int] = {
                 "SVTYPE": "DEL",
                 "TYPE": "DEL",
                 "SVLEN": -deletion_length,
@@ -339,7 +335,7 @@ def _midsv_to_vcf_records(
             has_left_anchor = left_anchor_base is not None and local_position > start_offset + 1
             insertion_position = local_position - 1 if has_left_anchor else local_position
             insertion_reference_base = left_anchor_base if has_left_anchor else anchor_reference_base
-            insertion_info: VcfInfo = {"TYPE": "INS", "SVLEN": len(inserted_sequence), "QNAME": allele_id}
+            insertion_info: dict[str, str | int] = {"TYPE": "INS", "SVLEN": len(inserted_sequence), "QNAME": allele_id}
             if inserted_sequence:
                 insertion_info["SEQ"] = inserted_sequence
             records.append(
@@ -353,7 +349,7 @@ def _midsv_to_vcf_records(
                 )
             )
             if anchor_operation == "*" and anchor_alternate_bases and anchor_alternate_bases != anchor_reference_base:
-                substitution_info: VcfInfo = {"TYPE": "SUB", "QNAME": allele_id}
+                substitution_info: dict[str, str | int] = {"TYPE": "SUB", "QNAME": allele_id}
                 records.append(
                     _build_vcf_record(
                         chrom,
@@ -470,10 +466,10 @@ def _align_sequence_to_control(control_sequence: str, query_sequence: str) -> li
 
 
 def _convert_record_on_negative_strand(
-    record: VcfRecord,
-    info_fields: VcfInfo,
+    record: dict[str, object],
+    info_fields: dict[str, str | int],
     region_end: int,
-) -> VcfRecord:
+) -> dict[str, object]:
     """Convert one local-coordinate record to genomic coordinates on the minus strand."""
     variant_kind = str(info_fields.get("TYPE") or info_fields.get("SVTYPE") or "")
     local_position = int(record["POS"])
@@ -540,9 +536,9 @@ def _convert_record_on_negative_strand(
 
 
 def _convert_records_to_genomic_coordinates(
-    records: list[VcfRecord],
+    records: list[dict[str, object]],
     genome_coordinates: dict[str, object] | None,
-) -> list[VcfRecord]:
+) -> list[dict[str, object]]:
     """Translate local VCF records into genomic coordinates."""
     if not records or genome_coordinates is None:
         return records
@@ -552,7 +548,7 @@ def _convert_records_to_genomic_coordinates(
     region_end = int(genome_coordinates.get("end", region_start))
     strand = str(genome_coordinates.get("strand") or "+")
 
-    genomic_records: list[VcfRecord] = []
+    genomic_records: list[dict[str, object]] = []
     for record in records:
         info_fields = dict(record.get("INFO", {})) if isinstance(record.get("INFO", {}), dict) else {}
         genomic_record = dict(record)
@@ -573,7 +569,7 @@ def _convert_records_to_genomic_coordinates(
     return genomic_records
 
 
-def _ensure_deletion_end(record: VcfRecord) -> None:
+def _ensure_deletion_end(record: dict[str, object]) -> None:
     """Populate END for deletion records when it can be derived from SVLEN."""
     info_fields = record.get("INFO", {})
     if not isinstance(info_fields, dict) or "END" in info_fields:
@@ -592,9 +588,9 @@ def _ensure_deletion_end(record: VcfRecord) -> None:
     info_fields["END"] = int(record["POS"]) + deletion_length - 1
 
 
-def _write_vcf(path_output: Path, records: list[VcfRecord]) -> None:
+def _write_vcf(path_output: Path, records: list[dict[str, object]]) -> None:
     """Write internal VCF records to a VCF file."""
-    sortable_records: list[VcfRecord] = []
+    sortable_records: list[dict[str, object]] = []
     for output_order, record in enumerate(records):
         record_with_order = dict(record)
         record_with_order["_order"] = output_order
