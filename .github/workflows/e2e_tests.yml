@@ -4,14 +4,25 @@ on:
     push:
 
 jobs:
+    get-python-version:
+        runs-on: ubuntu-latest
+        outputs:
+            latest-version: ${{ steps.get-version.outputs.latest_version }}
+        steps:
+            - uses: actions/checkout@v6
+            - name: Get latest Python version from pyproject.toml
+              id: get-version
+              run: python .github/scripts/get_python_versions.py
+
     e2e_tests:
         name: E2E tests for DAJIN2
+        needs: get-python-version
         runs-on: ${{ matrix.os }}
         strategy:
             max-parallel: 6
             matrix:
                 os: [ubuntu-latest, macos-latest]
-                python-version: ["3.12"]
+                python-version: ["${{ needs.get-python-version.outputs.latest-version }}"]
                 test-case: [cables2_flox, stx2_deletion, tyr_substitution]
 
         defaults:

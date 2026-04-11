@@ -64,6 +64,7 @@ def main() -> None:
     versions_json = json.dumps(versions)
     print(f"Python versions: {versions_json}")
     write_github_output("versions", versions_json)
+    write_github_output("latest_version", versions[-1])
 
 
 if __name__ == "__main__":

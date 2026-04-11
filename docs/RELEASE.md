@@ -20,7 +20,9 @@
 - Updated pyproject.toml so that dependencies are installed correctly following the DAJIN2 version update.  
   Issue [#151](https://github.com/akikuno/DAJIN2/issues/151) 
 
+## 🔧 Maintenance
 
+- Automatically reflect the Python version specified in pyproject.toml in the GitHub Actions test environment.
 
 <!-- ############################################################# # -->
 
