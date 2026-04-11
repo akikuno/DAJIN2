@@ -27,10 +27,10 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-# Specify 3.10–3.13 due to dependencies on mappy and pysam
+# Specify 3.10–3.12 due to dependencies on mappy and pysam
 # mappy: https://anaconda.org/bioconda/mappy/files
 # pysam: https://anaconda.org/bioconda/pysam/files
-python = ">=3.10,<3.14"
+python = ">=3.10,<3.13"
 
 # Bioinformatics
 mappy = ">=2.24,<3.0.0"
