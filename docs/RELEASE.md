@@ -12,7 +12,31 @@
 
 <!-- ############################################################# # -->
 
-# v0.9.1 (2026-02-28)
+# v0.9.2 (2026-04-13)
+
+
+## 🐛 Bug Fixes
+
+- Updated pyproject.toml so that dependencies are installed correctly following the DAJIN2 version update.  
+  Issue [#151](https://github.com/akikuno/DAJIN2/issues/151) 
+
+
+
+<!-- ############################################################# # -->
+
+
+-------------------------------------------------------------
+
+# Past Releases
+
+
+<!-- <details>
+<summary> v0.X.X (2025-MM-DD) </summary>
+
+</details> -->
+
+<details>
+<summary> v0.9.1 (2026-02-28) </summary>
 
 ## 🌟 New Features
 -  Add interactive allele rename controls and auto-sync colors for identical allele names in the report viewer.
@@ -45,19 +69,7 @@
 - Remove Mutation Info CSV output.
   Issue [#155](https://github.com/akikuno/DAJIN2/issues/155) 
 
-
-<!-- ############################################################# # -->
-
-
--------------------------------------------------------------
-
-# Past Releases
-
-
-<!-- <details>
-<summary> v0.X.X (2025-MM-DD) </summary>
-
-</details> -->
+</details>
 
 
 <details>
