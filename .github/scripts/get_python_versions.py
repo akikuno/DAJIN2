@@ -45,9 +45,14 @@ def expand_python_versions(constraint: str) -> list[str]:
 
 def _satisfies(version: tuple[int, int], op: str, major: int, minor: int) -> bool:
     target = (major, minor)
-    ops = {">=": version >= target, ">": version > target,
-           "<=": version <= target, "<": version < target,
-           "==": version == target, "!=": version != target}
+    ops = {
+        ">=": version >= target,
+        ">": version > target,
+        "<=": version <= target,
+        "<": version < target,
+        "==": version == target,
+        "!=": version != target,
+    }
     return ops[op]
 
 

@@ -10,6 +10,10 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 from sklearn.linear_model import LogisticRegression
 
+from DAJIN2.core.preprocess.error_correction.sequence_error_fastq import (
+    format_fastq_record,
+    split_fastq_records_by_qname,
+)
 from DAJIN2.utils import fileio, midsv_handler
 from DAJIN2.utils.allele_handler import to_allele_key
 from DAJIN2.utils.fastx_handler import read_fastq
@@ -140,28 +144,18 @@ def split_fastq_by_sequence_error(ARGS, is_control: bool = False) -> None:
 
     fastq: list[dict] = read_fastq(path_fastq)
 
-    # -----------------------------------------------------
-    # Split FASTQ by sequence error
-    # -----------------------------------------------------
-    fastq_passed = []
-    fastq_error = []
-    for fastq_record in fastq:
-        qname = fastq_record["identifier"].split()[0][1:]
-        if qname in qnames_without_error:
-            fastq_passed.append(fastq_record)
-        else:
-            fastq_error.append(fastq_record)
+    fastq_passed, fastq_error = split_fastq_records_by_qname(fastq, qnames_without_error)
 
     # -----------------------------------------------------
     # Output FASTQ files
     # -----------------------------------------------------
     with gzip.open(path_fastq, "wt") as f:
         for read in fastq_passed:
-            f.write(f"{read['identifier']}\n{read['sequence']}\n{read['separator']}\n{read['quality']}\n")
+            f.write(format_fastq_record(read))
 
     with gzip.open(path_fastq_error, "wt") as f:
         for read in fastq_error:
-            f.write(f"{read['identifier']}\n{read['sequence']}\n{read['separator']}\n{read['quality']}\n")
+            f.write(format_fastq_record(read))
 
 
 ###############################################################################

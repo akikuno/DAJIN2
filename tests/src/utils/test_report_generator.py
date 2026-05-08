@@ -8,9 +8,13 @@ from pathlib import Path
 
 def test_report_controls_deduplicate_same_allele_type_without_collapsing_stacks(tmp_path):
     template_path = Path(__file__).resolve().parents[3] / "src" / "DAJIN2" / "templates" / "report_controls.js"
-    script = template_path.read_text(encoding="utf-8").replace("__PLOT_DIV_ID__", "read_plot_fig").replace(
-        "__EXPORT_BUTTONS__",
-        "[]",
+    script = (
+        template_path.read_text(encoding="utf-8")
+        .replace("__PLOT_DIV_ID__", "read_plot_fig")
+        .replace(
+            "__EXPORT_BUTTONS__",
+            "[]",
+        )
     )
 
     initial_data = [
