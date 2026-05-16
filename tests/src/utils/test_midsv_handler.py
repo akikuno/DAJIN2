@@ -5,7 +5,7 @@ import pytest
 from DAJIN2.utils import midsv_handler
 
 ###########################################################
-# find_n_boundaries
+# is_n_tag
 ###########################################################
 
 
@@ -25,19 +25,6 @@ from DAJIN2.utils import midsv_handler
 )
 def test_is_n_tag(tag, expected):
     assert midsv_handler.is_n_tag(tag) is expected
-
-
-@pytest.mark.parametrize(
-    "midsv_tags, expected",
-    [
-        (["=N", "=N", "A", "B", "=N", "=N"], (1, 4)),
-        (["=N", "=N", "A", "B", "A", "B"], (1, 6)),
-        (["A", "B", "A", "B", "=N", "=N"], (-1, 4)),
-        (["A", "B", "A", "B", "A", "B"], (-1, 6)),
-    ],
-)
-def test_find_n_boundaries(midsv_tags, expected):
-    assert midsv_handler.find_n_boundaries(midsv_tags) == expected
 
 
 ###########################################################

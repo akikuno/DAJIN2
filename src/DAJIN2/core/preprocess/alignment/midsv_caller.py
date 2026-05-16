@@ -85,6 +85,26 @@ def transform_to_midsv_format(path_sam: Path) -> list[dict]:
     return midsv.transform(path_sam=path_sam, qscore=False, keep={"FLAG"})
 
 
+def _find_n_boundaries(midsv_tags: list[str]) -> tuple[int, int]:
+    """Find boundaries of contiguous MIDSV tokens whose reference base is =N."""
+
+    # Find the left boundary
+    left_idx_n = 0
+    for char in midsv_tags:
+        if not midsv_handler.is_n_tag(char):
+            break
+        left_idx_n += 1
+
+    # Find the right boundary
+    right_idx_n = len(midsv_tags) - 1
+    for char in reversed(midsv_tags):
+        if not midsv_handler.is_n_tag(char):
+            break
+        right_idx_n -= 1
+
+    return left_idx_n - 1, right_idx_n + 1
+
+
 def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -> Iterator[list[dict]]:
     """
     Replace internal MIDSV tokens whose reference base is '=N' with deletion tags.
@@ -96,7 +116,7 @@ def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -
     for samp in midsv_sample:
         midsv_tags = samp["MIDSV"].split(",")
 
-        left_idx_n, right_idx_n = midsv_handler.find_n_boundaries(midsv_tags)
+        left_idx_n, right_idx_n = _find_n_boundaries(midsv_tags)
 
         for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence)):
             if left_idx_n < j < right_idx_n and midsv_handler.is_n_tag(cs):

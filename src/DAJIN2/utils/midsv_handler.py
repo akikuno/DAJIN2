@@ -14,26 +14,6 @@ def is_n_tag(tag: str) -> bool:
     return False
 
 
-def find_n_boundaries(midsv_tags: list[str]) -> tuple[int, int]:
-    """Find boundaries of contiguous MIDSV tokens whose reference base is =N."""
-
-    # Find the left boundary
-    left_idx_n = 0
-    for char in midsv_tags:
-        if not is_n_tag(char):
-            break
-        left_idx_n += 1
-
-    # Find the right boundary
-    right_idx_n = len(midsv_tags) - 1
-    for char in reversed(midsv_tags):
-        if not is_n_tag(char):
-            break
-        right_idx_n -= 1
-
-    return left_idx_n - 1, right_idx_n + 1
-
-
 ###########################################################
 # Convert midsv_tags to DNA sequence
 ###########################################################

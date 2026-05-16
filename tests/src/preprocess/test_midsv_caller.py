@@ -3,10 +3,29 @@ from __future__ import annotations
 import pytest
 
 from DAJIN2.core.preprocess.alignment.midsv_caller import (
+    _find_n_boundaries,
     convert_consecutive_indels_to_match,
     convert_flag_to_strand,
     replace_internal_n_to_d,
 )
+
+###########################################################
+# find_n_boundaries
+###########################################################
+
+
+@pytest.mark.parametrize(
+    "midsv_tags, expected",
+    [
+        (["=N", "=N", "A", "B", "=N", "=N"], (1, 4)),
+        (["=N", "=N", "A", "B", "A", "B"], (1, 6)),
+        (["A", "B", "A", "B", "=N", "=N"], (-1, 4)),
+        (["A", "B", "A", "B", "A", "B"], (-1, 6)),
+    ],
+)
+def test_find_n_boundaries(midsv_tags, expected):
+    assert _find_n_boundaries(midsv_tags) == expected
+
 
 ###########################################################
 # replace =N to deletion
