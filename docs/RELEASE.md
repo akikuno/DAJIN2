@@ -14,6 +14,11 @@
 
 # v0.9.3 (2026-XX-XX)
 
+## 🐛 Bug Fixes
+
+- Fix minus-strand insertion VCF coordinates.
+  Issue: [#161](https://github.com/akikuno/DAJIN2/issues/161)
+
 
 ## 🔧 Maintenance
 
