@@ -81,7 +81,11 @@ def execute_control(arguments: dict):
     # ============================================================
     # Mapping using mappy
     # ============================================================
-    paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
+    if ARGS.control_coordinate_scoring:
+        control_allele_key = allele_handler.to_allele_key("control")
+        paths_fasta = [Path(ARGS.tempdir, ARGS.control_name, "fasta", f"{control_allele_key}.fasta")]
+    else:
+        paths_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta").glob("*.fasta")
     preprocess.generate_sam(ARGS, paths_fasta, is_control=True, is_sv=False)
 
     # ============================================================
@@ -130,6 +134,10 @@ def execute_sample(arguments: dict):
     # Save subsetted fastq if the read number is too large (> 100,000 reads)
     path_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
     fastx_handler.overwrite_with_downsampled_fastq(path_fastq, num_reads=100_000)
+
+    if ARGS.control_coordinate_scoring:
+        _execute_sample_with_control_coordinate_scoring(arguments, ARGS)
+        return None
 
     # ============================================================
     # Mapping with mappy
@@ -218,6 +226,136 @@ def execute_sample(arguments: dict):
         ARGS.tempdir, ARGS.fasta_alleles, ARGS.sample_name, ARGS.no_filter
     )
 
+    _complete_sample_analysis(arguments, ARGS, classif_sample)
+
+
+def _execute_sample_with_control_coordinate_scoring(arguments: dict, ARGS: FormattedInputs) -> None:
+    from DAJIN2.core.classification import control_coordinate
+
+    control_key = allele_handler.to_allele_key("control")
+    original_alleles = set(ARGS.fasta_alleles)
+
+    path_control_fasta = Path(ARGS.tempdir, ARGS.control_name, "fasta", f"{control_key}.fasta")
+    shutil.copy(path_control_fasta, Path(ARGS.tempdir, ARGS.sample_name, "fasta"))
+
+    ###########################################################
+    # Build sample/control MIDSV on the control coordinate.
+    ###########################################################
+    preprocess.generate_sam(ARGS, [Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{control_key}.fasta")])
+    preprocess.generate_midsv(ARGS, is_control=False, is_sv=False)
+
+    preprocess.detect_sequence_error_reads(ARGS, is_control=False)
+    preprocess.split_fastq_by_sequence_error(ARGS, is_control=False)
+    preprocess.replace_midsv_without_sequence_errors(ARGS)
+
+    preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
+    preprocess.cache_mutation_loci(ARGS, is_control=False)
+
+    ###########################################################
+    # Detect unexpected SV alleles on the control coordinate.
+    ###########################################################
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="insertion"
+    )
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="deletion"
+    )
+    preprocess.detect_sv_alleles(
+        ARGS.tempdir, ARGS.sample_name, ARGS.control_name, ARGS.fasta_alleles, sv_type="inversion"
+    )
+
+    _add_predicted_sv_alleles(ARGS, original_alleles)
+
+    ###########################################################
+    # Score every read against every allele, then remap only the assigned reads.
+    ###########################################################
+    logger.info(f"Classify {arguments['sample']} with control-coordinate scoring...")
+    allele_signatures = control_coordinate.build_allele_signatures(ARGS)
+    control_midsv_records = control_coordinate.load_control_midsv_records(ARGS.tempdir, ARGS.sample_name)
+    _classified_control, assignments = control_coordinate.classify_records_by_control_coordinate(
+        control_midsv_records, allele_signatures, ARGS.no_filter
+    )
+    if not assignments:
+        raise ValueError("No reads could be assigned by control-coordinate scoring.")
+    fileio.save_pickle(
+        assignments,
+        Path(ARGS.tempdir, ARGS.sample_name, "classification", "control_coordinate_assignments.pickle"),
+    )
+
+    path_sample_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", f"{ARGS.sample_name}.fastq.gz")
+    path_assigned_fastq = Path(ARGS.tempdir, ARGS.sample_name, "fastq", "control_coordinate_assignments")
+    paths_fastq_by_allele = control_coordinate.split_fastq_by_assignment(
+        path_sample_fastq, assignments, path_assigned_fastq
+    )
+    present_alleles = set(paths_fastq_by_allele)
+
+    _copy_user_fastas_to_sample(ARGS, present_alleles)
+    paths_sample_fasta = _paths_fasta_by_allele(ARGS.tempdir, ARGS.sample_name, present_alleles)
+    control_coordinate.write_assigned_sam_files(
+        ARGS, paths_fastq_by_allele, paths_sample_fasta, ARGS.sample_name, is_control_sv=False
+    )
+    preprocess.generate_midsv(ARGS, is_control=False, is_sv=False, target_alleles=present_alleles)
+
+    path_control_fastq = Path(ARGS.tempdir, ARGS.control_name, "fastq", f"{ARGS.control_name}.fastq.gz")
+    user_present_alleles = present_alleles & original_alleles
+    sv_present_alleles = present_alleles - original_alleles
+
+    if user_present_alleles:
+        paths_control_fastq = dict.fromkeys(user_present_alleles, path_control_fastq)
+        paths_control_fasta = _paths_fasta_by_allele(ARGS.tempdir, ARGS.control_name, user_present_alleles)
+        control_coordinate.write_assigned_sam_files(
+            ARGS, paths_control_fastq, paths_control_fasta, ARGS.control_name, is_control_sv=False
+        )
+        preprocess.generate_midsv(ARGS, is_control=True, is_sv=False, target_alleles=user_present_alleles)
+
+    if sv_present_alleles:
+        paths_control_fastq = dict.fromkeys(sv_present_alleles, path_control_fastq)
+        paths_sv_fasta = _paths_fasta_by_allele(ARGS.tempdir, ARGS.sample_name, sv_present_alleles)
+        control_coordinate.write_assigned_sam_files(
+            ARGS, paths_control_fastq, paths_sv_fasta, ARGS.control_name, is_control_sv=True
+        )
+        preprocess.generate_midsv(ARGS, is_control=True, is_sv=True, target_alleles=sv_present_alleles)
+
+    preprocess.cache_mutation_loci(ARGS, is_control=True)
+    preprocess.extract_knockin_loci(ARGS.tempdir, ARGS.sample_name)
+    preprocess.cache_mutation_loci(ARGS, is_control=False)
+
+    allele_handler.save_allele_name_map(ARGS.tempdir, ARGS.fasta_alleles.keys())
+    fileio.save_pickle(ARGS.fasta_alleles, Path(ARGS.tempdir, ARGS.sample_name, "fasta", "fasta_alleles.pickle"))
+
+    classif_sample = control_coordinate.load_classified_midsv_for_assignments(ARGS, assignments)
+    if not classif_sample:
+        raise ValueError("No assigned reads produced allele-specific MIDSV records.")
+    _complete_sample_analysis(arguments, ARGS, classif_sample)
+
+
+def _add_predicted_sv_alleles(ARGS: FormattedInputs, original_alleles: set[str]) -> None:
+    predefined_fasta = {
+        str(Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele_handler.to_allele_key(allele)}.fasta"))
+        for allele in original_alleles
+    }
+    paths_all_fasta = {str(path) for path in Path(ARGS.tempdir, ARGS.sample_name, "fasta").glob("*.fasta")}
+    for path_fasta in paths_all_fasta - predefined_fasta:
+        record = next(fileio.read_fasta(path_fasta))
+        ARGS.fasta_alleles[record["identifier"]] = record["sequence"]
+
+
+def _copy_user_fastas_to_sample(ARGS: FormattedInputs, alleles: set[str]) -> None:
+    for allele in alleles:
+        allele_key = allele_handler.to_allele_key(allele)
+        path_source = Path(ARGS.tempdir, ARGS.control_name, "fasta", f"{allele_key}.fasta")
+        path_destination = Path(ARGS.tempdir, ARGS.sample_name, "fasta", f"{allele_key}.fasta")
+        if path_source.exists() and not path_destination.exists():
+            shutil.copy(path_source, path_destination)
+
+
+def _paths_fasta_by_allele(tempdir: Path, name: str, alleles: set[str]) -> dict[str, Path]:
+    return {
+        allele: Path(tempdir, name, "fasta", f"{allele_handler.to_allele_key(allele)}.fasta") for allele in alleles
+    }
+
+
+def _complete_sample_analysis(arguments: dict, ARGS: FormattedInputs, classif_sample: list[dict]) -> None:
     fileio.save_pickle(classif_sample, Path(ARGS.tempdir, ARGS.sample_name, "classification", "classif_sample.pickle"))
 
     ########################################################################

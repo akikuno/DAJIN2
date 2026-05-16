@@ -6,6 +6,10 @@ from .._lazy_import import LazyExportMap, list_lazy_exports, load_lazy_export
 
 _LAZY_EXPORTS: LazyExportMap = {
     "classify_alleles": (".classifier", "classify_alleles"),
+    "classify_records_by_control_coordinate": (
+        ".control_coordinate",
+        "classify_records_by_control_coordinate",
+    ),
 }
 
 __all__ = sorted(_LAZY_EXPORTS)

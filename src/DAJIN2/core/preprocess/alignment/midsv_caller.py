@@ -118,7 +118,7 @@ def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -
 
         left_idx_n, right_idx_n = _find_n_boundaries(midsv_tags)
 
-        for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence)):
+        for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence, strict=False)):
             if left_idx_n < j < right_idx_n and midsv_handler.is_n_tag(cs):
                 midsv_tags[j] = f"-{seq_char}"
 
@@ -225,10 +225,14 @@ def append_best_preset(midsv_sample: list[dict], best_preset: dict[str, str]) ->
 ###########################################################
 
 
-def generate_midsv(ARGS, is_control: bool = False, is_sv: bool = False) -> None:
+def generate_midsv(
+    ARGS, is_control: bool = False, is_sv: bool = False, target_alleles: set[str] | None = None
+) -> None:
     name = ARGS.control_name if is_control else ARGS.sample_name
 
     for allele, sequence in ARGS.fasta_alleles.items():
+        if target_alleles is not None and allele not in target_alleles:
+            continue
         allele_key = to_allele_key(allele)
         # Skip if sam file does not exist
         if not Path(ARGS.tempdir, name, "sam", allele_key).exists():

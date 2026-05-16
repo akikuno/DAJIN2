@@ -129,6 +129,7 @@ def run_DAJIN2(
     is_control: bool = True,
     num_workers: int = 1,
     no_filter: bool = False,
+    control_coordinate_scoring: bool = False,
     progress_queue=None,
 ) -> None:
     contents = []
@@ -136,6 +137,7 @@ def run_DAJIN2(
         args = create_argument_dict(args, genome_with_server_urls, is_control)
         if args:  # Add args to contents only if it's not an empty dict
             args["no_filter"] = no_filter  # Add no_filter to each args dict
+            args["control_coordinate_scoring"] = control_coordinate_scoring
             contents.append(args)
 
     # Return a list of unique dictionaries
@@ -215,6 +217,7 @@ def execute_batch_mode(arguments: dict[str]):
             is_control=True,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
+            control_coordinate_scoring=arguments.get("control_coordinate_scoring", False),
             progress_queue=progress_queue,
         )
         run_DAJIN2(
@@ -223,6 +226,7 @@ def execute_batch_mode(arguments: dict[str]):
             is_control=False,
             num_workers=arguments["threads"],
             no_filter=arguments["no_filter"],
+            control_coordinate_scoring=arguments.get("control_coordinate_scoring", False),
             progress_queue=progress_queue,
         )
 
@@ -261,6 +265,11 @@ def execute():
     parser.add_argument(
         "--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)"
     )
+    parser.add_argument(
+        "--control-coordinate-scoring",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
     parser.add_argument("-v", "--version", action="version", version=f"DAJIN2 version {DAJIN_VERSION}")
     parser.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
 
@@ -273,6 +282,7 @@ def execute():
         arguments["file"] = args.file
         arguments["threads"] = input_validator.update_threads(int(args.threads))
         arguments["no_filter"] = args.no_filter
+        arguments["control_coordinate_scoring"] = args.control_coordinate_scoring
         arguments["debug"] = args.debug
         execute_batch_mode(arguments)
 
@@ -283,6 +293,7 @@ def execute():
     parser_batch.add_argument(
         "--no-filter", action="store_true", help="Disable minor allele filtering (keep alleles <0.5%%)"
     )
+    parser_batch.add_argument("--control-coordinate-scoring", action="store_true", help=argparse.SUPPRESS)
     parser_batch.add_argument("-d", "--debug", action="store_true", help=argparse.SUPPRESS)
     parser_batch.set_defaults(handler=batchmode)
 
@@ -323,6 +334,7 @@ def execute():
         arguments["genome_coordinate"] = args.genome_coordinate
         arguments["threads"] = input_validator.update_threads(int(args.threads))
         arguments["no_filter"] = args.no_filter
+        arguments["control_coordinate_scoring"] = args.control_coordinate_scoring
         arguments["debug"] = args.debug
 
         execute_single_mode(arguments)

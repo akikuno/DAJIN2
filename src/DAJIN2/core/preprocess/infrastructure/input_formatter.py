@@ -85,6 +85,7 @@ class FormattedInputs:
     threads: int
     uuid: str
     no_filter: bool = False
+    control_coordinate_scoring: bool = False
 
 
 def format_inputs(arguments: dict) -> FormattedInputs:
@@ -107,4 +108,5 @@ def format_inputs(arguments: dict) -> FormattedInputs:
         threads,
         uuid,
         arguments.get("no_filter", False),
+        arguments.get("control_coordinate_scoring", False),
     )
