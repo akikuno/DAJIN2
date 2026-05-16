@@ -113,8 +113,8 @@ def _parse_insertion_token(midsv_token: str) -> tuple[str, str, str, str]:
 
 
 def _is_unknown_token(midsv_token: str) -> bool:
-    """Detect placeholder tokens that represent unknown bases."""
-    return midsv_token.upper() in {"=N", "N"}
+    """Detect '=N' MIDSV placeholder tokens that represent unknown bases."""
+    return midsv_token.upper() == "=N"
 
 
 def _build_inversion_record(
@@ -150,7 +150,7 @@ def _build_unknown_run_record(
     run_length: int,
     allele_record_id: str,
 ) -> dict[str, object] | None:
-    """Represent an unknown-base run as a symbolic deletion-like record."""
+    """Represent a run of '=N' MIDSV tags as a symbolic deletion-like record."""
     if start_position is None:
         return None
 

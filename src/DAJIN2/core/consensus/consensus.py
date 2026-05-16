@@ -41,6 +41,7 @@ def convert_to_percentage(
 
 
 def remove_all_n(cons_percentage: list[dict[str, float]]) -> list[dict[str, float]]:
+    """Remove '=N' tags unless a position contains only unknown-base calls."""
     for c in cons_percentage:
         if len(c) == 1 and any(key in c for key in {"=N", "=n"}):
             continue

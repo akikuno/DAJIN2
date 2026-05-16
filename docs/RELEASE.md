@@ -12,17 +12,14 @@
 
 <!-- ############################################################# # -->
 
-# v0.9.2 (2026-04-13)
+# v0.9.3 (2026-XX-XX)
 
-
-## 🐛 Bug Fixes
-
-- Updated pyproject.toml so that dependencies are installed correctly following the DAJIN2 version update.  
-  Issue [#151](https://github.com/akikuno/DAJIN2/issues/151) 
 
 ## 🔧 Maintenance
 
-- Automatically reflect the Python version specified in pyproject.toml in the GitHub Actions test environment.
+- Change "N" to "=N" to match the output format of midsv 0.13.1.  
+  Issue: [#160](https://github.com/akikuno/DAJIN2/issues/160)
+
 
 <!-- ############################################################# # -->
 
@@ -36,6 +33,21 @@
 <summary> v0.X.X (2025-MM-DD) </summary>
 
 </details> -->
+
+<details>
+<summary> v0.9.2 (2026-04-13) </summary>
+
+## 🐛 Bug Fixes
+
+- Updated pyproject.toml so that dependencies are installed correctly following the DAJIN2 version update.  
+  Issue [#151](https://github.com/akikuno/DAJIN2/issues/151) 
+
+## 🔧 Maintenance
+
+- Automatically reflect the Python version specified in pyproject.toml in the GitHub Actions test environment.
+
+</details>
+
 
 <details>
 <summary> v0.9.1 (2026-02-28) </summary>

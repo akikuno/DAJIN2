@@ -23,12 +23,13 @@ from DAJIN2.utils.fastx_handler import read_fastq
 ###############################################################################
 
 
-def convert_nm_tag(csv_tags: list[list[str]]) -> str:
-    """Create a tag with N for bases that reads are truncated and M for bases that are mapped"""
-    return "".join(["N" if midsv_handler.is_n_tag(tag) else "M" for tag in csv_tags])
+def convert_nm_tag(midsv_tags: list[str]) -> str:
+    """Convert MIDSV tokens with '=N' reference bases to N and mapped bases to M."""
+    return "".join(["N" if midsv_handler.is_n_tag(tag) else "M" for tag in midsv_tags])
 
 
 def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:
+    """Extract N ratio and maximum N-run length from NM feature strings."""
     features = []
     for s in nm_tags:
         total_length = len(s)
@@ -40,7 +41,7 @@ def extract_n_features(nm_tags: list[str]) -> np.ndarray[np.float64]:
 
 
 def detect_sequence_error_reads_in_control(ARGS) -> None:
-    # Convert CSV strings to MIDSV tags
+    # Convert MIDSV tags to compact NM feature strings.
     control_key = to_allele_key("control")
     midsv_control = fileio.read_jsonl(
         Path(ARGS.tempdir, ARGS.control_name, "midsv", control_key, f"{ARGS.control_name}_midsv.jsonl")
@@ -75,7 +76,7 @@ def detect_sequence_error_reads_in_control(ARGS) -> None:
 
 
 def load_midsv_to_nm_tags(file_path: Path, filter_condition: Callable) -> list[str]:
-    """Load MIDSV file and convert to NM tags"""
+    """Load MIDSV records and convert them to NM feature strings."""
     midsv = fileio.read_jsonl(file_path)
     filtered_midsv = (m for m in midsv if filter_condition(m))
     return [convert_nm_tag(m["MIDSV"].split(",")) for m in filtered_midsv]

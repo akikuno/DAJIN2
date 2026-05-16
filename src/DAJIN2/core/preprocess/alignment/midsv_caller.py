@@ -87,11 +87,11 @@ def transform_to_midsv_format(path_sam: Path) -> list[dict]:
 
 def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -> Iterator[list[dict]]:
     """
-    Replace internal 'N's with 'D' in a given sequence.
+    Replace internal MIDSV tokens whose reference base is '=N' with deletion tags.
     This function modifies the 'MIDSV' field in the input sample. It identifies
-    the boundaries of consecutive 'N's and replaces any 'N' within these boundaries
-    with the corresponding character from the provided sequence. 'N's at the boundaries
-    remain unchanged.
+    the boundaries of consecutive unknown-reference tokens and replaces internal
+    ones with the corresponding character from the provided sequence. Boundary
+    unknown-reference tokens remain unchanged.
     """
     for samp in midsv_sample:
         midsv_tags = samp["MIDSV"].split(",")
@@ -123,7 +123,7 @@ def convert_flag_to_strand(midsv_sample: Iterator[list[dict]]) -> Iterator[list[
 
 
 def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int = 95) -> Iterator[list[dict]]:
-    """Filters out the samples from the input Iterator where the proportion of 'N' in the 'MIDSV' field is 95% or higher."""
+    """Filter reads with a high proportion of MIDSV tokens whose reference base is '=N'."""
     for samp in midsv_sample:
         midsv_tags = samp.get("MIDSV", "").split(",")
         total = len(midsv_tags)

@@ -10,6 +10,24 @@ from DAJIN2.utils import midsv_handler
 
 
 @pytest.mark.parametrize(
+    "tag, expected",
+    [
+        ("=N", True),
+        ("=n", True),
+        ("+A|=N", True),
+        ("+a|=n", True),
+        ("N", False),
+        ("n", False),
+        ("+A|N", False),
+        ("-N", False),
+        ("=A", False),
+    ],
+)
+def test_is_n_tag(tag, expected):
+    assert midsv_handler.is_n_tag(tag) is expected
+
+
+@pytest.mark.parametrize(
     "midsv_tags, expected",
     [
         (["=N", "=N", "A", "B", "=N", "=N"], (1, 4)),
@@ -62,19 +80,6 @@ def test_convert_midsvs_to_sequence(midsv_tags, expected):
 ###########################################################
 # convert midsv_tags to cstag
 ###########################################################
-
-
-@pytest.mark.parametrize(
-    "midsv_tags, expected",
-    [
-        ([], []),
-        (["=A", "=C", "=G"], ["=A", "=C", "=G"]),
-        (["=N", "=C", "=N"], ["=N", "=C", "=N"]),
-        (["=A", "+G|+G|+G|=N", "=T"], ["=A", "+G|+G|+G|=N", "=T"]),
-    ],
-)
-def test_add_match_operator_to_n(midsv_tags, expected):
-    assert midsv_handler._add_match_operator_to_n(midsv_tags) == expected
 
 
 @pytest.mark.parametrize(
