@@ -14,7 +14,7 @@
 
 [日本語READMEはこちら](https://github.com/akikuno/DAJIN2/blob/main/docs/README_JP.md)
 
-DAJIN2 is a genotyping tool for genome-edited samples using nanopore-targeted sequencing.
+DAJIN2 is a genotyping tool for genome-edited samples using targeted sequencing.
 
 **DAJIN2** takes its name from the Japanese phrase 一網**打尽** (*Ichimou DAJIN* in Japanese; *Yīwǎng Dǎjìn* in Chinese),  
 meaning “to capture everything in a single sweep.”  
@@ -25,7 +25,7 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 # 🌟 Features
 
 + **Comprehensive Mutation Detection**  
-  DAJIN2 can detect a wide range of genome editing events in nanopore-targeted regions, from point mutations to structural variants.  
+  DAJIN2 can detect a wide range of genome editing events in targeted regions, from point mutations to structural variants.  
   It is particularly effective at identifying **unexpected mutations** and **complex mutations**, such as insertions within deleted regions.
 
 + **Highly Sensitive Allele Classification**  
