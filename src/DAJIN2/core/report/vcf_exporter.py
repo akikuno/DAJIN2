@@ -16,6 +16,8 @@ LARGE_SV_THRESHOLD = 50
 VALID_DNA_BASES = frozenset("ACGTN")
 INFO_FIELD_PRIORITY = ("SVTYPE", "TYPE", "SVLEN", "SEQ", "QNAME")
 MAPPY_PRESET = "map-ont"
+INSERTION_RIGHT_ANCHOR_POS_INFO = "_INSERTION_RIGHT_ANCHOR_POS"
+INSERTION_RIGHT_ANCHOR_REF_INFO = "_INSERTION_RIGHT_ANCHOR_REF"
 
 
 def _build_vcf_record(
@@ -39,19 +41,20 @@ def _build_vcf_record(
 
 def _format_info(info_fields: dict[str, str | int]) -> str:
     """Serialize INFO fields in a stable order for VCF output."""
-    if not info_fields:
+    public_info_fields = {key: value for key, value in info_fields.items() if not key.startswith("_")}
+    if not public_info_fields:
         return "."
 
     ordered_pairs: list[tuple[str, str | int]] = []
     emitted_keys: set[str] = set()
 
     for key in INFO_FIELD_PRIORITY:
-        if key in info_fields:
-            ordered_pairs.append((key, info_fields[key]))
+        if key in public_info_fields:
+            ordered_pairs.append((key, public_info_fields[key]))
             emitted_keys.add(key)
 
-    for key in sorted(key for key in info_fields if key not in emitted_keys):
-        ordered_pairs.append((key, info_fields[key]))
+    for key in sorted(key for key in public_info_fields if key not in emitted_keys):
+        ordered_pairs.append((key, public_info_fields[key]))
 
     serialized_pairs: list[str] = []
     for key, value in ordered_pairs:
@@ -113,8 +116,8 @@ def _parse_insertion_token(midsv_token: str) -> tuple[str, str, str, str]:
 
 
 def _is_unknown_token(midsv_token: str) -> bool:
-    """Detect placeholder tokens that represent unknown bases."""
-    return midsv_token.upper() in {"=N", "N"}
+    """Detect '=N' MIDSV placeholder tokens that represent unknown bases."""
+    return midsv_token.upper() == "=N"
 
 
 def _build_inversion_record(
@@ -150,7 +153,7 @@ def _build_unknown_run_record(
     run_length: int,
     allele_record_id: str,
 ) -> dict[str, object] | None:
-    """Represent an unknown-base run as a symbolic deletion-like record."""
+    """Represent a run of '=N' MIDSV tags as a symbolic deletion-like record."""
     if start_position is None:
         return None
 
@@ -335,7 +338,13 @@ def _midsv_to_vcf_records(
             has_left_anchor = left_anchor_base is not None and local_position > start_offset + 1
             insertion_position = local_position - 1 if has_left_anchor else local_position
             insertion_reference_base = left_anchor_base if has_left_anchor else anchor_reference_base
-            insertion_info: dict[str, str | int] = {"TYPE": "INS", "SVLEN": len(inserted_sequence), "QNAME": allele_id}
+            insertion_info: dict[str, str | int] = {
+                "TYPE": "INS",
+                "SVLEN": len(inserted_sequence),
+                "QNAME": allele_id,
+                INSERTION_RIGHT_ANCHOR_POS_INFO: local_position,
+                INSERTION_RIGHT_ANCHOR_REF_INFO: anchor_reference_base,
+            }
             if inserted_sequence:
                 insertion_info["SEQ"] = inserted_sequence
             records.append(
@@ -478,8 +487,10 @@ def _convert_record_on_negative_strand(
     sequence_in_info = str(info_fields.get("SEQ", ""))
 
     if variant_kind == "INS":
-        genomic_position = region_end - local_position + 1
-        reference_base = _revcomp_variant_sequence(str(record["REF"])) or "N"
+        right_anchor_position = int(info_fields.get(INSERTION_RIGHT_ANCHOR_POS_INFO, local_position))
+        right_anchor_base = str(info_fields.get(INSERTION_RIGHT_ANCHOR_REF_INFO, record["REF"]))
+        genomic_position = region_end - right_anchor_position + 1
+        reference_base = _revcomp_variant_sequence(right_anchor_base) or "N"
         inserted_sequence = _revcomp_variant_sequence(sequence_in_info)
         alternate_bases = "<INS>" if str(record["ALT"]) == "<INS>" else reference_base + inserted_sequence
         if inserted_sequence:

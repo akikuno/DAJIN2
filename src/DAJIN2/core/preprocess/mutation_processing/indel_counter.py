@@ -13,7 +13,7 @@ from DAJIN2.utils import fileio, midsv_handler
 
 
 def count_indels(midsv_sample: Iterator[dict], sequence: str) -> dict[str, list[int]]:
-    """Count indels from midsv data."""
+    """Count indels from MIDSV data, excluding unknown-reference and inversion tags."""
     len_sequence = len(sequence)
     count = {"=": [0] * len_sequence, "+": [0] * len_sequence, "-": [0] * len_sequence, "*": [0] * len_sequence}
     for samp in midsv_sample:

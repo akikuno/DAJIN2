@@ -3,13 +3,32 @@ from __future__ import annotations
 import pytest
 
 from DAJIN2.core.preprocess.alignment.midsv_caller import (
+    _find_n_boundaries,
     convert_consecutive_indels_to_match,
     convert_flag_to_strand,
     replace_internal_n_to_d,
 )
 
 ###########################################################
-# replace n to d
+# find_n_boundaries
+###########################################################
+
+
+@pytest.mark.parametrize(
+    "midsv_tags, expected",
+    [
+        (["=N", "=N", "A", "B", "=N", "=N"], (1, 4)),
+        (["=N", "=N", "A", "B", "A", "B"], (1, 6)),
+        (["A", "B", "A", "B", "=N", "=N"], (-1, 4)),
+        (["A", "B", "A", "B", "A", "B"], (-1, 6)),
+    ],
+)
+def test_find_n_boundaries(midsv_tags, expected):
+    assert _find_n_boundaries(midsv_tags) == expected
+
+
+###########################################################
+# replace =N to deletion
 ###########################################################
 
 
@@ -26,27 +45,27 @@ def test_replace_internal_n_to_d():
     assert result == [{"MIDSV": "A,B,-Z,-A,C,D"}]
 
     # New test cases
-    # 1. Replace when Ns are not consecutive
+    # 1. Replace when =N tags are not consecutive
     midsv_samples = [{"MIDSV": "A,=N,B,=N,C"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,-Y,B,-A,C"}]
 
-    # 2. Keep Ns when they are at the start and end
+    # 2. Keep =N tags when they are at the start and end
     midsv_samples = [{"MIDSV": "=N,=N,=N,A,B,C,=N,=N"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "=N,=N,=N,A,B,C,=N,=N"}]
 
-    # 3. Replace when Ns appear in multiple consecutive groups
+    # 3. Replace when =N tags appear in multiple consecutive groups
     midsv_samples = [{"MIDSV": "A,B,=N,=N,C,=N,=N,D"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,-Z,-A,C,-C,-D,D"}]
 
-    # 4. Replace when there is a single N
+    # 4. Replace when there is a single =N tag
     midsv_samples = [{"MIDSV": "A,B,=N,C,D"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,-Z,C,D"}]
 
-    # 5. Keep when there are no Ns
+    # 5. Keep when there are no =N tags
     midsv_samples = [{"MIDSV": "A,B,C,D,E"}]
     result = list(replace_internal_n_to_d(midsv_samples, sequence))
     assert result == [{"MIDSV": "A,B,C,D,E"}]

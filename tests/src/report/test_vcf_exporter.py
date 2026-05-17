@@ -131,3 +131,20 @@ def test_convert_records_to_genomic_coordinates_minus_strand_sanitizes_inserted_
     assert record["REF"] == "T"
     assert record["ALT"] == "TGT"
     assert record["INFO"]["SEQ"] == "GT"
+
+
+def test_convert_records_to_genomic_coordinates_minus_strand_uses_right_anchor_for_insertion():
+    records = report.vcf_exporter._midsv_to_vcf_records(["=A", "+G|=G", "=T"], "control", 0, "allele01", 50)
+
+    converted = report.vcf_exporter._convert_records_to_genomic_coordinates(
+        records,
+        {"chrom": "chr2", "start": 100, "end": 200, "strand": "-"},
+    )
+
+    assert len(converted) == 1
+    record = converted[0]
+    assert record["POS"] == 199
+    assert record["REF"] == "C"
+    assert record["ALT"] == "CC"
+    assert record["INFO"]["SEQ"] == "C"
+    assert report.vcf_exporter._format_info(record["INFO"]) == "TYPE=INS;SVLEN=1;SEQ=C;QNAME=allele01"

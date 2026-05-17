@@ -85,18 +85,38 @@ def transform_to_midsv_format(path_sam: Path) -> list[dict]:
     return midsv.transform(path_sam=path_sam, qscore=False, keep={"FLAG"})
 
 
+def _find_n_boundaries(midsv_tags: list[str]) -> tuple[int, int]:
+    """Find boundaries of contiguous MIDSV tokens whose reference base is =N."""
+
+    # Find the left boundary
+    left_idx_n = 0
+    for char in midsv_tags:
+        if not midsv_handler.is_n_tag(char):
+            break
+        left_idx_n += 1
+
+    # Find the right boundary
+    right_idx_n = len(midsv_tags) - 1
+    for char in reversed(midsv_tags):
+        if not midsv_handler.is_n_tag(char):
+            break
+        right_idx_n -= 1
+
+    return left_idx_n - 1, right_idx_n + 1
+
+
 def replace_internal_n_to_d(midsv_sample: Iterator[list[dict]], sequence: str) -> Iterator[list[dict]]:
     """
-    Replace internal 'N's with 'D' in a given sequence.
+    Replace internal MIDSV tokens whose reference base is '=N' with deletion tags.
     This function modifies the 'MIDSV' field in the input sample. It identifies
-    the boundaries of consecutive 'N's and replaces any 'N' within these boundaries
-    with the corresponding character from the provided sequence. 'N's at the boundaries
-    remain unchanged.
+    the boundaries of consecutive unknown-reference tokens and replaces internal
+    ones with the corresponding character from the provided sequence. Boundary
+    unknown-reference tokens remain unchanged.
     """
     for samp in midsv_sample:
         midsv_tags = samp["MIDSV"].split(",")
 
-        left_idx_n, right_idx_n = midsv_handler.find_n_boundaries(midsv_tags)
+        left_idx_n, right_idx_n = _find_n_boundaries(midsv_tags)
 
         for j, (cs, seq_char) in enumerate(zip(midsv_tags, sequence)):
             if left_idx_n < j < right_idx_n and midsv_handler.is_n_tag(cs):
@@ -123,7 +143,7 @@ def convert_flag_to_strand(midsv_sample: Iterator[list[dict]]) -> Iterator[list[
 
 
 def filter_samples_by_n_proportion(midsv_sample: Iterator[dict], threshold: int = 95) -> Iterator[list[dict]]:
-    """Filters out the samples from the input Iterator where the proportion of 'N' in the 'MIDSV' field is 95% or higher."""
+    """Filter reads with a high proportion of MIDSV tokens whose reference base is '=N'."""
     for samp in midsv_sample:
         midsv_tags = samp.get("MIDSV", "").split(",")
         total = len(midsv_tags)

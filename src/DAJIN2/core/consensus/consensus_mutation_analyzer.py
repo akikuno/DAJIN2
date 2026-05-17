@@ -80,7 +80,7 @@ def extract_path_n_filtered_control(
     tempdir: Path, control_name: str, sample_name: str, path_control: Path, allele: str
 ) -> Path:
     """
-    Filter out reads with N enriched in the control.
+    Filter out control reads enriched with MIDSV tokens whose reference base is '=N'.
     """
     allele_key = to_allele_key(allele)
     path_output = Path(tempdir, control_name, "consensus", allele_key, f"{sample_name}_n_filtered.jsonl")

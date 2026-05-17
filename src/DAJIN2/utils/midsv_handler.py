@@ -6,27 +6,12 @@ import cstag
 
 
 def is_n_tag(tag: str) -> bool:
-    return tag.endswith("N") or tag.endswith("n")
-
-
-def find_n_boundaries(midsv_tags: list[str]) -> tuple[int, int]:
-    """Find the boundaries of contiguous Ns which aren't at the ends."""
-
-    # Find the left boundary
-    left_idx_n = 0
-    for char in midsv_tags:
-        if not is_n_tag(char):
-            break
-        left_idx_n += 1
-
-    # Find the right boundary
-    right_idx_n = len(midsv_tags) - 1
-    for char in reversed(midsv_tags):
-        if not is_n_tag(char):
-            break
-        right_idx_n -= 1
-
-    return left_idx_n - 1, right_idx_n + 1
+    """Return True when a MIDSV token represents an unknown =N reference base."""
+    if tag in {"=N", "=n"}:
+        return True
+    if tag.startswith("+"):
+        return tag.split("|")[-1] in {"=N", "=n"}
+    return False
 
 
 ###########################################################
@@ -106,10 +91,8 @@ def _complement_midsv(midsv_tags: list[str]) -> list[str]:
             midsv_tags[i] = op + comp[cs[1]] + comp[cs[2]]
         elif op == "+":
             midsv_tags[i] = "|".join(c[0] + comp[c[-1]] for c in cs.split("|"))
-        else:  # Match or Deletion or N
+        else:  # Match, deletion, or inversion
             midsv_tags[i] = op + comp[cs[-1]]
-        midsv_tags[i] = midsv_tags[i].replace("NN", "N")
-        midsv_tags[i] = midsv_tags[i].replace("nn", "n")
     return midsv_tags
 
 
@@ -123,30 +106,6 @@ def revcomp_midsvs(midsv_tags: list[str]) -> list[str]:
 ###########################################################
 # convert midsv_tags to cstag
 ###########################################################
-
-
-def _add_match_operator_to_n(midsv_tags: list[str]) -> list[str]:
-    """Add "=" (match operator) to the sequences with "N"."""
-    midsv_tags_add_match_op = []
-    for cs in midsv_tags:
-        if cs.startswith("+") and is_n_tag(cs.split("|")[-1]):
-            cs_ins = cs.split("|")
-            last_tag = cs_ins[-1]
-            if not last_tag.startswith("="):
-                last_tag = "=" + last_tag[-1]
-            cs_ins[-1] = last_tag
-            midsv_tags_add_match_op.append("|".join(cs_ins))
-            continue
-
-        if is_n_tag(cs):
-            if cs.startswith("="):
-                midsv_tags_add_match_op.append(cs)
-            else:
-                midsv_tags_add_match_op.append("=" + cs[-1])
-            continue
-
-        midsv_tags_add_match_op.append(cs)
-    return midsv_tags_add_match_op
 
 
 def _split_midsvs_by_delimiter(midsv_tags: list[str]) -> list[str]:
@@ -197,8 +156,7 @@ def _standardize_case(midsv_tags: list[str]) -> list[str]:
 
 
 def convert_midsvs_to_cstag(midsv_tags: list[str]) -> str:
-    midsv_tags_matched_op = _add_match_operator_to_n(midsv_tags)
-    midsv_tags_splitted = _split_midsvs_by_delimiter(midsv_tags_matched_op)
+    midsv_tags_splitted = _split_midsvs_by_delimiter(midsv_tags)
     midsv_tags_combined = _combine_midsvs_by_prefix(midsv_tags_splitted)
     return "".join(_standardize_case(midsv_tags_combined))
 
