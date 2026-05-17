@@ -53,6 +53,9 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 - Recommended memory: 16 GB or more
 
 >[!NOTE]
+> DAJIN2 is tested on macOS (Apple Silicon) and Linux (x86_64).
+
+>[!NOTE]
 > DAJIN2 is the successor to [DAJIN](https://github.com/akikuno/DAJIN), which required a GPU for efficient computation due to its use of deep learning.  
 > In contrast, **DAJIN2 does not use deep learning and does not require a GPU**.  
 > Therefore, it runs smoothly on typical laptops.
@@ -69,6 +72,9 @@ This reflects the tool’s design philosophy: comprehensive detection of both in
 
 
 ## From [Bioconda](https://anaconda.org/bioconda/DAJIN2) (Recommended)
+
+To use Bioconda, you need to set up a conda environment.  
+Therefore, we recommend installing [Miniforge](https://github.com/conda-forge/miniforge).  
 
 ```bash
 conda create -y -n env-dajin2 -c conda-forge -c bioconda DAJIN2
@@ -205,14 +211,14 @@ Here, `>control` represents the sequence of the control allele, while `>knock-in
 ### Using BED Files for Genomic Coordinates
 
 > [!NOTE]
-> BED file is an optional.
+> BED file is optional.
 
 If the reference genome is not from UCSC, or if the external servers that DAJIN2 depends on (UCSC Genome Browser and GGGenome) are unavailable, you can specify a BED file using the `-b/--bed` option to run offline.
 
 > [!TIP]
 > Access to the UCSC Genome Browser or GGGenome servers may occasionally be unavailable. Therefore, we generally recommend using `-b/--bed` instead of `--genome`.
 
-When using the `-b/--bed` option with a BED file, please ensure:
+When using the `-b/--bed` option with a BED file, please ensure the following:
 
 **Use BED6 format** (6 columns required):
 
@@ -259,7 +265,7 @@ Options:
 -s, --sample             Specify the path to the directory containing a sample FASTQ/FASTA/BAM file.
 -a, --allele             Specify the path to the FASTA file.
 -n, --name (Optional)    Set the output directory name. Default: 'Results'.
--b, --bed (Optional)     Specify the path to BED6 file containing genomic coordinates. Default: '' (empty string).
+-b, --bed (Optional)     Specify the path to a BED6 file containing genomic coordinates. Default: '' (empty string).
 -g, --genome (Optional)  Specify the reference UCSC genome ID (e.g., hg38, mm39). Default: '' (empty string).
 -t, --threads (Optional) Set the number of threads. Default: 1.
 --no-filter (Optional)   Disable minor allele filtering (keep alleles below 0.5%). Default: False.
@@ -288,7 +294,7 @@ DAJIN2 \
 
 ### Rare Mutation Detection with `--no-filter`
 
-By default, DAJIN2 filters out alleles with read counts below 0.5% (5 reads out of 100,000 downsampled reads) to reduce noise and improve accuracy. However, when analyzing rare mutations or somatic mosaicism where minor alleles may be present at very low frequencies, you can use the `--no-filter` option to disable this filtering.
+By default, DAJIN2 filters out alleles with read counts below 0.5% to reduce noise and improve accuracy. However, when analyzing rare mutations or somatic mosaicism where minor alleles may be present at very low frequencies, you can use the `--no-filter` option to disable this filtering.
 
 **When to use `--no-filter`:**
 - Detecting rare somatic mutations (< 0.5% frequency)
@@ -308,7 +314,8 @@ DAJIN2 \
 ```
 
 > [!CAUTION]
-> Using `--no-filter` may increase noise and false positives in the results. It is recommended to validate rare alleles through additional experimental methods.
+> Using `--no-filter` may increase noise and false positives in the results.  
+> We recommend validating rare alleles through additional experimental methods.  
 
 
 ## Batch Processing
@@ -459,7 +466,7 @@ Demo video:
 https://github.com/user-attachments/assets/e2de7b56-94c8-4361-a9d3-54c30d53720c
 
 >[!TIP]
-> **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (right panel above on figure, and video)**.
+> **Clicking on an allele of interest in the stacked bar chart allows you to view detailed information on the mutation (the right panel in the figure above, and in the video)**.
 
 In the report, **Allele type** indicates the allele category, and **Percent of reads** shows the proportion of reads.
 
@@ -476,7 +483,7 @@ In the report, **Allele type** indicates the allele category, and **Percent of r
 
 read_summary.xlsx lists the read counts and proportions for each allele.  
 The stacked bar chart in the report is a visualization of `read_summary.xlsx`.  
-Use it as reference when preparing figures for publications.
+Use it as a reference when preparing figures for publications.
 
 ## 3. BAM and VCF
 
@@ -510,7 +517,7 @@ Please use the following Google Form to submit your report:
 If you have a GitHub account, you can also submit reports via  
 👉 [GitHub Issues](https://github.com/akikuno/DAJIN2/issues/new/choose)  
 
-Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for how to contribute and how to verify your contributions.  
+Please refer to [CONTRIBUTING](https://github.com/akikuno/DAJIN2/blob/main/docs/CONTRIBUTING.md) for instructions on contributing.  
 
 > [!NOTE]
 > For frequently asked questions, please refer to [this page](https://github.com/akikuno/DAJIN2/blob/main/docs/FAQ.md).
